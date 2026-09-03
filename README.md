@@ -47,3 +47,12 @@ uv run python -m unittest discover -s tests -v
 
 OpenRouter является сторонним сервисом. Проект Tokenlogue не связан с
 OpenRouter и не аффилирован с ним.
+
+## License
+
+Собственный код Tokenlogue распространяется на условиях [MIT License](LICENSE).
+
+## Third-party software
+
+Предварительный реестр сторонних компонентов приведён в
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

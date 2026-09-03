@@ -2,6 +2,9 @@
 name = "tokenlogue"
 version = "0.1.0"
 description = "A secure cross-platform OpenRouter chat client with local history and configurable token and spending limits."
+authors = [{ name = "Viktor Zemkov" }]
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "flet==0.86.5",
@@ -13,6 +16,8 @@ dependencies = [
 dev = [
     "flet-cli==0.86.5",
     "flet-desktop==0.86.5",
+    "pyright==1.1.411",
+    "ruff==0.16.5",
 ]
 
 [tool.pyright]
@@ -35,10 +40,23 @@ artifact = "tokenlogue"
 org = "io.github.umichata"
 bundle_id = "io.github.umichata.tokenlogue"
 build_number = 1
+company = "Umichata"
+copyright = "Copyright © 2026 Viktor Zemkov"
 
 [tool.flet.app]
 path = "src"
-exclude = [".flet"]
+exclude = [
+    ".flet",
+    ".env",
+    ".env.local",
+    "tokenlogue.sqlite3",
+    "__pycache__",
+    "api/__pycache__",
+    "auth/__pycache__",
+    "chat/__pycache__",
+    "storage/__pycache__",
+    "ui/__pycache__",
+]
 
 [tool.flet.android]
 min_sdk_version = 24
