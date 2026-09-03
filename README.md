@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/assets/tokenlogue-icon-512.png" alt="Tokenlogue icon" width="128">
+</p>
+
 # Tokenlogue
 
 Tokenlogue — защищённый мультиплатформенный клиент OpenRouter с локальной

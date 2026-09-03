@@ -60,6 +60,14 @@ test/
 export/
 .metadata
 
+# Versioned packaging icon sources
+!packaging/icons/android/
+!packaging/icons/android/**
+!packaging/icons/linux/
+!packaging/icons/linux/**
+!packaging/icons/windows/
+!packaging/icons/windows/**
+
 # Environment variables
 .env
 .env.*

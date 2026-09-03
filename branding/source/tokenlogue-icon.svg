@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
+  <title id="title">Tokenlogue application icon</title>
+  <desc id="desc">A turquoise speech bubble containing three descending token-aware conversation rows on a graphite background.</desc>
+  <defs>
+    <mask id="bubble-cutouts" maskUnits="userSpaceOnUse" x="0" y="0" width="1024" height="1024">
+      <rect width="1024" height="1024" fill="#000000"/>
+      <rect x="150" y="155" width="724" height="630" rx="114" fill="#FFFFFF"/>
+      <path d="M650 708 L848 868 Q861 879 857 856 L820 677 Z" fill="#FFFFFF"/>
+      <rect x="250" y="285" width="530" height="104" rx="52" fill="#000000"/>
+      <rect x="250" y="445" width="440" height="104" rx="52" fill="#000000"/>
+      <rect x="250" y="605" width="350" height="104" rx="52" fill="#000000"/>
+    </mask>
+  </defs>
+  <rect width="1024" height="1024" fill="#151A1F"/>
+  <rect width="1024" height="1024" fill="#27D3C2" mask="url(#bubble-cutouts)"/>
+  <rect x="692" y="301" width="72" height="72" rx="19" fill="#8AF1E5"/>
+  <rect x="602" y="461" width="72" height="72" rx="19" fill="#8AF1E5"/>
+  <rect x="512" y="621" width="72" height="72" rx="19" fill="#8AF1E5"/>
+</svg>
