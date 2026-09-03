@@ -1,0 +1,54 @@
+[project]
+name = "tokenlogue"
+version = "0.1.0"
+description = "A secure cross-platform OpenRouter chat client with local history and configurable token and spending limits."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "flet==0.86.5",
+    "flet-secure-storage==0.86.5",
+    "httpx==0.28.1",
+]
+
+[dependency-groups]
+dev = [
+    "flet-cli==0.86.5",
+    "flet-desktop==0.86.5",
+]
+
+[tool.pyright]
+include = ["src", "tests"]
+exclude = ["legacy/desktop", ".flet", ".venv"]
+pythonVersion = "3.12"
+venvPath = "."
+venv = ".venv"
+
+[tool.ruff]
+target-version = "py312"
+extend-exclude = ["legacy/desktop", ".flet"]
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I"]
+
+[tool.flet]
+product = "Tokenlogue"
+artifact = "tokenlogue"
+org = "io.github.umichata"
+bundle_id = "io.github.umichata.tokenlogue"
+build_number = 1
+
+[tool.flet.app]
+path = "src"
+exclude = [".flet"]
+
+[tool.flet.android]
+min_sdk_version = 24
+
+[tool.flet.android.manifest_application]
+allowBackup = "false"
+fullBackupContent = "false"
+
+[tool.flet.android.permission]
+"android.permission.INTERNET" = true
+"android.permission.ACCESS_NETWORK_STATE" = false
+"android.permission.READ_EXTERNAL_STORAGE" = false
+"android.permission.WRITE_EXTERNAL_STORAGE" = false
