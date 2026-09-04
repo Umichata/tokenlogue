@@ -68,6 +68,11 @@ export/
 !packaging/icons/windows/
 !packaging/icons/windows/**
 
+# Versioned Linux integration metadata
+!packaging/linux/
+!packaging/linux/io.github.umichata.tokenlogue.desktop
+!packaging/linux/io.github.umichata.tokenlogue.metainfo.xml
+
 # Environment variables
 .env
 .env.*

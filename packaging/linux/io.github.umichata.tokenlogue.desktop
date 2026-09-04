@@ -1,0 +1,15 @@
+[Desktop Entry]
+Type=Application
+Version=1.5
+Name=Tokenlogue
+GenericName=AI Chat Client
+GenericName[ru]=Клиент чата с ИИ
+Comment=Chat with AI models through OpenRouter
+Comment[ru]=Общение с моделями ИИ через OpenRouter
+Exec=/usr/bin/tokenlogue
+TryExec=/usr/bin/tokenlogue
+Icon=tokenlogue
+Terminal=false
+Categories=Network;Chat;
+Keywords=AI;Chat;OpenRouter;
+Keywords[ru]=ИИ;Чат;OpenRouter;

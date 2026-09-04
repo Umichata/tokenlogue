@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.umichata.tokenlogue</id>
+  <metadata_license>MIT</metadata_license>
+  <project_license>MIT</project_license>
+  <name>Tokenlogue</name>
+  <summary>OpenRouter chat client with local history and configurable limits</summary>
+  <summary xml:lang="ru">Клиент OpenRouter с локальной историей и настраиваемыми лимитами</summary>
+  <developer id="io.github.umichata">
+    <name>Viktor Zemkov</name>
+  </developer>
+  <description>
+    <p>Tokenlogue is a cross-platform client for chatting with AI models through OpenRouter. It stores conversation history locally and keeps the API key in platform secure storage.</p>
+    <p>Chats support free or paid model selection with configurable token and spending limits.</p>
+    <p xml:lang="ru">Tokenlogue — кроссплатформенный клиент для общения с моделями ИИ через OpenRouter. Он сохраняет историю диалогов локально, а API-ключ — в защищённом хранилище платформы.</p>
+    <p xml:lang="ru">Для чатов доступны бесплатный или платный выбор модели и настраиваемые лимиты токенов и расходов.</p>
+  </description>
+  <launchable type="desktop-id">io.github.umichata.tokenlogue.desktop</launchable>
+  <url type="homepage">https://github.com/Umichata/tokenlogue</url>
+  <url type="bugtracker">https://github.com/Umichata/tokenlogue/issues</url>
+  <categories>
+    <category>Network</category>
+    <category>Chat</category>
+  </categories>
+</component>
