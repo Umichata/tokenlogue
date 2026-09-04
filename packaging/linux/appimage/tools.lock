@@ -1,0 +1,35 @@
+# shellcheck shell=bash
+# Exact tagged GitHub release assets for Linux x86_64.
+# SHA-256 values are the digests returned by the GitHub Releases API.
+# No GitHub artifact attestations or separately signed checksum files were
+# available when this lock was created, so publisher provenance remains TOFU.
+
+TOOLS_LOCK_VERSION='1'
+
+LINUXDEPLOY_TAG='1-alpha-20251107-1'
+LINUXDEPLOY_ASSET='linuxdeploy-x86_64.AppImage'
+LINUXDEPLOY_URL='https://github.com/linuxdeploy/linuxdeploy/releases/download/1-alpha-20251107-1/linuxdeploy-x86_64.AppImage'
+LINUXDEPLOY_SHA256='c20cd71e3a4e3b80c3483cef793cda3f4e990aca14014d23c544ca3ce1270b4d'
+LINUXDEPLOY_LICENSE='MIT'
+LINUXDEPLOY_LICENSE_URL='https://github.com/linuxdeploy/linuxdeploy/blob/1-alpha-20251107-1/LICENSE.txt'
+LINUXDEPLOY_PROVENANCE='github-release-api-digest;attestation-absent;tofu'
+
+APPIMAGETOOL_TAG='1.9.1'
+APPIMAGETOOL_ASSET='appimagetool-x86_64.AppImage'
+APPIMAGETOOL_URL='https://github.com/AppImage/appimagetool/releases/download/1.9.1/appimagetool-x86_64.AppImage'
+APPIMAGETOOL_SHA256='ed4ce84f0d9caff66f50bcca6ff6f35aae54ce8135408b3fa33abfc3cb384eb0'
+APPIMAGETOOL_LICENSE='MIT'
+APPIMAGETOOL_LICENSE_URL='https://github.com/AppImage/appimagetool/blob/1.9.1/LICENSE'
+APPIMAGETOOL_PROVENANCE='github-release-api-digest;attestation-absent;tofu'
+APPIMAGETOOL_RUNTIME_SIZE='944632'
+APPIMAGETOOL_RUNTIME_SHA256='d30a3ba1388ef57be73faabf606e0d326682f48c87f666106a3c8d6b35b58b4f'
+APPIMAGETOOL_RUNTIME_PROVENANCE='embedded-prefix-of-tagged-appimagetool-asset'
+
+PATCHELF_TAG='0.19.1'
+PATCHELF_ASSET='patchelf-0.19.1-x86_64.tar.gz'
+PATCHELF_URL='https://github.com/NixOS/patchelf/releases/download/0.19.1/patchelf-0.19.1-x86_64.tar.gz'
+PATCHELF_SHA256='a6818fef80128fb354423234ecacdcca3e993913d774e5d8346bc63f70fed4cf'
+PATCHELF_BINARY_SHA256='6526398feccd54ab150e49ef643376c6ae37445fdc28b3320baf4aea59f9d536'
+PATCHELF_LICENSE='GPL-3.0'
+PATCHELF_LICENSE_URL='https://github.com/NixOS/patchelf/blob/0.19.1/COPYING'
+PATCHELF_PROVENANCE='github-release-api-digest;attestation-absent;tofu'

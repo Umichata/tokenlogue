@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+IFS=$'\n\t'
+PATH='/usr/bin:/bin'
+export PATH
+CDPATH=''
+
+appdir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+export APPDIR="$appdir"
+export LD_LIBRARY_PATH="$appdir/usr/lib:$appdir/usr/lib/tokenlogue/lib"
+
+exec "$appdir/usr/bin/tokenlogue" "$@"

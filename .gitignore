@@ -72,6 +72,13 @@ export/
 !packaging/linux/
 !packaging/linux/io.github.umichata.tokenlogue.desktop
 !packaging/linux/io.github.umichata.tokenlogue.metainfo.xml
+!packaging/linux/appimage/
+!packaging/linux/appimage/AppRun
+!packaging/linux/appimage/README.md
+!packaging/linux/appimage/build_appimage.sh
+!packaging/linux/appimage/fetch_tools.sh
+!packaging/linux/appimage/sanitize_paths.py
+!packaging/linux/appimage/tools.lock
 
 # Environment variables
 .env
