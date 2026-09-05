@@ -8,6 +8,7 @@ import stat
 import subprocess
 import sys
 import tempfile
+import textwrap
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -329,6 +330,155 @@ class LinuxBuildPipelineTests(unittest.TestCase):
             "has not yet been run",
         ):
             self.assertIn(phrase, documentation)
+
+
+class PackagedMetadataValidationTests(unittest.TestCase):
+    DESKTOP_PATH = "usr/share/applications/io.github.umichata.tokenlogue.desktop"
+
+    def test_workflow_validates_only_appdir_and_extracted_desktop_files(self) -> None:
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+        targets = re.findall(
+            r"desktop-file-validate\s+([^\n]+)", workflow.replace("\\\n", "")
+        )
+        self.assertEqual(
+            [target.strip() for target in targets],
+            [f'"$appdir/{self.DESKTOP_PATH}"', f'"$extracted/{self.DESKTOP_PATH}"'],
+        )
+        block = self._metadata_block()
+        self.assertIn("set -Eeuo pipefail", block)
+        self.assertNotIn("continue-on-error", workflow)
+        self.assertNotIn("|| true", block)
+        self.assertIn(
+            "extract_root=$PWD/build/linux-release/extracted-appimage", workflow
+        )
+        self.assertIn(
+            "extracted=$PWD/build/linux-release/extracted-appimage/squashfs-root", block
+        )
+
+    def test_both_existing_desktops_are_validated_and_results_are_reported(
+        self,
+    ) -> None:
+        status, calls, report, targets = self._run_metadata_fixture()
+        self.assertEqual(status, 0)
+        self.assertEqual(calls[:2], [f"desktop:{target}" for target in targets])
+        self.assertEqual(calls[2:], ["appstream"] * 3)
+        self.assertIn("Validating AppDir desktop entry", report)
+        self.assertIn("Validating extracted AppImage desktop entry", report)
+        self.assertEqual(report.count("fixture validator success"), 2)
+
+    def test_missing_packaged_desktop_fails_even_if_validator_would_accept_it(
+        self,
+    ) -> None:
+        for missing in (0, 1):
+            with self.subTest(missing=missing):
+                status, calls, report, targets = self._run_metadata_fixture(
+                    missing=missing
+                )
+                self.assertNotEqual(status, 0)
+                self.assertNotIn(f"desktop:{targets[missing]}", calls)
+                self.assertEqual(
+                    calls, [f"desktop:{target}" for target in targets[:missing]]
+                )
+                self.assertIn("Validating", report)
+
+    def test_validator_failure_for_either_desktop_stops_metadata_validation(
+        self,
+    ) -> None:
+        for rejected in (0, 1):
+            with self.subTest(rejected=rejected):
+                status, calls, report, targets = self._run_metadata_fixture(
+                    rejected=rejected
+                )
+                self.assertEqual(status, 23)
+                self.assertEqual(
+                    calls, [f"desktop:{target}" for target in targets[: rejected + 1]]
+                )
+                self.assertIn("fixture validator rejection", report)
+                self.assertNotIn("appstream", calls)
+
+    def _metadata_block(self) -> str:
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+        step = workflow.split(
+            "      - name: Validate packaged metadata paths and ABI\n", 1
+        )[1].split("\n      - name:", 1)[0]
+        commands = textwrap.dedent(step.split("        run: |\n", 1)[1])
+        # Exercise only metadata validation, never a build or workflow run.
+        block, separator, _ = commands.partition("UV_MANAGED_PYTHON=")
+        self.assertTrue(separator)
+        self.assertIn("desktop-appstream-validation.txt 2>&1", block)
+        return block
+
+    def _run_metadata_fixture(
+        self,
+        *,
+        missing: int | None = None,
+        rejected: int | None = None,
+    ) -> tuple[int, list[str], str, list[str]]:
+        with tempfile.TemporaryDirectory(
+            prefix="tokenlogue metadata validation "
+        ) as temp:
+            root = Path(temp)
+            targets = [
+                root / "build/appimage/Tokenlogue.AppDir" / self.DESKTOP_PATH,
+                root
+                / "build/linux-release/extracted-appimage/squashfs-root"
+                / self.DESKTOP_PATH,
+            ]
+            for index, target in enumerate(targets):
+                if index != missing:
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    target.write_text(
+                        "[Desktop Entry]\nType=Application\nName=Tokenlogue\n"
+                        "Exec=tokenlogue\nIcon=tokenlogue\n",
+                        encoding="utf-8",
+                    )
+            report = (
+                root / "build/linux-release/reports/desktop-appstream-validation.txt"
+            )
+            report.parent.mkdir(parents=True)
+            call_log = root / "calls.txt"
+            # Deterministic validators let the tests prove fail-fast behavior
+            # without depending on system package versions or using real artifacts.
+            stubs = textwrap.dedent("""\
+                calls_file=$1
+                rejected_file=$2
+                desktop-file-validate() {
+                    printf 'desktop:%s\\n' "$1" >> "$calls_file"
+                    if [[ "$1" == "$rejected_file" ]]; then
+                        printf 'fixture validator rejection\\n' >&2
+                        return 23
+                    fi
+                    printf 'fixture validator success\\n'
+                }
+                appstreamcli() {
+                    printf 'appstream\\n' >> "$calls_file"
+                }
+            """)
+            result = subprocess.run(
+                [
+                    "bash",
+                    "-c",
+                    stubs + self._metadata_block(),
+                    "metadata-fixture",
+                    str(call_log),
+                    str(targets[rejected]) if rejected is not None else "",
+                ],
+                cwd=root,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            calls = (
+                call_log.read_text(encoding="utf-8").splitlines()
+                if call_log.exists()
+                else []
+            )
+            return (
+                result.returncode,
+                calls,
+                report.read_text(encoding="utf-8"),
+                [str(target) for target in targets],
+            )
 
 
 class OptionalJniAbiTests(unittest.TestCase):

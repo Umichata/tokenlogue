@@ -200,9 +200,11 @@ grep -Fxq 'Exec=/usr/bin/tokenlogue' "$desktop_source" || \
     die "unexpected source desktop Exec"
 grep -Fxq 'TryExec=/usr/bin/tokenlogue' "$desktop_source" || \
     die "unexpected source desktop TryExec"
+# desktop-file-utils 0.26 rejects the optional spec Version=1.5.
 sed \
     -e 's|^Exec=/usr/bin/tokenlogue$|Exec=tokenlogue|' \
     -e '/^TryExec=\/usr\/bin\/tokenlogue$/d' \
+    -e '/^\[Desktop Entry\][[:space:]]*$/,/^\[/ { /^[[:space:]]*Version[[:space:]]*=/d; }' \
     "$desktop_source" > "$desktop_staged"
 [[ "$(grep -c '^Exec=' "$desktop_staged")" == '1' ]] || \
     die "staged desktop must contain exactly one Exec field"

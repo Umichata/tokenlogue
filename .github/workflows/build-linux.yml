@@ -199,10 +199,14 @@ jobs:
           appdir=$PWD/build/appimage/Tokenlogue.AppDir
           extracted=$PWD/build/linux-release/extracted-appimage/squashfs-root
           {
-            desktop-file-validate \
-              packaging/linux/io.github.umichata.tokenlogue.desktop
+            printf 'Validating AppDir desktop entry\n'
+            test -f \
+              "$appdir/usr/share/applications/io.github.umichata.tokenlogue.desktop"
             desktop-file-validate \
               "$appdir/usr/share/applications/io.github.umichata.tokenlogue.desktop"
+            printf 'Validating extracted AppImage desktop entry\n'
+            test -f \
+              "$extracted/usr/share/applications/io.github.umichata.tokenlogue.desktop"
             desktop-file-validate \
               "$extracted/usr/share/applications/io.github.umichata.tokenlogue.desktop"
             appstreamcli validate --no-net \

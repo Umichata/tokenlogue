@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import configparser
 import re
 import shlex
 import shutil
@@ -230,6 +231,7 @@ class AppImagePackagingTests(unittest.TestCase):
         text = _clean_utf8_text(SOURCE_DESKTOP)
         lines = text.splitlines()
 
+        self.assertIn("Version=1.5", lines)
         self.assertEqual(
             [line for line in lines if line.startswith("Exec=")],
             ["Exec=/usr/bin/tokenlogue"],
@@ -238,6 +240,107 @@ class AppImagePackagingTests(unittest.TestCase):
             [line for line in lines if line.startswith("TryExec=")],
             ["TryExec=/usr/bin/tokenlogue"],
         )
+
+    def test_staged_desktop_omits_spec_version_and_preserves_metadata(self) -> None:
+        source_text = _clean_utf8_text(SOURCE_DESKTOP)
+        with tempfile.TemporaryDirectory(prefix="tokenlogue desktop version ") as temp:
+            desktop = Path(temp) / "staged desktop.desktop"
+            self._stage_desktop(SOURCE_DESKTOP, desktop)
+            self._assert_portable_appimage_desktop(desktop)
+            source = _desktop_groups(source_text)["Desktop Entry"]
+            staged = _desktop_groups(_clean_utf8_text(desktop))["Desktop Entry"]
+
+            self.assertNotIn("Version", staged)
+            self.assertNotIn("TryExec", staged)
+            self.assertEqual(staged["Exec"], "tokenlogue")
+            self.assertEqual(staged["Icon"], "tokenlogue")
+            for key in ("Version", "TryExec"):
+                source.pop(key)
+            source["Exec"] = "tokenlogue"
+            self.assertEqual(staged, source)
+
+    def test_staged_version_removal_is_scoped_to_desktop_entry(self) -> None:
+        source_text = _clean_utf8_text(SOURCE_DESKTOP)
+        prefix = "[X-Previous]\nVersion=previous-metadata\n\n"
+        suffix = "\n[X-Following]\nVersion=following-metadata\n"
+        comment_and_key = "# Version=keep-comment\nX-Version=keep-extension\n"
+        for version_line in ("Version=1.5", "Version = 1.5", "  Version\t=1.5"):
+            with self.subTest(version_line=version_line):
+                with tempfile.TemporaryDirectory(
+                    prefix="tokenlogue desktop group "
+                ) as temp:
+                    source = Path(temp) / "input.desktop"
+                    desktop = Path(temp) / "output.desktop"
+                    source.write_text(
+                        prefix
+                        + source_text.replace("Version=1.5", version_line)
+                        + comment_and_key
+                        + suffix,
+                        encoding="utf-8",
+                    )
+                    self._stage_desktop(source, desktop)
+                    result = _clean_utf8_text(desktop)
+                    groups = _desktop_groups(result)
+
+                    self.assertNotIn("Version", groups["Desktop Entry"])
+                    self.assertEqual(
+                        groups["X-Previous"]["Version"], "previous-metadata"
+                    )
+                    self.assertEqual(
+                        groups["X-Following"]["Version"], "following-metadata"
+                    )
+                    self.assertTrue(result.startswith(prefix))
+                    self.assertTrue(result.endswith(suffix))
+                    self.assertIn(comment_and_key, result)
+
+    def test_staged_desktop_allows_missing_spec_version(self) -> None:
+        with tempfile.TemporaryDirectory(
+            prefix="tokenlogue no desktop version "
+        ) as temp:
+            source = Path(temp) / "input.desktop"
+            desktop = Path(temp) / "output.desktop"
+            source.write_text(
+                _clean_utf8_text(SOURCE_DESKTOP).replace("Version=1.5\n", ""),
+                encoding="utf-8",
+            )
+            self._stage_desktop(source, desktop)
+            self._assert_portable_appimage_desktop(desktop)
+            self.assertNotIn(
+                "Version", _desktop_groups(_clean_utf8_text(desktop))["Desktop Entry"]
+            )
+
+    def _stage_desktop(self, source: Path, desktop: Path) -> None:
+        # Execute the build script's actual transformation in isolation.
+        # The remainder of the build script is never evaluated or run.
+        script = (APPIMAGE_DIR / "build_appimage.sh").read_text(encoding="utf-8")
+        transform = re.search(
+            r'^sed \\\n.*?^    "\$desktop_source" > "\$desktop_staged"$',
+            script,
+            re.MULTILINE | re.DOTALL,
+        )
+        assert transform is not None
+        self.assertLess(
+            transform.end(), script.index('"$linuxdeploy" "${linuxdeploy_args[@]}"')
+        )
+        self.assertLess(
+            transform.end(), script.index('\ndesktop-file-validate "$desktop_staged"\n')
+        )
+        before = source.read_bytes()
+        subprocess.run(
+            [
+                "bash",
+                "-c",
+                "set -Eeuo pipefail\ndesktop_source=$1\ndesktop_staged=$2\n"
+                + transform.group(0),
+                "desktop-fixture",
+                str(source),
+                str(desktop),
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(source.read_bytes(), before)
 
     def test_built_appdir_desktop_is_portable(self) -> None:
         desktop = (
@@ -371,6 +474,13 @@ class AppImagePackagingTests(unittest.TestCase):
         ):
             self.assertIn(statement, text)
         self.assertNotIn("published", text)
+
+
+def _desktop_groups(text: str) -> dict[str, dict[str, str]]:
+    parser = configparser.ConfigParser(interpolation=None)
+    parser.optionxform = str
+    parser.read_string(text)
+    return {section: dict(parser[section]) for section in parser.sections()}
 
 
 def _repository(prefix: str) -> str:

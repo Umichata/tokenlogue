@@ -4,6 +4,12 @@ This directory builds an unsigned diagnostic AppImage from the existing
 `build/linux/` Flet bundle. It never rebuilds the Flet application and performs
 all transformations on a staging copy under `build/appimage/`.
 
+The staged desktop entry omits the optional `Version` key in `[Desktop Entry]`
+because Ubuntu 22.04's desktop-file-utils 0.26 rejects `Version=1.5`.
+The system desktop source is unchanged; AppImage keeps `Exec=tokenlogue`,
+`Icon=tokenlogue`, localized metadata, and no `TryExec`. Staging conversion
+runs before linuxdeploy, and desktop-file-validate remains mandatory.
+
 ## Pinned tools
 
 `tools.lock` pins exact tagged Linux x86_64 release assets for linuxdeploy,
