@@ -149,6 +149,83 @@ class AppImagePackagingTests(unittest.TestCase):
         self.assertIn("/^TryExec=\\/usr\\/bin\\/tokenlogue$/d", text)
         self.assertNotIn("TryExec=tokenlogue", text)
 
+    def test_optional_jni_removal_preserves_source_bridge_and_neighbors(self) -> None:
+        self._check_jni_staging_removal(present=True)
+
+    def test_optional_jni_removal_allows_absent_file(self) -> None:
+        self._check_jni_staging_removal(present=False)
+
+    def _check_jni_staging_removal(self, *, present: bool) -> None:
+        text = (APPIMAGE_DIR / "build_appimage.sh").read_text(encoding="utf-8")
+        function = re.search(
+            r"^remove_optional_jni\(\) \{\n.*?^\}", text, re.MULTILINE | re.DOTALL
+        )
+        assert function is not None
+        copy_command = 'cp -a -- "$source_bundle/." "$appdir/usr/lib/tokenlogue/"'
+        remove_command = 'remove_optional_jni "$appdir"'
+        self.assertLess(text.index(copy_command), text.index(remove_command))
+        self.assertLess(
+            text.index(remove_command),
+            text.index('"$linuxdeploy" "${linuxdeploy_args[@]}"'),
+        )
+        self.assertEqual(text.count(remove_command), 1)
+
+        # Exercise only the real copy and removal fragment, never the build.
+        program = (
+            "set -Eeuo pipefail\n"
+            + function.group(0)
+            + "\nsource_bundle=$1\nappdir=$2\n"
+            + copy_command
+            + "\n"
+            + remove_command
+            + "\n"
+        )
+        source_contents = {
+            "tokenlogue": b"executable fixture",
+            "lib/libdart_bridge.so": b"required Python bridge",
+            "lib/libflutter_linux_gtk.so": b"Flutter fixture",
+            "lib/libdartjni.so.extra": b"similar filename must remain",
+            "lib/nested/libdartjni.so": b"only the exact path may be removed",
+        }
+        if present:
+            source_contents["lib/libdartjni.so"] = b"optional JNI fixture"
+        with tempfile.TemporaryDirectory(prefix="tokenlogue JNI staging ") as temp:
+            source = Path(temp) / "source bundle"
+            appdir = Path(temp) / "Tokenlogue.AppDir"
+            staging_bundle = appdir / "usr/lib/tokenlogue"
+            staging_bundle.mkdir(parents=True)
+            for relative, content in source_contents.items():
+                path = source / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(content)
+
+            subprocess.run(
+                ["bash", "-c", program, "jni-fixture", str(source), str(appdir)],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+
+            actual_source = {
+                path.relative_to(source).as_posix(): path.read_bytes()
+                for path in source.rglob("*")
+                if path.is_file()
+            }
+            actual_staging = {
+                path.relative_to(staging_bundle).as_posix(): path.read_bytes()
+                for path in staging_bundle.rglob("*")
+                if path.is_file()
+            }
+            self.assertEqual(actual_source, source_contents)
+            self.assertEqual(
+                actual_staging,
+                {
+                    name: data
+                    for name, data in source_contents.items()
+                    if name != "lib/libdartjni.so"
+                },
+            )
+
     def test_source_desktop_keeps_system_exec_and_try_exec(self) -> None:
         text = _clean_utf8_text(SOURCE_DESKTOP)
         lines = text.splitlines()

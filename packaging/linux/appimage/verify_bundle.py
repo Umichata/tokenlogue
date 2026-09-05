@@ -45,6 +45,15 @@ _NEEDED = re.compile(r"\(NEEDED\).*Shared library: \[([^]]+)\]")
 _LABEL = re.compile(r"^[a-z][a-z0-9_-]*$")
 _SOURCE_FLUTTER_RUNPATH = "/build/flutter/linux/flutter/ephemeral"
 _TCL_LIBRARIES = {"libtcl9tk9.0.so", "libtcl9.0.so"}
+# Source-only diagnostic allowance: build_appimage.sh removes this exact JNI
+# library from staging before linuxdeploy. Its ABI and ldd checks still apply.
+_SOURCE_JNI_LIBRARY = "lib/libdartjni.so"
+_SOURCE_JNI_RUNPATH = "/usr/lib/jvm/temurin-11-jdk-amd64/lib/server"
+_JAVA_LIBRARIES = {"libdartjni.so", "libjvm.so"}
+_JAVA_RUNTIME_PATH = re.compile(
+    rb"/(?:[^\x00\s/\"'<>]+/)*(?:jvm|(?:openjdk|jdk|jre)[^\x00\s/\"'<>]*)"
+    rb"(?=[/\x00\s\"'<>]|$)"
+)
 
 
 class VerificationError(RuntimeError):
@@ -314,11 +323,26 @@ def verify_abi(
                     continue
                 if label == "bundle" and entry.endswith(_SOURCE_FLUTTER_RUNPATH):
                     continue
+                if (
+                    label == "bundle"
+                    and relative == _SOURCE_JNI_LIBRARY
+                    and entry == _SOURCE_JNI_RUNPATH
+                ):
+                    rpath_lines.append(
+                        f"{label}:{relative}\tsource-only JNI allowance; "
+                        "removed from AppImage staging before linuxdeploy"
+                    )
+                    continue
                 errors.append(f"{label}:{relative} has absolute RUNPATH")
             if label != "bundle" and any("build/flutter" in item for item in runpaths):
                 errors.append(f"{label}:{relative} retains Flutter build RUNPATH")
             if label != "bundle" and _TCL_LIBRARIES.intersection(needed):
                 errors.append(f"{label}:{relative} retains Tcl/Tk dependency")
+            if label != "bundle":
+                if _JAVA_LIBRARIES.intersection(Path(item).name for item in needed):
+                    errors.append(f"{label}:{relative} retains Java dependency")
+                if _JAVA_RUNTIME_PATH.search(dynamic_output.encode("utf-8")):
+                    errors.append(f"{label}:{relative} retains JDK/JRE path")
 
             ldd_result = _run_ldd(elf, _library_path(label, resolved_root))
             safe_ldd = _sanitize_report_text(
@@ -328,6 +352,11 @@ def verify_abi(
                 label=label,
             )
             ldd_lines.append(f"\n[{label}:{relative}]\n{safe_ldd.rstrip()}")
+            if label != "bundle":
+                if _JAVA_RUNTIME_PATH.search(safe_ldd.encode("utf-8")):
+                    errors.append(f"{label}:{relative} ldd resolves to JDK/JRE path")
+                if any(name in safe_ldd for name in _JAVA_LIBRARIES):
+                    errors.append(f"{label}:{relative} ldd retains Java dependency")
             missing_libraries = set(
                 re.findall(r"^\s*(\S+)\s+=>\s+not found", safe_ldd, re.MULTILINE)
             )
@@ -448,9 +477,21 @@ def _verify_packaged_root(
     if workspace_bytes:
         forbidden_patterns[workspace_bytes] = "runner workspace path"
     for path in sorted(root.rglob("*")):
-        if path.is_symlink() or not path.is_file():
+        relative = path.relative_to(root).as_posix()
+        if path.name in _JAVA_LIBRARIES:
+            errors.append(f"{label}:{relative} is a forbidden Java library")
+        if path.is_symlink():
+            target = os.readlink(path)
+            if Path(target).name in _JAVA_LIBRARIES or _JAVA_RUNTIME_PATH.search(
+                os.fsencode(target)
+            ):
+                errors.append(f"{label}:{relative} links to a Java runtime")
+            continue
+        if not path.is_file():
             continue
         data = path.read_bytes()
+        if _JAVA_RUNTIME_PATH.search(data):
+            errors.append(f"{label}:{relative} contains JDK/JRE path")
         for pattern, description in forbidden_patterns.items():
             if pattern in data:
                 errors.append(

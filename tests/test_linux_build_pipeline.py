@@ -5,10 +5,12 @@ from __future__ import annotations
 import json
 import re
 import stat
+import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 APPIMAGE_DIR = PROJECT_ROOT / "packaging" / "linux" / "appimage"
@@ -327,6 +329,310 @@ class LinuxBuildPipelineTests(unittest.TestCase):
             "has not yet been run",
         ):
             self.assertIn(phrase, documentation)
+
+
+class OptionalJniAbiTests(unittest.TestCase):
+    JDK_RUNPATH = "/usr/lib/jvm/temurin-11-jdk-amd64/lib/server"
+    JNI_PATH = "lib/libdartjni.so"
+    SAFE_SYMBOLS = (
+        "0 DF *UND* 0 (GLIBC_2.34) symbol_a\n"
+        "0 DF *UND* 0 (GLIBCXX_3.4.29) symbol_b\n"
+        "0 DF *UND* 0 (CXXABI_1.3) symbol_c\n"
+    )
+
+    def test_exact_source_jni_runpath_passes_and_preserves_all_reports(self) -> None:
+        reports = self._verify_fixture(
+            "bundle",
+            self.JNI_PATH,
+            runpath=self.JDK_RUNPATH,
+            needed=("libjvm.so",),
+            ldd_output=f"libjvm.so => {self.JDK_RUNPATH}/libjvm.so (0x01)\n",
+        )
+        self.assertIn("bundle:lib/libdartjni.so", reports["elf-abi.txt"])
+        self.assertIn("GLIBC_2.34,GLIBCXX_3.4.29,CXXABI_1.3", reports["elf-abi.txt"])
+        self.assertIn(self.JDK_RUNPATH, reports["rpaths.txt"])
+        self.assertIn("removed from AppImage staging", reports["rpaths.txt"])
+        self.assertIn("libjvm.so =>", reports["ldd.txt"])
+
+    def test_source_jni_allowance_does_not_apply_to_other_elf_paths(self) -> None:
+        for relative in (
+            "lib/libdart_bridge.so",
+            "lib/other/libdartjni.so",
+            "libdartjni.so",
+            "lib/libdartjni.so.extra",
+        ):
+            with self.subTest(relative=relative):
+                self._verify_fixture(
+                    "bundle",
+                    relative,
+                    runpath=self.JDK_RUNPATH,
+                    expected_errors=("has absolute RUNPATH",),
+                )
+
+    def test_source_jni_allowance_does_not_allow_other_absolute_runpaths(self) -> None:
+        for runpath in ("/opt/jdk-21/lib/server", f"{self.JDK_RUNPATH}:/opt/extra"):
+            with self.subTest(runpath=runpath):
+                self._verify_fixture(
+                    "bundle",
+                    self.JNI_PATH,
+                    runpath=runpath,
+                    expected_errors=("has absolute RUNPATH",),
+                )
+
+    def test_source_jni_still_enforces_abi_limits(self) -> None:
+        for requirement in ("GLIBC_2.36", "GLIBCXX_3.4.30", "CXXABI_1.3.14"):
+            with self.subTest(requirement=requirement):
+                self._verify_fixture(
+                    "bundle",
+                    self.JNI_PATH,
+                    runpath=self.JDK_RUNPATH,
+                    symbols=f"0 DF *UND* 0 ({requirement}) symbol\n",
+                    expected_errors=(f"requires {requirement}",),
+                )
+
+    def test_source_jni_still_enforces_ldd_checks(self) -> None:
+        for output, returncode, message in (
+            ("libjvm.so => not found\n", 0, "has unresolved libraries: libjvm.so"),
+            ("loader failed\n", 1, "ldd failed"),
+        ):
+            with self.subTest(message=message):
+                self._verify_fixture(
+                    "bundle",
+                    self.JNI_PATH,
+                    runpath=self.JDK_RUNPATH,
+                    needed=("libjvm.so",),
+                    ldd_output=output,
+                    ldd_returncode=returncode,
+                    expected_errors=(message,),
+                )
+
+    def test_packaged_jni_is_rejected_at_source_and_staged_relative_paths(self) -> None:
+        for label in ("appdir", "appimage"):
+            for relative in (self.JNI_PATH, f"usr/lib/tokenlogue/{self.JNI_PATH}"):
+                with self.subTest(label=label, relative=relative):
+                    self._verify_fixture(
+                        label,
+                        relative,
+                        runpath=self.JDK_RUNPATH,
+                        expected_errors=(
+                            "has absolute RUNPATH",
+                            "is a forbidden Java library",
+                        ),
+                    )
+
+    def test_packaged_java_libraries_are_rejected_without_jdk_runpath(self) -> None:
+        for label in ("appdir", "appimage"):
+            for name in ("libdartjni.so", "libjvm.so"):
+                with self.subTest(label=label, name=name):
+                    self._verify_fixture(
+                        label,
+                        "usr/lib/tokenlogue/lib/libdart_bridge.so",
+                        extra_files={f"usr/lib/{name}": b"not even an ELF"},
+                        expected_errors=(
+                            f"usr/lib/{name} is a forbidden Java library",
+                        ),
+                    )
+
+    def test_packaged_java_dependencies_are_rejected_even_if_library_is_absent(
+        self,
+    ) -> None:
+        for label in ("appdir", "appimage"):
+            for dependency in ("libdartjni.so", "libjvm.so", "$ORIGIN/libjvm.so"):
+                with self.subTest(label=label, dependency=dependency):
+                    self._verify_fixture(
+                        label,
+                        "usr/lib/tokenlogue/lib/libdart_bridge.so",
+                        needed=(dependency,),
+                        expected_errors=("retains Java dependency",),
+                    )
+
+    def test_packaged_jdk_jre_paths_are_rejected_in_file_contents(self) -> None:
+        for label in ("appdir", "appimage"):
+            for runtime_path in (
+                self.JDK_RUNPATH,
+                "/opt/java/openjdk/lib/server",
+                "/opt/jdk-21/lib/server",
+                "/usr/java/jre1.8.0/lib/amd64/server",
+            ):
+                with self.subTest(label=label, runtime_path=runtime_path):
+                    self._verify_fixture(
+                        label,
+                        "usr/lib/tokenlogue/lib/libdart_bridge.so",
+                        extra_files={"runtime-path.txt": runtime_path.encode()},
+                        expected_errors=("runtime-path.txt contains JDK/JRE path",),
+                    )
+
+    def test_packaged_java_symlinks_are_rejected_without_following_them(self) -> None:
+        for label in ("appdir", "appimage"):
+            for name, target, message in (
+                ("lib/libdartjni.so", "missing", "is a forbidden Java library"),
+                ("lib/libjvm.so", "missing", "is a forbidden Java library"),
+                ("lib/alias.so", "libjvm.so", "links to a Java runtime"),
+                (
+                    "lib/alias.so",
+                    f"{self.JDK_RUNPATH}/libjvm.so",
+                    "links to a Java runtime",
+                ),
+            ):
+                with self.subTest(label=label, name=name, target=target):
+                    self._verify_fixture(
+                        label,
+                        "usr/lib/tokenlogue/lib/libdart_bridge.so",
+                        symlink=(name, target),
+                        expected_errors=(message,),
+                    )
+
+    def test_packaged_transitive_java_resolution_is_rejected(self) -> None:
+        for label in ("appdir", "appimage"):
+            with self.subTest(label=label):
+                self._verify_fixture(
+                    label,
+                    "usr/lib/tokenlogue/lib/libdart_bridge.so",
+                    ldd_output=f"libjvm.so => {self.JDK_RUNPATH}/libjvm.so (0x01)\n",
+                    expected_errors=(
+                        "ldd resolves to JDK/JRE path",
+                        "ldd retains Java dependency",
+                    ),
+                )
+
+    def test_flet_plugin_runpath_allowance_stays_source_only(self) -> None:
+        for name in (
+            "libflutter_secure_storage_linux_plugin.so",
+            "libpasteboard_plugin.so",
+            "libscreen_retriever_linux_plugin.so",
+            "libserious_python_linux_plugin.so",
+            "liburl_launcher_linux_plugin.so",
+            "libwindow_manager_plugin.so",
+        ):
+            runpath = "/build-agent/build/flutter/linux/flutter/ephemeral"
+            with self.subTest(name=name):
+                self._verify_fixture("bundle", f"lib/{name}", runpath=runpath)
+                self._verify_fixture(
+                    "bundle",
+                    f"lib/{name}",
+                    runpath=self.JDK_RUNPATH,
+                    expected_errors=("has absolute RUNPATH",),
+                )
+                for label in ("appdir", "appimage"):
+                    self._verify_fixture(
+                        label,
+                        f"usr/lib/tokenlogue/lib/{name}",
+                        runpath=runpath,
+                        expected_errors=(
+                            "has absolute RUNPATH",
+                            "retains Flutter build RUNPATH",
+                        ),
+                    )
+
+    def test_tkinter_diagnostic_allowance_stays_source_only(self) -> None:
+        relative = "python3.12/lib-dynload/_tkinter.cpython-312-x86_64-linux-gnu.so"
+        dependencies = ("libtcl9tk9.0.so", "libtcl9.0.so")
+        output = "".join(f"{name} => not found\n" for name in dependencies)
+        self._verify_fixture("bundle", relative, needed=dependencies, ldd_output=output)
+        for label in ("appdir", "appimage"):
+            with self.subTest(label=label):
+                self._verify_fixture(
+                    label,
+                    f"usr/lib/tokenlogue/{relative}",
+                    needed=dependencies,
+                    ldd_output=output,
+                    expected_errors=(
+                        "_tkinter remains",
+                        "retains Tcl/Tk dependency",
+                        "has unresolved libraries",
+                    ),
+                )
+
+    def test_java_free_packaged_bridge_still_passes(self) -> None:
+        for label in ("appdir", "appimage"):
+            with self.subTest(label=label):
+                self._verify_fixture(
+                    label,
+                    "usr/lib/tokenlogue/lib/libdart_bridge.so",
+                    runpath="$ORIGIN:$ORIGIN/../..",
+                )
+
+    def _verify_fixture(
+        self,
+        label: str,
+        relative: str,
+        *,
+        runpath: str = "$ORIGIN",
+        needed: tuple[str, ...] = ("libc.so.6",),
+        symbols: str = SAFE_SYMBOLS,
+        ldd_output: str = "libc.so.6 => /lib/x86_64-linux-gnu/libc.so.6 (0x01)\n",
+        ldd_returncode: int = 0,
+        extra_files: dict[str, bytes] | None = None,
+        symlink: tuple[str, str] | None = None,
+        expected_errors: tuple[str, ...] = (),
+    ) -> dict[str, str]:
+        # No ELF is executed or built: only readelf/objdump/ldd output is mocked.
+        # File discovery, packaged-file checks, ABI gates and reports are real.
+        with tempfile.TemporaryDirectory(prefix="tokenlogue jni test ") as temp:
+            root = Path(temp) / "artifact"
+            reports = Path(temp) / "reports"
+            workspace = Path(temp) / "workspace"
+            files = dict(extra_files or {})
+            files[relative] = b"\x7fELFfixture"
+            if label != "bundle":
+                files.update(
+                    {
+                        "LICENSE": b"MIT License\n",
+                        "THIRD_PARTY_NOTICES.md": b"Fixture notices\n",
+                        "usr/share/doc/tokenlogue/LICENSE": b"MIT License\n",
+                        "usr/share/doc/tokenlogue/THIRD_PARTY_NOTICES.md": b"Fixture notices\n",
+                        "usr/share/applications/io.github.umichata.tokenlogue.desktop": b"[Desktop Entry]\nType=Application\nExec=tokenlogue\n",
+                        "usr/share/metainfo/io.github.umichata.tokenlogue.metainfo.xml": b"<component/>\n",
+                    }
+                )
+            for name, content in files.items():
+                path = root / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(content)
+            if symlink is not None:
+                link = root / symlink[0]
+                link.parent.mkdir(parents=True, exist_ok=True)
+                link.symlink_to(symlink[1])
+            dynamic = (
+                "".join(f"0x (NEEDED) Shared library: [{name}]\n" for name in needed)
+                + f"0x (RUNPATH) Library runpath: [{runpath}]\n"
+            )
+            with (
+                patch.object(
+                    verify_bundle, "_run_checked", side_effect=[dynamic, symbols]
+                ) as elf_tools,
+                patch.object(
+                    verify_bundle,
+                    "_run_ldd",
+                    return_value=subprocess.CompletedProcess(
+                        ["ldd"], ldd_returncode, ldd_output, ""
+                    ),
+                ) as ldd,
+            ):
+                if expected_errors:
+                    with self.assertRaises(verify_bundle.VerificationError):
+                        verify_bundle.verify_abi([(label, root)], reports, workspace)
+                else:
+                    verify_bundle.verify_abi([(label, root)], reports, workspace)
+                self.assertEqual(
+                    elf_tools.call_args_list[0].args[0],
+                    ["readelf", "-d", str(root / relative)],
+                )
+                self.assertEqual(
+                    elf_tools.call_args_list[1].args[0],
+                    ["objdump", "-T", str(root / relative)],
+                )
+                ldd.assert_called_once()
+                self.assertEqual(ldd.call_args.args[0], root / relative)
+            result = {
+                name: (reports / name).read_text(encoding="utf-8")
+                for name in ("elf-abi.txt", "rpaths.txt", "ldd.txt")
+            }
+            for message in expected_errors:
+                self.assertIn(message, result["elf-abi.txt"])
+            if not expected_errors:
+                self.assertIn("result: PASS", result["elf-abi.txt"])
+            return result
 
 
 def _constraints_text() -> str:

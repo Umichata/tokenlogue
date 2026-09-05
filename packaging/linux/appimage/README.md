@@ -46,6 +46,17 @@ with a GLIBC 2.38 requirement, bundled `anyio` differs from `uv.lock`, ordinary
 FUSE execution and cross-distribution testing are pending, and tool provenance
 currently includes TOFU.
 
+## Optional JNI library
+
+The Flutter dependency package `jni` may produce `lib/libdartjni.so` on runners
+with a JDK installed. Tokenlogue does not use a JVM on Linux. Source-bundle
+verification permits the observed Temurin 11 server RUNPATH only for that exact
+file and retains its ABI and ldd diagnostics. `build_appimage.sh` removes only
+`usr/lib/tokenlogue/lib/libdartjni.so` from the AppDir staging copy before
+linuxdeploy; an absent file is allowed. The source bundle and `libdart_bridge.so`
+are preserved. Final AppDir and AppImage verification rejects `libdartjni.so`,
+`libjvm.so`, and JDK/JRE paths: the AppImage must not depend on Java.
+
 ## Ubuntu 22.04 baseline workflow
 
 `.github/workflows/build-linux.yml` is a manual-only workflow for a future

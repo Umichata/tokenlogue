@@ -34,12 +34,20 @@ is_elf() {
     file -b -- "$1" | grep -q '^ELF '
 }
 
+remove_optional_jni() {
+    local appdir=$1
+    # Flutter's jni package may build this on JDK-equipped runners.
+    # Tokenlogue does not use Java on Linux; remove only the staging copy.
+    rm -f -- "$appdir/usr/lib/tokenlogue/lib/libdartjni.so"
+}
+
 reject_forbidden_staging_files() {
     local appdir=$1
     local forbidden
     forbidden="$(find "$appdir" \
         \( -name '.env' -o -name '.env.local' -o -name 'tokenlogue.sqlite3' \
         -o -name '*.db' -o -name '*.sqlite' -o -name '*.sqlite3' \
+        -o -name 'libdartjni.so' -o -name 'libjvm.so' \
         -o -name '.git' -o -name '.flet' -o -name '__pycache__' \) -print)"
     [[ -z "$forbidden" ]] || die "forbidden files entered AppDir: $forbidden"
 }
@@ -170,6 +178,7 @@ mkdir -p \
     "$tool_home/data"
 
 cp -a -- "$source_bundle/." "$appdir/usr/lib/tokenlogue/"
+remove_optional_jni "$appdir"
 cp -- "$script_dir/AppRun" "$appdir/AppRun"
 
 cat > "$appdir/usr/bin/tokenlogue" <<'LAUNCHER'
