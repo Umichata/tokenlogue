@@ -56,6 +56,7 @@ class ChatWorkspaceView:
         key_validation_in_progress: bool,
         on_retry_key: AsyncCallback,
         on_replace_key: AsyncCallback,
+        on_draft_change: RenameCallback | None = None,
     ) -> None:
         self._page = page
         self._chats = chats
@@ -67,6 +68,7 @@ class ChatWorkspaceView:
         self._on_delete_chat = on_delete_chat
         self._on_lock = on_lock
         self._on_send_message = on_send_message
+        self._on_draft_change = on_draft_change
         self._on_retry_turn = on_retry_turn
         self._on_configure_limits = on_configure_limits
         self._on_edit_limits = on_edit_limits
@@ -105,6 +107,8 @@ class ChatWorkspaceView:
 
     def dispose(self) -> None:
         self._page.drawer = None
+        if self.composer is not None:
+            self.composer.dispose()
 
     def update_workspace(
         self,
@@ -141,6 +145,10 @@ class ChatWorkspaceView:
         if self.composer is not None:
             self.composer.clear_if_matches(expected)
 
+    def restore_editor(self, text: str) -> None:
+        if self.composer is not None:
+            self.composer.set_value(text)
+
     def show_message(self, message: str, *, error: bool = True) -> None:
         if self.composer is not None:
             self.composer.show_message(message, error=error)
@@ -152,10 +160,20 @@ class ChatWorkspaceView:
     def _sync_interaction_components(self, *, force: bool) -> None:
         state = self._interaction_state
         if self._selected_chat is None or state is None:
+            if self.composer is not None:
+                self.composer.dispose()
             self.message_history = None
             self.composer = None
             return
         if force or self.message_history is None or self.composer is None:
+            if self.composer is not None:
+                self.composer.dispose()
+            chat_id = self._selected_chat.id
+
+            async def draft_changed(text: str) -> None:
+                if self._on_draft_change is not None:
+                    await self._on_draft_change(chat_id, text)
+
             self.message_history = MessageHistoryView(
                 state.messages,
                 state.turns,
@@ -164,6 +182,7 @@ class ChatWorkspaceView:
             self.composer = MessageComposer(
                 self._on_send_message,
                 enabled=self._sending_allowed(state),
+                on_change=draft_changed,
             )
         else:
             self.message_history.set_messages(state.messages, state.turns)

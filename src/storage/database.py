@@ -11,7 +11,7 @@ from pathlib import Path
 from auth.models import LoginAttemptState, PinRecord, StoredAuthState
 
 DATABASE_FILENAME = "tokenlogue.sqlite3"
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 5
 
 
 class UnsupportedSchemaVersion(RuntimeError):
@@ -175,8 +175,10 @@ class AuthDatabase:
             1: _migrate_1_to_2,
             2: _migrate_2_to_3,
             3: _migrate_3_to_4,
+            4: _migrate_4_to_5,
         }
         with self._connection() as connection:
+            connection.execute("BEGIN IMMEDIATE")
             current_version = int(
                 connection.execute("PRAGMA user_version").fetchone()[0]
             )
@@ -496,6 +498,19 @@ def _migrate_3_to_4(connection: sqlite3.Connection) -> None:
         """
         CREATE UNIQUE INDEX idx_turns_one_pending_per_chat
         ON turns(chat_id) WHERE status = 'pending'
+        """
+    )
+
+
+def _migrate_4_to_5(connection: sqlite3.Connection) -> None:
+    connection.execute(
+        """
+        CREATE TABLE chat_drafts (
+            chat_id TEXT PRIMARY KEY NOT NULL,
+            revision INTEGER NOT NULL CHECK (typeof(revision) = 'integer' AND revision >= 0),
+            content TEXT NOT NULL CHECK (typeof(content) = 'text'),
+            FOREIGN KEY (chat_id) REFERENCES chats(id) ON DELETE CASCADE
+        )
         """
     )
 

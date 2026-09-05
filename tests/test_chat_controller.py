@@ -19,6 +19,7 @@ from api.openrouter import KeyValidationResult, KeyValidationStatus  # noqa: E40
 from auth.contracts import KeyValidator  # noqa: E402
 from auth.models import KeyLimitInfo, KeyValidityState  # noqa: E402
 from chat.accounting import BudgetState, ChatBudget, ChatBudgetService  # noqa: E402
+from chat.drafts import ChatDraftService  # noqa: E402
 from chat.models import (  # noqa: E402
     FREE_ROUTER_MODEL,
     CatalogModel,
@@ -29,6 +30,7 @@ from chat.models import (  # noqa: E402
 from chat.sending import MessageSendingService  # noqa: E402
 from chat.service import ChatService  # noqa: E402
 from chat_controller import ChatSessionController  # noqa: E402
+from tests.draft_fakes import MemoryDraftRepository  # noqa: E402
 
 
 class FakePage:
@@ -242,6 +244,7 @@ class ChatControllerTests(unittest.IsolatedAsyncioTestCase):
             cast(ModelCatalogService, self.catalog_service),
             cast(ChatBudgetService, self.budget_service),
             cast(MessageSendingService, object()),
+            ChatDraftService(MemoryDraftRepository()),
             on_lock=on_lock,
             on_replace_key=on_replace_key,
             on_storage_error=self.storage_errors.append,

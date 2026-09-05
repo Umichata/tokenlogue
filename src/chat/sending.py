@@ -82,6 +82,7 @@ class MessageRepository(Protocol):
         content: str,
         requested_model_id: str,
         retry: bool,
+        draft_revision: int | None = None,
     ) -> None: ...
 
     def mark_request_sent(self, turn_id: str, updated_at: datetime) -> None: ...
@@ -356,11 +357,20 @@ class MessageSendingService:
         key_limit: KeyLimitInfo,
         paid_confirmed: bool = False,
         on_reserved: ReservationCallback | None = None,
+        draft_revision: int | None = None,
     ) -> SendMessageResult:
         if (
             not _valid_identifier(chat_id)
             or not isinstance(text, str)
             or not isinstance(paid_confirmed, bool)
+            or (
+                draft_revision is not None
+                and (
+                    isinstance(draft_revision, bool)
+                    or not isinstance(draft_revision, int)
+                    or draft_revision < 0
+                )
+            )
         ):
             return _local_failure(ChatErrorType.INVALID_REQUEST)
         if not isinstance(api_key, str):
@@ -385,6 +395,7 @@ class MessageSendingService:
                 retry=False,
                 paid_confirmed=paid_confirmed,
                 on_reserved=on_reserved,
+                draft_revision=draft_revision,
             )
 
     async def retry_failed_turn(
@@ -483,6 +494,7 @@ class MessageSendingService:
         retry: bool,
         paid_confirmed: bool,
         on_reserved: ReservationCallback | None,
+        draft_revision: int | None = None,
     ) -> SendMessageResult:
         try:
             preflight = await self._preflight(
@@ -518,6 +530,7 @@ class MessageSendingService:
                 content=text,
                 requested_model_id=preflight.chat.requested_model_id,
                 retry=retry,
+                draft_revision=draft_revision,
             )
         )
         try:

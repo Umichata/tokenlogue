@@ -70,6 +70,7 @@ class ChatInteractionController:
         self._operation_lock = asyncio.Lock()
         self._active_chat_id: str | None = None
         self._generation = 0
+        self._session_generation = 0
         self._active = False
 
     @property
@@ -82,11 +83,13 @@ class ChatInteractionController:
 
     def activate(self) -> None:
         self._generation += 1
+        self._session_generation += 1
         self._active = True
         self._active_chat_id = None
 
     def deactivate(self) -> None:
         self._generation += 1
+        self._session_generation += 1
         self._active = False
         self._active_chat_id = None
 
@@ -168,6 +171,7 @@ class ChatInteractionController:
         *,
         paid_confirmed: bool,
         on_reserved: ReservationCallback | None = None,
+        draft_revision: int | None = None,
     ) -> InteractionOutcome:
         if (
             not _is_identifier(chat_id)
@@ -181,9 +185,17 @@ class ChatInteractionController:
         if session is None:
             return InteractionOutcome(False, _missing_session_result(), None)
         generation = self._generation
+        session_generation = self._session_generation
 
         async def reserved(turn_id: str) -> None:
-            if on_reserved is not None and self._matches(chat_id, generation):
+            # Reservation state belongs to the originating chat, even after
+            # navigation; only an ended authentication session invalidates it.
+            if (
+                on_reserved is not None
+                and self._active
+                and self._session_generation == session_generation
+                and self._session_provider() is not None
+            ):
                 await on_reserved(turn_id)
 
         async with self._operation_lock:
@@ -195,6 +207,7 @@ class ChatInteractionController:
                 key_limit=session.key_limit,
                 paid_confirmed=paid_confirmed,
                 on_reserved=reserved,
+                draft_revision=draft_revision,
             )
         if not self._matches(chat_id, generation):
             return InteractionOutcome(False, result, None)

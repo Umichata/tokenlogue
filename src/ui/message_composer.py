@@ -17,8 +17,11 @@ class MessageComposer:
         on_submit: MessageSubmitCallback,
         *,
         enabled: bool = True,
+        on_change: MessageSubmitCallback | None = None,
     ) -> None:
         self._on_submit = on_submit
+        self._on_change = on_change
+        self._disposed = False
         self._enabled = enabled
         self._busy = False
         self.message_field = ft.TextField(
@@ -86,6 +89,7 @@ class MessageComposer:
         value = self.message_field.value
         if (
             self.send_button.disabled
+            or self._disposed
             or self._busy
             or not isinstance(value, str)
             or not value.strip()
@@ -93,9 +97,22 @@ class MessageComposer:
             return
         await self._on_submit(value)
 
-    def _handle_change(self, _event: ft.Event[ft.TextField]) -> None:
+    async def _handle_change(self, _event: ft.Event[ft.TextField]) -> None:
+        if self._disposed:
+            return
+        value = self.message_field.value
         self._apply_state()
         self.send_button.update()
+        if self._on_change is not None and isinstance(value, str):
+            await self._on_change(value)
+
+    def set_value(self, text: str) -> None:
+        if self.message_field.value != text:
+            self.message_field.value = text
+        self._apply_state()
+
+    def dispose(self) -> None:
+        self._disposed = True
 
     def set_busy(self, busy: bool) -> None:
         self._busy = busy

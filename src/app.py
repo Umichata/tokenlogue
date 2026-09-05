@@ -18,6 +18,7 @@ from auth.models import (
 )
 from auth.service import AuthService
 from chat.accounting import ChatBudgetService
+from chat.drafts import ChatDraftService
 from chat.sending import MessageSendingService
 from chat.service import ChatService
 from chat_controller import ChatSessionController
@@ -42,6 +43,7 @@ class AppController:
         catalog_service: ModelCatalogService,
         budget_service: ChatBudgetService,
         sending_service: MessageSendingService,
+        drafts: ChatDraftService,
     ) -> None:
         self._page = page
         self._auth_service = auth_service
@@ -52,6 +54,7 @@ class AppController:
             catalog_service,
             budget_service,
             sending_service,
+            drafts,
             on_lock=self._handle_chat_lock,
             on_replace_key=self.request_reset,
             on_storage_error=self._show_storage_error,
@@ -224,6 +227,9 @@ class AppController:
         self._auth_service.cancel_pending_setup()
         self._clear_secret_controls()
         self._chat_controller.dispose()
+
+    async def flush_drafts(self) -> bool:
+        return await self._chat_controller.flush_drafts()
 
     async def _activate_session(
         self,

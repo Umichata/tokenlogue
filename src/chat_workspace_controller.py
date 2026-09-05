@@ -3,11 +3,17 @@
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import flet as ft
 
 from chat.accounting import ChatLimitConfiguration, parse_chat_limit_input
+from chat.drafts import (
+    DRAFT_STORAGE_MESSAGE,
+    ChatDraft,
+    ChatDraftService,
+    DraftStorageError,
+)
 from chat.errors import ChatErrorType
 from chat.models import ChatMode
 from chat.sending import MessageSendPreview, SendMessageResult
@@ -32,8 +38,9 @@ StateCallback = Callable[[ActiveChatState | None], None]
 @dataclass(frozen=True)
 class _PendingSend:
     chat_id: str
-    text: str
+    text: str = field(repr=False)
     turn_id: str | None = None
+    draft: ChatDraft | None = None
 
 
 class ChatWorkspaceController:
@@ -43,12 +50,14 @@ class ChatWorkspaceController:
         self,
         page: ft.Page,
         interaction: ChatInteractionController,
+        drafts: ChatDraftService,
         *,
         refresh_workspace: RefreshCallback,
         on_state_changed: StateCallback,
     ) -> None:
         self._page = page
         self._interaction = interaction
+        self._drafts = drafts
         self._refresh_workspace = refresh_workspace
         self._on_state_changed = on_state_changed
         self._view: ChatWorkspaceView | None = None
@@ -60,6 +69,7 @@ class ChatWorkspaceController:
         self._pending_preview: MessageSendPreview | None = None
         self._unknown_turn_id: str | None = None
         self._generation = 0
+        self._session_generation = 0
         self._active = False
 
     @property
@@ -76,12 +86,14 @@ class ChatWorkspaceController:
 
     def activate(self) -> None:
         self._generation += 1
+        self._session_generation += 1
         self._active = True
         self._view = None
         self._set_state(None)
 
     def deactivate(self) -> None:
         self._generation += 1
+        self._session_generation += 1
         self._active = False
         self.dismiss_dialogs()
         self._pending_send = None
@@ -99,6 +111,48 @@ class ChatWorkspaceController:
             self._generation += 1
         self._view = view
         self._set_state(state)
+        if state is not None:
+            view.restore_editor(self._drafts.current(state.chat.id).text)
+            if self._drafts.failed(state.chat.id):
+                view.show_message(DRAFT_STORAGE_MESSAGE)
+
+    async def update_draft(self, chat_id: str, text: str) -> None:
+        if (
+            not self._active
+            or self._view is None
+            or self._state is None
+            or self._state.chat.id != chat_id
+            or not isinstance(text, str)
+        ):
+            return
+        session = self._session_generation
+        self._drafts.record_edit(chat_id, text)
+        try:
+            await self._drafts.flush(chat_id)
+        except DraftStorageError:
+            if (
+                self._active
+                and session == self._session_generation
+                and self._state is not None
+                and self._state.chat.id == chat_id
+            ):
+                self._show_message(DRAFT_STORAGE_MESSAGE)
+
+    async def flush_editor(self) -> bool:
+        """Capture current control state before navigation; never drop failed writes."""
+        state = self._state
+        view = self._view
+        if not self._active or state is None or view is None:
+            return True
+        session = self._session_generation
+        self._drafts.record_edit(state.chat.id, view.editor_value)
+        try:
+            await self._drafts.flush(state.chat.id)
+        except DraftStorageError:
+            if self._active and session == self._session_generation:
+                self._show_message(DRAFT_STORAGE_MESSAGE)
+            return False
+        return self._active and session == self._session_generation
 
     def unbind(self) -> None:
         self._view = None
@@ -279,17 +333,27 @@ class ChatWorkspaceController:
         state = self._state
         view = self._view
         if (
-            state is None
+            not self._active
+            or state is None
             or view is None
             or self._pending_send is not None
             or self._interaction.busy
         ):
             return
-        pending = _PendingSend(state.chat.id, text)
+        snapshot = self._drafts.record_edit(state.chat.id, text)
+        pending = _PendingSend(state.chat.id, text, draft=snapshot)
         self._pending_send = pending
         view.set_sending(True)
         view.show_message("")
         self._page.update()
+        try:
+            await self._drafts.flush(state.chat.id)
+        except DraftStorageError:
+            if self._pending_send is pending:
+                self._finish_pending_with_message(DRAFT_STORAGE_MESSAGE)
+            return
+        if not self._active or self._pending_send is not pending:
+            return
         if state.chat.mode is ChatMode.PAID:
             preview = await self._interaction.preview_message(state.chat.id, text)
             if self._pending_send is not pending:
@@ -425,8 +489,14 @@ class ChatWorkspaceController:
         paid_confirmed: bool,
     ) -> None:
         generation = self._generation
+        session = self._session_generation
 
         async def on_reserved(_turn_id: str) -> None:
+            if not self._active or session != self._session_generation:
+                return
+            assert pending.draft is not None
+            was_current = self._drafts.current(pending.chat_id) == pending.draft
+            self._drafts.acknowledge_reserved(pending.draft)
             view = self._view
             if (
                 view is None
@@ -436,7 +506,8 @@ class ChatWorkspaceController:
                 or self._state.chat.id != pending.chat_id
             ):
                 return
-            view.clear_editor_if_matches(pending.text)
+            if was_current:
+                view.clear_editor_if_matches(pending.text)
             await self._refresh_workspace(True)
 
         outcome = await self._interaction.send_message(
@@ -444,7 +515,12 @@ class ChatWorkspaceController:
             pending.text,
             paid_confirmed=paid_confirmed,
             on_reserved=on_reserved,
+            draft_revision=pending.draft.revision
+            if pending.draft is not None
+            else None,
         )
+        if session != self._session_generation:
+            return
         await self._finish_send(pending, outcome, generation)
 
     async def _execute_retry(
@@ -455,6 +531,7 @@ class ChatWorkspaceController:
     ) -> None:
         assert pending.turn_id is not None
         generation = self._generation
+        session = self._session_generation
 
         async def on_reserved(_turn_id: str) -> None:
             if (
@@ -471,6 +548,8 @@ class ChatWorkspaceController:
             paid_confirmed=paid_confirmed,
             on_reserved=on_reserved,
         )
+        if session != self._session_generation:
+            return
         await self._finish_send(pending, outcome, generation)
 
     async def _finish_send(

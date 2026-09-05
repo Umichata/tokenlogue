@@ -14,6 +14,7 @@ from auth.contracts import KeyValidator
 from auth.key_validation import interpret_key_validation
 from auth.models import KeyLimitInfo, KeyValidityState
 from chat.accounting import ChatBudgetService, parse_chat_limit_input
+from chat.drafts import DRAFT_STORAGE_MESSAGE, ChatDraftService, DraftStorageError
 from chat.models import CatalogModel, ChatMode, ModelCatalog
 from chat.sending import MessageSendingService
 from chat.service import ChatPolicyError, ChatService
@@ -56,6 +57,7 @@ class ChatSessionController:
         catalog_service: ModelCatalogService,
         budget_service: ChatBudgetService,
         sending_service: MessageSendingService,
+        drafts: ChatDraftService,
         *,
         on_lock: AsyncCallback,
         on_replace_key: AsyncCallback,
@@ -65,6 +67,7 @@ class ChatSessionController:
         self._key_validator = key_validator
         self._chat_service = chat_service
         self._catalog_service = catalog_service
+        self._drafts = drafts
         self._on_lock = on_lock
         self._on_replace_key = on_replace_key
         self._on_storage_error = on_storage_error
@@ -82,6 +85,7 @@ class ChatSessionController:
         self._disposed = False
         self._session_api_key: str | None = None
         self._session_generation = 0
+        self._workspace_request_id = 0
         self._catalog_request_id = 0
         self._catalog: ModelCatalog | None = None
         self._pending_mode: ChatMode | None = None
@@ -100,6 +104,7 @@ class ChatSessionController:
         self._workspace_controller = ChatWorkspaceController(
             page,
             self._interaction,
+            drafts,
             refresh_workspace=self._refresh_workspace_from_interaction,
             on_state_changed=self._set_workspace_state,
         )
@@ -156,6 +161,7 @@ class ChatSessionController:
     def deactivate(self) -> None:
         """Удаляет ключ и каталог из памяти, не изменяя SQLite."""
         self._session_generation += 1
+        self._workspace_request_id += 1
         self._session_api_key = None
         self._workspace_controller.deactivate()
         self._interaction.deactivate()
@@ -191,6 +197,8 @@ class ChatSessionController:
             or self._workspace_controller.busy
             or self._workspace_controller.has_dialog()
         ):
+            return
+        if not await self._workspace_controller.flush_editor():
             return
         task = asyncio.current_task()
         if task is None:
@@ -380,6 +388,8 @@ class ChatSessionController:
             or not _is_identifier(chat_id)
         ):
             return
+        if not await self._workspace_controller.flush_editor():
+            return
         self._workspace_controller.cancel_confirmation_for_navigation()
         self._workspace_controller.begin_navigation(chat_id)
         self._selected_chat_id = chat_id
@@ -440,7 +450,9 @@ class ChatSessionController:
                 return
             if generation != self._session_generation or self._disposed:
                 return
+            self._drafts.forget(chat_id)
             if self._selected_chat_id == chat_id:
+                self._clear_workspace()
                 self._selected_chat_id = None
             await self._show_workspace(expected_generation=generation)
 
@@ -620,8 +632,24 @@ class ChatSessionController:
     async def lock_application(self) -> None:
         if self._disposed or self._session_api_key is None:
             return
+        generation = self._session_generation
+        await self.flush_drafts()
+        if generation != self._session_generation or self._disposed:
+            return
         self.deactivate()
         await self._on_lock()
+
+    async def flush_drafts(self) -> bool:
+        if not await self._workspace_controller.flush_editor():
+            return False
+        try:
+            await self._drafts.flush_all()
+        except DraftStorageError:
+            if self._workspace_view is not None:
+                self._workspace_view.show_message(DRAFT_STORAGE_MESSAGE)
+                self._page.update()
+            return False
+        return True
 
     def _start_key_validation(self) -> bool:
         if (
@@ -732,6 +760,12 @@ class ChatSessionController:
             or expected_generation != self._session_generation
         ):
             return
+        self._workspace_request_id += 1
+        request_id = self._workspace_request_id
+        if not await self._workspace_controller.flush_editor():
+            return
+        if not self._workspace_request_matches(expected_generation, request_id):
+            return
         try:
             chats = await self._chat_service.list_chats()
         except Exception:
@@ -742,6 +776,7 @@ class ChatSessionController:
             self._disposed
             or self._session_api_key is None
             or expected_generation != self._session_generation
+            or request_id != self._workspace_request_id
         ):
             return
 
@@ -767,6 +802,22 @@ class ChatSessionController:
                 ):
                     self._report_storage_error("Не удалось загрузить историю чата.")
                 return
+            if not self._workspace_request_matches(expected_generation, request_id):
+                return
+            try:
+                await self._drafts.load(selected.id)
+            except DraftStorageError:
+                if self._workspace_request_matches(expected_generation, request_id):
+                    if self._workspace_view is not None:
+                        self._workspace_view.show_message(DRAFT_STORAGE_MESSAGE)
+                        self._page.update()
+                    else:
+                        self._report_storage_error(
+                            "Не удалось загрузить локальный черновик."
+                        )
+                return
+        if not self._workspace_request_matches(expected_generation, request_id):
+            return
         self._workspace_state = interaction_state
         if self._workspace_view is not None and self._screen is _ChatScreen.WORKSPACE:
             self._workspace_view.update_workspace(
@@ -792,6 +843,7 @@ class ChatSessionController:
                 on_delete_chat=self.request_delete_chat,
                 on_lock=self.lock_application,
                 on_send_message=self.submit_message,
+                on_draft_change=self._workspace_controller.update_draft,
                 on_retry_turn=self.request_retry_turn,
                 on_configure_limits=self.request_configure_limits,
                 on_edit_limits=self.request_edit_limits,
@@ -812,9 +864,19 @@ class ChatSessionController:
         self,
         scroll_to_end: bool,
     ) -> None:
+        if self._screen is not _ChatScreen.WORKSPACE or not self.session_active:
+            return
         await self._show_workspace(
             expected_generation=self._session_generation,
             scroll_to_end=scroll_to_end,
+        )
+
+    def _workspace_request_matches(self, generation: int, request_id: int) -> bool:
+        return (
+            not self._disposed
+            and self.session_active
+            and generation == self._session_generation
+            and request_id == self._workspace_request_id
         )
 
     def _set_workspace_state(self, state: ActiveChatState | None) -> None:

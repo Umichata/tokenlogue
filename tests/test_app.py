@@ -26,8 +26,10 @@ from auth.models import (  # noqa: E402
 )
 from auth.service import AuthService  # noqa: E402
 from chat.accounting import ChatBudgetService  # noqa: E402
+from chat.drafts import ChatDraftService  # noqa: E402
 from chat.sending import MessageSendingService  # noqa: E402
 from chat.service import ChatService  # noqa: E402
+from tests.draft_fakes import MemoryDraftRepository  # noqa: E402
 from ui.auth_view import KeyEntryView, PinDisplayView, PinLoginView  # noqa: E402
 
 
@@ -431,6 +433,7 @@ def _make_controller(
         cast(ModelCatalogService, catalog_service or FakeCatalogService()),
         cast(ChatBudgetService, object()),
         cast(MessageSendingService, object()),
+        ChatDraftService(MemoryDraftRepository()),
     )
 
 

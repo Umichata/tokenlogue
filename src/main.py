@@ -12,10 +12,12 @@ from api.openrouter import OpenRouterClient
 from app import AppController
 from auth.service import AuthService
 from chat.accounting import ChatBudgetService
+from chat.drafts import ChatDraftService
 from chat.sending import MessageSendingService
 from chat.service import ChatService
 from storage.chat_repository import SqliteChatRepository
 from storage.database import AuthDatabase
+from storage.draft_repository import SqliteDraftRepository
 from storage.message_repository import SqliteMessageRepository
 from storage.secure_credentials import FletSecureCredentials
 from ui import StorageErrorView, configure_page
@@ -45,6 +47,7 @@ async def main(page: ft.Page) -> None:
     auth_service = AuthService(key_validator, credentials, database)
     chat_repository = SqliteChatRepository(database.path)
     message_repository = SqliteMessageRepository(database.path)
+    drafts = ChatDraftService(SqliteDraftRepository(database.path))
     chat_service = ChatService(chat_repository)
     budget_service = ChatBudgetService(message_repository)
     catalog_client = ModelCatalogClient()
@@ -64,10 +67,17 @@ async def main(page: ft.Page) -> None:
         catalog_service,
         budget_service,
         sending_service,
+        drafts,
     )
 
-    page.on_disconnect = controller.dispose
-    page.on_close = controller.dispose
+    async def close_session(_event: object = None) -> None:
+        try:
+            await controller.flush_drafts()
+        finally:
+            controller.dispose()
+
+    page.on_disconnect = close_session
+    page.on_close = close_session
     await controller.start()
 
 

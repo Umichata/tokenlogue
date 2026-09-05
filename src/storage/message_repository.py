@@ -140,6 +140,7 @@ class SqliteMessageRepository:
         content: str,
         requested_model_id: str,
         retry: bool,
+        draft_revision: int | None = None,
     ) -> None:
         if not isinstance(reservation, BudgetReservation):
             raise ValueError("Некорректный объект резервирования")
@@ -151,6 +152,8 @@ class SqliteMessageRepository:
         _require_text(content, "текст сообщения")
         _require_identifier(requested_model_id, "модели")
         _require_bool(retry, "признак повтора")
+        if draft_revision is not None:
+            _require_nonnegative_int(draft_revision, "ревизия черновика")
         with self._connection() as connection:
             connection.execute("BEGIN IMMEDIATE")
             row = connection.execute(
@@ -238,6 +241,14 @@ class SqliteMessageRepository:
                         _datetime_text(reservation.created_at),
                         _datetime_text(reservation.created_at),
                     ),
+                )
+
+            if not retry and draft_revision is not None:
+                # Keep a revision tombstone: an in-flight stale save of the
+                # consumed revision must never recreate its draft text.
+                connection.execute(
+                    "UPDATE chat_drafts SET content = '' WHERE chat_id = ? AND revision = ?",
+                    (reservation.chat_id, draft_revision),
                 )
 
             connection.execute(

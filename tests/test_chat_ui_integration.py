@@ -23,6 +23,7 @@ from api.openrouter import KeyValidationResult, KeyValidationStatus  # noqa: E40
 from auth.contracts import KeyValidator  # noqa: E402
 from auth.models import KeyLimitInfo, KeyValidityState  # noqa: E402
 from chat.accounting import BudgetState, ChatBudgetService  # noqa: E402
+from chat.drafts import ChatDraftService  # noqa: E402
 from chat.errors import ChatErrorType  # noqa: E402
 from chat.models import (  # noqa: E402
     FREE_ROUTER_MODEL,
@@ -35,6 +36,7 @@ from chat.service import ChatService  # noqa: E402
 from chat_controller import ChatSessionController  # noqa: E402
 from storage.chat_repository import SqliteChatRepository  # noqa: E402
 from storage.database import AuthDatabase  # noqa: E402
+from storage.draft_repository import SqliteDraftRepository  # noqa: E402
 from storage.message_repository import SqliteMessageRepository  # noqa: E402
 from ui.chat_view import ChatWorkspaceView  # noqa: E402
 
@@ -127,6 +129,7 @@ class ChatUiIntegrationTests(unittest.IsolatedAsyncioTestCase):
         database = AuthDatabase(self.temp_dir.name)
         self.chat_repository = SqliteChatRepository(database.path)
         self.message_repository = SqliteMessageRepository(database.path)
+        self.draft_repository = SqliteDraftRepository(database.path)
         self.chat_service = ChatService(self.chat_repository, now=lambda: NOW)
         self.budget_service = ChatBudgetService(
             self.message_repository,
@@ -570,6 +573,7 @@ class ChatUiIntegrationTests(unittest.IsolatedAsyncioTestCase):
             cast(ModelCatalogService, FakeCatalogService(self.catalog)),
             self.budget_service,
             sending,
+            ChatDraftService(self.draft_repository),
             on_lock=no_op,
             on_replace_key=no_op,
             on_storage_error=lambda _message: None,
