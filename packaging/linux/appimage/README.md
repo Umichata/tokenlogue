@@ -76,3 +76,18 @@ The resulting bundle, AppDir, and extracted AppImage must not require a GLIBC
 version newer than `GLIBC_2.35`. The workflow also records ELF, RUNPATH, ldd,
 toolchain, metadata, and isolated headless smoke-test reports. Its artifact is
 unsigned, remains diagnostic only, and is not promoted to a release.
+
+## Headless smoke diagnostics
+
+The isolated Xvfb smoke test discovers windows through `xwininfo -root -tree`
+and `xprop` on the same display with `LC_ALL=C`. It requires the exact
+`WM_CLASS` pair `"tokenlogue", "Tokenlogue"`, the title `"Tokenlogue"`, and
+`Map State: IsViewable`; no window manager or EWMH client list is required.
+
+On success and failure, an exit handler stops the owned processes, saves
+application/sandbox/Xvfb stderr, window search output, matched properties and
+map state, and a PASS/FAIL summary before deleting temporary data. Checks that
+have not run are marked `NOT_RUN`; missing evidence is `UNAVAILABLE` or
+`NOT_CAPTURED`. Report failures cannot turn a failed test into a success or
+skip cleanup. Only these diagnostic files are copied to the reports directory;
+temporary HOME, storage, databases, keyring and raw traces are excluded.

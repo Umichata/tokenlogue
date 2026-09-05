@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import json
+import os
 import re
+import signal
 import stat
 import subprocess
 import sys
@@ -294,13 +296,17 @@ class LinuxBuildPipelineTests(unittest.TestCase):
             "dbus-run-session",
             "gnome-keyring-daemon",
             "LIBGL_ALWAYS_SOFTWARE",
-            "wmctrl",
+            "xwininfo -root -tree",
+            "xprop -id",
+            "LC_ALL=C",
+            "Map State: IsViewable",
             "20s",
             "AF_INET",
             "no fallback is allowed",
             "ulimit -c 0",
         ):
             self.assertIn(expected, text)
+        self.assertNotIn("wmctrl", text)
         self.assertNotRegex(
             text,
             re.compile(r"(^|\n)\s*(export\s+)?(HOME|home)=", re.MULTILINE),
@@ -479,6 +485,333 @@ class PackagedMetadataValidationTests(unittest.TestCase):
                 report.read_text(encoding="utf-8"),
                 [str(target) for target in targets],
             )
+
+
+class SmokeAppImageBehaviorTests(unittest.TestCase):
+    REPORT_NAMES = {
+        "smoke-application.stderr.txt",
+        "smoke-sandbox.stderr.txt",
+        "smoke-xvfb.stderr.txt",
+        "smoke-window-search.txt",
+        "smoke-window-properties.txt",
+        "smoke-window-state.txt",
+        "smoke-test-summary.txt",
+    }
+
+    def test_viewable_window_is_found_without_ewmh_client_list(self) -> None:
+        status, summary, reports, calls = self._run_fixture()
+        self.assertEqual(status, 0)
+        self.assertEqual(summary["result"], "PASS")
+        self.assertEqual(summary["exit_code"], "124")
+        self.assertEqual(summary["window_id"], "0xabc")
+        self.assertEqual(summary["window_map_state"], "IsViewable")
+        self.assertIn(
+            'WM_CLASS(STRING) = "tokenlogue", "Tokenlogue"',
+            reports["smoke-window-properties.txt"],
+        )
+        self.assertIn("Map State: IsViewable", reports["smoke-window-state.txt"])
+        probes = [call for call in calls if call["tool"] in ("xprop", "xwininfo")]
+        self.assertTrue(probes)
+        for call in probes:
+            self.assertEqual(call["display"], ":97")
+            self.assertEqual(call["locale"], "C")
+            arguments = call["args"]
+            assert isinstance(arguments, list)
+            self.assertNotIn("_NET_CLIENT_LIST", arguments)
+        self.assertIn("xwininfo -root -tree exit=0", reports["smoke-window-search.txt"])
+
+    def test_legacy_wm_name_is_accepted_when_net_wm_name_is_absent(self) -> None:
+        status, summary, _, _ = self._run_fixture(window={"net_name": False})
+        self.assertEqual(status, 0)
+        self.assertEqual(summary["window_check"], "PASS")
+
+    def test_foreign_or_hidden_window_is_rejected(self) -> None:
+        for window in (
+            {"instance": "other"},
+            {"class_name": "tokenlogue"},
+            {"title": "Tokenlogue extra"},
+            {"title": "Other", "legacy_title": "Tokenlogue"},
+            {"map_state": "IsUnMapped"},
+            {"map_state": "IsUnviewable"},
+        ):
+            with self.subTest(window=window):
+                status, summary, reports, _ = self._run_fixture(window=window)
+                self.assertNotEqual(status, 0)
+                self.assertEqual(summary["result"], "FAIL")
+                self.assertEqual(summary["window_id"], "NOT_FOUND")
+                self.assertIn("window was not observed", summary["reason"])
+                self.assertIn("Candidate 0xabc", reports["smoke-window-search.txt"])
+
+    def test_absent_window_keeps_reports_and_failure_status(self) -> None:
+        status, summary, reports, _ = self._run_fixture(no_window=True)
+        self.assertNotEqual(status, 0)
+        self.assertEqual(summary["result"], "FAIL")
+        self.assertEqual(summary["window_check"], "NOT_FOUND")
+        self.assertEqual(summary["af_inet_socket_calls"], "0")
+        self.assertEqual(summary["owned_process_cleanup"], "PASS")
+        self.assertIn(
+            "fixture application stderr", reports["smoke-application.stderr.txt"]
+        )
+        self.assertIn("fixture sandbox stderr", reports["smoke-sandbox.stderr.txt"])
+        self.assertIn("fixture Xvfb stderr", reports["smoke-xvfb.stderr.txt"])
+        self.assertIn("Root window", reports["smoke-window-search.txt"])
+
+    def test_xvfb_startup_failure_saves_available_logs_and_cleans(self) -> None:
+        status, summary, reports, _ = self._run_fixture(xvfb_failure=True)
+        self.assertNotEqual(status, 0)
+        self.assertEqual(summary["result"], "FAIL")
+        self.assertIn("Xvfb exited before initialization", summary["reason"])
+        for key in (
+            "exit_code",
+            "window_check",
+            "af_inet_socket_calls",
+            "fatal_diagnostics",
+        ):
+            self.assertEqual(summary[key], "NOT_RUN")
+        self.assertEqual(summary["owned_process_cleanup"], "PASS")
+        self.assertIn("fixture Xvfb stderr", reports["smoke-xvfb.stderr.txt"])
+        self.assertIn("NOT_CAPTURED", reports["smoke-application.stderr.txt"])
+
+    def test_namespace_failure_is_reported_before_launch(self) -> None:
+        status, summary, reports, calls = self._run_fixture(namespace_failure=True)
+        self.assertNotEqual(status, 0)
+        self.assertIn("namespace is unavailable", summary["reason"])
+        self.assertEqual(summary["network_namespace"], "NOT_RUN")
+        self.assertEqual(summary["remaining_processes"], "NOT_RUN")
+        self.assertIn("fixture namespace denied", reports["smoke-sandbox.stderr.txt"])
+        self.assertFalse(any(call["tool"] == "Xvfb" for call in calls))
+
+    def test_launcher_failure_does_not_invent_missing_measurements(self) -> None:
+        status, summary, reports, _ = self._run_fixture(launch_failure=True)
+        self.assertNotEqual(status, 0)
+        self.assertEqual(summary["exit_code"], "72")
+        self.assertEqual(summary["af_inet_socket_calls"], "UNAVAILABLE")
+        self.assertEqual(summary["fatal_diagnostics"], "UNAVAILABLE")
+        self.assertIn("application exited before timeout: 72", summary["reason"])
+        self.assertIn("fixture launch failure", reports["smoke-sandbox.stderr.txt"])
+
+    def test_report_copy_failure_cannot_prevent_cleanup_or_mask_failure(self) -> None:
+        for no_window in (False, True):
+            with self.subTest(no_window=no_window):
+                status, summary, _, _ = self._run_fixture(
+                    report_copy_failure=True, no_window=no_window
+                )
+                self.assertNotEqual(status, 0)
+                self.assertEqual(summary["result"], "FAIL")
+                self.assertEqual(summary["report_logs"], "FAIL")
+                self.assertEqual(summary["owned_process_cleanup"], "PASS")
+                if no_window:
+                    self.assertIn("window was not observed", summary["reason"])
+
+    def test_network_crash_and_leftover_process_gates_still_fail(self) -> None:
+        for scenario, reason in (
+            ({"network_activity": True}, "AF_INET or AF_INET6"),
+            ({"crash": True}, "fatal runtime diagnostics"),
+            ({"leftover_process": True}, "processes remain"),
+            ({"missing_trace": True}, "network trace is unavailable"),
+        ):
+            with self.subTest(scenario=scenario):
+                status, summary, _, _ = self._run_fixture(**scenario)
+                self.assertNotEqual(status, 0)
+                self.assertEqual(summary["result"], "FAIL")
+                self.assertIn(reason, summary["reason"])
+
+    def _run_fixture(
+        self, **scenario: object
+    ) -> tuple[int, dict[str, str], dict[str, str], list[dict[str, object]]]:
+        with tempfile.TemporaryDirectory(prefix="tokenlogue smoke behavior ") as temp:
+            root = Path(temp)
+            fake_bin = root / "bin"
+            scratch = root / "scratch"
+            reports_dir = root / "reports"
+            fake_bin.mkdir()
+            scratch.mkdir()
+            appimage = root / "fixture.AppImage"
+            appimage.write_text("never executed\n", encoding="utf-8")
+            appimage.chmod(0o755)
+            fake = fake_bin / "fake_tool.py"
+            fake.write_text(
+                "#!" + sys.executable + "\n" + SMOKE_FAKE_TOOL, encoding="utf-8"
+            )
+            fake.chmod(0o755)
+            for name in (
+                "git",
+                "bwrap",
+                "dbus-run-session",
+                "gdbus",
+                "gnome-keyring-daemon",
+                "pgrep",
+                "strace",
+                "timeout",
+                "xwininfo",
+                "xprop",
+                "Xvfb",
+                "sleep",
+                "cp",
+            ):
+                (fake_bin / name).symlink_to(fake.name)
+            environment = os.environ.copy()
+            for name in (
+                "HTTP_PROXY",
+                "HTTPS_PROXY",
+                "ALL_PROXY",
+                "http_proxy",
+                "https_proxy",
+                "all_proxy",
+            ):
+                environment.pop(name, None)
+            environment.update(
+                {
+                    "PATH": str(fake_bin) + os.pathsep + "/usr/bin:/bin",
+                    "TMPDIR": str(scratch),
+                    "SMOKE_FIXTURE_ROOT": str(root),
+                    "SMOKE_FIXTURE_SCENARIO": json.dumps(scenario),
+                    "PYTHONDONTWRITEBYTECODE": "1",
+                }
+            )
+            alive = []
+            try:
+                result = subprocess.run(
+                    [
+                        "bash",
+                        str(APPIMAGE_DIR / "smoke_appimage.sh"),
+                        str(appimage),
+                        str(reports_dir),
+                    ],
+                    env=environment,
+                    cwd=root,
+                    capture_output=True,
+                    text=True,
+                    timeout=12,
+                )
+            finally:
+                pid_file = root / "xvfb.pid"
+                if pid_file.exists():
+                    pid = int(pid_file.read_text(encoding="utf-8"))
+                    try:
+                        os.kill(pid, 0)
+                    except ProcessLookupError:
+                        pass
+                    else:
+                        alive.append(pid)
+                        os.kill(pid, signal.SIGKILL)
+            self.assertEqual(alive, [], "smoke test leaked its fake Xvfb process")
+            self.assertEqual(list(scratch.iterdir()), [], result.stderr)
+            reports = {
+                path.name: path.read_text(encoding="utf-8")
+                for path in reports_dir.iterdir()
+            }
+            if scenario.get("report_copy_failure"):
+                self.assertTrue(set(reports).issubset(self.REPORT_NAMES))
+            else:
+                self.assertEqual(set(reports), self.REPORT_NAMES)
+            summary = dict(
+                line.split("=", 1)
+                for line in reports["smoke-test-summary.txt"].splitlines()
+            )
+            self.assertEqual(int(summary["script_exit_code"]), result.returncode)
+            calls = [
+                json.loads(line)
+                for line in (root / "tools.jsonl")
+                .read_text(encoding="utf-8")
+                .splitlines()
+            ]
+            return result.returncode, summary, reports, calls
+
+
+# Executables below exist only in a test's temporary PATH. They simulate X11
+# and sandbox lifecycles without starting an application, server or network.
+SMOKE_FAKE_TOOL = r"""
+import json
+import os
+import signal
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+root = Path(os.environ["SMOKE_FIXTURE_ROOT"])
+scenario = json.loads(os.environ["SMOKE_FIXTURE_SCENARIO"])
+tool = Path(sys.argv[0]).name
+args = sys.argv[1:]
+with (root / "tools.jsonl").open("a", encoding="utf-8") as stream:
+    stream.write(json.dumps({"tool": tool, "args": args,
+                            "display": os.environ.get("DISPLAY"),
+                            "locale": os.environ.get("LC_ALL")}) + "\n")
+
+if tool == "git":
+    print(args[args.index("-C") + 1])
+elif tool == "Xvfb":
+    (root / "xvfb.pid").write_text(str(os.getpid()), encoding="utf-8")
+    print("fixture Xvfb stderr", file=sys.stderr, flush=True)
+    if scenario.get("xvfb_failure"):
+        sys.exit(17)
+    def stopped(*_):
+        sys.exit(0)
+    signal.signal(signal.SIGTERM, stopped)
+    os.write(3, b"97\n")
+    while True:
+        signal.pause()
+elif tool == "timeout":
+    if args[0] == "2s":
+        os.execvp(args[1], args[1:])
+    assert "20s" in args
+    command = args[args.index("20s") + 1:]
+    status = subprocess.run(command, check=False).returncode
+    if status:
+        sys.exit(status)
+    time.sleep(0.3)
+    sys.exit(124)
+elif tool == "bwrap":
+    if "/usr/bin/true" in args:
+        if scenario.get("namespace_failure"):
+            print("fixture namespace denied", file=sys.stderr)
+            sys.exit(1)
+    else:
+        if scenario.get("launch_failure"):
+            print("fixture launch failure", file=sys.stderr)
+            sys.exit(72)
+        scratch = Path(args[args.index("--bind") + 1])
+        logs = scratch / "logs"
+        (logs / "isolation-ready").write_text("ready\n", encoding="utf-8")
+        (root / "launched").touch()
+        (logs / "application.stderr").write_text(
+            "Traceback: fixture crash\n" if scenario.get("crash") else "fixture application stderr\n",
+            encoding="utf-8",
+        )
+        if not scenario.get("missing_trace"):
+            trace = "socket(AF_INET6, SOCK_STREAM, 0) = 1\n" if scenario.get("network_activity") else "socket(AF_UNIX, SOCK_STREAM, 0) = 1\n"
+            (logs / "trace.42").write_text(trace, encoding="utf-8")
+        (scratch / "storage" / "private.sqlite3").write_bytes(b"fixture private data")
+        (scratch / "home" / "private-keyring").write_bytes(b"fixture private data")
+        print("fixture sandbox stderr", file=sys.stderr)
+elif tool == "xwininfo":
+    window = scenario.get("window", {})
+    if "-root" in args:
+        print("Root window id: 0x001 (has no name)")
+        if (root / "launched").exists() and not scenario.get("no_window"):
+            print('     0xabc "Tokenlogue": ("tokenlogue" "Tokenlogue")  1280x720+0+0')
+    else:
+        print("  Map State: " + window.get("map_state", "IsViewable"))
+elif tool == "xprop":
+    assert "_NET_CLIENT_LIST" not in args
+    window = scenario.get("window", {})
+    print('WM_CLASS(STRING) = "{}", "{}"'.format(window.get("instance", "tokenlogue"), window.get("class_name", "Tokenlogue")))
+    if window.get("net_name", True):
+        print('_NET_WM_NAME(UTF8_STRING) = "{}"'.format(window.get("title", "Tokenlogue")))
+    print('WM_NAME(STRING) = "{}"'.format(window.get("legacy_title", window.get("title", "Tokenlogue"))))
+elif tool == "pgrep":
+    sys.exit(0 if scenario.get("leftover_process") else 1)
+elif tool == "sleep":
+    time.sleep(0.002)
+elif tool == "cp":
+    if scenario.get("report_copy_failure") and Path(args[-1]).name.startswith("smoke-"):
+        print("fixture report copy failure", file=sys.stderr)
+        sys.exit(91)
+    os.execv("/bin/cp", ["cp", *args])
+else:
+    raise AssertionError("unexpected tool execution: " + tool)
+"""
 
 
 class OptionalJniAbiTests(unittest.TestCase):
