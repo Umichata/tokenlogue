@@ -45,3 +45,17 @@ It is not a release artifact because the source bundle was built on Linux Mint
 with a GLIBC 2.38 requirement, bundled `anyio` differs from `uv.lock`, ordinary
 FUSE execution and cross-distribution testing are pending, and tool provenance
 currently includes TOFU.
+
+## Ubuntu 22.04 baseline workflow
+
+`.github/workflows/build-linux.yml` is a manual-only workflow for a future
+clean build on a GitHub-hosted Ubuntu 22.04 x86_64 runner. It has not yet been
+run. The pipeline exports production-only pip constraints directly from
+`uv.lock`, creates a separate locked production environment, supplies the
+constraints to Flet through command-scoped `PIP_CONSTRAINT`, and rejects any
+package inventory mismatch.
+
+The resulting bundle, AppDir, and extracted AppImage must not require a GLIBC
+version newer than `GLIBC_2.35`. The workflow also records ELF, RUNPATH, ldd,
+toolchain, metadata, and isolated headless smoke-test reports. Its artifact is
+unsigned, remains diagnostic only, and is not promoted to a release.

@@ -1,0 +1,266 @@
+name: Build diagnostic Linux AppImage
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: linux-appimage-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Record runner metadata
+        id: metadata
+        run: |
+          set -Eeuo pipefail
+          mkdir -p build/linux-release/reports
+          short_sha=${GITHUB_SHA:0:7}
+          printf 'short_sha=%s\n' "$short_sha" >> "$GITHUB_OUTPUT"
+          {
+            printf 'ImageOS=%s\n' "${ImageOS-}"
+            printf 'ImageVersion=%s\n' "${ImageVersion-}"
+            cat /etc/os-release
+            uname -a
+            ldd --version | head -n 1
+          } > build/linux-release/reports/runner-tools.txt
+
+      - name: Install minimal Linux build and smoke-test packages
+        run: |
+          set -Eeuo pipefail
+          packages=(
+            appstream
+            binutils
+            bubblewrap
+            build-essential
+            ca-certificates
+            clang
+            cmake
+            curl
+            dbus-x11
+            desktop-file-utils
+            file
+            gnome-keyring
+            libegl-mesa0
+            libegl1
+            libgl1-mesa-dri
+            libglib2.0-bin
+            libglx-mesa0
+            libgtk-3-dev
+            liblzma-dev
+            libsecret-1-0
+            libsecret-1-dev
+            libunwind-dev
+            lld
+            llvm
+            ninja-build
+            pkg-config
+            procps
+            shellcheck
+            squashfs-tools
+            strace
+            unzip
+            wmctrl
+            x11-utils
+            xauth
+            xvfb
+            zip
+          )
+          printf '%s\n' "${packages[@]}" > \
+            build/linux-release/reports/requested-system-packages.txt
+          sudo apt-get update 2>&1 | tee build/linux-release/reports/apt-install.log
+          sudo env DEBIAN_FRONTEND=noninteractive apt-get install \
+            --no-install-recommends -y "${packages[@]}" 2>&1 | \
+            tee -a build/linux-release/reports/apt-install.log
+          dpkg-query -W -f='${binary:Package}\t${Version}\n' "${packages[@]}" | \
+            sort > build/linux-release/reports/system-packages.txt
+
+      - name: Install pinned uv
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          version: "0.12.8"
+          enable-cache: false
+          github-token: ""
+          download-from-astral-mirror: false
+
+      - name: Install Python from version file
+        run: |
+          set -Eeuo pipefail
+          python_version=$(tr -d '\r\n' < .python-version)
+          test "$python_version" = "3.12"
+          uv python install "$python_version"
+          {
+            uv --version
+            UV_MANAGED_PYTHON=1 uv run --locked python --version
+          } >> build/linux-release/reports/runner-tools.txt
+
+      - name: Synchronize locked development environment
+        run: UV_MANAGED_PYTHON=1 uv sync --locked
+
+      - name: Run source QA
+        run: |
+          set -Eeuo pipefail
+          UV_MANAGED_PYTHON=1 uv run --locked python -m unittest discover -s tests -v
+          UV_MANAGED_PYTHON=1 uv run --locked ruff check .
+          UV_MANAGED_PYTHON=1 uv run --locked ruff format --check .
+          UV_MANAGED_PYTHON=1 uv run --locked pyright
+          UV_MANAGED_PYTHON=1 uv run --locked python -m compileall -q src
+          find src -type f -name '*.pyc' -delete
+          find src -depth -type d -name '__pycache__' -empty -delete
+          bash -n packaging/linux/appimage/*.sh
+          shellcheck packaging/linux/appimage/*.sh
+          UV_MANAGED_PYTHON=1 uv run --locked python -c \
+            'import tomllib; tomllib.load(open("pyproject.toml", "rb"))'
+          git diff --exit-code -- pyproject.toml uv.lock src
+
+      - name: Export locked production constraints
+        run: packaging/linux/appimage/build_linux_bundle.sh constraints
+
+      - name: Create isolated production reference environment
+        run: packaging/linux/appimage/build_linux_bundle.sh reference
+
+      - name: Build Flet Linux bundle with production constraints
+        run: packaging/linux/appimage/build_linux_bundle.sh build
+
+      - name: Compare bundle package inventory
+        run: packaging/linux/appimage/build_linux_bundle.sh inventory
+
+      - name: Verify source bundle ABI
+        run: packaging/linux/appimage/build_linux_bundle.sh abi
+
+      - name: Fetch and verify pinned AppImage tools
+        run: |
+          set -Eeuo pipefail
+          packaging/linux/appimage/fetch_tools.sh
+          {
+            build/appimage/tools/downloads/linuxdeploy-x86_64.AppImage \
+              --appimage-extract-and-run --version
+            build/appimage/tools/downloads/appimagetool-x86_64.AppImage \
+              --appimage-extract-and-run --version
+            build/appimage/tools/patchelf --version
+            sha256sum \
+              build/appimage/tools/downloads/linuxdeploy-x86_64.AppImage \
+              build/appimage/tools/downloads/appimagetool-x86_64.AppImage \
+              build/appimage/tools/downloads/patchelf-0.19.1-x86_64.tar.gz \
+              build/appimage/tools/patchelf \
+              build/appimage/tools/appimagetool-runtime-x86_64
+          } > build/linux-release/reports/appimage-tools.txt 2>&1
+
+      - name: Build first diagnostic AppImage
+        run: |
+          set -Eeuo pipefail
+          packaging/linux/appimage/build_appimage.sh 2>&1 | \
+            tee build/linux-release/reports/appimage-build-first.log
+          sha256sum build/appimage/Tokenlogue-0.1.0-x86_64.AppImage | \
+            awk '{print $1}' > build/linux-release/reports/appimage-first.sha256
+
+      - name: Rebuild AppImage and verify reproducibility
+        run: |
+          set -Eeuo pipefail
+          first=$(<build/linux-release/reports/appimage-first.sha256)
+          packaging/linux/appimage/build_appimage.sh 2>&1 | \
+            tee build/linux-release/reports/appimage-build-second.log
+          second=$(sha256sum build/appimage/Tokenlogue-0.1.0-x86_64.AppImage | \
+            awk '{print $1}')
+          test "$first" = "$second"
+          {
+            printf 'result=PASS\n'
+            printf 'first_sha256=%s\n' "$first"
+            printf 'second_sha256=%s\n' "$second"
+          } > build/linux-release/reports/appimage-reproducibility.txt
+
+      - name: Extract diagnostic AppImage
+        run: |
+          set -Eeuo pipefail
+          extract_root=$PWD/build/linux-release/extracted-appimage
+          rm -rf -- "$extract_root"
+          mkdir -p "$extract_root"
+          (
+            cd "$extract_root"
+            "$GITHUB_WORKSPACE/build/appimage/Tokenlogue-0.1.0-x86_64.AppImage" \
+              --appimage-extract
+          ) > build/linux-release/reports/appimage-extract.log
+          test -d "$extract_root/squashfs-root"
+
+      - name: Validate packaged metadata paths and ABI
+        run: |
+          set -Eeuo pipefail
+          appdir=$PWD/build/appimage/Tokenlogue.AppDir
+          extracted=$PWD/build/linux-release/extracted-appimage/squashfs-root
+          {
+            desktop-file-validate \
+              packaging/linux/io.github.umichata.tokenlogue.desktop
+            desktop-file-validate \
+              "$appdir/usr/share/applications/io.github.umichata.tokenlogue.desktop"
+            desktop-file-validate \
+              "$extracted/usr/share/applications/io.github.umichata.tokenlogue.desktop"
+            appstreamcli validate --no-net \
+              packaging/linux/io.github.umichata.tokenlogue.metainfo.xml
+            appstreamcli validate --no-net \
+              "$appdir/usr/share/metainfo/io.github.umichata.tokenlogue.metainfo.xml"
+            appstreamcli validate --no-net \
+              "$extracted/usr/share/metainfo/io.github.umichata.tokenlogue.metainfo.xml"
+          } > build/linux-release/reports/desktop-appstream-validation.txt 2>&1
+          UV_MANAGED_PYTHON=1 uv run --locked python \
+            packaging/linux/appimage/verify_bundle.py abi \
+            --root "bundle=$PWD/build/linux" \
+            --root "appdir=$appdir" \
+            --root "appimage=$extracted" \
+            --reports-dir "$PWD/build/linux-release/reports" \
+            --workspace "$GITHUB_WORKSPACE"
+          UV_MANAGED_PYTHON=1 uv run --locked python -m unittest \
+            tests.test_appimage_packaging -v
+
+      - name: Record final tool versions
+        run: |
+          set -Eeuo pipefail
+          {
+            UV_MANAGED_PYTHON=1 uv run --locked flet --version
+            UV_MANAGED_PYTHON=1 uv run --locked flet doctor -v
+            clang --version | head -n 1
+            llvm-config --version
+            ld.lld --version | head -n 1
+            cmake --version | head -n 1
+            ninja --version
+          } >> build/linux-release/reports/runner-tools.txt 2>&1
+
+      - name: Run isolated headless AppImage smoke test
+        run: |
+          set -Eeuo pipefail
+          packaging/linux/appimage/smoke_appimage.sh \
+            "$PWD/build/appimage/Tokenlogue-0.1.0-x86_64.AppImage" \
+            "$PWD/build/linux-release/reports"
+
+      - name: Create artifact checksums
+        run: |
+          set -Eeuo pipefail
+          (
+            cd build/appimage
+            sha256sum Tokenlogue-0.1.0-x86_64.AppImage
+          ) > build/linux-release/SHA256SUMS
+
+      - name: Upload diagnostic AppImage and reports
+        if: ${{ always() && !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: tokenlogue-linux-diagnostic-${{ steps.metadata.outputs.short_sha }}
+          path: |
+            build/appimage/Tokenlogue-0.1.0-x86_64.AppImage
+            build/linux-release/SHA256SUMS
+            build/linux-release/production-constraints.txt
+            build/linux-release/reports/
+          if-no-files-found: warn
+          retention-days: 14
+          compression-level: 0
+          include-hidden-files: false

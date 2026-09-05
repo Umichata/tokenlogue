@@ -76,9 +76,12 @@ export/
 !packaging/linux/appimage/AppRun
 !packaging/linux/appimage/README.md
 !packaging/linux/appimage/build_appimage.sh
+!packaging/linux/appimage/build_linux_bundle.sh
 !packaging/linux/appimage/fetch_tools.sh
 !packaging/linux/appimage/sanitize_paths.py
+!packaging/linux/appimage/smoke_appimage.sh
 !packaging/linux/appimage/tools.lock
+!packaging/linux/appimage/verify_bundle.py
 
 # Environment variables
 .env

@@ -47,8 +47,11 @@ class AppImagePackagingTests(unittest.TestCase):
         for name in (
             *SCRIPT_NAMES,
             "README.md",
+            "build_linux_bundle.sh",
             "sanitize_paths.py",
+            "smoke_appimage.sh",
             "tools.lock",
+            "verify_bundle.py",
         ):
             with self.subTest(name=name):
                 self.assertTrue((APPIMAGE_DIR / name).is_file())
@@ -233,9 +236,12 @@ class AppImagePackagingTests(unittest.TestCase):
             "AppRun",
             "README.md",
             "build_appimage.sh",
+            "build_linux_bundle.sh",
             "fetch_tools.sh",
             "sanitize_paths.py",
+            "smoke_appimage.sh",
             "tools.lock",
+            "verify_bundle.py",
         ):
             self.assertIn(f"!packaging/linux/appimage/{name}", text)
         self.assertNotIn("!packaging/linux/appimage/**", text)
