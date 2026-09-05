@@ -478,7 +478,7 @@ class AppImagePackagingTests(unittest.TestCase):
 
 def _desktop_groups(text: str) -> dict[str, dict[str, str]]:
     parser = configparser.ConfigParser(interpolation=None)
-    parser.optionxform = str
+    parser.optionxform = lambda optionstr: optionstr
     parser.read_string(text)
     return {section: dict(parser[section]) for section in parser.sections()}
 
