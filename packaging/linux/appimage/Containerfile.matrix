@@ -6,7 +6,7 @@ FROM ${BASE_IMAGE}
 RUN if command -v apt-get >/dev/null; then \
       apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         bash ca-certificates coreutils dbus-x11 gnome-keyring libglib2.0-bin \
-        libgtk-3-0 libsecret-1-0 libstdc++6 libunwind8 libegl1 libegl-mesa0 \
+        libgtk-3-0 libsecret-1-0 libstdc++6 libunwind8 libegl1 libegl-mesa0 libgles2 \
         libgl1-mesa-dri libglx-mesa0 libx11-6 libwayland-client0 \
         python3 passwd procps strace x11-utils xvfb && \
       rm -rf /var/lib/apt/lists/*; \
@@ -14,8 +14,8 @@ RUN if command -v apt-get >/dev/null; then \
       dnf install -y --setopt=install_weak_deps=False \
         bash ca-certificates coreutils dbus-daemon dbus-tools dbus-x11 \
         gnome-keyring glib2 gtk3 libsecret libstdc++ libunwind \
-        mesa-dri-drivers mesa-libEGL mesa-libGL libX11 wayland-libs \
-        python3 shadow-utils procps-ng strace xorg-x11-utils xorg-x11-server-Xvfb && \
+        mesa-dri-drivers mesa-libEGL mesa-libGL libglvnd-gles libX11 libwayland-client \
+        python3 shadow-utils procps-ng strace xprop xwininfo xorg-x11-server-Xvfb && \
       dnf clean all; \
     else exit 1; fi
 
