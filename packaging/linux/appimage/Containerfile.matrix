@@ -1,0 +1,33 @@
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
+
+# Runtime and observation tools only. No application SDK or development headers.
+# Package repositories are mutable: record the complete installed inventory below.
+RUN if command -v apt-get >/dev/null; then \
+      apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        bash ca-certificates coreutils dbus-x11 gnome-keyring libglib2.0-bin \
+        libgtk-3-0 libsecret-1-0 libstdc++6 libunwind8 libegl1 libegl-mesa0 \
+        libgl1-mesa-dri libglx-mesa0 libx11-6 libwayland-client0 \
+        python3 passwd procps strace x11-utils xvfb && \
+      rm -rf /var/lib/apt/lists/*; \
+    elif command -v dnf >/dev/null; then \
+      dnf install -y --setopt=install_weak_deps=False \
+        bash ca-certificates coreutils dbus-daemon dbus-tools dbus-x11 \
+        gnome-keyring glib2 gtk3 libsecret libstdc++ libunwind \
+        mesa-dri-drivers mesa-libEGL mesa-libGL libX11 wayland-libs \
+        python3 shadow-utils procps-ng strace xorg-x11-utils xorg-x11-server-Xvfb && \
+      dnf clean all; \
+    else exit 1; fi
+
+RUN groupadd --gid 10001 smoke && \
+    useradd --uid 10001 --gid 10001 --create-home --shell /bin/bash smoke && \
+    mkdir /reports && chown smoke:smoke /reports && \
+    touch /run/tokenlogue-matrix-container
+COPY source_artifact.py container_matrix.py container_smoke.sh smoke_appimage.sh /opt/tokenlogue-matrix/
+# Export only reviewed functions, not the bubblewrap entry point. Original is unchanged.
+RUN python3 /opt/tokenlogue-matrix/container_matrix.py library \
+      /opt/tokenlogue-matrix/smoke_appimage.sh /opt/tokenlogue-matrix/smoke-functions.sh && \
+    chmod 0755 /opt/tokenlogue-matrix/container_smoke.sh
+USER 10001:10001
+WORKDIR /home/smoke
+ENTRYPOINT ["/bin/bash", "/opt/tokenlogue-matrix/container_smoke.sh"]

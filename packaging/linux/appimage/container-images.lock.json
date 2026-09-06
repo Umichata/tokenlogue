@@ -1,0 +1,33 @@
+{
+  "schema": 1,
+  "verification": "Official Docker Hub library images; tag index and linux/amd64 manifest retrieved via the Registry v2 HTTPS API. Each Docker-Content-Digest was checked against SHA-256 of the response bytes. No layers downloaded. Tag observations are not signatures or immutable package repository snapshots.",
+  "images": {
+    "ubuntu-22.04": {
+      "tag": "docker.io/library/ubuntu:22.04",
+      "index_digest": "sha256:2edbbc5dc405e9612ba3584ce95480277e3eb374407b5505fe26f17df77c7dbc",
+      "digest": "sha256:79676deb51ebb02885b0b9d33788e78a37cf1045ad79d1bb04c6a222c3556b3d",
+      "manifest_url": "https://registry-1.docker.io/v2/library/ubuntu/manifests/sha256:79676deb51ebb02885b0b9d33788e78a37cf1045ad79d1bb04c6a222c3556b3d",
+      "upstream": "https://github.com/docker-library/official-images/blob/master/library/ubuntu",
+      "os_id": "ubuntu",
+      "version_id": "22.04"
+    },
+    "ubuntu-24.04": {
+      "tag": "docker.io/library/ubuntu:24.04",
+      "index_digest": "sha256:33ceb71981b602c1a7443a53469e4dba065f7503eab3078a2d7a57a2ab987517",
+      "digest": "sha256:1e0a86e57d247923571b75e0aaf48a1449cf8c543d51fb3e07a4a7d7bfa79316",
+      "manifest_url": "https://registry-1.docker.io/v2/library/ubuntu/manifests/sha256:1e0a86e57d247923571b75e0aaf48a1449cf8c543d51fb3e07a4a7d7bfa79316",
+      "upstream": "https://github.com/docker-library/official-images/blob/master/library/ubuntu",
+      "os_id": "ubuntu",
+      "version_id": "24.04"
+    },
+    "fedora-44": {
+      "tag": "docker.io/library/fedora:44",
+      "index_digest": "sha256:43b29f65a41eb9c35e1cd5323e3bdf3b655c2357a9f4f1ff2f9c2798e5045d80",
+      "digest": "sha256:be9d65e2344d805cc11114319c685ecaa96b6d9b4350a0a6460cdb931babbd19",
+      "manifest_url": "https://registry-1.docker.io/v2/library/fedora/manifests/sha256:be9d65e2344d805cc11114319c685ecaa96b6d9b4350a0a6460cdb931babbd19",
+      "upstream": "https://github.com/docker-library/official-images/blob/master/library/fedora",
+      "os_id": "fedora",
+      "version_id": "44"
+    }
+  }
+}
