@@ -13,6 +13,11 @@ from email.parser import BytesParser
 from pathlib import Path
 from typing import Sequence
 
+from desktop_runtime import (  # pyright: ignore[reportMissingImports]
+    bundled_desktop_libraries,
+    is_host_desktop_library,
+)
+
 EXPECTED_ANYIO_VERSION = "4.14.2"
 MAX_ABI_VERSIONS = {
     "GLIBC": (2, 35),
@@ -293,6 +298,13 @@ def verify_abi(
             relative = elf.relative_to(resolved_root).as_posix()
             dynamic_output = _run_checked(["readelf", "-d", str(elf)])
             needed, runpaths = parse_dynamic_section(dynamic_output)
+            soname = re.search(r"\(SONAME\).*\[([^]]+)\]", dynamic_output)
+            if (
+                label != "bundle"
+                and soname
+                and is_host_desktop_library(soname.group(1))
+            ):
+                errors.append(f"{label}:{relative} bundles a host desktop SONAME")
             symbol_output = _run_checked(["objdump", "-T", str(elf)])
             versions = parse_undefined_abi_versions(symbol_output)
             file_versions: list[str] = []
@@ -440,6 +452,8 @@ def _library_path(label: str, root: Path) -> str:
 def _verify_packaged_root(
     label: str, root: Path, workspace: Path, errors: list[str]
 ) -> None:
+    for relative in bundled_desktop_libraries(root):
+        errors.append(f"{label}:{relative} bundles a host desktop library")
     required = (
         "LICENSE",
         "THIRD_PARTY_NOTICES.md",

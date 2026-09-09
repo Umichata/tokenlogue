@@ -295,6 +295,13 @@ linuxdeploy_args=(
     --exclude-library='libwindow_manager_plugin.so'
 )
 
+# Keep GTK/GIO and the host's loadable desktop modules on one runtime ABI.
+desktop_exclusions="$("$python_bin" "$script_dir/desktop_runtime.py" exclusions)"
+[[ -n "$desktop_exclusions" ]] || die "desktop runtime exclusions are empty"
+while IFS= read -r library_pattern; do
+    linuxdeploy_args+=("--exclude-library=$library_pattern")
+done <<< "$desktop_exclusions"
+
 printf 'Deploying runtime dependencies with linuxdeploy %s\n' "$LINUXDEPLOY_TAG"
 env \
     HOME="$tool_home" \
@@ -304,6 +311,8 @@ env \
     NO_STRIP=1 \
     LD_LIBRARY_PATH="$appdir/usr/lib/tokenlogue/lib" \
     "$linuxdeploy" "${linuxdeploy_args[@]}"
+
+"$python_bin" "$script_dir/desktop_runtime.py" check "$appdir"
 
 # linuxdeploy may select a smaller icon for its AppDir root integration.
 # Restore the project's deterministic root links after dependency deployment.

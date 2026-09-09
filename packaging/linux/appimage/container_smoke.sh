@@ -27,18 +27,20 @@ fatal_count=NOT_RUN
 # shellcheck disable=SC2034
 isolation_status=NOT_RUN
 hash_check=NOT_RUN
+desktop_modules=NOT_RUN
 phase=BLOCKED
 expected_hash=${1-}
 os_id=${2-}
 version_id=${3-}
 mkdir -p "$reports_dir"
+printf '{"result":"NOT_RUN"}\n' > "$reports_dir/desktop-modules.json"
 
 collect_matrix_diagnostics() {
     local extra_fatal
     collect_diagnostics
     [[ -n "$smoke_root" && "$fatal_count" =~ ^[0-9]+$ ]] || return 0
     extra_fatal=$(count_log_matches \
-        'error while loading shared libraries|undefined symbol|\+\+\+ killed by SIG(SEGV|ABRT|BUS|ILL)' \
+        'error while loading shared libraries|undefined symbol|Failed to load module|Loading IM context type .* failed|\+\+\+ killed by SIG(SEGV|ABRT|BUS|ILL)' \
         "$smoke_root/logs/application.stderr" "$smoke_root/logs/sandbox.stderr" \
         "$smoke_root"/logs/trace.*)
     if [[ "$extra_fatal" =~ ^[0-9]+$ ]]; then
@@ -49,7 +51,7 @@ collect_matrix_diagnostics() {
 }
 
 # Invoked by the EXIT trap, including early environment failures.
-# shellcheck disable=SC2317
+# shellcheck disable=SC2317,SC2329
 finish() {
     local status=$1 cleanup_json result=$phase
     trap - EXIT ERR INT TERM
@@ -75,13 +77,14 @@ finish() {
         fi
     fi
     [[ "$hash_check" == PASS ]] || status=1
+    [[ "$desktop_modules" == PASS ]] || status=1
     [[ "$inet_calls" == 0 && "$inet_connects" == 0 && "$fatal_count" == 0 ]] || status=1
     [[ "$status" -eq 0 ]] && result=PASS
     # Only measured values are serialized; NOT_RUN/UNAVAILABLE stay explicit.
     if ! python3 - "$reports_dir/container-summary.json" "$result" \
         "${failure_reason:-completed}" "$status" "$smoke_status" "$elapsed_seconds" \
         "$window_check" "$window_id" "$window_map_state" "$inet_calls" \
-        "$inet_connects" "$fatal_count" "$hash_check" "$cleanup_json" <<'PY'
+        "$inet_connects" "$fatal_count" "$hash_check" "$cleanup_json" "$desktop_modules" <<'PY'
 import json
 import sys
 from pathlib import Path
@@ -93,6 +96,7 @@ report = dict(zip(keys, sys.argv[2:14]))
 if report["elapsed_seconds"].isdigit():
     report["elapsed_seconds"] = int(report["elapsed_seconds"])
 report.update(json.loads(sys.argv[14]))
+report["desktop_modules"] = sys.argv[15]
 if report["cleanup"] != "PASS":
     report.update(result="FAIL", reason="process cleanup not confirmed")
 report["timeout_seconds"] = 20
@@ -144,6 +148,25 @@ unset HTTP_PROXY HTTPS_PROXY ALL_PROXY http_proxy https_proxy all_proxy
 unset DBUS_SESSION_BUS_ADDRESS GNOME_KEYRING_CONTROL GNOME_KEYRING_PID SSH_AUTH_SOCK
 unset OPENROUTER_API_KEY XAUTHORITY
 export LIBGL_ALWAYS_SOFTWARE=1 GDK_BACKEND=x11
+# Resolve the installed GVfs/IBus modules with the candidate's library paths.
+# All extraction and module loading stay inside the offline disposable container.
+phase=FAIL
+mkdir "$smoke_root/module-probe"
+(
+    cd -- "$smoke_root/module-probe"
+    "$smoke_root/Tokenlogue.AppImage" --appimage-extract \
+        > "$smoke_root/logs/module-extract.log" 2>&1
+)
+if python3 "$script_dir/desktop_runtime.py" probe \
+    "$smoke_root/module-probe/squashfs-root" \
+    --report "$reports_dir/desktop-modules.json"; then
+    desktop_modules=PASS
+else
+    desktop_modules=FAIL
+    die "desktop module compatibility check failed; see desktop-modules.json"
+fi
+# Exercise GTK's IBus selection during the existing application smoke test too.
+export GTK_IM_MODULE=ibus
 Xvfb -displayfd 3 -screen 0 1280x720x24 -nolisten tcp -ac \
     3> "$smoke_root/display" > /dev/null 2> "$smoke_root/logs/xvfb.stderr" &
 xvfb_pid=$!

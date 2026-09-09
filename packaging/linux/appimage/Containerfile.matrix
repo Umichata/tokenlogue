@@ -6,6 +6,7 @@ FROM ${BASE_IMAGE}
 RUN if command -v apt-get >/dev/null; then \
       apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         bash ca-certificates coreutils dbus-x11 gnome-keyring libglib2.0-bin \
+        gvfs ibus-gtk3 dconf-gsettings-backend \
         libgtk-3-0 libsecret-1-0 libstdc++6 libunwind8 libegl1 libegl-mesa0 libgles2 \
         libgl1-mesa-dri libglx-mesa0 libx11-6 libwayland-client0 \
         python3 passwd procps strace x11-utils xvfb && \
@@ -13,7 +14,7 @@ RUN if command -v apt-get >/dev/null; then \
     elif command -v dnf >/dev/null; then \
       dnf install -y --setopt=install_weak_deps=False \
         bash ca-certificates coreutils dbus-daemon dbus-tools dbus-x11 \
-        gnome-keyring glib2 gtk3 libsecret libstdc++ libunwind \
+        gnome-keyring glib2 gtk3 libsecret libstdc++ libunwind gvfs-client ibus-gtk3 dconf \
         mesa-dri-drivers mesa-libEGL mesa-libGL libglvnd-gles libX11 libwayland-client \
         python3 shadow-utils procps-ng strace xprop xwininfo xorg-x11-server-Xvfb && \
       dnf clean all; \
@@ -23,7 +24,7 @@ RUN groupadd --gid 10001 smoke && \
     useradd --uid 10001 --gid 10001 --create-home --shell /bin/bash smoke && \
     mkdir /reports && chown smoke:smoke /reports && \
     touch /run/tokenlogue-matrix-container
-COPY source_artifact.py container_matrix.py container_smoke.sh smoke_appimage.sh /opt/tokenlogue-matrix/
+COPY source_artifact.py container_matrix.py container_smoke.sh smoke_appimage.sh desktop_runtime.py /opt/tokenlogue-matrix/
 # Export only reviewed functions, not the bubblewrap entry point. Original is unchanged.
 RUN python3 /opt/tokenlogue-matrix/container_matrix.py library \
       /opt/tokenlogue-matrix/smoke_appimage.sh /opt/tokenlogue-matrix/smoke-functions.sh && \

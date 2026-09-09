@@ -192,6 +192,7 @@ class ArtifactVerificationTests(unittest.TestCase):
 
 def success_evidence() -> dict:
     return {
+        "desktop_modules": "PASS",
         "result": "PASS",
         "reason": "completed",
         "window_check": "PASS",
@@ -257,6 +258,7 @@ class MatrixFailureTests(unittest.TestCase):
                             "container_matrix.py",
                             "container_smoke.sh",
                             "smoke_appimage.sh",
+                            "desktop_runtime.py",
                         },
                     )
                     if scenario == "environment_failure":

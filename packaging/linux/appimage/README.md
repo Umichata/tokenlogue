@@ -10,6 +10,29 @@ The system desktop source is unchanged; AppImage keeps `Exec=tokenlogue`,
 `Icon=tokenlogue`, localized metadata, and no `TryExec`. Staging conversion
 runs before linuxdeploy, and desktop-file-validate remains mandatory.
 
+## Host desktop runtime
+
+The AppImage uses the distribution's GTK3, GLib/GIO, GdkPixbuf, Pango/Cairo
+and accessibility runtime. `desktop_runtime.py` owns the shared exclusion
+policy, including core GLib/GIO/D-Bus dependencies. linuxdeploy does not copy
+these libraries, and packaged verification rejects matching names and SONAMEs.
+The target system must provide GTK3 and its runtime dependencies. Flutter,
+Python, application plugins and the bundled libsecret client remain packaged.
+Ubuntu 22.04 remains the build baseline; the existing ABI limits are unchanged.
+
+This avoids loading newer host GVfs/IBus modules against the old private
+GLib 2.72 runtime. Input methods, GVfs and accessibility are not disabled in
+AppRun. Host GTK also uses the distribution's module paths, including Fedora's
+lib64 layout and Linux Mint's XApp module when installed.
+
+The userspace matrix installs GVfs, IBus GTK3 and dconf. Before launching the
+application it checks eager symbol resolution (`dlopen` with `RTLD_NOW`) under
+AppRun's library paths, requires the GVfs and IBus modules, and records loaded
+desktop library paths in `desktop-modules.json`. The existing application
+smoke then explicitly selects IBus. Missing modules, private desktop runtime
+copies, symbol errors, or failed IM-module loading fail the job. This checks
+module loading; complete input-method interaction still needs a desktop test.
+
 ## Pinned tools
 
 `tools.lock` pins exact tagged Linux x86_64 release assets for linuxdeploy,
@@ -49,8 +72,11 @@ build/appimage/Tokenlogue-<version>-x86_64.AppImage
 The generated artifact is diagnostic, unsigned, and has no update metadata.
 The older local Linux Mint bundle required GLIBC 2.38 and its bundled `anyio`
 differed from `uv.lock`. These observations describe that old local bundle,
-not subsequent Ubuntu CI artifacts. Ordinary FUSE execution and
-cross-distribution testing are pending; tool provenance currently includes TOFU.
+not subsequent Ubuntu CI artifacts. For the earlier `7c3976a` artifact, matrix
+run `34011565339` passed and manual FUSE mounting and two ordinary Linux Mint
+launches were reported successful. Those launches exposed host desktop-module
+symbol errors. The revised desktop runtime requires a new build and matrix run;
+the earlier results do not validate this revision. Tool provenance includes TOFU.
 
 ## Optional JNI library
 
@@ -94,10 +120,10 @@ temporary HOME, storage, databases, keyring and raw traces are excluded.
 
 ## Cross-distribution userspace matrix
 
-`test-linux-appimage.yml` is a separate manual-only workflow. This new matrix
-has not yet been run. The user reports successful manual draft restoration
-across chat switches and application restarts with build `7c3976a` on Linux Mint;
-this is separate evidence from Ubuntu 22.04's automated launch check.
+`test-linux-appimage.yml` is a separate manual-only workflow. Matrix run
+`34011565339` passed for the earlier `7c3976a` artifact. Manual draft restoration
+across chat switches and application restarts was also confirmed on Linux Mint.
+This is separate evidence from Ubuntu 22.04's automated launch check.
 
 Supply a specific successful `build-linux.yml` run ID and full application
 commit SHA. `source_artifact.py` checks the repository, workflow ID/path,
@@ -144,8 +170,8 @@ The automatic GitHub token is limited to retrieval steps and is never passed
 to containers. There is no signing, release, automatic source-run selection,
 or per-distribution application rebuild.
 
-The first real run must confirm package availability, container/ptrace support,
-and the launch checks on all three userspaces. These checks do not establish
+Each newly built candidate must pass module and launch checks in all three
+userspaces. These container checks do not establish
 ordinary FUSE launch, Wayland compatibility, hardware GPU drivers, or complete
 desktop-session integration. They do not make an unsigned diagnostic AppImage
 a general-distribution release.

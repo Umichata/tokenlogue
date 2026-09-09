@@ -333,7 +333,7 @@ class LinuxBuildPipelineTests(unittest.TestCase):
             "GLIBC_2.35",
             "uv.lock",
             "manual-only",
-            "has not yet been run",
+            "requires a new build and matrix run",
         ):
             self.assertIn(phrase, documentation)
 
@@ -1035,12 +1035,36 @@ class OptionalJniAbiTests(unittest.TestCase):
                     runpath="$ORIGIN:$ORIGIN/../..",
                 )
 
+    def test_host_desktop_libraries_are_rejected_only_in_packaged_roots(self) -> None:
+        for label in ("bundle", "appdir", "appimage"):
+            with self.subTest(label=label):
+                self._verify_fixture(
+                    label,
+                    "usr/lib/libgio-2.0.so.0",
+                    expected_errors=("bundles a host desktop library",)
+                    if label != "bundle"
+                    else (),
+                )
+
+    def test_renamed_desktop_library_is_rejected_by_soname(self) -> None:
+        for label in ("bundle", "appdir", "appimage"):
+            with self.subTest(label=label):
+                self._verify_fixture(
+                    label,
+                    "usr/lib/renamed-library.so",
+                    soname="libgtk-3.so.0",
+                    expected_errors=("bundles a host desktop SONAME",)
+                    if label != "bundle"
+                    else (),
+                )
+
     def _verify_fixture(
         self,
         label: str,
         relative: str,
         *,
         runpath: str = "$ORIGIN",
+        soname: str | None = None,
         needed: tuple[str, ...] = ("libc.so.6",),
         symbols: str = SAFE_SYMBOLS,
         ldd_output: str = "libc.so.6 => /lib/x86_64-linux-gnu/libc.so.6 (0x01)\n",
@@ -1080,6 +1104,8 @@ class OptionalJniAbiTests(unittest.TestCase):
                 "".join(f"0x (NEEDED) Shared library: [{name}]\n" for name in needed)
                 + f"0x (RUNPATH) Library runpath: [{runpath}]\n"
             )
+            if soname is not None:
+                dynamic += f"0x (SONAME) Library soname: [{soname}]\n"
             with (
                 patch.object(
                     verify_bundle, "_run_checked", side_effect=[dynamic, symbols]

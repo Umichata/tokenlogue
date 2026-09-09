@@ -33,6 +33,7 @@ SMOKE_FUNCTIONS = (
     "save_diagnostic_logs",
 )
 REPORT_FILES = (
+    "desktop-modules.json",
     "smoke-application.stderr.txt",
     "smoke-sandbox.stderr.txt",
     "smoke-xvfb.stderr.txt",
@@ -115,6 +116,7 @@ def evaluate(evidence: dict[str, Any], exit_code: int) -> tuple[str, str]:
     if evidence.get("result") == "BLOCKED":
         return "BLOCKED", str(evidence.get("reason", "environment unavailable"))
     required = {
+        "desktop_modules": "PASS",
         "window_check": "PASS",
         "window_map_state": "IsViewable",
         "af_inet_socket_calls": "0",
@@ -242,6 +244,7 @@ def run_matrix(
                 "container_matrix.py",
                 "container_smoke.sh",
                 "smoke_appimage.sh",
+                "desktop_runtime.py",
             ):
                 shutil.copyfile(HERE / name, context / name)
             run_command(
