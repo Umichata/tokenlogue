@@ -55,7 +55,7 @@ uv run python -m unittest discover -s tests -v
 ## Linux AppImage
 
 Для Linux x86_64 с поддержкой x86-64-v2 подготовлена тестовая AppImage-сборка
-`4a498ad`. Python, uv и Flutter SDK для её запуска устанавливать не нужно.
+`14b87ac`. Python, uv и Flutter SDK для её запуска устанавливать не нужно.
 Нужны системная GTK3 с её
 зависимостями и работающий Secret Service для защищённого хранения API-ключа.
 
@@ -63,13 +63,19 @@ uv run python -m unittest discover -s tests -v
 SHA-256, обычный запуск и запуск без FUSE. Файл пока распространяется как
 диагностический артефакт GitHub Actions; публичный prerelease готовится.
 
-[Сборка 34343220780](https://github.com/Umichata/tokenlogue/actions/runs/34343220780)
+[Сборка 34439008120](https://github.com/Umichata/tokenlogue/actions/runs/34439008120)
 прошла на Ubuntu 22.04 с проверкой состава Python-пакетов по `uv.lock` и
-ABI-пределом `GLIBC_2.35`.
-[Матрица 34345861706](https://github.com/Umichata/tokenlogue/actions/runs/34345861706)
+ABI-пределом `GLIBC_2.35`. Встроенный реестр notices проверен в AppDir и
+извлечённом AppImage. Он охватывает 75 компонентов и 85 проверяемых объектов.
+[Матрица 34439720271](https://github.com/Umichata/tokenlogue/actions/runs/34439720271)
 успешно проверила тот же AppImage в Ubuntu 22.04, Ubuntu 24.04 и Fedora 44,
-включая загрузку системных GVfs и IBus. На Linux Mint 22.3 Cinnamon/X11
-дополнительно выполнены ручные запуски и проверены ввод, буфер обмена и черновики.
+включая обязательные проверки системных GVfs и IBus. Дополнительная ручная
+проверка на Linux Mint 22.3 Cinnamon/X11 подтвердила стабильную работу.
+
+[Сверка нового артефакта](docs/releases/14b87ac-notice-audit.md) подтверждает
+совпадение контрольных сумм и отсутствие прежнего пути runner в notices.
+Подготовка исходных материалов сторонних компонентов остаётся отдельным
+незавершённым пунктом перед публичным preview.
 
 AppImage не подписан и не содержит автоматического обновления. Проверки в
 контейнерах не подтверждают работу во всех desktop-окружениях, Wayland и со

@@ -72,15 +72,16 @@ build/appimage/Tokenlogue-<version>-x86_64.AppImage
 ```
 
 The generated artifact is diagnostic, unsigned, and has no update metadata.
-Commit `4a498adfdb175104fe12acfea2b6a839f839852b` passed build run
-[34343220780](https://github.com/Umichata/tokenlogue/actions/runs/34343220780)
+Commit `14b87ac03e5c03c2ed9c4acf6caae29daa39d20e` passed build run
+[34439008120](https://github.com/Umichata/tokenlogue/actions/runs/34439008120)
 and userspace matrix run
-[34345861706](https://github.com/Umichata/tokenlogue/actions/runs/34345861706).
-This revision uses host desktop libraries. The submitted manual Linux Mint
-launch logs no longer contain the earlier GVfs/IBus symbol or module-load
-errors; text input, clipboard and draft restoration were confirmed manually.
-Flutter engine/view warnings remain in stderr without a reported visible
-failure. They have not been fixed or suppressed.
+[34439720271](https://github.com/Umichata/tokenlogue/actions/runs/34439720271).
+Both supplied artifacts contain identical AppImage bytes. Notice coverage and
+all 207 manifest file hashes were checked independently after extraction.
+The user confirmed stable operation on Linux Mint. This revision uses host
+desktop libraries. The earlier detailed manual input/clipboard/draft checks
+and stderr observations for `4a498ad` remain historical evidence; new manual
+stderr logs were not supplied, so resolution of Flutter warnings is not claimed.
 
 The older local Linux Mint bundle required GLIBC 2.38 and its bundled `anyio`
 differed from `uv.lock`. These observations describe that old local bundle,
@@ -92,10 +93,12 @@ See the [Linux user guide](../../../docs/linux-appimage.md) and the
 Preparing release documentation does not rebuild or promote an artifact.
 The root `THIRD_PARTY_NOTICES.md` is still a preliminary registry of direct
 Python dependencies; its presence alone is not a complete binary notice audit.
-The [artifact audit](../../../docs/releases/4a498ad-notice-audit.md) records
-the actual checksum, missing notices and recovered copyright texts. It also
-confirms CPython 3.12.14 targeting x86_64_v2 in this AppImage: compatible GLIBC
-alone does not establish support for older x86_64 processors.
+The [current artifact audit](../../../docs/releases/14b87ac-notice-audit.md)
+records the verified checksum, completed notice checks and remaining source
+materials. The [earlier audit](../../../docs/releases/4a498ad-notice-audit.md)
+preserves the findings for the old file. This AppImage includes CPython 3.12.14
+targeting x86_64_v2; compatible GLIBC alone does not establish support for
+older x86_64 processors.
 
 ## Optional JNI library
 
@@ -140,9 +143,11 @@ temporary HOME, storage, databases, keyring and raw traces are excluded.
 ## Cross-distribution userspace matrix
 
 `test-linux-appimage.yml` is a separate manual-only workflow. Matrix run
-`34345861706` passed for the `4a498ad` artifact in all three userspaces,
-including the host desktop-module checks. Manual desktop checks are separate
-evidence from the automated Xvfb/software-rendering launch checks.
+`34439720271` passed for the `14b87ac` artifact in all three userspaces,
+including the required host desktop-module checks. GitHub API job conclusions
+were verified. The per-distribution report archives were not supplied for
+independent report inspection. Manual desktop checks are separate evidence
+from the automated Xvfb/software-rendering launch checks.
 
 Supply a specific successful `build-linux.yml` run ID and full application
 commit SHA. `source_artifact.py` checks the repository, workflow ID/path,
@@ -224,6 +229,14 @@ copies become a generated index, with the machine-readable registry at
 `usr/share/doc/tokenlogue/notices.json`. New diagnostic reports are
 `notice-inputs.json`, `notices-appdir.json`, `notices-appimage.json`,
 `notices-manifest.json`, and the resolved `flutter-pubspec.lock`.
+
+Build `34439008120` passed both notice-verification gates with 75 components
+and 85 subjects. The embedded lock is an audit copy with only the known local
+plugin path made relative; its original source SHA-256 is retained in the
+manifest. All 153 resolved packages are preserved. The final Python content
+scan runs after collection in read-only mode and no longer depends on `rg`.
+Two packagings produced the same AppImage SHA-256. See the current artifact
+audit for the exact file identity and evidence boundaries.
 
 Notice coverage does not close the separate corresponding-source review.
 The registry explicitly preserves `source_materials: REVIEW_REQUIRED`.
