@@ -21,6 +21,7 @@ from notice_inputs import (
     fetch_asset,
     font_names,
     load_lock,
+    pubspec_audit_copy,
     reject_proxies,
     relative_file,
     same_binary,
@@ -314,11 +315,13 @@ class Collector:
             )
         self.add("appimage-runtime", [], self.group("runtime"), self.lock["runtime"])
         self.copy(DIRECTORY / "notices.lock.json", "upstream/notices.lock.json")
-        if "serious_python_linux:" not in pubspec.read_text():
-            raise NoticeError(
-                "resolved Flutter pubspec.lock is missing serious_python_linux"
-            )
-        self.copy(pubspec, "flutter/pubspec.lock")
+        pubspec = pubspec.resolve(strict=True)
+        if pubspec.parts[-3:] != ("build", "flutter", "pubspec.lock"):
+            raise NoticeError("expected generated Flutter project pubspec.lock")
+        lock_text, lock_origin = pubspec_audit_copy(
+            pubspec.read_bytes(), pubspec.parents[2]
+        )
+        lock_notice = self.text("flutter/pubspec.lock", lock_text)
         notices = relative_file(self.root, f"{BUNDLE}/data/flutter_assets/NOTICES.Z")
         text = gzip.decompress(notices.read_bytes()).decode("utf-8")
         if "serious_python" not in text or "flutter" not in text.lower():
@@ -337,7 +340,7 @@ class Collector:
             "flutter-and-plugins",
             flutter_files,
             [flutter_notice],
-            {"resolved_packages": f"{DOC}/licenses/flutter/pubspec.lock"},
+            {"resolved_packages": lock_notice, **lock_origin},
         )
         bridge = relative_file(cache, self.lock["bridge"]["sha256"])
         if sha256(bridge) != self.lock["bridge"]["sha256"]:

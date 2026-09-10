@@ -13,9 +13,14 @@ import tempfile
 import tomllib
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 APPIMAGE_DIR = PROJECT_ROOT / "packaging" / "linux" / "appimage"
+sys.path.insert(0, str(APPIMAGE_DIR))
+
+import sanitize_paths  # noqa: E402  # pyright: ignore[reportMissingImports]
+
 SOURCE_DESKTOP = (
     PROJECT_ROOT / "packaging" / "linux" / "io.github.umichata.tokenlogue.desktop"
 )
@@ -132,8 +137,7 @@ class AppImagePackagingTests(unittest.TestCase):
         self.assertIn("--exclude-library='libflutter_linux_gtk.so'", text)
         self.assertIn("--exclude-library='libpython3.12.so.1.0'", text)
         self.assertIn("Restore the project's deterministic root links", text)
-        self.assertIn('is_elf "$candidate" && continue', text)
-        self.assertIn("-----BEGIN [A-Z ]*PRIVATE KEY-----", text)
+        self.assertIn('"$script_dir/sanitize_paths.py" --check-only', text)
         self.assertNotIn("zsync", text.lower())
 
     def test_build_script_handles_tkinter_runpaths_documents_and_metadata(self) -> None:
@@ -474,6 +478,100 @@ class AppImagePackagingTests(unittest.TestCase):
         ):
             self.assertIn(statement, text)
         self.assertNotIn("published", text)
+
+
+class StagedContentChecksTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.temp = tempfile.TemporaryDirectory(prefix="staged-content-")
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        self.appdir = self.root / "Tokenlogue.AppDir"
+        self.appdir.mkdir()
+        self.source = self.root / "source workspace"
+        self.source.mkdir()
+        self.fixture = self.appdir / ".hidden" / "pubspec.lock"
+        self.fixture.parent.mkdir()
+
+    def run_check(self) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            [
+                sys.executable,
+                str(APPIMAGE_DIR / "sanitize_paths.py"),
+                "--check-only",
+                str(self.appdir),
+                str(self.source),
+            ],
+            env={"PATH": "/nonexistent"},
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+    def test_read_only_check_works_without_rg_or_other_external_tools(self) -> None:
+        content = b'path: "../flutter-packages/flet_secure_storage"\nrelative: true\n'
+        self.fixture.write_bytes(content)
+        before = self.fixture.stat().st_mtime_ns
+        result = self.run_check()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Staged content checks: PASS", result.stdout)
+        self.assertEqual(self.fixture.read_bytes(), content)
+        self.assertEqual(self.fixture.stat().st_mtime_ns, before)
+
+    def test_paths_fail_without_rewriting_newly_collected_notices(self) -> None:
+        for data in (
+            str(self.source).encode() + b"/plugin",
+            b"build/flutter-packages/plugin",
+            b"/home/runner/something",
+            b"/tmp/serious_python_tempXYZ123",
+        ):
+            with self.subTest(data=data):
+                self.fixture.write_bytes(data)
+                result = self.run_check()
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("Build path remains", result.stderr)
+                self.assertEqual(self.fixture.read_bytes(), data)
+
+    def test_secret_patterns_fail_without_printing_values(self) -> None:
+        for token in (
+            b"sk-or-v1-" + b"a" * 24,
+            b"ghp_" + b"a" * 24,
+            b"AKIA" + b"A" * 16,
+            b"-----BEGIN " + b"RSA PRIVATE KEY-----",
+        ):
+            with self.subTest(kind=token[:4]):
+                self.fixture.write_bytes(token)
+                result = self.run_check()
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("Secret-like data", result.stderr)
+                self.assertNotIn(token.decode(), result.stdout + result.stderr)
+                self.assertEqual(self.fixture.read_bytes(), token)
+
+    def test_elf_private_key_markers_keep_previous_exception_but_tokens_do_not(
+        self,
+    ) -> None:
+        self.fixture.write_bytes(b"\x7fELF\0-----BEGIN " + b"RSA PRIVATE KEY-----")
+        self.assertEqual(self.run_check().returncode, 0)
+        self.fixture.write_bytes(b"\x7fELF\0ghp_" + b"a" * 24)
+        self.assertNotEqual(self.run_check().returncode, 0)
+
+    def test_file_read_errors_are_not_treated_as_clean_results(self) -> None:
+        self.fixture.write_bytes(b"plain text")
+        with patch.object(Path, "read_bytes", side_effect=OSError("read failed")):
+            with self.assertRaisesRegex(OSError, "read failed"):
+                sanitize_paths.check_staged_contents(
+                    self.appdir, str(self.source).encode()
+                )
+
+    def test_directory_scan_errors_are_not_treated_as_clean_results(self) -> None:
+        def failed_walk(_root: Path, *, onerror):
+            onerror(OSError("directory scan failed"))
+            return iter(())
+
+        with patch.object(sanitize_paths.os, "walk", side_effect=failed_walk):
+            with self.assertRaisesRegex(OSError, "directory scan failed"):
+                sanitize_paths.check_staged_contents(
+                    self.appdir, str(self.source).encode()
+                )
 
 
 def _desktop_groups(text: str) -> dict[str, dict[str, str]]:

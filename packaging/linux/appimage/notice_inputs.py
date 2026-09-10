@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import struct
 import subprocess
 import tarfile
@@ -20,6 +21,42 @@ class NoticeError(ValueError):
 def sha256(path: Path) -> str:
     with path.open("rb") as stream:
         return hashlib.file_digest(stream, "sha256").hexdigest()
+
+
+def pubspec_audit_copy(data: bytes, workspace: Path) -> tuple[str, dict[str, str]]:
+    """Normalize only Flet's known local plugin reference, before manifest hashing."""
+    text = data.decode("utf-8")
+    if not re.search(r"(?m)^  serious_python_linux:$", text):
+        raise NoticeError("resolved Flutter lock is missing serious_python_linux")
+    # Dart emits this block in a fixed form. Unknown layouts or local packages
+    # require review instead of a global replacement in audit/license texts.
+    block = re.compile(
+        r"(?m)(^  flet_secure_storage:\n    dependency: [^\n]+\n"
+        r'    description:\n)      path: ("(?:[^"\\\n]|\\.)*")\n'
+        r"      relative: (true|false)\n"
+        r"(    source: path\n    version: [^\n]+\n)"
+    )
+    matches = list(block.finditer(text))
+    if len(matches) != 1 or len(re.findall(r"(?m)^    source: path$", text)) != 1:
+        raise NoticeError("unexpected local dependencies in Flutter lock")
+    match = matches[0]
+    path = json.loads(match[2])
+    expected = str(workspace / "build/flutter-packages/flet_secure_storage")
+    portable = "../flutter-packages/flet_secure_storage"
+    if (path, match[3]) not in ((expected, "false"), (portable, "true")):
+        raise NoticeError("unexpected flet_secure_storage path in Flutter lock")
+    replacement = (
+        match[1] + f'      path: "{portable}"\n      relative: true\n' + match[4]
+    )
+    output = text[: match.start()] + replacement + text[match.end() :]
+    header = (
+        "# Audit copy: local plugin path is relative to the generated Flutter project.\n"
+        "# This is not a standalone build input; the original lock is in CI reports.\n"
+    )
+    return header + output, {
+        "resolved_packages_source_sha256": hashlib.sha256(data).hexdigest(),
+        "resolved_packages_transform": "flet_secure_storage path made project-relative; audit copy",
+    }
 
 
 def relative_file(root: Path, name: str) -> Path:

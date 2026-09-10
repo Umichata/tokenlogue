@@ -370,39 +370,9 @@ appstreamcli validate --no-net \
     "$appdir/usr/share/metainfo/io.github.umichata.tokenlogue.metainfo.xml"
 bash -n "$appdir/AppRun" "$appdir/usr/bin/tokenlogue"
 
-if rg -uuu -a -q -F "$repo_root" "$appdir"; then
-    die "repository path remains in AppDir"
-fi
-if rg -uuu -a -q \
-    -e '/tmp/serious_python_temp' \
-    -e 'build/flutter' \
-    "$appdir"; then
-    die "build-specific temporary path remains in AppDir"
-fi
-
-mapfile -d '' -t secret_files < <(
-    {
-        rg -uuu -a -l -0 \
-            -e 'sk-or-v1-[A-Za-z0-9_-]{20,}' \
-            -e 'gh[pousr]_[A-Za-z0-9]{20,}' \
-            -e 'AKIA[0-9A-Z]{16}' \
-            "$appdir" 2>/dev/null || true
-        while IFS= read -r -d '' candidate; do
-            is_elf "$candidate" && continue
-            if rg -a -q -e '-----BEGIN [A-Z ]*PRIVATE KEY-----' \
-                "$candidate" 2>/dev/null; then
-                printf '%s\0' "$candidate"
-            fi
-        done < <(find "$appdir" -type f -print0)
-    } | sort -zu
-)
-if [[ "${#secret_files[@]}" -ne 0 ]]; then
-    printf 'Secret-like pattern found in staged files (values omitted):\n' >&2
-    for secret_file in "${secret_files[@]}"; do
-        printf '  %s\n' "${secret_file#"$appdir"/}" >&2
-    done
-    die "secret-like data detected in AppDir"
-fi
+# Read-only final scan includes newly collected notices. A missing tool or
+# unreadable file must fail packaging; do not edit files after manifest hashing.
+"$python_bin" "$script_dir/sanitize_paths.py" --check-only "$appdir" "$repo_root"
 
 source_date_epoch="$(git -C "$repo_root" show -s --format=%ct HEAD)"
 export SOURCE_DATE_EPOCH="$source_date_epoch"
