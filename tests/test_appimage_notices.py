@@ -55,6 +55,32 @@ class NoticeInputsTests(unittest.TestCase):
             ):
                 notice_inputs.same_binary(a, b)
 
+    def test_provenance_mismatch_reports_sections_and_hashes_without_paths(self):
+        with tempfile.TemporaryDirectory() as td:
+            actual, reference = Path(td) / "actual.so", Path(td) / "reference.so"
+            actual.write_bytes(minimal_elf(code=b"NEW!"))
+            reference.write_bytes(minimal_elf())
+            with self.assertRaises(notice_inputs.NoticeError) as caught:
+                notice_inputs.same_binary(actual, reference)
+            message = str(caught.exception)
+            self.assertIn("binary provenance mismatch: actual.so;", message)
+            self.assertIn("differing_sections=.text;", message)
+            self.assertIn(f"actual_sha256={notice_inputs.sha256(actual)}", message)
+            self.assertIn(
+                f"reference_sha256={notice_inputs.sha256(reference)}", message
+            )
+            self.assertNotIn(td, message)
+
+    def test_changed_constants_are_rejected_even_when_code_matches(self):
+        with tempfile.TemporaryDirectory() as td:
+            actual, reference = Path(td) / "actual.so", Path(td) / "reference.so"
+            actual.write_bytes(minimal_elf(rodata=b"NEW!"))
+            reference.write_bytes(minimal_elf())
+            with self.assertRaisesRegex(
+                notice_inputs.NoticeError, "differing_sections=.rodata;"
+            ):
+                notice_inputs.same_binary(actual, reference)
+
     def test_truncated_elf_is_rejected(self):
         with tempfile.TemporaryDirectory() as td:
             path = Path(td) / "file"

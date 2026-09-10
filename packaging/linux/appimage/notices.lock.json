@@ -8,10 +8,10 @@
     "bytes": 111067555
   },
   "bridge": {
-    "version": "1.8.0",
-    "url": "https://github.com/flet-dev/dart-bridge/releases/download/v1.8.0/libdart_bridge-linux-x86_64.so",
-    "sha256": "840d7bb8be3f1602aca9b865a37cb88208b202b0195d6103481a8f1c82e9cc55",
-    "bytes": 43168
+    "version": "1.9.0",
+    "url": "https://github.com/flet-dev/dart-bridge/releases/download/v1.9.0/libdart_bridge-linux-x86_64.so",
+    "sha256": "f89a2694fea152e4291f719657ee9f506ddbad271b1d769c739d6c65f0d42c15",
+    "bytes": 43264
   },
   "runtime": {
     "commit": "caf24f9f712084686bfc24a70b75e50df0aefb9c",
@@ -39,8 +39,8 @@
   "texts": [
     {
       "group": "bridge",
-      "path": "licenses/bridge-v1.8-LICENSE.txt",
-      "url": "https://raw.githubusercontent.com/flet-dev/dart-bridge/v1.8.0/LICENSE",
+      "path": "licenses/bridge-v1.9-LICENSE.txt",
+      "url": "https://raw.githubusercontent.com/flet-dev/dart-bridge/v1.9.0/LICENSE",
       "upstream_sha256": "b7150f41f2912b5289ad687eb160b3f3b3e4f55cad82e98069b4d97c895aae83",
       "sha256": "b7150f41f2912b5289ad687eb160b3f3b3e4f55cad82e98069b4d97c895aae83"
     },

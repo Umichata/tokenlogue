@@ -201,9 +201,17 @@ a general-distribution release.
 AppImage creation. It requires the real `build/flutter/pubspec.lock`, `zstd`,
 Debian package metadata, and the inputs downloaded by `notices.py fetch`.
 Those inputs are pinned in `notices.lock.json`. The binary comparisons bind
-CPython 3.12.14 x86_64_v2 and dart-bridge 1.8.0 to their own license material.
+CPython 3.12.14 x86_64_v2 and dart-bridge 1.9.0 to their own license material.
 A different binary requires a reviewed lock update; no approximate version
 match or automatic fallback is used.
+
+The bridge reference was reviewed after the build of commit `156966a` resolved
+`serious_python_linux` 4.7.0, which selects dart-bridge 1.9.0. Its code and Build ID
+do not match the previous 1.8.0 reference. The updated release asset remains
+SHA-256 pinned, and its license text is byte-identical to the 1.8.0 license.
+`uv.lock` covers Python packages; it does not pin Flutter's transitive packages.
+Future native binary changes still require review and a matching notice lock.
+Provenance errors include differing ELF section names and both file hashes.
 
 The registry includes native-package copyright, full common-license texts,
 Python distribution notices, the complete license set from the matching PBS

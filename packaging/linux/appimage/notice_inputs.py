@@ -68,8 +68,20 @@ def elf_fingerprint(path: Path) -> dict[str, str]:
 
 
 def same_binary(actual: Path, reference: Path) -> None:
-    if elf_fingerprint(actual) != elf_fingerprint(reference):
-        raise NoticeError(f"binary provenance mismatch: {actual.name}")
+    actual_sections = elf_fingerprint(actual)
+    reference_sections = elf_fingerprint(reference)
+    if actual_sections != reference_sections:
+        changed = sorted(
+            name
+            for name in actual_sections.keys() | reference_sections.keys()
+            if actual_sections.get(name) != reference_sections.get(name)
+        )
+        raise NoticeError(
+            f"binary provenance mismatch: {actual.name}; "
+            f"differing_sections={','.join(changed)}; "
+            f"actual_sha256={sha256(actual)}; "
+            f"reference_sha256={sha256(reference)}"
+        )
 
 
 def fetch_asset(spec: dict, cache: Path) -> Path:
