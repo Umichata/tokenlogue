@@ -54,11 +54,13 @@ mutable continuous runtime while packaging.
 
 ## Usage
 
-Run from any working directory with all HTTP, HTTPS, and ALL proxy variables
+Run from the repository root with all HTTP, HTTPS, and ALL proxy variables
 unset:
 
 ```bash
 packaging/linux/appimage/fetch_tools.sh
+uv run --locked python packaging/linux/appimage/notices.py fetch \
+  --cache build/appimage/notice-inputs
 packaging/linux/appimage/build_appimage.sh
 ```
 
@@ -70,13 +72,30 @@ build/appimage/Tokenlogue-<version>-x86_64.AppImage
 ```
 
 The generated artifact is diagnostic, unsigned, and has no update metadata.
+Commit `4a498adfdb175104fe12acfea2b6a839f839852b` passed build run
+[34343220780](https://github.com/Umichata/tokenlogue/actions/runs/34343220780)
+and userspace matrix run
+[34345861706](https://github.com/Umichata/tokenlogue/actions/runs/34345861706).
+This revision uses host desktop libraries. The submitted manual Linux Mint
+launch logs no longer contain the earlier GVfs/IBus symbol or module-load
+errors; text input, clipboard and draft restoration were confirmed manually.
+Flutter engine/view warnings remain in stderr without a reported visible
+failure. They have not been fixed or suppressed.
+
 The older local Linux Mint bundle required GLIBC 2.38 and its bundled `anyio`
 differed from `uv.lock`. These observations describe that old local bundle,
-not subsequent Ubuntu CI artifacts. For the earlier `7c3976a` artifact, matrix
-run `34011565339` passed and manual FUSE mounting and two ordinary Linux Mint
-launches were reported successful. Those launches exposed host desktop-module
-symbol errors. The revised desktop runtime requires a new build and matrix run;
-the earlier results do not validate this revision. Tool provenance includes TOFU.
+not subsequent Ubuntu CI artifacts. A further desktop-runtime change requires
+a new build and matrix run. Tool provenance includes TOFU.
+
+See the [Linux user guide](../../../docs/linux-appimage.md) and the
+[preview preparation record](../../../docs/releases/v0.1.0-linux-preview.1.md).
+Preparing release documentation does not rebuild or promote an artifact.
+The root `THIRD_PARTY_NOTICES.md` is still a preliminary registry of direct
+Python dependencies; its presence alone is not a complete binary notice audit.
+The [artifact audit](../../../docs/releases/4a498ad-notice-audit.md) records
+the actual checksum, missing notices and recovered copyright texts. It also
+confirms CPython 3.12.14 targeting x86_64_v2 in this AppImage: compatible GLIBC
+alone does not establish support for older x86_64 processors.
 
 ## Optional JNI library
 
@@ -121,9 +140,9 @@ temporary HOME, storage, databases, keyring and raw traces are excluded.
 ## Cross-distribution userspace matrix
 
 `test-linux-appimage.yml` is a separate manual-only workflow. Matrix run
-`34011565339` passed for the earlier `7c3976a` artifact. Manual draft restoration
-across chat switches and application restarts was also confirmed on Linux Mint.
-This is separate evidence from Ubuntu 22.04's automated launch check.
+`34345861706` passed for the `4a498ad` artifact in all three userspaces,
+including the host desktop-module checks. Manual desktop checks are separate
+evidence from the automated Xvfb/software-rendering launch checks.
 
 Supply a specific successful `build-linux.yml` run ID and full application
 commit SHA. `source_artifact.py` checks the repository, workflow ID/path,
@@ -175,3 +194,33 @@ userspaces. These container checks do not establish
 ordinary FUSE launch, Wayland compatibility, hardware GPU drivers, or complete
 desktop-session integration. They do not make an unsigned diagnostic AppImage
 a general-distribution release.
+
+## Notice collection
+
+`notices.py` collects the license registry after ELF patching and before
+AppImage creation. It requires the real `build/flutter/pubspec.lock`, `zstd`,
+Debian package metadata, and the inputs downloaded by `notices.py fetch`.
+Those inputs are pinned in `notices.lock.json`. The binary comparisons bind
+CPython 3.12.14 x86_64_v2 and dart-bridge 1.8.0 to their own license material.
+A different binary requires a reviewed lock update; no approximate version
+match or automatic fallback is used.
+
+The registry includes native-package copyright, full common-license texts,
+Python distribution notices, the complete license set from the matching PBS
+archive, Flutter notices, bridge/runtime notices, and KaTeX font declarations
+with OFL 1.1. Every packaged ELF, distribution METADATA and font must have an
+entry. The build and extracted-image checks reject missing or altered files.
+
+The original repository `THIRD_PARTY_NOTICES.md` is unchanged. Its two staged
+copies become a generated index, with the machine-readable registry at
+`usr/share/doc/tokenlogue/notices.json`. New diagnostic reports are
+`notice-inputs.json`, `notices-appdir.json`, `notices-appimage.json`,
+`notices-manifest.json`, and the resolved `flutter-pubspec.lock`.
+
+Notice coverage does not close the separate corresponding-source review.
+The registry explicitly preserves `source_materials: REVIEW_REQUIRED`.
+Release preparation must arrange the required source and rebuild materials
+for applicable components, including the static AppImage runtime. A green
+diagnostic workflow does not declare that source package complete.
+
+See [notices.md](notices.md) for the implementation scope and verification.

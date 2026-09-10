@@ -356,6 +356,15 @@ done
 normalize_permissions "$appdir"
 validate_symlinks "$appdir"
 
+# Collect notices after all binary edits, so their manifest describes final bytes.
+"$python_bin" "$script_dir/notices.py" collect \
+    --appdir "$appdir" \
+    --cache "$work_root/notice-inputs" \
+    --runtime "$appimagetool_runtime" \
+    --pubspec-lock "$repo_root/build/flutter/pubspec.lock"
+normalize_permissions "$appdir"
+validate_symlinks "$appdir"
+
 desktop-file-validate "$desktop_staged"
 appstreamcli validate --no-net \
     "$appdir/usr/share/metainfo/io.github.umichata.tokenlogue.metainfo.xml"
@@ -398,6 +407,8 @@ fi
 source_date_epoch="$(git -C "$repo_root" show -s --format=%ct HEAD)"
 export SOURCE_DATE_EPOCH="$source_date_epoch"
 find "$appdir" -exec touch -h -d "@${SOURCE_DATE_EPOCH}" {} +
+
+"$python_bin" "$script_dir/notices.py" verify --appdir "$appdir"
 
 printf 'Creating unsigned diagnostic AppImage with appimagetool %s\n' \
     "$APPIMAGETOOL_TAG"

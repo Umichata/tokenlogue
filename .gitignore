@@ -82,6 +82,12 @@ export/
 !packaging/linux/appimage/smoke_appimage.sh
 !packaging/linux/appimage/tools.lock
 !packaging/linux/appimage/verify_bundle.py
+!packaging/linux/appimage/notice_inputs.py
+!packaging/linux/appimage/notices.py
+!packaging/linux/appimage/notices.md
+!packaging/linux/appimage/notices.lock.json
+!packaging/linux/appimage/licenses/
+!packaging/linux/appimage/licenses/**
 
 # Environment variables
 .env

@@ -76,6 +76,7 @@ jobs:
             xauth
             xvfb
             zip
+            zstd
           )
           printf '%s\n' "${packages[@]}" > \
             build/linux-release/reports/requested-system-packages.txt
@@ -157,6 +158,15 @@ jobs:
               build/appimage/tools/appimagetool-runtime-x86_64
           } > build/linux-release/reports/appimage-tools.txt 2>&1
 
+      - name: Fetch pinned notice references
+        run: |
+          set -Eeuo pipefail
+          uv run --locked python packaging/linux/appimage/notices.py fetch \
+            --cache build/appimage/notice-inputs \
+            --report build/linux-release/reports/notice-inputs.json
+          test -f build/flutter/pubspec.lock
+          cp build/flutter/pubspec.lock build/linux-release/reports/flutter-pubspec.lock
+
       - name: Build first diagnostic AppImage
         run: |
           set -Eeuo pipefail
@@ -225,6 +235,14 @@ jobs:
             --workspace "$GITHUB_WORKSPACE"
           UV_MANAGED_PYTHON=1 uv run --locked python -m unittest \
             tests.test_appimage_packaging -v
+          uv run --locked python packaging/linux/appimage/notices.py verify \
+            --appdir "$appdir" \
+            --report build/linux-release/reports/notices-appdir.json
+          uv run --locked python packaging/linux/appimage/notices.py verify \
+            --appdir "$extracted" \
+            --report build/linux-release/reports/notices-appimage.json
+          cp "$appdir/usr/share/doc/tokenlogue/notices.json" \
+            build/linux-release/reports/notices-manifest.json
 
       - name: Record final tool versions
         run: |
