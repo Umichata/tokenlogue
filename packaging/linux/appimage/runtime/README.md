@@ -58,6 +58,12 @@ the complete binary tool inventory is retained. These observations provide
 integrity and origin checks, not publisher attestations or a claim of rebuilding
 the Alpine packages from source.
 
+zlib 1.3.2 is downloaded from the [Alpine v3.21 distfiles cache](https://distfiles.alpinelinux.org/distfiles/v3.21/zlib-1.3.2.tar.gz).
+This is a byte-identical copy checked against the existing size, SHA-256
+and the pinned APKBUILD SHA-512. The upstream fossils endpoint can serve
+an HTML verification page with HTTP 200; such a response remains a hard
+integrity failure. No alternate bytes or checksum updates are accepted.
+
 Changing the lock is an explicit review operation: inspect the chosen manifest
 and signed APK metadata, collect the full dependency closure and inherited
 inventory, collect aports recipes at those commits, verify all recipe source
