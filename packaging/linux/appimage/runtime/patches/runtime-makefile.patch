@@ -1,0 +1,8 @@
+--- a/src/runtime/Makefile
++++ b/src/runtime/Makefile
+@@ -3 +3 @@
+-CFLAGS        = -std=gnu99 -Os -D_FILE_OFFSET_BITS=64 -DGIT_COMMIT=\"$(GIT_COMMIT)\" -T data_sections.ld -ffunction-sections -fdata-sections -Wl,--gc-sections -static -Wall -Werror -static-pie
++CFLAGS        = -std=gnu99 -Os -D_FILE_OFFSET_BITS=64 -DGIT_COMMIT=\"$(GIT_COMMIT)\" -T data_sections.ld -ffunction-sections -fdata-sections -Wl,--gc-sections -static -Wall -Werror -static-pie $(REPRO_CFLAGS)
+@@ -9 +9 @@
+-	$(CC) -I/usr/local/include/squashfuse -I/usr/include/fuse3 $(CFLAGS) $^ $(LIBS) -o $@
++	$(CC) $(CPPFLAGS) -I/usr/local/include/squashfuse -I/usr/include/fuse3 $(CFLAGS) $^ $(LDFLAGS) $(LIBS) -o $@

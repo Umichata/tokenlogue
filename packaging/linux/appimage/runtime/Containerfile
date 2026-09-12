@@ -1,0 +1,8 @@
+# prepare supplies a local tag only after inspecting the locked config digest.
+# The default is also pinned to the linux/amd64 manifest, never a floating tag.
+ARG BUILDER=docker.io/library/alpine@sha256:f27cad9117495d32d067133afff942cb2dc745dfe9163e949f6bfe8a6a245339
+FROM ${BUILDER}
+COPY locked/ /locked/
+RUN /bin/sh /locked/install.sh
+USER 1000:1000
+WORKDIR /work

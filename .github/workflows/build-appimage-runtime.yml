@@ -1,0 +1,94 @@
+name: Build standalone AppImage runtime
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: appimage-runtime-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  runtime-x86_64:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    env:
+      RUNTIME_RUN: ${{ github.run_id }}-${{ github.run_attempt }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Check out recipe
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1, shared project pin
+        with:
+          persist-credentials: false
+
+      - name: Record recipe identity and initialize a fresh attempt
+        run: python3 packaging/linux/appimage/runtime/build_runtime.py init --run "$RUNTIME_RUN"
+
+      - name: Fetch and hash-check pinned inputs and builder image
+        run: python3 packaging/linux/appimage/runtime/build_runtime.py fetch --run "$RUNTIME_RUN"
+
+      - name: Verify APK signatures and install exact inventory offline
+        id: prepare
+        run: python3 packaging/linux/appimage/runtime/build_runtime.py prepare --run "$RUNTIME_RUN"
+
+      - name: Compile runtime in first clean offline container
+        id: first
+        run: python3 packaging/linux/appimage/runtime/build_runtime.py build-one --run "$RUNTIME_RUN"
+
+      - name: Compile runtime in second clean offline container
+        id: second
+        if: ${{ !cancelled() && steps.prepare.outcome == 'success' }}
+        run: python3 packaging/linux/appimage/runtime/build_runtime.py build-two --run "$RUNTIME_RUN"
+
+      - name: Compare independent runtimes byte for byte
+        id: compare
+        if: ${{ !cancelled() && steps.first.outcome == 'success' && steps.second.outcome == 'success' }}
+        run: python3 packaging/linux/appimage/runtime/build_runtime.py compare --run "$RUNTIME_RUN"
+
+      - name: Check both ELF files and their version output
+        id: verify
+        if: ${{ !cancelled() && steps.first.outcome == 'success' && steps.second.outcome == 'success' }}
+        run: python3 packaging/linux/appimage/runtime/build_runtime.py verify --run "$RUNTIME_RUN"
+
+      - name: Package and run minimal AppImage offline with the new runtime
+        if: ${{ !cancelled() && steps.compare.outcome == 'success' && steps.verify.outcome == 'success' }}
+        run: python3 packaging/linux/appimage/runtime/build_runtime.py smoke --run "$RUNTIME_RUN"
+
+      - name: Require every mandatory stage and assemble source materials
+        run: python3 packaging/linux/appimage/runtime/build_runtime.py bundle --run "$RUNTIME_RUN"
+
+      - name: Upload runtime and corresponding materials
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1, shared project pin
+        with:
+          name: appimage-runtime-${{ github.run_id }}-${{ github.run_attempt }}
+          path: build/appimage/runtime/runs/${{ env.RUNTIME_RUN }}/artifact/
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
+          include-hidden-files: false
+
+      - name: Upload diagnostics and both available binaries even on failure
+        if: ${{ always() && !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1, shared project pin
+        with:
+          name: appimage-runtime-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            build/appimage/runtime/runs/${{ env.RUNTIME_RUN }}/recipe.json
+            build/appimage/runtime/runs/${{ env.RUNTIME_RUN }}/reports/
+            build/appimage/runtime/runs/${{ env.RUNTIME_RUN }}/builder-evidence/
+            build/appimage/runtime/runs/${{ env.RUNTIME_RUN }}/build-one/reports/
+            build/appimage/runtime/runs/${{ env.RUNTIME_RUN }}/build-one/runtime-x86_64*
+            build/appimage/runtime/runs/${{ env.RUNTIME_RUN }}/build-one/linked-inputs/
+            build/appimage/runtime/runs/${{ env.RUNTIME_RUN }}/build-two/reports/
+            build/appimage/runtime/runs/${{ env.RUNTIME_RUN }}/build-two/runtime-x86_64*
+            build/appimage/runtime/runs/${{ env.RUNTIME_RUN }}/build-two/linked-inputs/
+            build/appimage/runtime/runs/${{ env.RUNTIME_RUN }}/smoke/*.log
+            build/appimage/runtime/runs/${{ env.RUNTIME_RUN }}/smoke/*.json
+          if-no-files-found: warn
+          retention-days: 14
+          compression-level: 0
+          include-hidden-files: false

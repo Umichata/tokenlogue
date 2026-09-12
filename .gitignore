@@ -88,6 +88,17 @@ export/
 !packaging/linux/appimage/notices.lock.json
 !packaging/linux/appimage/licenses/
 !packaging/linux/appimage/licenses/**
+!packaging/linux/appimage/runtime/
+!packaging/linux/appimage/runtime/Containerfile
+!packaging/linux/appimage/runtime/README.md
+!packaging/linux/appimage/runtime/build_runtime.py
+!packaging/linux/appimage/runtime/runtime_inputs.py
+!packaging/linux/appimage/runtime/runtime_checks.py
+!packaging/linux/appimage/runtime/runtime.lock.json
+!packaging/linux/appimage/runtime/compile.sh
+!packaging/linux/appimage/runtime/install.sh
+!packaging/linux/appimage/runtime/patches/
+!packaging/linux/appimage/runtime/patches/runtime-makefile.patch
 
 # Environment variables
 .env
