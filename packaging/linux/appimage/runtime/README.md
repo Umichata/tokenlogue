@@ -110,7 +110,9 @@ timezone UTC and umask 022. The recipe sets x86-64 baseline compiler flags and
 prefix maps; it does not use `-march=native`. Alpine's binary libraries remain
 separate, recorded inputs; their ISA choices are those of the pinned APKs.
 
-Libfuse and squashfuse are built into a private prefix. The upstream Makefile
+Libfuse and squashfuse are built into a private prefix. The include search path
+contains `$prefix/include` for upstream `<squashfuse/...>` includes, as well as
+the squashfuse/fuse3 subdirectories for flat header names. The upstream Makefile
 patch only adds explicit include/link/reproducibility flags. The version is
 `tokenlogue-unofficial-<full upstream commit>-recipe-<recipe SHA-256>` and does
 not depend on a `.git` directory in the source archive. The upstream debug

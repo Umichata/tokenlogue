@@ -67,7 +67,7 @@ patch --batch --fuzz=0 -p1 < /recipe/patches/runtime-makefile.patch
 cd src/runtime
 printf '%s\n' "$RUNTIME_VERSION" > version
 make runtime \
-    CPPFLAGS="-I$prefix/include/squashfuse -I$prefix/include/fuse3" \
+    CPPFLAGS="-I$prefix/include -I$prefix/include/squashfuse -I$prefix/include/fuse3" \
     REPRO_CFLAGS="$repro_flags -fPIE -save-temps=obj --rtlib=libgcc -fuse-ld=bfd -MD -MF $work/reports/runtime-headers.d" \
     LDFLAGS="-L$prefix/lib -Wl,--build-id=none,-Map,$work/reports/runtime.map,--trace"
 cp runtime.i "$work/reports/runtime-preprocessed.c"
