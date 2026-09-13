@@ -6,10 +6,8 @@
 
 ## English
 
-[English](#lang-en) | [Русский](#lang-ru)
-
 This page describes sources for the `0.1.0` Linux preview `1472c00`.
-For the executable, use the [AppImage download guide](linux-appimage.md#en-download).
+To download the ready-to-use application, follow the [AppImage guide](linux-appimage.md#en-download).
 
 ### Application source
 
@@ -44,25 +42,24 @@ After it completes, start Tokenlogue from that same directory.
 uv run --locked flet run
 ```
 
-This opens the application from source. Environment setup and the Flet desktop
-runtime can require downloads. It does not create an AppImage or establish
-equivalence with the verified preview. For normal use without a development
-environment, download the existing AppImage.
+The second command starts the application directly from the source files.
+Setting up the environment and downloading Flet desktop components may require
+an internet connection. These commands do not create an AppImage.
+For use without a development environment, download the ready-to-use AppImage.
 
 ### Runtime source bundle
 
 The AppImage includes a small startup component called the runtime.
 Its [separate source bundle](https://github.com/Umichata/tokenlogue/actions/runs/34749438406)
-is the Actions artifact `appimage-runtime-34749438406-1`. Access may require
-signing in to GitHub, and artifact retention is limited. No permanent Release
-download for this bundle is established.
+is the Actions artifact `appimage-runtime-34749438406-1`. You may need to sign in to GitHub to download it.
+Artifact retention is limited, so keep a local copy if you need the bundle.
 
 The bundle contains the runtime binary, source archives, recipes, patches,
 original Alpine packages, tool inventory, linked inputs, license texts and
 checksums. The [runtime overview](../packaging/linux/appimage/runtime/README.md#lang-en)
 explains its contents. The full bundle is separate from the AppImage.
 
-### Completeness and limitations
+### Which source materials are still missing
 
 The source collection for the full application is not yet complete.
 The runtime bundle covers the startup component. Additional Flutter SDK
@@ -75,30 +72,24 @@ Its Flutter engine dependency list references external Git repositories and
 CIPD assets that are not all archived. Compiler bootstrap, relinking,
 font subsetting and a full application rebuild have not been verified.
 
-That historical collection does not establish complete source coverage for
+The older collection is not a complete source bundle for
 `1472c00`. In particular, the new preview uses
 `flutter_secure_storage_linux` `3.0.3`, while the old collection records
 `3.0.2`. Ubuntu's `libgcrypt20` also changed from `1.9.4-3ubuntu3.2` to
-`1.9.4-3ubuntu3.3`. Availability of a source URL is distinct from inclusion
-of that exact source in a complete, checked bundle.
+`1.9.4-3ubuntu3.3`. These dependency versions need their own matching source files.
 
-[Third-party notices](../packaging/linux/appimage/notices.md#lang-en)
-explain where to find the original license texts. Their presence and the
-AppImage checksum do not certify corresponding-source completeness.
+The [license guide](../packaging/linux/appimage/notices.md#lang-en) explains
+where to find the original license texts supplied with the application.
 
 [Back to Tokenlogue](../README.md#lang-en)
-
-[English](#lang-en) | [Русский](#lang-ru)
 
 <a name="lang-ru"></a>
 
 ## Русский
 
-[English](#lang-en) | [Русский](#lang-ru)
-
 Страница описывает исходники предварительной Linux-сборки `0.1.0` версии
-`1472c00`. Готовое приложение находится по
-[инструкции скачивания AppImage](linux-appimage.md#ru-download).
+`1472c00`. Готовое приложение можно скачать по
+[инструкции для AppImage](linux-appimage.md#ru-download).
 
 ### Исходники приложения
 
@@ -133,26 +124,26 @@ uv sync --locked
 uv run --locked flet run
 ```
 
-Откроется приложение из исходников. Подготовка окружения и настольной среды
-Flet может потребовать скачивания файлов. Этот запуск не создаёт AppImage
-и не подтверждает совпадение с проверенной предварительной сборкой.
-Для обычной работы без среды разработки скачайте готовый AppImage.
+Вторая команда запускает приложение непосредственно из исходных файлов.
+Для подготовки окружения и загрузки настольных компонентов Flet может
+потребоваться интернет. Эти команды не создают AppImage.
+Для работы без среды разработки скачайте готовый AppImage.
 
 ### Комплект исходников runtime
 
 В AppImage есть небольшой компонент запуска, называемый runtime.
 Его [отдельный комплект исходников](https://github.com/Umichata/tokenlogue/actions/runs/34749438406)
-находится в артефакте Actions `appimage-runtime-34749438406-1`. Для доступа
-может потребоваться вход в GitHub, а срок хранения артефакта ограничен.
-Постоянная загрузка этого комплекта через Release не подтверждена.
+находится в артефакте Actions `appimage-runtime-34749438406-1`. Для скачивания
+может потребоваться вход в GitHub. Срок хранения артефакта ограничен, поэтому
+сохраните локальную копию, если комплект вам нужен.
 
 В комплект входят исполняемый runtime, архивы исходников, рецепты, патчи,
-оригинальные пакеты Alpine, опись инструментов, входы линковки, тексты лицензий
+оригинальные пакеты Alpine, список инструментов, файлы для линковки, тексты лицензий
 и контрольные суммы. Содержимое описано в
 [обзоре runtime](../packaging/linux/appimage/runtime/README.md#lang-ru).
 Полный комплект поставляется отдельно от AppImage.
 
-### Полнота и ограничения
+### Каких исходных материалов пока не хватает
 
 Комплект исходников всего приложения пока неполон. Комплект runtime охватывает
 компонент запуска. Нужны дополнительные материалы Flutter SDK, а пересборка
@@ -165,17 +156,13 @@ Flet может потребовать скачивания файлов. Это
 повторная линковка, формирование подмножеств шрифтов и пересборка всего
 приложения не проверены.
 
-Исторический комплект не подтверждает полное покрытие исходниками версии
+Старый комплект не содержит всех исходников для версии
 `1472c00`. В частности, новая сборка использует
 `flutter_secure_storage_linux` `3.0.3`, а старый комплект описывает
 `3.0.2`. Версия Ubuntu-пакета `libgcrypt20` также изменилась с
-`1.9.4-3ubuntu3.2` на `1.9.4-3ubuntu3.3`. Наличие ссылки на исходник
-отличается от включения именно этого исходника в полный проверенный комплект.
+`1.9.4-3ubuntu3.2` на `1.9.4-3ubuntu3.3`. Для этих версий зависимостей нужны соответствующие им исходные файлы.
 
-[Описание сторонних лицензий](../packaging/linux/appimage/notices.md#lang-ru)
-поможет найти их оригинальные тексты. Наличие лицензий и контрольной суммы
-AppImage не удостоверяет полноту соответствующих исходников.
+[Руководство по лицензиям](../packaging/linux/appimage/notices.md#lang-ru)
+поможет найти оригинальные тексты лицензий, включённые в приложение.
 
 [К Tokenlogue](../README.md#lang-ru)
-
-[English](#lang-en) | [Русский](#lang-ru)

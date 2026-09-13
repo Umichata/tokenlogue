@@ -6,12 +6,10 @@
 
 ## English
 
-[English](#lang-en) | [Русский](#lang-ru)
-
 The Tokenlogue AppImage is an unsigned preview for Linux x86_64.
-The current documented file is `Tokenlogue-0.1.0-1472c00-x86_64.AppImage`.
-Follow the [Linux guide](../../../docs/linux-appimage.md#lang-en) for the
-available download, checksum and launch commands.
+This page covers `Tokenlogue-0.1.0-1472c00-x86_64.AppImage`.
+The [Linux guide](../../../docs/linux-appimage.md#lang-en) explains how to
+download it, check the file and launch the application.
 
 ### What you need
 
@@ -23,10 +21,10 @@ a working Secret Service in your user session. Java and a separate Python
 installation are not needed.
 
 Ordinary startup uses FUSE. An extract-and-run option is available when FUSE
-cannot be used. Neither mode adds automatic updates or an applications-menu
-entry. Run the file as your normal user.
+cannot be used. The AppImage does not update automatically or add an entry
+to the applications menu. Run the file as your normal user.
 
-### Preview status
+### Before you start
 
 The file is distributed through GitHub Actions with limited retention.
 It has no signature or automatic updater. Check its checksum before running
@@ -38,27 +36,23 @@ Wayland support has not been verified.
 
 ### Included licenses and available sources
 
-The [license guide](notices.md#lang-en) explains the embedded component index
-and original license texts. The [runtime overview](runtime/README.md#lang-en)
+The [license guide](notices.md#lang-en) explains where to find the list of
+included components and their original license texts. The [runtime overview](runtime/README.md#lang-en)
 describes the startup component and its separate source bundle.
 For available application sources and the gaps in their collection, see
 [source materials](../../../docs/source-materials.md#lang-en).
 
 [Back to Tokenlogue](../../../README.md#lang-en)
 
-[English](#lang-en) | [Русский](#lang-ru)
-
 <a name="lang-ru"></a>
 
 ## Русский
 
-[English](#lang-en) | [Русский](#lang-ru)
-
 AppImage Tokenlogue - неподписанная предварительная сборка
-для Linux x86_64. Текущий описанный файл -
+для Linux x86_64. На этой странице описан файл
 `Tokenlogue-0.1.0-1472c00-x86_64.AppImage`.
-В [руководстве для Linux](../../../docs/linux-appimage.md#lang-ru) находятся
-доступная загрузка, контрольная сумма и команды запуска.
+В [руководстве для Linux](../../../docs/linux-appimage.md#lang-ru) объясняется,
+как скачать его, проверить и запустить приложение.
 
 ### Что потребуется
 
@@ -70,10 +64,10 @@ AppImage Tokenlogue - неподписанная предварительная 
 установка Python не требуются.
 
 Обычный запуск использует FUSE. Если FUSE недоступен, можно запустить приложение
-с распаковкой. Оба режима не добавляют автоматическое обновление или ярлык
-в меню приложений. Запускайте файл от обычного пользователя.
+с распаковкой. AppImage не обновляется автоматически
+и не добавляет ярлык в меню приложений. Запускайте файл от обычного пользователя.
 
-### Статус предварительной сборки
+### Перед запуском
 
 Файл распространяется через GitHub Actions с ограниченным сроком хранения.
 Подписи и автоматического обновления нет. Перед запуском проверьте контрольную
@@ -85,13 +79,11 @@ AppImage Tokenlogue - неподписанная предварительная 
 
 ### Включённые лицензии и доступные исходники
 
-[Руководство по лицензиям](notices.md#lang-ru) описывает встроенный индекс
-компонентов и оригинальные тексты лицензий.
+[Руководство по лицензиям](notices.md#lang-ru) поможет найти список
+включённых компонентов и оригинальные тексты их лицензий.
 [Обзор runtime](runtime/README.md#lang-ru) объясняет компонент запуска
 и его отдельный комплект исходников. Доступные исходники приложения
 и недостающие части комплекта описаны на странице
 [исходных материалов](../../../docs/source-materials.md#lang-ru).
 
 [К Tokenlogue](../../../README.md#lang-ru)
-
-[English](#lang-en) | [Русский](#lang-ru)

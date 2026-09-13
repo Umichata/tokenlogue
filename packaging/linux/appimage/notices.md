@@ -6,11 +6,9 @@
 
 ## English
 
-[English](#lang-en) | [Русский](#lang-ru)
-
 The `1472c00` Linux preview includes the original notices and license texts
-for its packaged components. This guide explains where a recipient can read
-them. The [repository overview](../../../THIRD_PARTY_NOTICES.md#lang-en)
+for its packaged components. This guide explains how to find and read
+those files. The [repository overview](../../../THIRD_PARTY_NOTICES.md#lang-en)
 lists the direct application dependencies.
 
 ### Finding the notices
@@ -23,7 +21,7 @@ After extracting the AppImage, open these paths relative to its extracted root:
 | `THIRD_PARTY_NOTICES.md` | Index of components and their notice paths. |
 | `usr/share/doc/tokenlogue/THIRD_PARTY_NOTICES.md` | Another copy of that index. |
 | `usr/share/doc/tokenlogue/licenses/` | Original license and copyright texts. |
-| `usr/share/doc/tokenlogue/notices.json` | Component-to-file associations, checksums and source-material status. |
+| `usr/share/doc/tokenlogue/notices.json` | Component files, checksums and information about their sources. |
 
 If you want to read the notices without starting Tokenlogue, use an installed
 `unsquashfs` tool. Open a terminal in the folder containing the verified
@@ -47,35 +45,31 @@ texts for libfuse and its other components.
 
 A Debian copyright file can describe source-package files that are absent
 from this AppImage. Python's license collection can include optional modules
-that are not shipped here. Read the component association together with its
-license text. An upstream license collection alone is not a list of enabled
-application features.
+that are not shipped here. Use the component index to find the relevant
+license text. A mention of a module in a license file does not mean that
+Tokenlogue includes that module or its features.
 
-The original license and copyright texts are preserved in their original
-language. This bilingual explanation does not replace their terms.
-An already downloaded preview can have an English-only generated index.
-The language layout of documentation does not alter that artifact.
+License and copyright texts are kept unchanged in their original language.
+The explanations in this guide do not replace those terms.
+Earlier previews may have an English-only component index.
 
-### Corresponding sources
+### Where to find the source code
 
-The collection is a set of notices, not a complete source archive.
-[Available source materials](../../../docs/source-materials.md#lang-en)
-include the application's source and a separate runtime bundle, while
-Flutter SDK completeness and full application rebuild coverage remain limited.
+Source code is provided separately from these license texts. The
+[source materials guide](../../../docs/source-materials.md#lang-en) links to
+the application source and runtime bundle. It also describes the missing
+Flutter SDK materials that prevent the collection from being complete.
+Rebuilding the full application from the available materials has not been verified.
 
 [Back to the AppImage overview](README.md#lang-en)
-
-[English](#lang-en) | [Русский](#lang-ru)
 
 <a name="lang-ru"></a>
 
 ## Русский
 
-[English](#lang-en) | [Русский](#lang-ru)
-
 Предварительная Linux-сборка `1472c00` содержит оригинальные уведомления
-и тексты лицензий упакованных компонентов. Это руководство объясняет,
-где получатель приложения может их прочитать.
+и тексты лицензий упакованных компонентов. В этом руководстве объясняется,
+как найти и прочитать эти файлы.
 [Обзор в репозитории](../../../THIRD_PARTY_NOTICES.md#lang-ru)
 перечисляет прямые зависимости приложения.
 
@@ -86,10 +80,10 @@ Flutter SDK completeness and full application rebuild coverage remain limited.
 | Путь | Содержимое |
 | --- | --- |
 | `LICENSE` | Лицензия MIT для Tokenlogue. |
-| `THIRD_PARTY_NOTICES.md` | Индекс компонентов и путей к их уведомлениям. |
-| `usr/share/doc/tokenlogue/THIRD_PARTY_NOTICES.md` | Ещё одна копия индекса. |
-| `usr/share/doc/tokenlogue/licenses/` | Оригинальные тексты лицензий и copyright. |
-| `usr/share/doc/tokenlogue/notices.json` | Связи компонентов с файлами, контрольные суммы и статус исходных материалов. |
+| `THIRD_PARTY_NOTICES.md` | Список компонентов и файлов с их лицензиями. |
+| `usr/share/doc/tokenlogue/THIRD_PARTY_NOTICES.md` | Ещё одна копия списка компонентов. |
+| `usr/share/doc/tokenlogue/licenses/` | Оригинальные тексты лицензий и уведомлений об авторских правах. |
+| `usr/share/doc/tokenlogue/notices.json` | Файлы компонентов, контрольные суммы и сведения об их исходниках. |
 
 Чтобы прочитать лицензии без запуска Tokenlogue, используйте установленную
 утилиту `unsquashfs`. Откройте терминал в папке с проверенным AppImage.
@@ -114,22 +108,20 @@ Flutter и его плагинов, Dart bridge, шрифтов и runtime AppIm
 
 Copyright-файл Debian может описывать файлы исходного пакета, которых нет
 в этом AppImage. Комплект лицензий Python может включать необязательные модули,
-не вошедшие в приложение. Читайте связь с конкретным компонентом вместе
-с текстом лицензии. Сам по себе комплект лицензий разработчика зависимости
-не является перечнем включённых возможностей приложения.
+не вошедшие в приложение. Сверяйтесь со списком компонентов, чтобы найти нужную лицензию.
+Упоминание модуля в тексте лицензии ещё не означает, что этот модуль
+или его функции включены в Tokenlogue.
 
-Оригинальные тексты лицензий и copyright сохранены на исходном языке.
-Это двуязычное пояснение не заменяет их условия. В уже скачанной
-предварительной сборке сгенерированный индекс может быть только на английском.
-Языковое оформление документации не меняет этот артефакт.
+Тексты лицензий и уведомлений об авторских правах сохранены без изменений
+на языке оригинала. Пояснения в этом руководстве не заменяют их условия.
+В ранних сборках список компонентов может быть только на английском языке.
 
-### Соответствующие исходники
+### Где найти исходный код
 
-Комплект является набором уведомлений, а не полным архивом исходников.
-[Доступные исходные материалы](../../../docs/source-materials.md#lang-ru)
-включают код приложения и отдельный комплект runtime. Полнота Flutter SDK
-и охват пересборки всего приложения остаются ограниченными.
+Исходный код предоставляется отдельно от текстов лицензий.
+[Руководство по исходным материалам](../../../docs/source-materials.md#lang-ru)
+содержит ссылки на код приложения и комплект runtime. В нём также описаны
+недостающие материалы Flutter SDK, из-за которых комплект остаётся неполным.
+Пересборка всего приложения из доступных материалов не проверена.
 
 [К обзору AppImage](README.md#lang-ru)
-
-[English](#lang-en) | [Русский](#lang-ru)

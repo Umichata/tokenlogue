@@ -6,136 +6,136 @@
 
 ## English
 
-[English](#lang-en) | [Русский](#lang-ru)
-
 <img src="docs/assets/tokenlogue-icon-512.png" alt="Tokenlogue application icon" width="128">
 
-Tokenlogue is an OpenRouter chat client with local conversation history and
-configurable token and spending limits. The application interface is currently
-in Russian. These links navigate between the two documentation languages.
+Tokenlogue is a desktop application for chatting with AI models through
+OpenRouter. It saves conversations and unsent drafts on your device and lets
+you set token and spending limits for each chat. The application interface
+is currently in Russian.
 
-### Get the Linux preview
+### Download and launch
 
-The available preview is `Tokenlogue-0.1.0-1472c00-x86_64.AppImage`.
-Follow the [Linux guide](docs/linux-appimage.md#lang-en) to download it from
-GitHub Actions, check its SHA-256 and run it. It needs an x86-64-v2 compatible
-processor, system GTK3, graphics support and a working Secret Service.
-You do not need to install Python, uv or Flutter SDK to run the AppImage.
+The [Linux guide](docs/linux-appimage.md#lang-en) explains how to download
+`Tokenlogue-0.1.0-1472c00-x86_64.AppImage`, check its SHA-256 and run it.
+You need an x86-64-v2 compatible processor, system GTK3, graphics drivers
+and a working Secret Service for storing the API key. You do not need to install Python, uv or Flutter SDK separately.
 
-This is an unsigned preview distributed as an Actions artifact, with limited
-retention and no automatic updates. No public Release download is established
-for this file. Windows and Android are target platforms without confirmed
-ready-to-use packages. DEB and RPM packages are also unavailable.
+This unsigned preview is distributed through GitHub Actions with limited
+retention. It does not update automatically. Ready-to-use Windows, Android, DEB
+and RPM packages are not available.
 
-### Everyday use
+### How to use Tokenlogue
 
-- Enter your OpenRouter API key, save the generated four-digit PIN and use
-  that PIN to unlock the application later.
-- Create separate chats with a free or paid model and their own limits.
-- Keep conversation history locally and resume a separate saved draft in
-  each chat after switching chats or restarting.
-- Review used, reserved and remaining tokens and costs before sending.
-- Confirm paid requests and increases to a chat's spending limit.
+1. Enter your OpenRouter API key. After the key is checked, save the generated
+   four-digit PIN. You will use it to unlock the application on later launches.
+2. Create a chat with `+`. Choose a free or paid mode and a model, then set
+   the chat's token limit. For a paid chat, also set a spending limit.
+3. Type a message and send it. Tokenlogue asks for confirmation before each
+   paid request and before increasing a chat's spending limit.
 
-The compact header keeps the chat title, new-chat button `+`, lock button
-and menu `⋮` visible. Open `⋮` on the right for key status, mode, model, budget,
-limits, renaming and deletion. In a narrow window, open the chat list with
-the menu button on the left. The editor stays at the bottom.
+Conversation history and a separate draft for each chat are saved
+automatically. You can switch chats or restart the application and continue
+where you left off.
 
-The [user guide](docs/user-guide.md#lang-en) explains setup, keyboard controls,
-drafts, limits and requests with an unknown outcome.
+Open `⋮` at the far right of the header to view the key status, chat mode,
+model, token usage and spending. The same menu lets you change limits,
+rename a chat or delete it. The `+` and lock buttons remain beside the menu.
+In a narrow window, the button at the top left opens the chat list.
 
-### Your data and OpenRouter
+The [user guide](docs/user-guide.md#lang-en) covers setup, keyboard controls,
+drafts, budget reservations and what to do if a request's result is unknown.
+
+### Where your data is stored
 
 History and drafts are stored in a local SQLite database without additional
-content encryption. The PIN restricts access through the interface and is
-not stored as plain text. The API key is stored separately through the
+content encryption. The PIN controls access through the application interface
+and is not stored as plain text. The API key is kept separately in the
 platform's SecureStorage. Protect your operating-system account and backups.
 
-Sending a message sends its text and conversation context to OpenRouter for
-processing by the selected model provider. Unsent drafts are kept locally
-and do not consume the chat budget. OpenRouter is a separate service with its
-own account, network access and usage conditions. Tokenlogue is not affiliated
-with OpenRouter. Read about [storage and reset](docs/user-guide.md#en-data).
+When you send a message, its text and conversation context go to OpenRouter
+and the selected model provider. Unsent drafts stay on your device and do not
+consume tokens or money. You need an OpenRouter account and an internet
+connection to use the service. OpenRouter has its own usage and data terms.
+Tokenlogue is an independent application and is not affiliated with OpenRouter.
+See [data storage and reset](docs/user-guide.md#en-data) for details.
 
-### Sources and licenses
+### Source code and licenses
 
 Tokenlogue's own code is available under the [MIT License](LICENSE).
-The [third-party overview](THIRD_PARTY_NOTICES.md#lang-en) explains the main
-dependencies and links to the notices included in the AppImage.
+The [third-party software overview](THIRD_PARTY_NOTICES.md#lang-en) lists the
+main dependencies and explains where to find their licenses in the AppImage.
 
-[Source materials](docs/source-materials.md#lang-en) include the application
-source and a separate runtime bundle. The guide explains which materials are
-available and what is still missing for an offline rebuild of the application.
-
-[English](#lang-en) | [Русский](#lang-ru)
+The [source materials guide](docs/source-materials.md#lang-en) links to the
+application source and a separate runtime bundle. It also explains which
+materials are still missing for rebuilding the full application offline.
 
 <a name="lang-ru"></a>
 
 ## Русский
 
-[English](#lang-en) | [Русский](#lang-ru)
-
 <img src="docs/assets/tokenlogue-icon-512.png" alt="Значок приложения Tokenlogue" width="128">
 
-Tokenlogue - клиент OpenRouter с локальной историей диалогов и настраиваемыми
-лимитами токенов и расходов. Интерфейс приложения сейчас на русском языке.
-Ссылки переключают читателя между языковыми разделами документации.
+Tokenlogue - настольное приложение для общения с моделями ИИ через OpenRouter.
+Оно сохраняет переписку и неотправленные черновики на вашем устройстве
+и позволяет задавать лимиты токенов и расходов для каждого чата.
+Интерфейс приложения сейчас на русском языке.
 
-### Получение предварительной сборки для Linux
+### Скачивание и запуск
 
-Доступная предварительная сборка - `Tokenlogue-0.1.0-1472c00-x86_64.AppImage`.
-В [руководстве для Linux](docs/linux-appimage.md#lang-ru) описаны скачивание
-из GitHub Actions, проверка SHA-256 и запуск. Нужны процессор с поддержкой
-x86-64-v2, системная GTK3, работающая графическая подсистема и Secret Service.
-Отдельно устанавливать Python, uv или Flutter SDK для запуска AppImage не нужно.
+В [руководстве для Linux](docs/linux-appimage.md#lang-ru) описано, как скачать
+`Tokenlogue-0.1.0-1472c00-x86_64.AppImage`, проверить его SHA-256 и запустить.
+Нужны процессор с поддержкой x86-64-v2, системная GTK3, видеодрайверы
+и работающий Secret Service для хранения API-ключа. Отдельно устанавливать Python, uv или Flutter SDK не нужно.
 
-Это неподписанная предварительная сборка в виде артефакта Actions с
-ограниченным сроком хранения и без автоматического обновления. Публичная
-загрузка через Release для этого файла не подтверждена. Windows и Android
-остаются целевыми платформами без подтверждённых готовых пакетов.
-Пакеты DEB и RPM также недоступны.
+Эта неподписанная предварительная сборка распространяется через GitHub Actions
+с ограниченным сроком хранения. Автоматического обновления нет. Готовых пакетов
+для Windows и Android, а также пакетов DEB и RPM пока нет.
 
-### Повседневная работа
+### Как пользоваться Tokenlogue
 
-- Введите API-ключ OpenRouter, сохраните созданный четырёхзначный PIN и
-  используйте его для следующих входов.
-- Создавайте отдельные чаты с бесплатной или платной моделью и своими лимитами.
-- Храните историю локально и возвращайтесь к отдельному черновику каждого
-  чата после переключения или перезапуска.
-- Проверяйте использованные, зарезервированные и оставшиеся токены и средства
-  перед отправкой.
-- Подтверждайте платные запросы и увеличение денежного лимита чата.
+1. Введите API-ключ OpenRouter. После проверки ключа сохраните созданный
+   четырёхзначный PIN. Он понадобится для входа при следующих запусках.
+2. Создайте чат кнопкой `+`. Выберите бесплатный или платный режим и модель,
+   затем задайте лимит токенов. Для платного чата также укажите лимит расходов.
+3. Напишите и отправьте сообщение. Перед каждым платным запросом
+   и увеличением денежного лимита чата приложение запросит подтверждение.
 
-В компактной шапке остаются название чата, кнопка нового чата `+`, блокировка
-и меню `⋮`. Откройте `⋮` справа, чтобы увидеть состояние ключа, режим, модель,
-бюджет и лимиты, переименовать или удалить чат. В узком окне список чатов
-открывается кнопкой меню слева. Редактор остаётся внизу.
+История переписки и отдельный черновик каждого чата сохраняются автоматически.
+Можно переключиться в другой чат или перезапустить приложение, а затем
+продолжить с того же места.
 
-[Руководство пользователя](docs/user-guide.md#lang-ru) описывает настройку,
-клавиатурное управление, черновики, лимиты и запросы с неизвестным результатом.
+Откройте `⋮` в правом краю шапки, чтобы посмотреть состояние ключа, режим чата,
+выбранную модель, расход токенов и денег. В этом же меню можно изменить лимиты,
+переименовать или удалить чат. Кнопки `+` и блокировки находятся рядом с меню.
+В узком окне кнопка слева вверху открывает список чатов.
 
-### Ваши данные и OpenRouter
+[Руководство пользователя](docs/user-guide.md#lang-ru) объясняет настройку,
+управление с клавиатуры, сохранение черновиков, резервирование бюджета
+и действия при неизвестном результате запроса.
 
-История и черновики находятся в локальной SQLite-базе без дополнительного
-шифрования содержимого. PIN ограничивает вход через интерфейс и не хранится
-открытым текстом. API-ключ сохраняется отдельно через платформенное
-SecureStorage. Защищайте свою учётную запись ОС и резервные копии.
+### Где хранятся ваши данные
 
-При отправке сообщения его текст и контекст диалога передаются в OpenRouter
-для обработки выбранным поставщиком модели. Неотправленные черновики остаются
-локальными и не расходуют бюджет чата. OpenRouter - отдельный сервис со своей
-учётной записью, сетевым доступом и условиями использования. Tokenlogue не
-аффилирован с OpenRouter. Подробнее о [хранении и сбросе](docs/user-guide.md#ru-data).
+История и черновики находятся в локальной базе SQLite без дополнительного
+шифрования содержимого. PIN ограничивает доступ через интерфейс приложения
+и не хранится открытым текстом. API-ключ сохраняется отдельно
+в платформенном хранилище SecureStorage. Защищайте свою учётную запись ОС
+и резервные копии.
 
-### Исходники и лицензии
+При отправке сообщения его текст и контекст переписки передаются в OpenRouter
+и выбранному поставщику модели. Неотправленные черновики остаются на устройстве
+и не расходуют токены или деньги. Для работы сервиса нужны учётная запись
+OpenRouter и подключение к интернету. У OpenRouter действуют собственные
+условия использования и обработки данных. Tokenlogue разрабатывается независимо
+от OpenRouter. Подробнее в разделе
+[о хранении данных и сбросе доступа](docs/user-guide.md#ru-data).
+
+### Исходный код и лицензии
 
 Собственный код Tokenlogue доступен по [лицензии MIT](LICENSE).
-[Обзор сторонних компонентов](THIRD_PARTY_NOTICES.md#lang-ru) описывает основные
-зависимости и помогает найти уведомления о лицензиях внутри AppImage.
+[Обзор сторонних компонентов](THIRD_PARTY_NOTICES.md#lang-ru) перечисляет
+основные зависимости и объясняет, где найти их лицензии внутри AppImage.
 
-[Исходные материалы](docs/source-materials.md#lang-ru) включают исходники
-приложения и отдельный комплект runtime. Руководство объясняет, какие
-материалы доступны и чего пока не хватает для пересборки приложения без сети.
-
-[English](#lang-en) | [Русский](#lang-ru)
+[Руководство по исходным материалам](docs/source-materials.md#lang-ru)
+содержит ссылки на код приложения и отдельный комплект runtime. В нём также
+описано, каких материалов пока не хватает для пересборки всего приложения
+без подключения к сети.

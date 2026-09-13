@@ -433,17 +433,20 @@ class PubspecNoticeTests(unittest.TestCase):
         )
         anchors = re.findall(r'<a name="([^"]+)"></a>', index)
         self.assertEqual(len(anchors), len(set(anchors)))
+        for label, anchor in (("English", "lang-en"), ("Русский", "lang-ru")):
+            link = f"[{label}](#{anchor})"
+            self.assertEqual(index.count(link), 1)
+            self.assertLess(index.index(link), index.index('<a name="lang-en">'))
+            self.assertIn(anchor, anchors)
         english, russian = index.split('<a name="lang-ru"></a>')
         self.assertIn('<a name="lang-en"></a>', english)
         for section in (english, russian):
-            self.assertGreaterEqual(section.count("[English](#lang-en)"), 2)
-            self.assertGreaterEqual(section.count("[Русский](#lang-ru)"), 2)
             for component in manifest["components"]:
                 self.assertIn(f"### `{component['id']}`", section)
                 for name in component["notices"]:
                     self.assertIn(f"- `{name}`", section)
-        self.assertIn("does not establish source completeness", english)
-        self.assertIn("не подтверждает их полноту", russian)
+        self.assertIn("Source archives are provided separately", english)
+        self.assertIn("Архивы исходников предоставляются отдельно", russian)
         self.assertEqual(
             (appdir / "LICENSE").read_bytes(),
             b"Copyright fixture preserved without edits.\n",

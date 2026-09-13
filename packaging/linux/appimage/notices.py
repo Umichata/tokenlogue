@@ -396,35 +396,38 @@ class Collector:
             (
                 "en",
                 "English",
-                "This index describes the components in this AppImage. Paths below "
-                "are relative to its extracted root. Full license texts are in "
+                "This index lists the components included in this AppImage and "
+                "their license files. Paths below start at the extracted AppImage "
+                "folder. Full license texts are in "
                 "`usr/share/doc/tokenlogue/licenses/`.\n\n"
                 "Debian copyright files can also describe source-package files "
                 "that are not included here. Python license files preserve the "
                 "complete upstream distribution set, including unused optional "
                 "modules. Original license texts retain their original language.\n\n"
-                "The source-material status is recorded separately in "
-                "`usr/share/doc/tokenlogue/notices.json`. This index is not a "
-                "source archive and does not establish source completeness.\n\n",
+                "The file `usr/share/doc/tokenlogue/notices.json` records which "
+                "files belong to each component and their checksums. Source "
+                "archives are provided separately from this license collection.\n\n",
             ),
             (
                 "ru",
                 "Русский",
-                "Индекс описывает компоненты этого AppImage. Пути ниже указаны "
-                "относительно его распакованного корня. Полные тексты лицензий "
+                "Здесь перечислены компоненты этого AppImage и файлы с их "
+                "лицензиями. Пути ниже отсчитываются от папки распакованного "
+                "AppImage. Полные тексты лицензий "
                 "находятся в `usr/share/doc/tokenlogue/licenses/`.\n\n"
                 "Copyright-файлы Debian могут также описывать файлы исходного "
-                "пакета, которых здесь нет. Лицензии Python сохраняют полный "
-                "набор исходного дистрибутива, включая неиспользуемые необязательные "
-                "модули. Оригинальные тексты лицензий остаются на исходном языке.\n\n"
-                "Статус исходных материалов записан отдельно в "
-                "`usr/share/doc/tokenlogue/notices.json`. Этот индекс не является "
-                "архивом исходников и не подтверждает их полноту.\n\n",
+                "пакета, не включённые в AppImage. Комплект лицензий Python "
+                "содержит тексты для всех модулей исходного дистрибутива, "
+                "включая необязательные модули, которые здесь не используются. "
+                "Оригинальные тексты лицензий сохранены на исходном языке.\n\n"
+                "В файле `usr/share/doc/tokenlogue/notices.json` указаны "
+                "файлы каждого компонента и их контрольные суммы. Архивы "
+                "исходников предоставляются отдельно от этого комплекта лицензий.\n\n",
             ),
         )
         for language, title, introduction in introductions:
             index += f'<a name="lang-{language}"></a>\n\n## {title}\n\n'
-            index += switch + introduction
+            index += introduction
             for position, component in enumerate(self.components, start=1):
                 index += f'<a name="{language}-component-{position}"></a>\n\n'
                 index += "### `" + component["id"] + "`\n\n"
@@ -432,7 +435,6 @@ class Collector:
                     "\n".join("- `" + name + "`" for name in component["notices"])
                     + "\n\n"
                 )
-            index += switch
         for name in ("THIRD_PARTY_NOTICES.md", f"{DOC}/THIRD_PARTY_NOTICES.md"):
             (self.root / name).write_text(index, encoding="utf-8")
             self.notice_paths.add(name)

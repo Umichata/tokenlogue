@@ -6,8 +6,6 @@
 
 ## English
 
-[English](#lang-en) | [Русский](#lang-ru)
-
 This guide describes the `0.1.0` preview `1472c00`. The interface is in
 Russian. Russian labels below identify the controls you will see in the app.
 For installation, use the [Linux AppImage guide](linux-appimage.md#lang-en).
@@ -17,7 +15,7 @@ For installation, use the [Linux AppImage guide](linux-appimage.md#lang-en).
 
 <a name="en-access"></a>
 
-### Key and PIN
+### First launch and signing in
 
 On first launch, enter your API key in `OpenRouter API-ключ` and choose
 `Проверить ключ` (check key). Obtain a key through your OpenRouter account.
@@ -36,29 +34,31 @@ and confirm. This removes the saved API key, PIN verification data and lockout
 state. Existing chats and drafts remain. The next setup requires the key again
 and generates a new PIN. This local reset does not revoke the key at OpenRouter.
 
-After unlocking, check the key status through `⋮`. The panel shows key validity
-and the available key limit when known. Depending on that state, it offers
+After unlocking, check the key status through `⋮`. The panel shows whether the key is valid
+and its remaining spending limit, if available. Depending on the key status, it offers
 `Повторить проверку ключа` (check again) or `Заменить ключ` (replace key).
 Opening the menu alone does not recheck the key or send a model request.
 The key's spending limit is separate from the local limit of each chat.
 
 <a name="en-chats"></a>
 
-### Chats, models and the compact menu
+### Creating and managing chats
 
 Choose `+` with the tooltip `Новый чат` (new chat). Select free or paid mode,
 find a model by name or ID in `Поиск модели`, then configure the chat limits.
 Paid mode includes a warning about possible charges.
 
-Free mode uses `openrouter/free` or models whose applicable price components
-are all zero. It still depends on OpenRouter's availability and request limits.
-A model name or the suffix `:free` alone is not a guarantee that a request can
-be sent. Paid availability depends on key status and model information.
-OpenRouter checks the account balance when processing a paid request.
+Free mode offers automatic model selection through `openrouter/free` and
+models whose applicable prices are all zero. Tokenlogue checks the prices
+reported by OpenRouter, rather than relying on the model name or `:free` suffix.
+Free requests are still subject to the service's availability and request limits.
+Paid mode also requires a valid key and available model information.
+OpenRouter checks your account balance when processing a paid request.
 
 Each chat keeps its selected mode and model. To use another mode or model,
-create another chat. The model shown in the menu is the requested model.
-For a router model, it need not identify the final provider that handles a request.
+create another chat. The menu shows the model selected for the chat.
+If you choose automatic model selection, this is the router's name.
+OpenRouter then chooses the model that processes each request.
 
 In a wide window, use the chat list on the left. In a narrow window, the
 left header button `Открыть список чатов` opens that list. Select a chat to
@@ -86,7 +86,7 @@ to keep it. Renaming, deletion and limit changes are disabled while sending.
 
 <a name="en-drafts"></a>
 
-### Messages and drafts
+### Sending messages and saving drafts
 
 Type in `Сообщение` (message). Press Enter to send or use `Отправить` (send).
 Shift+Enter inserts a new line. Empty or whitespace-only messages cannot be sent.
@@ -94,13 +94,13 @@ While a response is pending, the editor displays its waiting state.
 
 Each chat automatically saves its own draft locally. Switching chats,
 resizing the window, renaming a chat and restarting restore the saved text,
-including Unicode, spaces and line breaks. Drafts are separate from message
+including text in any language, spaces and line breaks. Drafts are separate from message
 history. They are not sent as context and do not use tokens or money.
 
-When Tokenlogue successfully records a send locally, it clears the submitted
-draft. This does not mean that a reply has already arrived. A newer draft is
-not erased by completion of an older send. A failed preliminary check or
-cancellation of a paid request keeps the draft.
+After Tokenlogue adds your message to the conversation and starts sending it,
+the submitted draft is cleared. The reply may arrive later. If you begin a new
+draft, completion of the previous request will not erase it. A failed check
+before sending or a cancelled paid request leaves the original draft in place.
 
 Sending transmits the message and conversation context to OpenRouter.
 Long histories therefore affect both the input size and the budget needed for
@@ -108,7 +108,7 @@ the next request. View the response or request status in the conversation.
 
 <a name="en-limits"></a>
 
-### Token and spending limits
+### How token and spending limits work
 
 Configure limits before the first send. Tokenlogue distinguishes these settings:
 
@@ -119,34 +119,34 @@ Configure limits before the first send. Tokenlogue distinguishes these settings:
 | `Денежный лимит чата, USD` | Local spending cap for a paid chat. |
 
 The total budget also accounts for conversation context sent again with later
-messages. The response maximum is a ceiling, not a promise of a response of
-that length. Before sending, Tokenlogue reserves tokens and, for paid chats,
+messages. The response maximum sets an upper limit. The actual response can be shorter. Before sending, Tokenlogue reserves tokens and, for paid chats,
 money. It can refuse a request when the available budget cannot cover that reserve.
 
-In `⋮`, used amounts describe recorded usage, reserved amounts protect
-pending or uncertain requests, and remaining amounts reflect the budget still
-available. An unknown value is not zero. A reservation is not an actual charge.
-Local counters do not replace OpenRouter's account records.
+Open `⋮` to see how much of the budget has been used, reserved or remains
+available. Reserved amounts are set aside for requests that are still pending
+or have an unknown result. They cannot be used for a new request until
+released. An unknown cost is not treated as zero. A reservation is a local
+budget limit, not a charge to your OpenRouter account. Check that account
+for the service's actual billing records.
 
 Each paid request has a confirmation showing its model and estimated reserve.
 If prices change, another confirmation is required. Increasing a chat's
-monetary cap also requires confirmation. Cancelling these dialogs does not
-authorize a paid send.
+monetary cap also requires confirmation. Cancel the dialog to leave the request unsent or keep the previous limit.
 
-### A request with an unknown outcome
+#### If a request's result is unknown
 
 If a connection fails after a request may have reached OpenRouter, Tokenlogue
 keeps a protective reserve. The conversation shows that the result is unknown.
 The service may still have processed and billed the request.
 
 Check the request and usage in your OpenRouter account before sending again.
-Use `Освободить резерв` (release reserve) only after reviewing that uncertainty
-and confirming the action. It releases the local reservation. It does not
+After checking the request, you can choose `Освободить резерв` (release reserve)
+and confirm if you want to make that budget available again. It releases the local reservation. It does not
 cancel a remote request or refund a charge. Retrying can create another charge.
 
 <a name="en-data"></a>
 
-### Local data and access limits
+### Data storage and access
 
 Chats, messages, drafts, budget state and PIN verification data are stored
 in the local application database. The database contents have no additional
@@ -162,18 +162,13 @@ or a model provider. Replacing the AppImage file does not remove application dat
 
 Tokenlogue is a client of the separate OpenRouter service and is not affiliated
 with it. Review the service's and model provider's data terms before sending
-private content. The two languages in this guide do not add an in-app
-language switch.
+private content.
 
 [Back to Tokenlogue](../README.md#lang-en)
-
-[English](#lang-en) | [Русский](#lang-ru)
 
 <a name="lang-ru"></a>
 
 ## Русский
-
-[English](#lang-en) | [Русский](#lang-ru)
 
 Руководство описывает предварительную сборку `0.1.0` версии `1472c00`.
 Интерфейс на русском языке. Ниже используются названия элементов, которые
@@ -185,7 +180,7 @@ language switch.
 
 <a name="ru-access"></a>
 
-### Ключ и PIN
+### Первый запуск и вход в приложение
 
 При первом запуске введите свой ключ в поле `OpenRouter API-ключ` и нажмите
 `Проверить ключ`. Получить ключ можно в своей учётной записи OpenRouter.
@@ -205,30 +200,32 @@ language switch.
 нужно снова ввести ключ и сохранить новый PIN. Локальный сброс не отзывает
 ключ в OpenRouter.
 
-После входа откройте `⋮`, чтобы проверить состояние ключа. Панель показывает
-его действительность и доступный лимит ключа, если он известен. В зависимости
-от состояния доступны `Повторить проверку ключа` или `Заменить ключ`.
+После входа откройте `⋮`, чтобы проверить состояние ключа. В меню видно, действителен ли ключ
+и сколько средств осталось в его расходном лимите, если эти данные доступны.
+В зависимости от состояния ключа можно выбрать `Повторить проверку ключа` или `Заменить ключ`.
 Само открытие меню не проверяет ключ заново и не отправляет запрос модели.
 Расходный лимит ключа отделён от локального лимита каждого чата.
 
 <a name="ru-chats"></a>
 
-### Чаты, модели и компактное меню
+### Создание чатов и управление ими
 
 Нажмите `+` с подсказкой `Новый чат`. Выберите бесплатный или платный режим,
 найдите модель по названию или ID в поле `Поиск модели`, затем настройте
 лимиты чата. При выборе платного режима показывается предупреждение о расходах.
 
-Бесплатный режим использует `openrouter/free` или модели, у которых все
-применимые составляющие цены равны нулю. Он зависит от доступности OpenRouter
-и ограничений числа запросов. Одного названия модели или суффикса `:free`
-недостаточно для гарантии отправки. Доступность платного режима зависит от
-состояния ключа и сведений о моделях. Баланс аккаунта проверяется OpenRouter
-при обработке платного запроса.
+В бесплатном режиме доступны автоматический выбор модели через
+`openrouter/free` и модели с нулевой стоимостью всех применимых услуг.
+Tokenlogue проверяет цены, полученные от OpenRouter. Одного названия модели
+или суффикса `:free` для этого недостаточно. Бесплатные запросы также зависят
+от доступности сервиса и ограничений на число запросов. Для платного режима
+нужны действующий ключ и сведения о моделях. OpenRouter проверяет баланс
+вашей учётной записи при обработке платного запроса.
 
 Чат сохраняет выбранные режим и модель. Для другого режима или модели
-создайте новый чат. В меню указана запрошенная модель. При использовании
-модели-маршрутизатора она может не обозначать конечного поставщика запроса.
+создайте новый чат. В меню указана выбранная для чата модель.
+При автоматическом выборе здесь отображается название маршрутизатора.
+Модель для обработки каждого запроса в этом случае выбирает OpenRouter.
 
 В широком окне список чатов находится слева. В узком окне он открывается
 левой кнопкой шапки с подсказкой `Открыть список чатов`. Выберите чат, чтобы
@@ -257,7 +254,7 @@ language switch.
 
 <a name="ru-drafts"></a>
 
-### Сообщения и черновики
+### Отправка сообщений и сохранение черновиков
 
 Введите текст в поле `Сообщение`. Для отправки нажмите Enter или кнопку
 `Отправить`. Shift+Enter добавляет перенос строки. Пустое сообщение или
@@ -266,14 +263,15 @@ language switch.
 
 Каждый чат автоматически сохраняет свой черновик локально. При переключении
 чатов, изменении размера окна, переименовании и перезапуске восстанавливается
-сохранённый текст, включая Unicode, пробелы и переносы строк. Черновики
+сохранённый текст на любом языке, включая пробелы и переносы строк. Черновики
 отделены от истории сообщений. Они не передаются в контекст и не расходуют
 токены или деньги.
 
-После успешной локальной регистрации отправки Tokenlogue очищает отправленный
-черновик. Это ещё не означает, что ответ получен. Завершение более ранней
-отправки не стирает новый черновик. Ошибка предварительной проверки или отмена
-платного запроса сохраняет черновик.
+Когда Tokenlogue добавляет ваше сообщение в переписку и начинает отправку,
+отправленный черновик очищается. Ответ может прийти позже. Если вы начнёте
+новый черновик, завершение предыдущего запроса его не сотрёт. Если проверка
+перед отправкой завершится ошибкой или вы отмените платный запрос, исходный
+черновик останется в поле ввода.
 
 Отправка передаёт сообщение и контекст переписки в OpenRouter. Поэтому длинная
 история влияет и на объём входных данных, и на бюджет следующего запроса.
@@ -281,7 +279,7 @@ language switch.
 
 <a name="ru-limits"></a>
 
-### Лимиты токенов и расходов
+### Как работают лимиты токенов и расходов
 
 Настройте лимиты до первой отправки. В Tokenlogue различаются следующие параметры:
 
@@ -292,36 +290,38 @@ language switch.
 | `Денежный лимит чата, USD` | Локальный предел расходов платного чата. |
 
 Общий бюджет учитывает и контекст переписки, который повторно передаётся
-со следующими сообщениями. Максимум ответа задаёт верхнюю границу, а не
-обещание ответа такой длины. До отправки Tokenlogue резервирует токены, а
+со следующими сообщениями. Максимум ответа задаёт верхнюю границу.
+Сам ответ может быть короче. До отправки Tokenlogue резервирует токены, а
 в платном чате также деньги. Если доступного бюджета недостаточно для резерва,
 запрос может быть отклонён.
 
-В меню `⋮` использованные суммы относятся к учтённому расходу. Резерв
-защищает бюджет ожидающих и неопределённых запросов. Остаток показывает
-доступную часть бюджета. Неизвестное значение не равно нулю. Резерв не является
-фактическим списанием. Локальные счётчики не заменяют сведения аккаунта OpenRouter.
+Откройте `⋮`, чтобы узнать, сколько бюджета использовано, зарезервировано
+и осталось. Резерв удерживается для запросов, которые ещё выполняются или
+имеют неизвестный результат. Пока резерв не освобождён, его нельзя использовать
+для нового запроса. Неизвестный расход не считается нулевым. Резерв ограничивает
+доступный бюджет в приложении и сам по себе не списывает деньги с учётной записи
+OpenRouter. Фактические списания проверяйте в этой учётной записи.
 
 Перед каждым платным запросом показывается подтверждение с моделью и
 предварительным резервом. При изменении цен требуется ещё одно подтверждение.
-Увеличение денежного лимита чата также требует подтверждения. Отмена этих
-диалогов не разрешает платную отправку.
+Увеличение денежного лимита чата также требует подтверждения. Если отменить диалог, запрос не будет отправлен или прежний лимит останется
+без изменений.
 
-### Запрос с неизвестным результатом
+#### Если результат запроса неизвестен
 
 Если соединение прервалось после возможного получения запроса OpenRouter,
 Tokenlogue сохраняет защитный резерв. В переписке появляется сообщение
 о неизвестном результате. Сервис мог обработать и тарифицировать запрос.
 
 Перед повторной отправкой проверьте запрос и расход в своём аккаунте OpenRouter.
-Используйте `Освободить резерв` только после оценки этой неопределённости
-и подтверждения действия. Оно снимает локальный резерв, но не отменяет
+После проверки можно нажать `Освободить резерв` и подтвердить действие,
+если вы хотите снова использовать эту часть бюджета. Оно снимает локальный резерв, но не отменяет
 удалённый запрос и не возвращает списанные средства. Повторная отправка
 может привести к ещё одному списанию.
 
 <a name="ru-data"></a>
 
-### Локальные данные и границы защиты
+### Хранение данных и защита доступа
 
 Чаты, сообщения, черновики, состояние бюджета и проверочные данные PIN
 хранятся в локальной базе приложения. Дополнительного шифрования содержимого
@@ -335,11 +335,8 @@ SecureStorage. В Linux для этого нужен работающий Secret
 содержимое. Оба действия не удаляют записи у OpenRouter или поставщика
 модели. Замена файла AppImage не удаляет данные приложения.
 
-Tokenlogue - клиент отдельного сервиса OpenRouter, не аффилированный с ним.
+Tokenlogue разрабатывается независимо от OpenRouter.
 Перед отправкой личных сведений ознакомьтесь с условиями обработки данных
-сервиса и поставщика модели. Два языка этого руководства не добавляют
-переключение языка в приложение.
+сервиса и поставщика модели.
 
 [К Tokenlogue](../README.md#lang-ru)
-
-[English](#lang-en) | [Русский](#lang-ru)

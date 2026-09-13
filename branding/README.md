@@ -1,4 +1,4 @@
-# Tokenlogue - Visual identity / Оформление
+# Tokenlogue - Icon / Значок
 
 [English](#lang-en) | [Русский](#lang-ru)
 
@@ -6,22 +6,15 @@
 
 ## English
 
-[English](#lang-en) | [Русский](#lang-ru)
-
-The Tokenlogue icon combines a speech bubble, three rows of local conversation
-history and square details representing tokens. It is the project's original
-visual identity.
-
-### Recognizing the application
+### Application icon
 
 ![Tokenlogue icon](../docs/assets/tokenlogue-icon-512.png)
 
-The icon helps identify Tokenlogue in a file manager or launcher.
-An icon alone does not verify a downloaded application. Follow the
-[download and checksum guide](../docs/linux-appimage.md#en-download)
-when obtaining the Linux preview.
+This icon identifies Tokenlogue in the file manager and application launcher.
+It combines a speech bubble, three lines representing conversation history
+and small squares representing tokens.
 
-### Colors and artwork
+### Colors and image files
 
 | Color | Value |
 | --- | --- |
@@ -29,37 +22,28 @@ when obtaining the Linux preview.
 | Turquoise | `#27D3C2` |
 | Pale mint | `#8AF1E5` |
 
-The [full-color SVG](source/tokenlogue-icon.svg) uses flat fills without
-gradients or filters. The artwork also includes an
-[adaptive foreground](source/tokenlogue-icon-foreground.svg),
-[adaptive background](source/tokenlogue-icon-background.svg) and
-[monochrome version](source/tokenlogue-icon-monochrome.svg).
-These artwork variants do not establish the availability of an Android package.
+The [full-color SVG](source/tokenlogue-icon.svg) uses solid colors without
+gradients or filters. You can scale it without losing sharpness.
+A [monochrome version](source/tokenlogue-icon-monochrome.svg) is also available.
+The [foreground](source/tokenlogue-icon-foreground.svg) and
+[background](source/tokenlogue-icon-background.svg) are provided as separate
+files for layouts that use an adaptive icon.
 
 [Back to Tokenlogue](../README.md#lang-en)
-
-[English](#lang-en) | [Русский](#lang-ru)
 
 <a name="lang-ru"></a>
 
 ## Русский
 
-[English](#lang-en) | [Русский](#lang-ru)
-
-Значок Tokenlogue объединяет облачко диалога, три строки локальной истории
-переписки и квадратные детали, обозначающие токены. Это оригинальное
-оформление проекта.
-
-### Как узнать приложение
+### Значок приложения
 
 ![Значок Tokenlogue](../docs/assets/tokenlogue-icon-512.png)
 
-Значок помогает найти Tokenlogue в файловом менеджере или меню запуска.
-Сам по себе значок не подтверждает подлинность скачанного приложения.
-При получении сборки для Linux используйте
-[руководство по скачиванию и проверке суммы](../docs/linux-appimage.md#ru-download).
+По этому значку можно найти Tokenlogue в файловом менеджере и меню приложений.
+В нём объединены облачко диалога, три строки, обозначающие историю переписки,
+и небольшие квадраты, обозначающие токены.
 
-### Цвета и изображения
+### Цвета и файлы изображений
 
 | Цвет | Значение |
 | --- | --- |
@@ -68,12 +52,10 @@ These artwork variants do not establish the availability of an Android package.
 | Светлый мятный | `#8AF1E5` |
 
 [Полноцветный SVG](source/tokenlogue-icon.svg) использует сплошные заливки
-без градиентов и фильтров. Также доступны
-[передний план адаптивного значка](source/tokenlogue-icon-foreground.svg),
-[адаптивный фон](source/tokenlogue-icon-background.svg) и
-[одноцветная версия](source/tokenlogue-icon-monochrome.svg).
-Наличие этих вариантов оформления не подтверждает доступность пакета для Android.
+без градиентов и фильтров. Его можно масштабировать без потери чёткости.
+Также доступна [одноцветная версия](source/tokenlogue-icon-monochrome.svg).
+[Передний план](source/tokenlogue-icon-foreground.svg) и
+[фон](source/tokenlogue-icon-background.svg) сохранены отдельно
+для оформления с адаптивным значком.
 
 [К Tokenlogue](../README.md#lang-ru)
-
-[English](#lang-en) | [Русский](#lang-ru)

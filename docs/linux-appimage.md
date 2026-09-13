@@ -6,8 +6,6 @@
 
 ## English
 
-[English](#lang-en) | [Русский](#lang-ru)
-
 This guide covers the Linux preview `0.1.0` built from application commit
 `1472c00d38a87dddfa33cdb8c9c0d3b6aadb02f6`. Its interface is in Russian.
 See the [user guide](user-guide.md#lang-en) for API-key setup and chat controls.
@@ -33,6 +31,7 @@ See the [user guide](user-guide.md#lang-en) for API-key setup and chat controls.
 You do not need to install Python, uv, Flutter SDK or compilation tools to
 run this AppImage. An OpenRouter API key and network access are needed to
 validate the key, obtain model information and exchange messages.
+Wayland compatibility has not been verified.
 
 <a name="en-download"></a>
 
@@ -43,9 +42,10 @@ and select `verified-appimage-34759960235` under **Artifacts**. Sign in to
 GitHub if required. Extract the downloaded ZIP. It contains the AppImage,
 `SHA256SUMS` and `provenance.json`.
 
-Actions artifacts have limited retention. If the artifact has expired or
-is unavailable to your account, this page does not provide a permanent
-download. No public Release asset or signature is established for this file.
+GitHub Actions keeps artifacts for a limited time and may require access
+through your account. The download link will stop working when the artifact
+expires. This preview is unsigned. Check the downloaded file against the
+values below.
 
 | Property | Value |
 | --- | --- |
@@ -82,11 +82,10 @@ Then start the application as your normal user.
 ./Tokenlogue-0.1.0-1472c00-x86_64.AppImage
 ```
 
-The Tokenlogue window should open. A system package installation is not
-required for the AppImage itself. A file manager that permits executable
-files can also start it after execute permission is set. You can keep the
-file in a folder of your choice. This preview does not automatically add
-an entry to the applications menu.
+The Tokenlogue window will open. You can keep the AppImage in any convenient
+folder. After granting execute permission, you can also open it through a
+file manager that supports launching programs. The AppImage itself needs no
+installation and does not automatically add an entry to the applications menu.
 
 <a name="en-without-fuse"></a>
 
@@ -98,9 +97,9 @@ From the same folder, use the following option if FUSE is unavailable.
 ./Tokenlogue-0.1.0-1472c00-x86_64.AppImage --appimage-extract-and-run
 ```
 
-This temporarily extracts the image and starts the application. Allow space
-for the unpacked files in the temporary directory. It is a separate startup
-mode and does not establish that FUSE works on the system.
+This option unpacks the AppImage into a temporary directory and starts
+Tokenlogue without FUSE. Make sure the temporary directory has enough free
+space for the unpacked files.
 
 <a name="en-help"></a>
 
@@ -131,29 +130,21 @@ The [storage guide](user-guide.md#en-data) explains the role of the PIN and rese
 
 There is no automatic updater. Close Tokenlogue, verify the checksum of the
 replacement file and start it under the same OS account. Replacing the AppImage
-does not delete its data directory. Compatibility with arbitrary older
-application versions has not been verified.
+does not delete its data directory. Before switching back to an older version, make a backup of your application
+data. Older versions may not support a database updated by a newer version.
 
-### Preview limitations
-
-Use a graphical Linux session that meets the [requirements](#en-requirements)
-above. Wayland compatibility has not been verified. The preview is unsigned
-and has no automatic updater.
+### Related guides
 
 The [source-material guide](source-materials.md#lang-en) describes the
 available sources and the remaining gaps in the collection.
-The [older preview record](releases/v0.1.0-linux-preview.1.md#lang-en) describes
-`14b87ac`, a different file.
+If you have version `14b87ac`, see the [earlier preview guide](releases/v0.1.0-linux-preview.1.md#lang-en)
+for its checksum and differences from this version.
 
 [Back to Tokenlogue](../README.md#lang-en)
-
-[English](#lang-en) | [Русский](#lang-ru)
 
 <a name="lang-ru"></a>
 
 ## Русский
-
-[English](#lang-en) | [Русский](#lang-ru)
 
 Руководство относится к предварительной Linux-сборке `0.1.0` из коммита
 приложения `1472c00d38a87dddfa33cdb8c9c0d3b6aadb02f6`. Интерфейс на русском языке.
@@ -181,6 +172,7 @@ The [older preview record](releases/v0.1.0-linux-preview.1.md#lang-en) describes
 Для запуска этого AppImage не нужно устанавливать Python, uv, Flutter SDK
 или инструменты компиляции. API-ключ OpenRouter и доступ к сети нужны для
 проверки ключа, получения сведений о моделях и обмена сообщениями.
+Совместимость с Wayland не проверена.
 
 <a name="ru-download"></a>
 
@@ -191,9 +183,10 @@ The [older preview record](releases/v0.1.0-linux-preview.1.md#lang-en) describes
 необходимости войдите в GitHub. Распакуйте скачанный ZIP. В нём находятся
 AppImage, `SHA256SUMS` и `provenance.json`.
 
-Артефакты Actions хранятся ограниченное время. Если срок хранения истёк или
-ваша учётная запись не имеет доступа, эта страница не предоставляет постоянную
-загрузку. Публичный файл Release и подпись для этой сборки не подтверждены.
+GitHub Actions хранит артефакты ограниченное время и может запрашивать
+доступ через вашу учётную запись. После истечения срока хранения ссылка
+перестанет работать. Эта сборка не подписана. Сверьте скачанный файл
+со значениями ниже.
 
 | Свойство | Значение |
 | --- | --- |
@@ -230,11 +223,10 @@ chmod u+x ./Tokenlogue-0.1.0-1472c00-x86_64.AppImage
 ./Tokenlogue-0.1.0-1472c00-x86_64.AppImage
 ```
 
-Должно открыться окно Tokenlogue. Для самого AppImage не требуется установка
-системного пакета. После выдачи разрешения файл также можно открыть через
-файловый менеджер, если он поддерживает запуск исполняемых файлов. AppImage
-можно хранить в удобной папке. Эта предварительная сборка не добавляет ярлык
-в меню приложений автоматически.
+Откроется окно Tokenlogue. AppImage можно хранить в любой удобной папке.
+После выдачи разрешения файл также можно открыть через файловый менеджер,
+если он поддерживает запуск программ. Сам AppImage не требует установки
+и не добавляет ярлык в меню приложений автоматически.
 
 <a name="ru-without-fuse"></a>
 
@@ -246,9 +238,9 @@ chmod u+x ./Tokenlogue-0.1.0-1472c00-x86_64.AppImage
 ./Tokenlogue-0.1.0-1472c00-x86_64.AppImage --appimage-extract-and-run
 ```
 
-Этот режим временно распаковывает образ и запускает приложение. Во временном
-каталоге должно быть место для распакованных файлов. Это отдельный способ
-запуска, который не подтверждает работу FUSE в системе.
+Эта команда распаковывает AppImage во временный каталог и запускает
+Tokenlogue без FUSE. Убедитесь, что во временном каталоге достаточно свободного
+места для распакованных файлов.
 
 <a name="ru-help"></a>
 
@@ -279,20 +271,14 @@ chmod u+x ./Tokenlogue-0.1.0-1472c00-x86_64.AppImage
 
 Автоматического обновления нет. Закройте Tokenlogue, проверьте сумму нового
 файла и запустите его под той же учётной записью ОС. Замена AppImage не удаляет
-каталог данных. Совместимость с произвольными более старыми версиями
-приложения не проверена.
+каталог данных. Перед возвратом к старой версии сохраните резервную копию данных приложения.
+Старая версия может не поддерживать базу, обновлённую более новой версией.
 
-### Ограничения предварительной сборки
-
-Используйте графическую сессию Linux, соответствующую указанным выше
-[требованиям](#ru-requirements). Совместимость с Wayland не проверена.
-Предварительная сборка не подписана и не обновляется автоматически.
+### Другие руководства
 
 [Руководство по исходным материалам](source-materials.md#lang-ru) описывает
 доступные исходники и недостающие части комплекта.
-[Карточка прежней версии](releases/v0.1.0-linux-preview.1.md#lang-ru)
-относится к `14b87ac`, другому файлу.
+Для версии `14b87ac` используйте [описание прежней сборки](releases/v0.1.0-linux-preview.1.md#lang-ru).
+В нём приведены её контрольная сумма и отличия от этой версии.
 
 [К Tokenlogue](../README.md#lang-ru)
-
-[English](#lang-en) | [Русский](#lang-ru)

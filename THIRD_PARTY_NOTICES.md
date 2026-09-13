@@ -6,13 +6,11 @@
 
 ## English
 
-[English](#lang-en) | [Русский](#lang-ru)
-
 Tokenlogue uses third-party software under its respective licenses.
 Tokenlogue's own code is covered by the [MIT License](LICENSE).
 The original third-party license texts retain their original language.
 
-### Main application dependencies
+### Main components
 
 | Component | Version | License | Role |
 | --- | --- | --- | --- |
@@ -22,36 +20,32 @@ The original third-party license texts retain their original language.
 
 ### Licenses supplied with the AppImage
 
-This table describes the direct application dependencies. The AppImage also
-contains Python, Flutter, Dart plugins, native libraries, fonts and its startup
-runtime. It includes a separate index for its actual components and the full
-license texts in `usr/share/doc/tokenlogue/licenses/`, relative to the
-AppImage's extracted root.
+The table above lists the application's direct dependencies. The AppImage
+also contains Python, Flutter, Dart plugins, native libraries, fonts and a
+startup component called the runtime. Its component index lists the licenses
+for the software included in that build. The full texts are in
+`usr/share/doc/tokenlogue/licenses/` inside the extracted AppImage.
 
 The [AppImage license guide](packaging/linux/appimage/notices.md#lang-en)
-explains how to find those files. The index inside an already built preview
-may have an older language layout. Its original license texts still apply.
+explains how to find those files. Earlier previews may have an English-only index.
+The license texts are kept in their original language.
 
-License notices and source archives serve different purposes.
-[Available source materials](docs/source-materials.md#lang-en) are described
-separately, including gaps in the Flutter SDK source collection.
+To inspect the source code, use the [source materials guide](docs/source-materials.md#lang-en).
+It explains which archives are available and which parts of the Flutter SDK
+source collection are still missing.
 
 [Back to Tokenlogue](README.md#lang-en)
-
-[English](#lang-en) | [Русский](#lang-ru)
 
 <a name="lang-ru"></a>
 
 ## Русский
-
-[English](#lang-en) | [Русский](#lang-ru)
 
 Tokenlogue использует стороннее программное обеспечение на условиях его
 собственных лицензий. На собственный код Tokenlogue распространяется
 [лицензия MIT](LICENSE). Оригинальные тексты сторонних лицензий сохранены
 на исходном языке.
 
-### Основные зависимости приложения
+### Основные компоненты
 
 | Компонент | Версия | Лицензия | Назначение |
 | --- | --- | --- | --- |
@@ -61,20 +55,17 @@ Tokenlogue использует стороннее программное обе
 
 ### Лицензии внутри AppImage
 
-Таблица описывает прямые зависимости приложения. AppImage также содержит
-Python, Flutter, плагины Dart, нативные библиотеки, шрифты и компонент запуска
-runtime. В нём есть отдельный индекс фактических компонентов и полные тексты
-лицензий в `usr/share/doc/tokenlogue/licenses/` относительно корня
-распакованного AppImage.
+В таблице перечислены прямые зависимости приложения. В AppImage также
+включены Python, Flutter, плагины Dart, нативные библиотеки, шрифты
+и компонент запуска runtime. Внутри есть список компонентов со ссылками
+на их лицензии. Полные тексты находятся в папке
+`usr/share/doc/tokenlogue/licenses/` распакованного AppImage.
 
 Найти эти файлы поможет [руководство по лицензиям AppImage](packaging/linux/appimage/notices.md#lang-ru).
-Индекс в ранее собранной предварительной версии может иметь прежнее языковое
-оформление. Его оригинальные тексты лицензий продолжают действовать.
+В ранних сборках список может быть только на английском языке.
+Тексты лицензий сохранены на языке оригинала.
 
-Уведомления о лицензиях и архивы исходников имеют разное назначение.
-[Доступные исходные материалы](docs/source-materials.md#lang-ru) описаны
-отдельно, включая недостающие части комплекта исходников Flutter SDK.
+Для изучения исходного кода откройте [руководство по исходным материалам](docs/source-materials.md#lang-ru).
+В нём описаны доступные архивы и недостающие части комплекта исходников Flutter SDK.
 
 [К Tokenlogue](README.md#lang-ru)
-
-[English](#lang-en) | [Русский](#lang-ru)
