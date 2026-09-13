@@ -6,6 +6,7 @@ import gzip
 import hashlib
 import io
 import json
+import re
 import shutil
 import struct
 import subprocess
@@ -423,6 +424,34 @@ class PubspecNoticeTests(unittest.TestCase):
             hashlib.sha256(original).hexdigest(),
         )
         self.assertEqual(notices.verify_contents(appdir)["result"], "PASS")
+        index = (appdir / "THIRD_PARTY_NOTICES.md").read_text(encoding="utf-8")
+        self.assertEqual(
+            index,
+            (appdir / notices.DOC / "THIRD_PARTY_NOTICES.md").read_text(
+                encoding="utf-8"
+            ),
+        )
+        anchors = re.findall(r'<a name="([^"]+)"></a>', index)
+        self.assertEqual(len(anchors), len(set(anchors)))
+        english, russian = index.split('<a name="lang-ru"></a>')
+        self.assertIn('<a name="lang-en"></a>', english)
+        for section in (english, russian):
+            self.assertGreaterEqual(section.count("[English](#lang-en)"), 2)
+            self.assertGreaterEqual(section.count("[Русский](#lang-ru)"), 2)
+            for component in manifest["components"]:
+                self.assertIn(f"### `{component['id']}`", section)
+                for name in component["notices"]:
+                    self.assertIn(f"- `{name}`", section)
+        self.assertIn("does not establish source completeness", english)
+        self.assertIn("не подтверждает их полноту", russian)
+        self.assertEqual(
+            (appdir / "LICENSE").read_bytes(),
+            b"Copyright fixture preserved without edits.\n",
+        )
+        for name in ("THIRD_PARTY_NOTICES.md", f"{notices.DOC}/THIRD_PARTY_NOTICES.md"):
+            self.assertEqual(
+                manifest["files"][name], notice_inputs.sha256(appdir / name)
+            )
         embedded.write_bytes(original)
         with self.assertRaisesRegex(notice_inputs.NoticeError, "checksum changed"):
             notices.verify_contents(appdir)

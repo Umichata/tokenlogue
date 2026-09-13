@@ -1,161 +1,135 @@
-# Лицензии в AppImage
+# Tokenlogue - AppImage licenses / Лицензии AppImage
 
-Сборщик формирует реестр для фактически упакованных файлов. Запуск без нужного
-copyright, с изменённым Python/bridge или с неизвестной библиотекой завершается
-ошибкой. Исходный Linux bundle при этом не изменяется.
+[English](#lang-en) | [Русский](#lang-ru)
 
-## Источники
+<a name="lang-en"></a>
 
-| Группа | Как устанавливается происхождение |
+## English
+
+[English](#lang-en) | [Русский](#lang-ru)
+
+The `1472c00` Linux preview includes the original notices and license texts
+for its packaged components. This guide explains where a recipient can read
+them. The [repository overview](../../../THIRD_PARTY_NOTICES.md#lang-en)
+lists the direct application dependencies.
+
+### Finding the notices
+
+After extracting the AppImage, open these paths relative to its extracted root:
+
+| Path | Contents |
 | --- | --- |
-| Нативные зависимости | Совпадение ELF-кода, констант и Build ID с установленной библиотекой. Пакет и его исходная версия определяются через dpkg-query |
-| CPython | Полный PBS-архив 20260901 для CPython 3.12.14 x86_64_v2. Проверяются его SHA-256, metadata и код включённых libpython, `_crypt`, `_dbm` |
-| Dart bridge | Официальный binary release 1.9.0. Проверяются SHA-256 исходного файла и совпадение ELF-секций |
-| Flutter | Включённый NOTICES.Z и фактический разрешённый pubspec.lock после Flet-сборки |
-| Python-пакеты | METADATA, лицензионные файлы и принадлежность native extensions по RECORD. Для flet 0.86.5 отдельно закреплён upstream LICENSE |
-| Шрифты | Copyright и Reserved Font Names читаются из каждого KaTeX TTF. Полный текст OFL 1.1 закреплён отдельно |
-| AppImage runtime | Готовый комплект по runtime-artifact.lock.json. Проверяются ZIP, manifest, исходный lock, производящий run/commit/fingerprint и входы линковки. Лицензии берутся из materials/licenses/ |
+| `LICENSE` | Tokenlogue's MIT license. |
+| `THIRD_PARTY_NOTICES.md` | Index of components and their notice paths. |
+| `usr/share/doc/tokenlogue/THIRD_PARTY_NOTICES.md` | Another copy of that index. |
+| `usr/share/doc/tokenlogue/licenses/` | Original license and copyright texts. |
+| `usr/share/doc/tokenlogue/notices.json` | Component-to-file associations, checksums and source-material status. |
 
-URL и SHA-256 текстов находятся в `notices.lock.json`. Для OFL удалена только
-шаблонная шапка с незаполненными copyright-полями. Реальные правообладатели и
-зарезервированные имена берутся из шрифтов. Остальные vendored тексты сохранены
-побайтно, включая отсутствие завершающего перевода строки в upstream COPYING
-zstd. Наличие цифровой подписи или attestation этих источников не заявляется.
-
-У выбранного standalone runtime восемь отдельных записей `runtime:<component>`
-и общая запись `appimage-runtime`: type2-runtime `caf24f9…`, libfuse 3.15.0,
-squashfuse 0.5.2, musl 1.2.5-r11, gcc 14.2.0-r4, zlib 1.3.2-r0, zstd 1.5.6-r2
-и mimalloc2 2.1.7-r0. Сохраняются все 15 текстов, включая `gcc/COPYING.RUNTIME`
-и сопутствующие GCC licenses. Прежняя ссылка zlib v1.3.1 больше не относится
-к выбранному runtime. Старые vendored runtime licenses не используются для
-нового AppDir и не редактируются.
-
-Тексты копируются побайтно из проверенного комплекта. В
-`licenses/appimage-runtime/provenance.json` явно перечисляются producer commit,
-upstream commit, recipe fingerprint, source run/attempt, artifact ID и хеши
-ZIP/runtime/manifest, версии и исходники компонентов, лицензии и хеши входов
-линковки. Абсолютные пути полных отчётов не переносятся. Все добавленные файлы
-участвуют в notices manifest и финальной проверке путей. Отсутствие или изменение
-runtime notice, его версии либо связь с другим runtime останавливают упаковку.
-Полный комплект исходников остаётся отдельным ZIP. Общий
-`source_materials: REVIEW_REQUIRED` сохраняется из-за материалов Flutter SDK.
-
-Python reference не используется для подмены runtime. При несовпадении
-бинарников упаковка останавливается. Вся поставленная PBS подборка лицензий
-сохраняется, включая тексты для необязательных модулей. Это не означает,
-что удалённый `_tkinter` вернулся в AppImage. Metadata PBS содержит также
-альтернативы зависимостей для других вариантов сборки.
-
-При сборке коммита `156966a` Flutter разрешил `serious_python_linux` версии
-4.7.0. Этот пакет выбирает dart-bridge 1.9.0. Прежний эталон 1.8.0 не совпал
-по секциям `.text` и `.note.gnu.build-id`, поэтому упаковка остановилась.
-После проверки официального release asset обновлены его версия, URL, размер
-и SHA-256 в реестре. Лицензия 1.9.0 побайтно совпадает с лицензией 1.8.0.
-Архив Python из python-build 20260908 использует PBS 20260901. Проверка
-`libpython3.12.so.1.0`, `libpython3.so`, `_crypt` и `_dbm` подтвердила прежний
-эталон CPython, его закрепление сохранено.
-
-`uv.lock` фиксирует Python-пакеты. Транзитивные Flutter-пакеты разрешаются
-отдельно, поэтому их обновление может потребовать нового аудита бинарников.
-Сообщение о несовпадении теперь содержит имена различающихся ELF-секций и
-SHA-256 обоих файлов. Проверка всех выбранных секций остаётся обязательной.
-
-Сборка `239ea91` прошла сбор notices, но финальная проверка путей обнаружила
-абсолютный путь runner в скопированном `pubspec.lock`. Вложенный файл теперь
-помечен как аудиторская копия: только известный локальный путь зависимости
-`flet_secure_storage` заменяется на `../flutter-packages/flet_secure_storage`
-с `relative: true`. Он отсчитывается от сгенерированного Flutter-проекта;
-копия в каталоге лицензий не является самостоятельным входом для пересборки.
-Неожиданный путь, формат блока или дополнительная локальная зависимость
-останавливают сбор notices. Версии, hosted SHA-256 и остальной текст сохраняются.
-
-Исходный lock не меняется и остаётся в CI-отчёте `flutter-pubspec.lock`.
-Его SHA-256 и описание преобразования записываются в origin компонента
-`flutter-and-plugins`. Хеш вложенной копии рассчитывается уже после
-преобразования. Финальная проверка путей и секретных шаблонов выполняется
-Python в режиме `--check-only`, включая файлы notices. Она не требует `rg`,
-не меняет файлы после расчёта реестра и останавливает сборку при ошибке чтения
-или обхода каталога. ABI-пределы и проверки содержимого AppImage сохранены.
-
-## Команды
-
-Из корня репозитория, после успешного создания `build/linux` и при сохранённом
-`build/flutter/pubspec.lock`, выполнить:
+If you want to read the notices without starting Tokenlogue, use an installed
+`unsquashfs` tool. Open a terminal in the folder containing the verified
+AppImage. Choose a destination name that does not already exist.
 
 ```bash
-uv run --locked python packaging/linux/appimage/fetch_runtime.py \
-  --archive /tmp/appimage-runtime-34749438406-1.zip \
-  --report build/linux-release/reports/runtime-inputs.json
-uv run --locked python packaging/linux/appimage/notices.py fetch \
-  --cache build/appimage/notice-inputs
-packaging/linux/appimage/build_appimage.sh
-uv run --locked python packaging/linux/appimage/notices.py verify \
-  --appdir build/appimage/Tokenlogue.AppDir
+unsquashfs -no-xattrs -o 678280 -d "./tokenlogue-notices" "./Tokenlogue-0.1.0-1472c00-x86_64.AppImage"
 ```
 
-Для загрузки должны отсутствовать HTTP/HTTPS/ALL proxy variables. Ubuntu
-runner дополнительно получает `zstd`. Повторная упаковка использует сохранённые
-входные архивы, каждый раз проверяет их SHA-256 и работает без новых загрузок.
-Локальные команды предполагают ранее подготовленные инструменты AppImage
-через `fetch_tools.sh` и проектное окружение через `uv sync --locked`.
+This extracts the filesystem to `tokenlogue-notices` without executing the
+AppImage runtime or the application. The offset `678280` applies only to
+this exact file. Confirm its [name and checksum](../../../docs/linux-appimage.md#en-download)
+before using the command. Other AppImages can have different offsets.
 
-Перед упаковкой формируются два одинаковых `THIRD_PARTY_NOTICES.md` и файл
-`usr/share/doc/tokenlogue/notices.json`. Реестр содержит соответствие
-компонентов, полные пути внутри AppDir и контрольные суммы. Проверка после
-извлечения AppImage выявляет потерю лицензии, изменение файла, новый ELF,
-новую distribution METADATA и новый шрифт без записи в реестре.
+### Reading the license collection
 
-## Первоначальная проверка реализации
+The collection includes notices for Ubuntu libraries, the Python runtime and
+packages, Flutter and its plugins, Dart bridge, fonts and the AppImage runtime.
+The runtime license set includes GCC's runtime exception and the applicable
+texts for libfuse and its other components.
 
-При разработке использована отдельная копия AppDir из проверенного артефакта
-`4a498ad`. Для всех 35 нативных библиотек найдены официальные Ubuntu binary
-packages с совпадающими ELF-секциями. Они распакованы без установки. В локальную
-проверку передан этот проверенный каталог пакетов. Ubuntu runner использует
-собственные dpkg metadata.
+A Debian copyright file can describe source-package files that are absent
+from this AppImage. Python's license collection can include optional modules
+that are not shipped here. Read the component association together with its
+license text. An upstream license collection alone is not a list of enabled
+application features.
 
-Локальная проверка сформировала 75 записей компонентов для 85 проверяемых
-файлов, включая 50 ELF, 13 METADATA и 22 шрифта. Исходный pubspec.lock старой
-сборки отсутствовал в предоставленном артефакте, поэтому для теста его чтения
-использовалась явно помеченная фикстура. Это историческая проверка реализации.
-Результат на подлинном lock новой сборки приведён ниже.
+The original license and copyright texts are preserved in their original
+language. This bilingual explanation does not replace their terms.
+An already downloaded preview can have an English-only generated index.
+The language layout of documentation does not alter that artifact.
 
-Отдельные тесты проверяют пропажу и изменение лицензий, неподтверждённые
-компоненты, несовпадение ELF-кода, повреждение cache, недопустимые ссылки и
-пути в архиве, а также сохранение Unicode в данных шрифтов.
+### Corresponding sources
 
-## Проверенный артефакт 14b87ac
+The collection is a set of notices, not a complete source archive.
+[Available source materials](../../../docs/source-materials.md#lang-en)
+include the application's source and a separate runtime bundle, while
+Flutter SDK completeness and full application rebuild coverage remain limited.
 
-[Сборка 34439008120](https://github.com/Umichata/tokenlogue/actions/runs/34439008120)
-и [матрица 34439720271](https://github.com/Umichata/tokenlogue/actions/runs/34439720271)
-успешно завершились на коммите `14b87ac03e5c03c2ed9c4acf6caae29daa39d20e`.
-Оба отчёта `notices-appdir.json` и `notices-appimage.json` содержат `PASS`,
-75 компонентов и 85 объектов. Независимая проверка извлечённого AppImage
-подтвердила все 207 хешей, полноту связей реестра и совпадение его копии
-с `notices-manifest.json` из build-артефакта.
+[Back to the AppImage overview](README.md#lang-en)
 
-Подлинный `flutter-pubspec.lock` сохранён в CI-отчётах. Его SHA-256 совпал
-с `resolved_packages_source_sha256` внутри AppImage. Во вложенной копии
-сохранены все 153 зависимости. Изменены только локальный путь
-`flet_secure_storage`, признак `relative` и поясняющая шапка. Проверки путей
-и секретных шаблонов проходят. В обоих логах упаковки присутствует
-`Staged content checks: PASS`, ошибок отсутствующего `rg` нет.
+[English](#lang-en) | [Русский](#lang-ru)
 
-Две упаковки дали одинаковые байты, а проверенный файл матрицы совпал
-с исходным файлом сборки. Точные идентификаторы и суммы находятся в
-[аудите 14b87ac](../../../docs/releases/14b87ac-notice-audit.md).
+<a name="lang-ru"></a>
 
-## Перед публичным релизом
+## Русский
 
-`PASS` подтверждает техническую полноту реестра и целостность перечисленных
-файлов. Комплект соответствующих исходников проверяется отдельно. В реестре
-явно остаётся `source_materials: REVIEW_REQUIRED`. Для применимых компонентов
-нужно подготовить выдачу исходников и материалов пересборки, в том числе для
-компонентов вне выбранного standalone runtime. Сохранённый runtime ZIP связан
-с новой упаковкой через его хеш и компактные сведения о происхождении.
-Копирование лицензий не
-создаёт такой архив автоматически.
+[English](#lang-en) | [Русский](#lang-ru)
 
-Сборка и матрица для `14b87ac` уже пройдены. Обновление документации об этом
-файле не требует его пересборки. При изменении содержимого AppImage нужны
-новые сборка, матрица и сверка. Прежний файл `4a498ad` сохраняет свой
-исторический статус артефакта без добавленного полного реестра notices.
+Предварительная Linux-сборка `1472c00` содержит оригинальные уведомления
+и тексты лицензий упакованных компонентов. Это руководство объясняет,
+где получатель приложения может их прочитать.
+[Обзор в репозитории](../../../THIRD_PARTY_NOTICES.md#lang-ru)
+перечисляет прямые зависимости приложения.
+
+### Как найти лицензии
+
+После распаковки AppImage откройте следующие пути относительно его корня:
+
+| Путь | Содержимое |
+| --- | --- |
+| `LICENSE` | Лицензия MIT для Tokenlogue. |
+| `THIRD_PARTY_NOTICES.md` | Индекс компонентов и путей к их уведомлениям. |
+| `usr/share/doc/tokenlogue/THIRD_PARTY_NOTICES.md` | Ещё одна копия индекса. |
+| `usr/share/doc/tokenlogue/licenses/` | Оригинальные тексты лицензий и copyright. |
+| `usr/share/doc/tokenlogue/notices.json` | Связи компонентов с файлами, контрольные суммы и статус исходных материалов. |
+
+Чтобы прочитать лицензии без запуска Tokenlogue, используйте установленную
+утилиту `unsquashfs`. Откройте терминал в папке с проверенным AppImage.
+Выберите ещё не существующее имя каталога назначения.
+
+```bash
+unsquashfs -no-xattrs -o 678280 -d "./tokenlogue-notices" "./Tokenlogue-0.1.0-1472c00-x86_64.AppImage"
+```
+
+Команда извлекает файловую систему в `tokenlogue-notices`, не выполняя
+runtime AppImage или приложение. Смещение `678280` относится только к
+этому файлу. Перед выполнением сверьте его
+[имя и контрольную сумму](../../../docs/linux-appimage.md#ru-download).
+У других AppImage смещение может отличаться.
+
+### Как читать комплект лицензий
+
+Комплект содержит уведомления для библиотек Ubuntu, среды и пакетов Python,
+Flutter и его плагинов, Dart bridge, шрифтов и runtime AppImage.
+Лицензии runtime включают исключение GCC для библиотек времени выполнения,
+а также применимые тексты для libfuse и остальных компонентов.
+
+Copyright-файл Debian может описывать файлы исходного пакета, которых нет
+в этом AppImage. Комплект лицензий Python может включать необязательные модули,
+не вошедшие в приложение. Читайте связь с конкретным компонентом вместе
+с текстом лицензии. Сам по себе комплект лицензий разработчика зависимости
+не является перечнем включённых возможностей приложения.
+
+Оригинальные тексты лицензий и copyright сохранены на исходном языке.
+Это двуязычное пояснение не заменяет их условия. В уже скачанной
+предварительной сборке сгенерированный индекс может быть только на английском.
+Языковое оформление документации не меняет этот артефакт.
+
+### Соответствующие исходники
+
+Комплект является набором уведомлений, а не полным архивом исходников.
+[Доступные исходные материалы](../../../docs/source-materials.md#lang-ru)
+включают код приложения и отдельный комплект runtime. Полнота Flutter SDK
+и охват пересборки всего приложения остаются ограниченными.
+
+[К обзору AppImage](README.md#lang-ru)
+
+[English](#lang-en) | [Русский](#lang-ru)

@@ -465,19 +465,26 @@ class AppImagePackagingTests(unittest.TestCase):
             self.assertNotIn(b"/tmp/serious_python_temp", sanitized)
             self.assertNotIn(b"build/flutter", sanitized)
 
-    def test_documentation_marks_output_as_diagnostic(self) -> None:
-        text = (APPIMAGE_DIR / "README.md").read_text(encoding="utf-8").lower()
+    def test_documentation_describes_preview_requirements(self) -> None:
+        text = " ".join(
+            (APPIMAGE_DIR / "README.md").read_text(encoding="utf-8").lower().split()
+        )
         for statement in (
-            "diagnostic",
+            "preview",
             "unsigned",
-            "glibc 2.38",
-            "anyio",
-            "cross-distribution",
+            "x86-64-v2",
+            "system gtk3",
+            "secret service",
+            "wayland",
             "fuse",
-            "trust-on-first-use",
+            "limited retention",
+            "check its checksum before running",
+            "неподписанная",
+            'name="lang-en"',
+            'name="lang-ru"',
         ):
             self.assertIn(statement, text)
-        self.assertNotIn("published", text)
+        self.assertIn("no signature or automatic updater", text)
 
 
 class StagedContentChecksTests(unittest.TestCase):

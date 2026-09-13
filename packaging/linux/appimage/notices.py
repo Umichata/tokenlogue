@@ -390,16 +390,49 @@ class Collector:
             raise NoticeError(
                 "unregistered packaged components: " + ", ".join(sorted(missing))
             )
-        index = "# Third-party notices\n\n"
-        index += "This index describes this AppImage. Full license texts are in `usr/share/doc/tokenlogue/licenses/`.\n"
-        index += "Debian copyright files also describe source-package files that may not be included here.\n"
-        index += "Python license files preserve the complete upstream distribution set, including unused optional modules.\n"
-        index += "The source-material review is recorded separately in notices.json; this is not a source archive.\n\n"
-        for component in self.components:
-            index += "## " + component["id"] + "\n\n"
-            index += (
-                "\n".join("- `" + name + "`" for name in component["notices"]) + "\n\n"
-            )
+        switch = "[English](#lang-en) | [Русский](#lang-ru)\n\n"
+        index = "# Third-party notices / Сторонние лицензии\n\n" + switch
+        introductions = (
+            (
+                "en",
+                "English",
+                "This index describes the components in this AppImage. Paths below "
+                "are relative to its extracted root. Full license texts are in "
+                "`usr/share/doc/tokenlogue/licenses/`.\n\n"
+                "Debian copyright files can also describe source-package files "
+                "that are not included here. Python license files preserve the "
+                "complete upstream distribution set, including unused optional "
+                "modules. Original license texts retain their original language.\n\n"
+                "The source-material status is recorded separately in "
+                "`usr/share/doc/tokenlogue/notices.json`. This index is not a "
+                "source archive and does not establish source completeness.\n\n",
+            ),
+            (
+                "ru",
+                "Русский",
+                "Индекс описывает компоненты этого AppImage. Пути ниже указаны "
+                "относительно его распакованного корня. Полные тексты лицензий "
+                "находятся в `usr/share/doc/tokenlogue/licenses/`.\n\n"
+                "Copyright-файлы Debian могут также описывать файлы исходного "
+                "пакета, которых здесь нет. Лицензии Python сохраняют полный "
+                "набор исходного дистрибутива, включая неиспользуемые необязательные "
+                "модули. Оригинальные тексты лицензий остаются на исходном языке.\n\n"
+                "Статус исходных материалов записан отдельно в "
+                "`usr/share/doc/tokenlogue/notices.json`. Этот индекс не является "
+                "архивом исходников и не подтверждает их полноту.\n\n",
+            ),
+        )
+        for language, title, introduction in introductions:
+            index += f'<a name="lang-{language}"></a>\n\n## {title}\n\n'
+            index += switch + introduction
+            for position, component in enumerate(self.components, start=1):
+                index += f'<a name="{language}-component-{position}"></a>\n\n'
+                index += "### `" + component["id"] + "`\n\n"
+                index += (
+                    "\n".join("- `" + name + "`" for name in component["notices"])
+                    + "\n\n"
+                )
+            index += switch
         for name in ("THIRD_PARTY_NOTICES.md", f"{DOC}/THIRD_PARTY_NOTICES.md"):
             (self.root / name).write_text(index, encoding="utf-8")
             self.notice_paths.add(name)

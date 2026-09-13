@@ -1,304 +1,97 @@
-# Diagnostic AppImage infrastructure
+# Tokenlogue - Linux AppImage
 
-This directory builds an unsigned diagnostic AppImage from the existing
-`build/linux/` Flet bundle. It never rebuilds the Flet application and performs
-all transformations on a staging copy under `build/appimage/`.
+[English](#lang-en) | [Русский](#lang-ru)
 
-The staged desktop entry omits the optional `Version` key in `[Desktop Entry]`
-because Ubuntu 22.04's desktop-file-utils 0.26 rejects `Version=1.5`.
-The system desktop source is unchanged; AppImage keeps `Exec=tokenlogue`,
-`Icon=tokenlogue`, localized metadata, and no `TryExec`. Staging conversion
-runs before linuxdeploy, and desktop-file-validate remains mandatory.
+<a name="lang-en"></a>
 
-## Host desktop runtime
+## English
 
-The AppImage uses the distribution's GTK3, GLib/GIO, GdkPixbuf, Pango/Cairo
-and accessibility runtime. `desktop_runtime.py` owns the shared exclusion
-policy, including core GLib/GIO/D-Bus dependencies. linuxdeploy does not copy
-these libraries, and packaged verification rejects matching names and SONAMEs.
-The target system must provide GTK3 and its runtime dependencies. Flutter,
-Python, application plugins and the bundled libsecret client remain packaged.
-Ubuntu 22.04 remains the build baseline; the existing ABI limits are unchanged.
+[English](#lang-en) | [Русский](#lang-ru)
 
-This avoids loading newer host GVfs/IBus modules against the old private
-GLib 2.72 runtime. Input methods, GVfs and accessibility are not disabled in
-AppRun. Host GTK also uses the distribution's module paths, including Fedora's
-lib64 layout and Linux Mint's XApp module when installed.
+The Tokenlogue AppImage is an unsigned preview for Linux x86_64.
+The current documented file is `Tokenlogue-0.1.0-1472c00-x86_64.AppImage`.
+Follow the [Linux guide](../../../docs/linux-appimage.md#lang-en) for the
+available download, checksum and launch commands.
 
-The userspace matrix installs GVfs, IBus GTK3 and dconf. Before launching the
-application it checks eager symbol resolution (`dlopen` with `RTLD_NOW`) under
-AppRun's library paths, requires the GVfs and IBus modules, and records loaded
-desktop library paths in `desktop-modules.json`. The existing application
-smoke then explicitly selects IBus. Missing modules, private desktop runtime
-copies, symbol errors, or failed IM-module loading fail the job. This checks
-module loading; complete input-method interaction still needs a desktop test.
+### What you need
 
-## Pinned tools
+The CPU must support x86-64-v2. The AppImage includes Python, Flutter and
+application plugins. System GTK3, GLib/GIO, graphics drivers and desktop services
+come from your Linux distribution. Ubuntu 22.04 is the system library baseline.
+The bundled libsecret client requires
+a working Secret Service in your user session. Java and a separate Python
+installation are not needed.
 
-`tools.lock` pins exact tagged Linux x86_64 release assets for linuxdeploy,
-appimagetool, and patchelf. Each asset is verified with SHA-256 before use.
-The digests were obtained from the GitHub Releases API, but the releases do not
-publish artifact attestations or separately signed checksums. Initial publisher
-provenance is therefore trust-on-first-use (TOFU).
+Ordinary startup uses FUSE. An extract-and-run option is available when FUSE
+cannot be used. Neither mode adds automatic updates or an applications-menu
+entry. Run the file as your normal user.
 
-The appimagetool asset is downloaded from the exact `1.9.1` tag URL. Its
-embedded `--version` text calls itself a continuous build; this infrastructure
-does not use the mutable `/continuous/` download URL and relies on the pinned
-tag, asset name, and digest.
+### Preview status
 
-Для новой упаковки выбран готовый standalone runtime. Его закрепления находятся
-в `runtime-artifact.lock.json`, отдельно от исходного `runtime/runtime.lock.json`.
-`fetch_tools.sh` по-прежнему проверяет собственный префикс appimagetool размером
-944632 байта. Этот префикс относится только к утилите и не используется как
-запасной runtime для Tokenlogue. `tools.lock` и хеш appimagetool 1.9.1 сохранены.
+The file is distributed through GitHub Actions with limited retention.
+It has no signature or automatic updater. Check its checksum before running
+it. The [Linux guide](../../../docs/linux-appimage.md#lang-en) describes
+the requirements, download verification and startup options.
 
-## Выбранный standalone runtime
+Compatibility depends on the system libraries and graphics environment.
+Wayland support has not been verified.
 
-Производитель — `build-appimage-runtime.yml`, run `34749438406`, attempt `1`,
-commit `afaa07703beb783370b82ade6ac2557782a59d07`. Artifact ID `10315337524`,
-имя `appimage-runtime-34749438406-1`. Размер ZIP — 391916671 байт, SHA-256
-`a9869ba745218ea8b0e2dec0c3da6af15b4d28fbd6e1ec1170afcadb758b06c9`.
-Размер `runtime-x86_64` — 678280 байт, SHA-256
-`48106c5b9cba63270319422a90640f615846a26326b9b3d942ab6932d3cedabb`.
-Commit приложения может меняться. Он не заменяет commit производителя и не
-меняет закрепление уже выбранного runtime.
+### Included licenses and available sources
 
-`fetch_runtime.py` проверяет размер и SHA-256 ZIP до распаковки, CRC каждого
-члена, точный состав файлов manifest/SHA256SUMS, все размеры и хеши, вложенный
-workflow `.github`, fingerprint рецепта, исходный lock, обязательные PASS-отчёты,
-лицензии, привязки линкованных компонентов и ELF чтением. Код и бинарники из
-комплекта не исполняются. Публикуется только полностью проверенный временный
-каталог. Повреждённый кэш вызывает ошибку вместо повторного разрешения версии.
+The [license guide](notices.md#lang-en) explains the embedded component index
+and original license texts. The [runtime overview](runtime/README.md#lang-en)
+describes the startup component and its separate source bundle.
+For available application sources and the gaps in their collection, see
+[source materials](../../../docs/source-materials.md#lang-en).
 
-Локальный режим использует сохранённый ZIP и не требует токена:
+[Back to Tokenlogue](../../../README.md#lang-en)
 
-```bash
-uv run --locked python packaging/linux/appimage/fetch_runtime.py \
-  --archive /tmp/appimage-runtime-34749438406-1.zip \
-  --report build/linux-release/reports/runtime-inputs.json
-```
+[English](#lang-en) | [Русский](#lang-ru)
 
-Он не утверждает, что срок хранения проверен через API. В CI helper проверяет
-точные repository/workflow/run/attempt/commit и artifact ID/name/digest/size,
-успешное завершение и срок хранения, затем скачивает по закреплённому ID.
-`GH_TOKEN` с `actions: read` передаётся только этому шагу. Подписанные URLs
-и токен не попадают в отчёт или сборку приложения. Сохраните исходный ZIP:
-Actions artifact истекает 27 сентября 2026 года. Постоянное Release-хранилище
-не создаётся, автоматического выбора другого артефакта нет.
+<a name="lang-ru"></a>
 
-Комплект сохраняется в `build/appimage/runtime-selected/`. Оба запуска упаковки
-используют один файл `runtime-x86_64` для notices и `--runtime-file`. Перед
-использованием проверяются его байты. Перед публикацией каждого AppImage
-проверяется префикс. Допускается только изменение 16 байтов `.digest_md5`.
-Другой runtime, усечение и остальные изменения отклоняются. В CI сохраняются
-`runtime-inputs.json`, `runtime-prefix-first.json`, `runtime-prefix-second.json`.
+## Русский
 
-Сборщик переносит в AppDir только 15 исходных текстов лицензий и компактное
-происхождение восьми компонентов. Полный ZIP, APK и toolchain туда не входят.
-Сведения о новых упаковке, матрице и FUSE появятся после следующего CI/ручного
-этапа. Исторические результаты `14b87ac` ниже относятся к прежнему runtime.
+[English](#lang-en) | [Русский](#lang-ru)
 
-## Usage
+AppImage Tokenlogue - неподписанная предварительная сборка
+для Linux x86_64. Текущий описанный файл -
+`Tokenlogue-0.1.0-1472c00-x86_64.AppImage`.
+В [руководстве для Linux](../../../docs/linux-appimage.md#lang-ru) находятся
+доступная загрузка, контрольная сумма и команды запуска.
 
-Run from the repository root with all HTTP, HTTPS, and ALL proxy variables
-unset:
+### Что потребуется
 
-```bash
-packaging/linux/appimage/fetch_tools.sh
-uv run --locked python packaging/linux/appimage/fetch_runtime.py \
-  --archive /tmp/appimage-runtime-34749438406-1.zip \
-  --report build/linux-release/reports/runtime-inputs.json
-uv run --locked python packaging/linux/appimage/notices.py fetch \
-  --cache build/appimage/notice-inputs
-packaging/linux/appimage/build_appimage.sh
-```
+Процессор должен поддерживать x86-64-v2. AppImage содержит Python, Flutter
+и плагины приложения. GTK3, GLib/GIO, видеодрайверы и службы рабочего стола
+предоставляет ваш дистрибутив Linux. Базовая среда системных библиотек - Ubuntu 22.04.
+Для встроенного клиента libsecret нужен
+работающий Secret Service в пользовательской сессии. Java и отдельная
+установка Python не требуются.
 
-Outputs:
+Обычный запуск использует FUSE. Если FUSE недоступен, можно запустить приложение
+с распаковкой. Оба режима не добавляют автоматическое обновление или ярлык
+в меню приложений. Запускайте файл от обычного пользователя.
 
-```text
-build/appimage/Tokenlogue.AppDir/
-build/appimage/Tokenlogue-<version>-x86_64.AppImage
-```
+### Статус предварительной сборки
 
-The generated artifact is diagnostic, unsigned, and has no update metadata.
-Commit `14b87ac03e5c03c2ed9c4acf6caae29daa39d20e` passed build run
-[34439008120](https://github.com/Umichata/tokenlogue/actions/runs/34439008120)
-and userspace matrix run
-[34439720271](https://github.com/Umichata/tokenlogue/actions/runs/34439720271).
-Both supplied artifacts contain identical AppImage bytes. Notice coverage and
-all 207 manifest file hashes were checked independently after extraction.
-The user confirmed stable operation on Linux Mint. This revision uses host
-desktop libraries. The earlier detailed manual input/clipboard/draft checks
-and stderr observations for `4a498ad` remain historical evidence; new manual
-stderr logs were not supplied, so resolution of Flutter warnings is not claimed.
+Файл распространяется через GitHub Actions с ограниченным сроком хранения.
+Подписи и автоматического обновления нет. Перед запуском проверьте контрольную
+сумму. В [руководстве для Linux](../../../docs/linux-appimage.md#lang-ru)
+описаны требования, проверка загрузки и способы запуска.
 
-The older local Linux Mint bundle required GLIBC 2.38 and its bundled `anyio`
-differed from `uv.lock`. These observations describe that old local bundle,
-not subsequent Ubuntu CI artifacts. A further desktop-runtime change requires
-a new build and matrix run. Tool provenance includes TOFU.
+Совместимость зависит от системных библиотек и графической среды.
+Поддержка Wayland не проверена.
 
-See the [Linux user guide](../../../docs/linux-appimage.md) and the
-[preview preparation record](../../../docs/releases/v0.1.0-linux-preview.1.md).
-Preparing release documentation does not rebuild or promote an artifact.
-The root `THIRD_PARTY_NOTICES.md` is still a preliminary registry of direct
-Python dependencies; its presence alone is not a complete binary notice audit.
-The [current artifact audit](../../../docs/releases/14b87ac-notice-audit.md)
-records the verified checksum, completed notice checks and remaining source
-materials. The [earlier audit](../../../docs/releases/4a498ad-notice-audit.md)
-preserves the findings for the old file. This AppImage includes CPython 3.12.14
-targeting x86_64_v2; compatible GLIBC alone does not establish support for
-older x86_64 processors.
+### Включённые лицензии и доступные исходники
 
-## Optional JNI library
+[Руководство по лицензиям](notices.md#lang-ru) описывает встроенный индекс
+компонентов и оригинальные тексты лицензий.
+[Обзор runtime](runtime/README.md#lang-ru) объясняет компонент запуска
+и его отдельный комплект исходников. Доступные исходники приложения
+и недостающие части комплекта описаны на странице
+[исходных материалов](../../../docs/source-materials.md#lang-ru).
 
-The Flutter dependency package `jni` may produce `lib/libdartjni.so` on runners
-with a JDK installed. Tokenlogue does not use a JVM on Linux. Source-bundle
-verification permits the observed Temurin 11 server RUNPATH only for that exact
-file and retains its ABI and ldd diagnostics. `build_appimage.sh` removes only
-`usr/lib/tokenlogue/lib/libdartjni.so` from the AppDir staging copy before
-linuxdeploy; an absent file is allowed. The source bundle and `libdart_bridge.so`
-are preserved. Final AppDir and AppImage verification rejects `libdartjni.so`,
-`libjvm.so`, and JDK/JRE paths: the AppImage must not depend on Java.
+[К Tokenlogue](../../../README.md#lang-ru)
 
-## Ubuntu 22.04 baseline workflow
-
-`.github/workflows/build-linux.yml` is a manual-only workflow which has completed
-successfully on GitHub-hosted Ubuntu 22.04 x86_64, including its automatic
-isolated launch check. The pipeline exports production-only pip constraints directly from
-`uv.lock`, creates a separate locked production environment, supplies the
-constraints to Flet through command-scoped `PIP_CONSTRAINT`, and rejects any
-package inventory mismatch.
-
-The resulting bundle, AppDir, and extracted AppImage must not require a GLIBC
-version newer than `GLIBC_2.35`. The workflow also records ELF, RUNPATH, ldd,
-toolchain, metadata, and isolated headless smoke-test reports. Its artifact is
-unsigned, remains diagnostic only, and is not promoted to a release.
-
-## Headless smoke diagnostics
-
-The isolated Xvfb smoke test discovers windows through `xwininfo -root -tree`
-and `xprop` on the same display with `LC_ALL=C`. It requires the exact
-`WM_CLASS` pair `"tokenlogue", "Tokenlogue"`, the title `"Tokenlogue"`, and
-`Map State: IsViewable`; no window manager or EWMH client list is required.
-
-On success and failure, an exit handler stops the owned processes, saves
-application/sandbox/Xvfb stderr, window search output, matched properties and
-map state, and a PASS/FAIL summary before deleting temporary data. Checks that
-have not run are marked `NOT_RUN`; missing evidence is `UNAVAILABLE` or
-`NOT_CAPTURED`. Report failures cannot turn a failed test into a success or
-skip cleanup. Only these diagnostic files are copied to the reports directory;
-temporary HOME, storage, databases, keyring and raw traces are excluded.
-
-## Cross-distribution userspace matrix
-
-`test-linux-appimage.yml` is a separate manual-only workflow. Matrix run
-`34439720271` passed for the `14b87ac` artifact in all three userspaces,
-including the required host desktop-module checks. GitHub API job conclusions
-were verified. The per-distribution report archives were not supplied for
-independent report inspection. Manual desktop checks are separate evidence
-from the automated Xvfb/software-rendering launch checks.
-
-Supply a specific successful `build-linux.yml` run ID and full application
-commit SHA. `source_artifact.py` checks the repository, workflow ID/path,
-completion, conclusion, commit, unique artifact name, expiry and artifact run
-association through GitHub's API. It downloads by artifact ID, audits ZIP paths
-and types, and reads only the single AppImage and checksum manifest. It does
-not execute the source archive. The verified file is renamed, without changing
-bytes, to `Tokenlogue-<version>-<short-source-sha>-x86_64.AppImage`. Its checksum
-manifest references that exact name. Application and test-infrastructure commits
-are recorded separately; checkout always stays on the infrastructure commit.
-
-Every matrix job downloads the same verified copy and checks SHA-256 before
-and after testing. The three official Docker Hub base images and their verified
-linux/amd64 manifest digests are recorded in `container-images.lock.json`:
-Ubuntu 22.04, Ubuntu 24.04 and Fedora 44. The manifest bytes were SHA-256 checked
-against the registry response. This is registry/TLS provenance, not a signature.
-Installed runtime package repositories remain mutable: a pinned base does not
-make the complete environment bit-for-bit reproducible. Each test records the
-complete installed package inventory and `/etc/os-release`.
-
-`Containerfile.matrix` adds runtime GTK/GLib, graphics, libsecret, D-Bus and
-diagnostic tools, not Flet/Flutter SDKs, compilers or development packages.
-No runner libraries are copied into the image. The container is the explicit
-isolation boundary: an unprivileged UID, a private disposable home/filesystem,
-`--network none`, a separate D-Bus/keyring, Xvfb without TCP, software GL and
-20-second extract-and-run timeout. It has no host HOME or Docker socket mount.
-All capabilities are dropped except `SYS_PTRACE`, needed for strace of child
-processes under Docker's default seccomp policy; `no-new-privileges` remains on.
-No privileged or network fallback is provided. libsecret still needs a Secret
-Service provider; the test supplies a disposable one without a real key.
-
-The new probe reuses the exact inner launch, window discovery and diagnostic
-functions of `smoke_appimage.sh`. Function extraction is checked by tests and
-`bash -n`; the existing bubblewrap workflow and script are unchanged. Missing
-evidence is NOT_RUN/UNAVAILABLE, never a numeric zero or a successful check.
-Process cleanup and diagnostic copying run on failures too, followed by removal
-of the disposable container. Raw traces, temporary home/storage/keyring/caches
-are never included in artifacts. Diagnostic artifacts are retained for 14 days.
-
-Runtime/environment failures fail their jobs. `fail-fast: false` allows other
-distributions to finish. Reports and Step Summary identify the source run,
-artifact, both commits, file hash/size, image digest and measured outcomes.
-The automatic GitHub token is limited to retrieval steps and is never passed
-to containers. There is no signing, release, automatic source-run selection,
-or per-distribution application rebuild.
-
-Each newly built candidate must pass module and launch checks in all three
-userspaces. These container checks do not establish
-ordinary FUSE launch, Wayland compatibility, hardware GPU drivers, or complete
-desktop-session integration. They do not make an unsigned diagnostic AppImage
-a general-distribution release.
-
-## Notice collection
-
-`notices.py` collects the license registry after ELF patching and before
-AppImage creation. It requires the real `build/flutter/pubspec.lock`, `zstd`,
-Debian package metadata, and the inputs downloaded by `notices.py fetch`.
-Those inputs are pinned in `notices.lock.json`. The binary comparisons bind
-CPython 3.12.14 x86_64_v2 and dart-bridge 1.9.0 to their own license material.
-A different binary requires a reviewed lock update; no approximate version
-match or automatic fallback is used.
-
-The bridge reference was reviewed after the build of commit `156966a` resolved
-`serious_python_linux` 4.7.0, which selects dart-bridge 1.9.0. Its code and Build ID
-do not match the previous 1.8.0 reference. The updated release asset remains
-SHA-256 pinned, and its license text is byte-identical to the 1.8.0 license.
-`uv.lock` covers Python packages; it does not pin Flutter's transitive packages.
-Future native binary changes still require review and a matching notice lock.
-Provenance errors include differing ELF section names and both file hashes.
-
-The registry includes native-package copyright, full common-license texts,
-Python distribution notices, the complete license set from the matching PBS
-archive, Flutter notices, bridge/runtime notices, and KaTeX font declarations
-with OFL 1.1. Every packaged ELF, distribution METADATA and font must have an
-entry. The build and extracted-image checks reject missing or altered files.
-
-The original repository `THIRD_PARTY_NOTICES.md` is unchanged. Its two staged
-copies become a generated index, with the machine-readable registry at
-`usr/share/doc/tokenlogue/notices.json`. New diagnostic reports are
-`notice-inputs.json`, `notices-appdir.json`, `notices-appimage.json`,
-`notices-manifest.json`, and the resolved `flutter-pubspec.lock`.
-
-Build `34439008120` passed both notice-verification gates with 75 components
-and 85 subjects. The embedded lock is an audit copy with only the known local
-plugin path made relative; its original source SHA-256 is retained in the
-manifest. All 153 resolved packages are preserved. The final Python content
-scan runs after collection in read-only mode and no longer depends on `rg`.
-Two packagings produced the same AppImage SHA-256. See the current artifact
-audit for the exact file identity and evidence boundaries.
-
-Notice coverage does not close the separate corresponding-source review.
-The registry explicitly preserves `source_materials: REVIEW_REQUIRED`.
-Release preparation must arrange the required source and rebuild materials
-for applicable components, including the static AppImage runtime. A green
-diagnostic workflow does not declare that source package complete.
-
-See [notices.md](notices.md) for the implementation scope and verification.
-
-## Проверка следующей сборки приложения
-
-После публикации нового коммита вручную запустите `build-linux.yml`. Для
-`test-linux-appimage.yml` затем укажите ID этого нового успешного запуска
-приложения и его полный commit. Runtime run `34749438406` не является
-source run приложения для матрицы. Новую упаковку, матрицу, FUSE и ручную работу
-Tokenlogue этот исходный патч не объявляет проверенными.
+[English](#lang-en) | [Русский](#lang-ru)

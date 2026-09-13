@@ -313,7 +313,7 @@ class LinuxBuildPipelineTests(unittest.TestCase):
         )
         self.assertIn('--bind "$smoke_root/home" "$HOME"', text)
 
-    def test_gitignore_and_documentation_cover_only_generated_pipeline_files(
+    def test_gitignore_excludes_outputs_and_documentation_states_preview_limits(
         self,
     ) -> None:
         ignore = (PROJECT_ROOT / ".gitignore").read_text(encoding="utf-8")
@@ -330,10 +330,12 @@ class LinuxBuildPipelineTests(unittest.TestCase):
         documentation = " ".join((root_readme + packaging_readme).split())
         for phrase in (
             "Ubuntu 22.04",
-            "GLIBC_2.35",
-            "uv.lock",
-            "manual-only",
-            "requires a new build and matrix run",
+            "x86-64-v2",
+            "Secret Service",
+            "unsigned",
+            "limited retention",
+            "source-materials.md#lang-en",
+            "source-materials.md#lang-ru",
         ):
             self.assertIn(phrase, documentation)
 
