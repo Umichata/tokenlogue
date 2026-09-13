@@ -69,7 +69,9 @@ jobs:
           if-no-files-found: error
           retention-days: 14
           compression-level: 0
-          include-hidden-files: false
+          # The curated artifact includes materials/recipe/.github/workflows/.
+          # These recipe files are covered by manifest.json and SHA256SUMS.
+          include-hidden-files: true
 
       - name: Upload diagnostics and both available binaries even on failure
         if: ${{ always() && !cancelled() }}
