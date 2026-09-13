@@ -69,7 +69,12 @@ class MessageHistoryView:
         ]
         metadata = _message_metadata(message, turn)
         if metadata:
-            details.append(ft.Text(metadata, size=11, color=MUTED_COLOR))
+            spans = []
+            for index, (label, value) in enumerate(metadata):
+                if index:
+                    spans.append(ft.TextSpan(" · "))
+                spans.extend([ft.TextSpan(label + " "), ft.TextSpan(value)])
+            details.append(ft.Text(spans=spans, size=11, color=MUTED_COLOR))
 
         if message.status is MessageStatus.PENDING:
             details.append(ft.Text("Отправляется…", size=11, color=MUTED_COLOR))
@@ -104,6 +109,7 @@ class MessageHistoryView:
                 )
 
         bubble = ft.Container(
+            expand=True,
             bgcolor=(ft.Colors.BLUE_700 if is_user else PANEL_BACKGROUND),
             border_radius=14,
             padding=12,
@@ -113,7 +119,11 @@ class MessageHistoryView:
             alignment=(
                 ft.MainAxisAlignment.END if is_user else ft.MainAxisAlignment.START
             ),
-            controls=[bubble],
+            controls=(
+                [ft.Container(width=24), bubble]
+                if is_user
+                else [bubble, ft.Container(width=24)]
+            ),
         )
 
     def _retry_handler(
@@ -126,21 +136,23 @@ class MessageHistoryView:
         return handle_click
 
 
-def _message_metadata(message: Message, turn: TurnRecord | None) -> str:
-    parts: list[str] = []
+def _message_metadata(
+    message: Message, turn: TurnRecord | None
+) -> list[tuple[str, str]]:
+    parts: list[tuple[str, str]] = []
     if message.role is MessageRole.ASSISTANT:
         model = message.actual_model_id or (
             turn.actual_model_id if turn is not None else None
         )
         if model:
-            parts.append(f"Модель: {model}")
+            parts.append(("Модель", model))
     if turn is not None and turn.accounting_status is AccountingStatus.FINAL:
         if turn.prompt_tokens is not None:
-            parts.append(f"prompt: {turn.prompt_tokens}")
+            parts.append(("Входные токены", str(turn.prompt_tokens)))
         if turn.completion_tokens is not None:
-            parts.append(f"completion: {turn.completion_tokens}")
+            parts.append(("Токены ответа", str(turn.completion_tokens)))
         if turn.total_tokens is not None:
-            parts.append(f"всего: {turn.total_tokens}")
+            parts.append(("Всего", str(turn.total_tokens)))
         if turn.cost_usd is not None:
-            parts.append(f"стоимость: ${format_decimal_usd(turn.cost_usd)}")
-    return " · ".join(parts)
+            parts.append(("Стоимость", "$" + format_decimal_usd(turn.cost_usd)))
+    return parts

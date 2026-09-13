@@ -5,6 +5,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: linux-appimage-${{ github.workflow }}-${{ github.ref }}
@@ -158,6 +159,14 @@ jobs:
               build/appimage/tools/appimagetool-runtime-x86_64
           } > build/linux-release/reports/appimage-tools.txt 2>&1
 
+      - name: Получить закреплённый standalone runtime и проверить материалы
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          uv run --locked python packaging/linux/appimage/fetch_runtime.py \
+            --report build/linux-release/reports/runtime-inputs.json
+
       - name: Fetch pinned notice references
         run: |
           set -Eeuo pipefail
@@ -170,7 +179,8 @@ jobs:
       - name: Build first diagnostic AppImage
         run: |
           set -Eeuo pipefail
-          packaging/linux/appimage/build_appimage.sh 2>&1 | \
+          RUNTIME_PREFIX_REPORT="$PWD/build/linux-release/reports/runtime-prefix-first.json" \
+            packaging/linux/appimage/build_appimage.sh 2>&1 | \
             tee build/linux-release/reports/appimage-build-first.log
           sha256sum build/appimage/Tokenlogue-0.1.0-x86_64.AppImage | \
             awk '{print $1}' > build/linux-release/reports/appimage-first.sha256
@@ -179,7 +189,8 @@ jobs:
         run: |
           set -Eeuo pipefail
           first=$(<build/linux-release/reports/appimage-first.sha256)
-          packaging/linux/appimage/build_appimage.sh 2>&1 | \
+          RUNTIME_PREFIX_REPORT="$PWD/build/linux-release/reports/runtime-prefix-second.json" \
+            packaging/linux/appimage/build_appimage.sh 2>&1 | \
             tee build/linux-release/reports/appimage-build-second.log
           second=$(sha256sum build/appimage/Tokenlogue-0.1.0-x86_64.AppImage | \
             awk '{print $1}')

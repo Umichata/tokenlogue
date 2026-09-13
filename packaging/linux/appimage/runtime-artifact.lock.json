@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "repository": "Umichata/tokenlogue",
+  "workflow": ".github/workflows/build-appimage-runtime.yml",
+  "source_run_id": 34749438406,
+  "run_attempt": 1,
+  "producer_commit": "afaa07703beb783370b82ade6ac2557782a59d07",
+  "recipe_fingerprint": "a8f4a650d47ec2f042160b33beec4c3f44d0484887c6977b8057e0723cc30336",
+  "artifact_id": 10315337524,
+  "artifact_name": "appimage-runtime-34749438406-1",
+  "archive_size": 391916671,
+  "archive_sha256": "a9869ba745218ea8b0e2dec0c3da6af15b4d28fbd6e1ec1170afcadb758b06c9",
+  "runtime_path": "runtime-x86_64",
+  "runtime_size": 678280,
+  "runtime_sha256": "48106c5b9cba63270319422a90640f615846a26326b9b3d942ab6932d3cedabb",
+  "manifest_sha256": "61e5145d0ace697bff0927276eda03a1001d60c2aaa802f9832740f815b1234c",
+  "runtime_lock_sha256": "5b312af0ff01ae6985868f5a4f9790ba582295969bd56598f7bc40682f6101bf",
+  "upstream_commit": "caf24f9f712084686bfc24a70b75e50df0aefb9c",
+  "expires_on": "2026-09-27",
+  "components": {
+    "type2-runtime": {"version": "caf24f9f712084686bfc24a70b75e50df0aefb9c", "licenses": ["LICENSE"]},
+    "libfuse": {"version": "3.15.0", "licenses": ["GPL2.txt", "LGPL2.txt", "LICENSE"]},
+    "squashfuse": {"version": "0.5.2", "licenses": ["LICENSE"]},
+    "musl": {"version": "1.2.5-r11", "licenses": ["COPYRIGHT"]},
+    "gcc": {"version": "14.2.0-r4", "licenses": ["COPYING", "COPYING.LIB", "COPYING.RUNTIME", "COPYING3", "COPYING3.LIB"]},
+    "zlib": {"version": "1.3.2-r0", "licenses": ["LICENSE"]},
+    "zstd": {"version": "1.5.6-r2", "licenses": ["COPYING", "LICENSE"]},
+    "mimalloc2": {"version": "2.1.7-r0", "licenses": ["LICENSE"]}
+  }
+}

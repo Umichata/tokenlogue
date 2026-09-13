@@ -2,6 +2,25 @@
 
 import flet as ft
 
+
+def detail_row(label: str, value: str, *, size: int = 12) -> ft.Row:
+    """Подпись и значение остаются отдельными колонками и переносятся по ширине."""
+    return ft.Row(
+        spacing=12,
+        vertical_alignment=ft.CrossAxisAlignment.START,
+        controls=[
+            ft.Text(label, size=size, color=MUTED_COLOR, expand=3),
+            ft.Text(
+                value,
+                size=size,
+                selectable=True,
+                expand=2,
+                text_align=ft.TextAlign.RIGHT,
+            ),
+        ],
+    )
+
+
 PAGE_BACKGROUND = ft.Colors.BLUE_GREY_900
 PANEL_BACKGROUND = ft.Colors.BLUE_GREY_800
 PRIMARY_COLOR = ft.Colors.BLUE_400

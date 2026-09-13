@@ -14,13 +14,31 @@ copyright, с изменённым Python/bridge или с неизвестно�
 | Flutter | Включённый NOTICES.Z и фактический разрешённый pubspec.lock после Flet-сборки |
 | Python-пакеты | METADATA, лицензионные файлы и принадлежность native extensions по RECORD. Для flet 0.86.5 отдельно закреплён upstream LICENSE |
 | Шрифты | Copyright и Reserved Font Names читаются из каждого KaTeX TTF. Полный текст OFL 1.1 закреплён отдельно |
-| AppImage runtime | Точный runtime из tools.lock, его собственная лицензия и тексты статических зависимостей, включая libfuse, squashfuse, musl, zstd, zlib и mimalloc |
+| AppImage runtime | Готовый комплект по runtime-artifact.lock.json. Проверяются ZIP, manifest, исходный lock, производящий run/commit/fingerprint и входы линковки. Лицензии берутся из materials/licenses/ |
 
 URL и SHA-256 текстов находятся в `notices.lock.json`. Для OFL удалена только
 шаблонная шапка с незаполненными copyright-полями. Реальные правообладатели и
 зарезервированные имена берутся из шрифтов. Остальные vendored тексты сохранены
 побайтно, включая отсутствие завершающего перевода строки в upstream COPYING
 zstd. Наличие цифровой подписи или attestation этих источников не заявляется.
+
+У выбранного standalone runtime восемь отдельных записей `runtime:<component>`
+и общая запись `appimage-runtime`: type2-runtime `caf24f9…`, libfuse 3.15.0,
+squashfuse 0.5.2, musl 1.2.5-r11, gcc 14.2.0-r4, zlib 1.3.2-r0, zstd 1.5.6-r2
+и mimalloc2 2.1.7-r0. Сохраняются все 15 текстов, включая `gcc/COPYING.RUNTIME`
+и сопутствующие GCC licenses. Прежняя ссылка zlib v1.3.1 больше не относится
+к выбранному runtime. Старые vendored runtime licenses не используются для
+нового AppDir и не редактируются.
+
+Тексты копируются побайтно из проверенного комплекта. В
+`licenses/appimage-runtime/provenance.json` явно перечисляются producer commit,
+upstream commit, recipe fingerprint, source run/attempt, artifact ID и хеши
+ZIP/runtime/manifest, версии и исходники компонентов, лицензии и хеши входов
+линковки. Абсолютные пути полных отчётов не переносятся. Все добавленные файлы
+участвуют в notices manifest и финальной проверке путей. Отсутствие или изменение
+runtime notice, его версии либо связь с другим runtime останавливают упаковку.
+Полный комплект исходников остаётся отдельным ZIP. Общий
+`source_materials: REVIEW_REQUIRED` сохраняется из-за материалов Flutter SDK.
 
 Python reference не используется для подмены runtime. При несовпадении
 бинарников упаковка останавливается. Вся поставленная PBS подборка лицензий
@@ -65,6 +83,9 @@ Python в режиме `--check-only`, включая файлы notices. Она
 `build/flutter/pubspec.lock`, выполнить:
 
 ```bash
+uv run --locked python packaging/linux/appimage/fetch_runtime.py \
+  --archive /tmp/appimage-runtime-34749438406-1.zip \
+  --report build/linux-release/reports/runtime-inputs.json
 uv run --locked python packaging/linux/appimage/notices.py fetch \
   --cache build/appimage/notice-inputs
 packaging/linux/appimage/build_appimage.sh
@@ -129,7 +150,9 @@ packages с совпадающими ELF-секциями. Они распако
 файлов. Комплект соответствующих исходников проверяется отдельно. В реестре
 явно остаётся `source_materials: REVIEW_REQUIRED`. Для применимых компонентов
 нужно подготовить выдачу исходников и материалов пересборки, в том числе для
-статического AppImage runtime и `_dbm`/Berkeley DB. Копирование лицензий не
+компонентов вне выбранного standalone runtime. Сохранённый runtime ZIP связан
+с новой упаковкой через его хеш и компактные сведения о происхождении.
+Копирование лицензий не
 создаёт такой архив автоматически.
 
 Сборка и матрица для `14b87ac` уже пройдены. Обновление документации об этом

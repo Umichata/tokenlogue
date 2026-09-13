@@ -138,6 +138,7 @@ download_dir="$tools_dir/downloads"
 linuxdeploy="$download_dir/$LINUXDEPLOY_ASSET"
 appimagetool="$download_dir/$APPIMAGETOOL_ASSET"
 appimagetool_runtime="$tools_dir/appimagetool-runtime-x86_64"
+standalone_runtime="$work_root/runtime-selected/runtime-x86_64"
 patchelf="$tools_dir/patchelf"
 
 verify_sha256 "$linuxdeploy" "$LINUXDEPLOY_SHA256"
@@ -150,6 +151,9 @@ verify_sha256 "$download_dir/$PATCHELF_ASSET" "$PATCHELF_SHA256"
 verify_sha256 "$patchelf" "$PATCHELF_BINARY_SHA256"
 [[ "$("$patchelf" --version)" == "patchelf ${PATCHELF_TAG}" ]] || \
     die "unexpected patchelf version"
+
+# Выбранный комплект проверяется целиком. Старый runtime утилиты не является заменой.
+"$python_bin" "$script_dir/fetch_runtime.py" verify --output "$work_root/runtime-selected"
 
 mkdir -p -- "$work_root"
 staging_root="$(mktemp -d "$work_root/.stage.XXXXXX")"
@@ -356,11 +360,11 @@ done
 normalize_permissions "$appdir"
 validate_symlinks "$appdir"
 
-# Collect notices after all binary edits, so their manifest describes final bytes.
+# После правок бинарников собираем notices из того же проверенного standalone runtime.
 "$python_bin" "$script_dir/notices.py" collect \
     --appdir "$appdir" \
     --cache "$work_root/notice-inputs" \
-    --runtime "$appimagetool_runtime" \
+    --runtime "$standalone_runtime" \
     --pubspec-lock "$repo_root/build/flutter/pubspec.lock"
 normalize_permissions "$appdir"
 validate_symlinks "$appdir"
@@ -378,7 +382,7 @@ source_date_epoch="$(git -C "$repo_root" show -s --format=%ct HEAD)"
 export SOURCE_DATE_EPOCH="$source_date_epoch"
 find "$appdir" -exec touch -h -d "@${SOURCE_DATE_EPOCH}" {} +
 
-"$python_bin" "$script_dir/notices.py" verify --appdir "$appdir"
+"$python_bin" "$script_dir/notices.py" verify --appdir "$appdir" --runtime "$standalone_runtime"
 
 printf 'Creating unsigned diagnostic AppImage with appimagetool %s\n' \
     "$APPIMAGETOOL_TAG"
@@ -390,10 +394,15 @@ env \
     ARCH=x86_64 \
     SOURCE_DATE_EPOCH="$SOURCE_DATE_EPOCH" \
     "$appimagetool" --appimage-extract-and-run \
-    --runtime-file "$appimagetool_runtime" \
+    --runtime-file "$standalone_runtime" \
     "$appdir" "$partial_image"
 
 [[ -f "$partial_image" ]] || die "appimagetool did not create an artifact"
+# Публикация разрешена только после проверки префикса с исключением .digest_md5.
+"$python_bin" "$script_dir/fetch_runtime.py" prefix \
+    --runtime "$standalone_runtime" --appimage "$partial_image" \
+    --report "${RUNTIME_PREFIX_REPORT:-$repo_root/build/linux-release/reports/runtime-prefix.json}"
+"$python_bin" "$script_dir/notices.py" verify --appdir "$appdir" --runtime "$standalone_runtime"
 chmod 0755 "$partial_image"
 
 [[ "$final_appdir" == "$work_root/Tokenlogue.AppDir" ]] || \

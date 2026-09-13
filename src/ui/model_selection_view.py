@@ -21,6 +21,7 @@ from ui.styles import (
     PANEL_BACKGROUND,
     SUCCESS_COLOR,
     build_screen,
+    detail_row,
     primary_button_style,
 )
 
@@ -215,12 +216,13 @@ class ModelSelectionView:
         )
         details: list[ft.Control] = [
             ft.Text(model.id, color=MUTED_COLOR, selectable=True),
-            ft.Text(
-                "Вход: "
-                f"${format_price_per_million(displayed_pricing.prompt)} / 1 млн; "
-                "выход: "
-                f"${format_price_per_million(displayed_pricing.completion)} / 1 млн",
-                size=12,
+            detail_row(
+                "Входные токены, 1 млн",
+                "$" + format_price_per_million(displayed_pricing.prompt),
+            ),
+            detail_row(
+                "Выходные токены, 1 млн",
+                "$" + format_price_per_million(displayed_pricing.completion),
             ),
         ]
         if self._mode is ChatMode.PAID:
@@ -276,8 +278,7 @@ def key_limit_mode_notice(key_limit: KeyLimitInfo) -> tuple[str, str]:
         )
     if key_limit.state is KeyLimitState.AVAILABLE:
         return (
-            f"Доступный лимит ключа: {key_limit.remaining} USD. "
-            "Это не баланс аккаунта.",
+            f"Доступный лимит ключа {key_limit.remaining} USD. Это не баланс аккаунта.",
             SUCCESS_COLOR,
         )
     return (
@@ -315,32 +316,38 @@ def key_access_mode_notice(
 
 def _additional_price_controls(model: CatalogModel) -> list[ft.Control]:
     pricing = maximum_pricing(model)
-    details: list[str] = []
+    details: list[ft.Control] = []
     if pricing.request > 0:
-        details.append(f"за запрос: ${pricing.request}")
+        details.append(detail_row("За запрос", f"${pricing.request}"))
     if pricing.internal_reasoning > 0:
         details.append(
-            "внутреннее рассуждение: "
-            f"${format_price_per_million(pricing.internal_reasoning)} / 1 млн"
+            detail_row(
+                "Внутреннее рассуждение, 1 млн токенов",
+                "$" + format_price_per_million(pricing.internal_reasoning),
+            )
         )
     if pricing.input_cache_read > 0:
         details.append(
-            "чтение кэша: "
-            f"${format_price_per_million(pricing.input_cache_read)} / 1 млн"
+            detail_row(
+                "Чтение кэша, 1 млн токенов",
+                "$" + format_price_per_million(pricing.input_cache_read),
+            )
         )
     if pricing.input_cache_write > 0:
         details.append(
-            "запись кэша: "
-            f"${format_price_per_million(pricing.input_cache_write)} / 1 млн"
+            detail_row(
+                "Запись кэша, 1 млн токенов",
+                "$" + format_price_per_million(pricing.input_cache_write),
+            )
         )
     if model.pricing_overrides:
-        details.append("указаны ценовые overrides; показаны верхние значения")
+        details.append(
+            ft.Text(
+                "У модели есть переопределения цен. Показаны верхние значения.",
+                size=12,
+                color=MUTED_COLOR,
+            )
+        )
     if not details:
         return []
-    return [
-        ft.Text(
-            "Дополнительная цена: " + "; ".join(details),
-            size=12,
-            color=MUTED_COLOR,
-        )
-    ]
+    return [ft.Text("Дополнительная цена", size=12, color=MUTED_COLOR), *details]

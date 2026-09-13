@@ -243,7 +243,7 @@ class AuthService:
         attempts_left = max(0, MAX_FAILED_ATTEMPTS - attempt_state.failed_attempts)
         return AuthResult(
             AuthStatus.INVALID_PIN,
-            f"Неверный PIN. Осталось попыток: {attempts_left}.",
+            f"Неверный PIN. Осталось попыток {attempts_left}.",
         )
 
     async def _reset_authentication(self) -> AuthResult:
@@ -410,7 +410,7 @@ def _validated_key_message(key_limit: KeyLimitInfo) -> str:
         )
     if key_limit.state is KeyLimitState.AVAILABLE:
         return (
-            f"{prefix} Доступный лимит ключа: {key_limit.remaining} USD. "
+            f"{prefix} Доступный лимит ключа {key_limit.remaining} USD. "
             "Сохраните созданный PIN."
         )
     return f"{prefix} Сохраните созданный PIN."

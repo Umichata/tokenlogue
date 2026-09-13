@@ -46,11 +46,57 @@ embedded `--version` text calls itself a continuous build; this infrastructure
 does not use the mutable `/continuous/` download URL and relies on the pinned
 tag, asset name, and digest.
 
-AppImage creation uses the runtime embedded at the start of that same tagged
-appimagetool asset. `fetch_tools.sh` verifies its reported offset, extracts the
-exact `944632`-byte prefix, and checks its separately pinned SHA-256. The build
-passes this file through `--runtime-file`, so appimagetool cannot fetch the
-mutable continuous runtime while packaging.
+Для новой упаковки выбран готовый standalone runtime. Его закрепления находятся
+в `runtime-artifact.lock.json`, отдельно от исходного `runtime/runtime.lock.json`.
+`fetch_tools.sh` по-прежнему проверяет собственный префикс appimagetool размером
+944632 байта. Этот префикс относится только к утилите и не используется как
+запасной runtime для Tokenlogue. `tools.lock` и хеш appimagetool 1.9.1 сохранены.
+
+## Выбранный standalone runtime
+
+Производитель — `build-appimage-runtime.yml`, run `34749438406`, attempt `1`,
+commit `afaa07703beb783370b82ade6ac2557782a59d07`. Artifact ID `10315337524`,
+имя `appimage-runtime-34749438406-1`. Размер ZIP — 391916671 байт, SHA-256
+`a9869ba745218ea8b0e2dec0c3da6af15b4d28fbd6e1ec1170afcadb758b06c9`.
+Размер `runtime-x86_64` — 678280 байт, SHA-256
+`48106c5b9cba63270319422a90640f615846a26326b9b3d942ab6932d3cedabb`.
+Commit приложения может меняться. Он не заменяет commit производителя и не
+меняет закрепление уже выбранного runtime.
+
+`fetch_runtime.py` проверяет размер и SHA-256 ZIP до распаковки, CRC каждого
+члена, точный состав файлов manifest/SHA256SUMS, все размеры и хеши, вложенный
+workflow `.github`, fingerprint рецепта, исходный lock, обязательные PASS-отчёты,
+лицензии, привязки линкованных компонентов и ELF чтением. Код и бинарники из
+комплекта не исполняются. Публикуется только полностью проверенный временный
+каталог. Повреждённый кэш вызывает ошибку вместо повторного разрешения версии.
+
+Локальный режим использует сохранённый ZIP и не требует токена:
+
+```bash
+uv run --locked python packaging/linux/appimage/fetch_runtime.py \
+  --archive /tmp/appimage-runtime-34749438406-1.zip \
+  --report build/linux-release/reports/runtime-inputs.json
+```
+
+Он не утверждает, что срок хранения проверен через API. В CI helper проверяет
+точные repository/workflow/run/attempt/commit и artifact ID/name/digest/size,
+успешное завершение и срок хранения, затем скачивает по закреплённому ID.
+`GH_TOKEN` с `actions: read` передаётся только этому шагу. Подписанные URLs
+и токен не попадают в отчёт или сборку приложения. Сохраните исходный ZIP:
+Actions artifact истекает 27 сентября 2026 года. Постоянное Release-хранилище
+не создаётся, автоматического выбора другого артефакта нет.
+
+Комплект сохраняется в `build/appimage/runtime-selected/`. Оба запуска упаковки
+используют один файл `runtime-x86_64` для notices и `--runtime-file`. Перед
+использованием проверяются его байты. Перед публикацией каждого AppImage
+проверяется префикс. Допускается только изменение 16 байтов `.digest_md5`.
+Другой runtime, усечение и остальные изменения отклоняются. В CI сохраняются
+`runtime-inputs.json`, `runtime-prefix-first.json`, `runtime-prefix-second.json`.
+
+Сборщик переносит в AppDir только 15 исходных текстов лицензий и компактное
+происхождение восьми компонентов. Полный ZIP, APK и toolchain туда не входят.
+Сведения о новых упаковке, матрице и FUSE появятся после следующего CI/ручного
+этапа. Исторические результаты `14b87ac` ниже относятся к прежнему runtime.
 
 ## Usage
 
@@ -59,6 +105,9 @@ unset:
 
 ```bash
 packaging/linux/appimage/fetch_tools.sh
+uv run --locked python packaging/linux/appimage/fetch_runtime.py \
+  --archive /tmp/appimage-runtime-34749438406-1.zip \
+  --report build/linux-release/reports/runtime-inputs.json
 uv run --locked python packaging/linux/appimage/notices.py fetch \
   --cache build/appimage/notice-inputs
 packaging/linux/appimage/build_appimage.sh
@@ -245,3 +294,11 @@ for applicable components, including the static AppImage runtime. A green
 diagnostic workflow does not declare that source package complete.
 
 See [notices.md](notices.md) for the implementation scope and verification.
+
+## Проверка следующей сборки приложения
+
+После публикации нового коммита вручную запустите `build-linux.yml`. Для
+`test-linux-appimage.yml` затем укажите ID этого нового успешного запуска
+приложения и его полный commit. Runtime run `34749438406` не является
+source run приложения для матрицы. Новую упаковку, матрицу, FUSE и ручную работу
+Tokenlogue этот исходный патч не объявляет проверенными.

@@ -154,7 +154,11 @@ class ChatComponentTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(len(history.control.controls), 2)
         first_row = cast(ft.Row, history.control.controls[0])
-        first_bubble = cast(ft.Container, first_row.controls[0])
+        first_bubble = next(
+            c
+            for c in first_row.controls
+            if isinstance(c, ft.Container) and isinstance(c.content, ft.Column)
+        )
         first_column = cast(ft.Column, first_bubble.content)
         displayed = [
             control.value
@@ -203,7 +207,8 @@ class ChatComponentTests(unittest.IsolatedAsyncioTestCase):
             on_replace_key=callback,
         )
 
-        self.assertIsNotNone(view.limits_button)
+        self.assertIsNone(view.limits_button)
+        self.assertIsNotNone(view.send_notice)
         self.assertIsNotNone(view.composer)
         assert view.composer is not None
         self.assertTrue(view.composer.send_button.disabled)

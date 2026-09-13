@@ -7,6 +7,7 @@ import sqlite3
 import sys
 import threading
 import unittest
+from collections.abc import Awaitable, Callable
 from contextlib import closing
 from pathlib import Path
 from types import SimpleNamespace
@@ -128,6 +129,73 @@ class ChatDraftUiTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(
             self.fixture.draft_repository.get_draft(self.a).text, EXACT_TEXT
         )
+
+    async def test_menu_resize_switch_and_restart_keep_exact_drafts(self) -> None:
+        await self._type(EXACT_TEXT)
+        view = self.controller._workspace_view
+        assert view is not None and view.composer is not None
+        composer = view.composer
+        history = view.message_history
+        await view.open_menu()
+        view._handle_size_change(
+            cast(ft.LayoutSizeChangeEvent, SimpleNamespace(width=1280, height=750))
+        )
+        view._handle_size_change(
+            cast(ft.LayoutSizeChangeEvent, SimpleNamespace(width=420, height=700))
+        )
+        self.assertEqual(view.editor_value, EXACT_TEXT)
+        self.assertIs(view.composer, composer)
+        self.assertIs(view.message_history, history)
+        view.close_menu()
+        await view.open_menu()
+        await self.controller.select_chat(self.b)
+        self.assertFalse(view.menu_open)
+        await self._type("  Второй: текст;\n🙂\n")
+        await self.controller.select_chat(self.a)
+        self.assertEqual(self._text(), EXACT_TEXT)
+        self.assertEqual(self.client.calls, 0)
+        self.assertEqual(self.fixture.chat_repository.list_messages(self.a), [])
+        self.controller.dispose()
+        restarted, client = self.fixture._controller([])
+        self.addCleanup(restarted.dispose)
+        await self.fixture._activate(restarted)
+        await restarted.select_chat(self.a)
+        self.assertEqual(self._text(restarted), EXACT_TEXT)
+        await restarted.select_chat(self.b)
+        self.assertEqual(self._text(restarted), "  Второй: текст;\n🙂\n")
+        self.assertEqual(client.calls, 0)
+
+    async def test_old_rename_dialog_cannot_rename_another_chat(self) -> None:
+        await self.controller.request_rename_chat(self.a)
+        dialog = self.controller._rename_dialog
+        assert dialog is not None
+        self.assertEqual(dialog.chat_id, self.a)
+        before = self.fixture.chat_repository.get_chat(self.b)
+        await self.controller.confirm_rename_chat(self.b, "Wrong chat")
+        self.assertEqual(self.fixture.chat_repository.get_chat(self.b), before)
+        self.controller.cancel_rename_chat()
+
+    async def test_menu_limits_action_keeps_paid_confirmation_and_chat_identity(
+        self,
+    ) -> None:
+        chat_id = await self.fixture._create_chat(ChatMode.PAID)
+        await self.controller.select_chat(chat_id)
+        await self._type(EXACT_TEXT)
+        view = self.controller._workspace_view
+        assert view is not None
+        await view.open_menu()
+        button = view.limits_button
+        assert button is not None and button.on_click is not None
+        handler = cast(Callable[[ft.Event], Awaitable[None]], button.on_click)
+        await handler(ft.Event(name="click", control=button))
+        self.assertFalse(view.menu_open)
+        self.assertEqual(self.controller._workspace_controller._limits_chat_id, chat_id)
+        await self.controller.submit_existing_chat_limits("8192", "256", "2.5")
+        self.assertIsNotNone(
+            self.controller._workspace_controller._pending_limit_configuration
+        )
+        self.assertEqual(self._text(), EXACT_TEXT)
+        self.assertEqual(self.client.calls, 0)
 
     async def test_restart_loads_draft_from_sqlite_with_fresh_service(self) -> None:
         await self._type(EXACT_TEXT)

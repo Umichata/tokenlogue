@@ -24,7 +24,7 @@ from chat.models import (
     format_price_per_million,
 )
 from chat.sending import MessageSendPreview
-from ui.styles import ERROR_COLOR, MUTED_COLOR, primary_button_style
+from ui.styles import ERROR_COLOR, MUTED_COLOR, detail_row, primary_button_style
 
 LimitSubmitCallback = Callable[[str, str, str | None], Awaitable[None]]
 AsyncCallback = Callable[[], Awaitable[None]]
@@ -239,6 +239,7 @@ def build_paid_request_dialog(
     return ft.AlertDialog(
         modal=True,
         title=ft.Text("Подтвердить платный запрос?"),
+        scrollable=True,
         content=ft.Column(
             tight=True,
             controls=[
@@ -246,19 +247,21 @@ def build_paid_request_dialog(
                     preview.model_name or "Платная модель", weight=ft.FontWeight.BOLD
                 ),
                 ft.Text(preview.model_id or "", selectable=True, color=MUTED_COLOR),
-                ft.Text(
-                    f"Оценка prompt-токенов: {preview.estimated_prompt_tokens or 0}"
+                detail_row(
+                    "Оценка входных токенов",
+                    _number_or_unknown(preview.estimated_prompt_tokens),
                 ),
-                ft.Text(
-                    f"Максимум completion-токенов: {preview.max_completion_tokens or 0}"
+                detail_row(
+                    "Максимум токенов ответа",
+                    _number_or_unknown(preview.max_completion_tokens),
                 ),
-                ft.Text(
-                    "Максимальный денежный резерв: $"
-                    f"{format_decimal_usd(preview.reserved_cost_usd or Decimal('0'))}"
+                detail_row(
+                    "Максимальный денежный резерв",
+                    _money_or_unknown(preview.reserved_cost_usd),
                 ),
-                ft.Text(
-                    "Остаток локального бюджета после резерва: $"
-                    f"{format_decimal_usd(preview.remaining_cost_after_reservation or Decimal('0'))}"
+                detail_row(
+                    "Остаток бюджета после резерва",
+                    _money_or_unknown(preview.remaining_cost_after_reservation),
                 ),
                 ft.Text(
                     "Это защитная верхняя оценка, а не точная будущая стоимость.",
@@ -294,13 +297,14 @@ def build_price_reconfirmation_dialog(
     return ft.AlertDialog(
         modal=True,
         title=ft.Text("Цена модели изменилась"),
+        scrollable=True,
         content=ft.Column(
             tight=True,
             controls=[
-                ft.Text("Ранее подтверждённые верхние цены:"),
-                ft.Text(_format_price_components(change.confirmed), selectable=True),
-                ft.Text("Текущие верхние цены:"),
-                ft.Text(_format_price_components(change.current), selectable=True),
+                ft.Text("Ранее подтверждённые верхние цены"),
+                *_price_component_rows(change.confirmed),
+                ft.Text("Текущие верхние цены"),
+                *_price_component_rows(change.current),
                 ft.Text(
                     "Запрос не будет отправлен, пока новые цены не подтверждены.",
                     color=ft.Colors.AMBER_300,
@@ -334,9 +338,13 @@ def build_cost_increase_dialog(
     return ft.AlertDialog(
         modal=True,
         title=ft.Text("Увеличить денежный лимит?"),
-        content=ft.Text(
-            f"Текущий лимит: ${format_decimal_usd(old_value)}. "
-            f"Новый лимит: ${format_decimal_usd(new_value)}."
+        scrollable=True,
+        content=ft.Column(
+            tight=True,
+            controls=[
+                detail_row("Текущий лимит", "$" + format_decimal_usd(old_value)),
+                detail_row("Новый лимит", "$" + format_decimal_usd(new_value)),
+            ],
         ),
         actions=[
             ft.TextButton("Отмена", on_click=handle_cancel),
@@ -373,13 +381,33 @@ def build_release_unknown_dialog(
     )
 
 
-def _format_price_components(pricing: PriceComponents) -> str:
-    return (
-        f"prompt: ${format_price_per_million(pricing.prompt)} / 1 млн; "
-        f"completion: ${format_price_per_million(pricing.completion)} / 1 млн; "
-        f"request: ${format_decimal_usd(pricing.request)}; "
-        "internal reasoning: "
-        f"${format_price_per_million(pricing.internal_reasoning)} / 1 млн; "
-        f"cache read: ${format_price_per_million(pricing.input_cache_read)} / 1 млн; "
-        f"cache write: ${format_price_per_million(pricing.input_cache_write)} / 1 млн"
-    )
+def _price_component_rows(pricing: PriceComponents) -> list[ft.Control]:
+    return [
+        detail_row(
+            "Входные токены, 1 млн", "$" + format_price_per_million(pricing.prompt)
+        ),
+        detail_row(
+            "Выходные токены, 1 млн", "$" + format_price_per_million(pricing.completion)
+        ),
+        detail_row("За запрос", "$" + format_decimal_usd(pricing.request)),
+        detail_row(
+            "Внутреннее рассуждение, 1 млн токенов",
+            "$" + format_price_per_million(pricing.internal_reasoning),
+        ),
+        detail_row(
+            "Чтение кэша, 1 млн токенов",
+            "$" + format_price_per_million(pricing.input_cache_read),
+        ),
+        detail_row(
+            "Запись кэша, 1 млн токенов",
+            "$" + format_price_per_million(pricing.input_cache_write),
+        ),
+    ]
+
+
+def _number_or_unknown(value: int | None) -> str:
+    return "—" if value is None else str(value)
+
+
+def _money_or_unknown(value: Decimal | None) -> str:
+    return "—" if value is None else "$" + format_decimal_usd(value)

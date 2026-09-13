@@ -16,6 +16,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+from tests.runtime_fixture import RuntimeFixture
+
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / "packaging/linux/appimage"
 sys.path.insert(0, str(SCRIPTS))
@@ -215,43 +217,43 @@ class NoticeManifestTests(unittest.TestCase):
         notices.write_json(self.root / notices.MANIFEST, self.manifest)
 
     def test_valid_manifest_preserves_separate_source_review(self):
-        result = notices.verify(self.root)
+        result = notices.verify_contents(self.root)
         self.assertEqual(result["result"], "PASS")
         self.assertEqual(result["source_materials"], "REVIEW_REQUIRED")
 
     def test_removed_license_fails(self):
         (self.root / "LICENSE").unlink()
         with self.assertRaisesRegex(notice_inputs.NoticeError, "missing regular file"):
-            notices.verify(self.root)
+            notices.verify_contents(self.root)
 
     def test_modified_license_fails(self):
         (self.root / "LICENSE").write_text("changed")
         with self.assertRaisesRegex(notice_inputs.NoticeError, "checksum changed"):
-            notices.verify(self.root)
+            notices.verify_contents(self.root)
 
     def test_new_elf_without_notice_fails(self):
         (self.root / "unknown.so").write_bytes(minimal_elf())
         with self.assertRaisesRegex(notice_inputs.NoticeError, "component set differs"):
-            notices.verify(self.root)
+            notices.verify_contents(self.root)
 
     def test_removed_notice_association_fails(self):
         self.manifest["components"][0]["notices"] = []
         self.save()
         with self.assertRaisesRegex(notice_inputs.NoticeError, "no license references"):
-            notices.verify(self.root)
+            notices.verify_contents(self.root)
 
     def test_unhashed_notice_reference_fails(self):
         del self.manifest["files"]["LICENSE"]
         self.save()
         with self.assertRaisesRegex(notice_inputs.NoticeError, "unhashed"):
-            notices.verify(self.root)
+            notices.verify_contents(self.root)
 
     def test_new_python_distribution_fails(self):
         info = self.root / "unknown.dist-info"
         info.mkdir()
         (info / "METADATA").write_text("Name: unknown\nVersion: 1\n")
         with self.assertRaisesRegex(notice_inputs.NoticeError, "component set differs"):
-            notices.verify(self.root)
+            notices.verify_contents(self.root)
 
     def test_python_package_without_license_fails_collection(self):
         info = self.root / notices.BUNDLE / "site-packages/missing-1.dist-info"
@@ -382,10 +384,11 @@ class PubspecNoticeTests(unittest.TestCase):
         flutter = appdir / notices.BUNDLE / "data/flutter_assets/NOTICES.Z"
         flutter.parent.mkdir(parents=True)
         flutter.write_bytes(gzip.compress(b"serious_python flutter license fixture"))
-        runtime = self.workspace / "runtime"
-        runtime.write_bytes(b"fixture runtime")
-        lock = notice_inputs.load_lock(SCRIPTS)
-        lock["runtime"]["sha256"] = notice_inputs.sha256(runtime)
+        fixture = RuntimeFixture(self.workspace)
+        materials = self.workspace / "runtime-materials"
+        notices.fetch_runtime.obtain(fixture.lock, materials, archive=fixture.archive)
+        runtime = materials / "runtime-x86_64"
+        lock = fixture.notice_lock
         cache = self.workspace / "cache"
         cache.mkdir()
         lock["bridge"]["sha256"] = hashlib.sha256(minimal_elf()).hexdigest()
@@ -394,6 +397,8 @@ class PubspecNoticeTests(unittest.TestCase):
         # External package inventories are separate tested collectors. Here the
         # real final manifest covers every ELF in this small staging fixture.
         with (
+            patch.object(notices.fetch_runtime, "load_lock", return_value=fixture.lock),
+            patch.object(notices, "load_lock", return_value=lock),
             patch.object(collector, "collect_native"),
             patch.object(collector, "collect_python"),
             patch.object(collector, "collect_packages"),
@@ -417,10 +422,10 @@ class PubspecNoticeTests(unittest.TestCase):
             origin["resolved_packages_source_sha256"],
             hashlib.sha256(original).hexdigest(),
         )
-        self.assertEqual(notices.verify(appdir)["result"], "PASS")
+        self.assertEqual(notices.verify_contents(appdir)["result"], "PASS")
         embedded.write_bytes(original)
         with self.assertRaisesRegex(notice_inputs.NoticeError, "checksum changed"):
-            notices.verify(appdir)
+            notices.verify_contents(appdir)
 
 
 if __name__ == "__main__":

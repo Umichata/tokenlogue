@@ -86,6 +86,8 @@ export/
 !packaging/linux/appimage/notices.py
 !packaging/linux/appimage/notices.md
 !packaging/linux/appimage/notices.lock.json
+!packaging/linux/appimage/fetch_runtime.py
+!packaging/linux/appimage/runtime-artifact.lock.json
 !packaging/linux/appimage/licenses/
 !packaging/linux/appimage/licenses/**
 !packaging/linux/appimage/runtime/

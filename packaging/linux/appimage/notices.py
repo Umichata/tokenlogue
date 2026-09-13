@@ -15,6 +15,7 @@ import sys
 import tempfile
 from pathlib import Path
 
+import fetch_runtime
 from notice_inputs import (
     NoticeError,
     extract_python,
@@ -308,12 +309,40 @@ class Collector:
                 raise NoticeError(f"unregistered font: {rel}")
             self.add("font:" + path.name, [rel], licenses, {"font_names": names})
 
-    def collect(self, cache: Path, runtime: Path, pubspec: Path) -> None:
-        if sha256(runtime) != self.lock["runtime"]["sha256"]:
+    def collect_runtime(self, runtime: Path) -> None:
+        spec = self.lock["runtime"]
+        artifact = fetch_runtime.load_lock()
+        if (
+            spec["sha256"] != artifact["runtime_sha256"]
+            or spec["bytes"] != artifact["runtime_size"]
+        ):
+            raise NoticeError("runtime artifact lock differs from notice registry")
+        fetch_runtime.verify_runtime(runtime, artifact)
+        if sha256(runtime) != spec["sha256"]:
             raise NoticeError(
                 "AppImage runtime checksum does not match notice registry"
             )
-        self.add("appimage-runtime", [], self.group("runtime"), self.lock["runtime"])
+        provenance = fetch_runtime.compact_provenance(runtime.parent, artifact)
+        origin_notice = self.text(
+            "appimage-runtime/provenance.json",
+            json.dumps(provenance, ensure_ascii=False, indent=2) + "\n",
+        )
+        all_notices = [origin_notice]
+        for component in provenance["components"]:
+            name = component["name"]
+            licenses = [
+                self.copy(
+                    relative_file(runtime.parent, record["path"]),
+                    f"appimage-runtime/{name}/{Path(record['path']).name}",
+                )
+                for record in component["licenses"]
+            ]
+            self.add("runtime:" + name, [], licenses + [origin_notice], component)
+            all_notices.extend(licenses)
+        self.add("appimage-runtime", [], all_notices, spec)
+
+    def collect(self, cache: Path, runtime: Path, pubspec: Path) -> None:
+        self.collect_runtime(runtime)
         self.copy(DIRECTORY / "notices.lock.json", "upstream/notices.lock.json")
         pubspec = pubspec.resolve(strict=True)
         if pubspec.parts[-3:] != ("build", "flutter", "pubspec.lock"):
@@ -391,7 +420,8 @@ class Collector:
         verify(self.root)
 
 
-def verify(root: Path) -> dict:
+def verify_contents(root: Path) -> dict:
+    """Проверяет общий реестр объектов и неизменность всех файлов notices."""
     manifest = json.loads(relative_file(root, MANIFEST).read_text())
     if manifest["schema"] != 1 or manifest["result"] != "PASS":
         raise NoticeError("invalid notices manifest")
@@ -420,6 +450,82 @@ def verify(root: Path) -> dict:
     }
 
 
+def verify_runtime_notice(root: Path, manifest: dict, lock: dict) -> None:
+    components = {c["id"]: c for c in manifest["components"]}
+    runtime = components.get("appimage-runtime")
+    if runtime is None or runtime.get("origin") != lock["runtime"]:
+        raise NoticeError("missing or mismatched appimage-runtime notice")
+    if manifest["source_materials"] != lock["release_source_status"]:
+        raise NoticeError("runtime notices must preserve global REVIEW_REQUIRED")
+    origin_path = f"{DOC}/licenses/appimage-runtime/provenance.json"
+    provenance = json.loads(relative_file(root, origin_path).read_text())
+    expected = lock["runtime"]
+    if provenance.get("runtime") != {
+        "sha256": expected["sha256"],
+        "size": expected["bytes"],
+    }:
+        raise NoticeError("runtime provenance identity mismatch")
+    for key in (
+        "producer_commit",
+        "recipe_fingerprint",
+        "artifact_id",
+        "artifact_name",
+        "source_run_id",
+        "run_attempt",
+        "workflow",
+        "archive_sha256",
+        "manifest_sha256",
+        "runtime_lock_sha256",
+    ):
+        if provenance.get(key) != expected[key]:
+            raise NoticeError("runtime provenance differs from notice registry")
+    if provenance.get("upstream_commit") != expected["commit"]:
+        raise NoticeError("runtime upstream commit mismatch")
+    details = {c["name"]: c for c in provenance["components"]}
+    if set(details) != set(expected["components"]):
+        raise NoticeError("runtime source component set is incomplete")
+    required_notices = {origin_path}
+    for name, spec in expected["components"].items():
+        paths = {
+            f"{DOC}/licenses/appimage-runtime/{name}/{filename}"
+            for filename in spec["licenses"]
+        }
+        required_notices.update(paths)
+        component = components.get("runtime:" + name)
+        if (
+            component is None
+            or set(component["notices"]) != paths | {origin_path}
+            or component.get("origin") != details[name]
+        ):
+            raise NoticeError("missing or mismatched runtime component notices")
+        if (
+            details[name]["version"] != spec["version"]
+            or details[name]["source"]["url"] != spec["source"]
+        ):
+            raise NoticeError("runtime component version/source mismatch")
+        for record in details[name]["licenses"]:
+            path = f"{DOC}/licenses/appimage-runtime/{name}/{Path(record['path']).name}"
+            if path not in paths or manifest["files"].get(path) != record["sha256"]:
+                raise NoticeError(
+                    "runtime license hash differs from verified materials"
+                )
+    if set(runtime["notices"]) != required_notices:
+        raise NoticeError("runtime notice set is incomplete")
+
+
+def verify(root: Path, runtime: Path | None = None) -> dict:
+    result = verify_contents(root)
+    lock = load_lock(DIRECTORY)
+    manifest = json.loads(relative_file(root, MANIFEST).read_text())
+    verify_runtime_notice(root, manifest, lock)
+    if runtime is not None:
+        artifact = fetch_runtime.load_lock()
+        if artifact["runtime_sha256"] != lock["runtime"]["sha256"]:
+            raise NoticeError("runtime locks disagree")
+        fetch_runtime.verify_runtime(runtime, artifact)
+    return result
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=("fetch", "collect", "verify"))
@@ -433,7 +539,7 @@ def main() -> int:
         if args.action == "verify":
             if args.appdir is None:
                 raise NoticeError("--appdir required")
-            result = verify(args.appdir.resolve())
+            result = verify(args.appdir.resolve(), args.runtime)
         else:
             lock = load_lock(DIRECTORY)
             if args.cache is None:

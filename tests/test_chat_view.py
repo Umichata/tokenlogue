@@ -41,7 +41,13 @@ from ui.model_selection_view import (  # noqa: E402
 class FakePage:
     def __init__(self, width: int) -> None:
         self.width = width
+        self.height = 700
+        self.dialogs: list[ft.DialogControl] = []
         self.drawer: ft.NavigationDrawer | None = None
+
+    def show_dialog(self, dialog: ft.DialogControl) -> None:
+        dialog.open = True
+        self.dialogs.append(dialog)
 
     async def show_drawer(self) -> None:
         return None
@@ -154,7 +160,7 @@ class ChatViewTests(unittest.IsolatedAsyncioTestCase):
         )
         self.assertIn("не установлен отдельный расходный лимит", null_notice)
         self.assertNotIn("положитель", null_notice.casefold())
-        self.assertIn("Доступный лимит ключа: 5 USD", positive_notice)
+        self.assertIn("Доступный лимит ключа 5 USD", positive_notice)
         self.assertIn("не баланс аккаунта", positive_notice)
 
     def test_paid_button_is_closed_for_zero_but_not_null_or_positive(self) -> None:
@@ -203,7 +209,7 @@ class ChatViewTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(null_view.paid_button.disabled)
         self.assertFalse(positive_view.paid_button.disabled)
 
-    def test_key_validity_controls_retry_replace_and_new_chat(self) -> None:
+    async def test_key_validity_controls_retry_replace_and_new_chat(self) -> None:
         async def callback(*_args: str) -> None:
             return None
 
@@ -251,6 +257,8 @@ class ChatViewTests(unittest.IsolatedAsyncioTestCase):
             on_replace_key=callback,
         )
 
+        await invalid.open_menu()
+        await restricted.open_menu()
         self.assertIsNotNone(invalid.retry_key_button)
         self.assertIsNotNone(invalid.replace_key_button)
         self.assertFalse(invalid._new_chat_allowed)
@@ -314,6 +322,7 @@ class ChatViewTests(unittest.IsolatedAsyncioTestCase):
             on_retry_key=no_op,
             on_replace_key=no_op,
         )
+        await view.open_menu()
         assert view.rename_button is not None
         assert view.delete_button is not None
         rename_handler = cast(
@@ -327,7 +336,17 @@ class ChatViewTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertTrue(inspect.iscoroutinefunction(rename_handler))
         self.assertTrue(inspect.iscoroutinefunction(delete_handler))
+        old_delete_button = view.delete_button
+        assert old_delete_button is not None
         await rename_handler(ft.Event(name="click", control=view.rename_button))
+        await delete_handler(ft.Event(name="click", control=old_delete_button))
+        self.assertEqual(deleted, [])
+        await view.open_menu()
+        assert view.delete_button is not None
+        delete_handler = cast(
+            Callable[[ft.Event[ft.TextButton]], Awaitable[None]],
+            view.delete_button.on_click,
+        )
         await delete_handler(ft.Event(name="click", control=view.delete_button))
 
         self.assertEqual(renamed, [chat.id])

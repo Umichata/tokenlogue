@@ -19,6 +19,7 @@ from ui.styles import (
     MUTED_COLOR,
     PANEL_BACKGROUND,
     SUCCESS_COLOR,
+    detail_row,
     primary_button_style,
 )
 
@@ -79,6 +80,23 @@ class ChatWorkspaceView:
         self._on_retry_key = on_retry_key
         self._on_replace_key = on_replace_key
         self._new_chat_allowed = free_mode_allowed(key_validity)
+        self._disposed = False
+        self._sending = False
+        self._chat_generation = 0
+        self._menu_revision = 0
+        self._menu_dialog: ft.AlertDialog | None = None
+        self._menu_list: ft.ListView | None = None
+        self._menu_container: ft.Container | None = None
+        self._available_width = page.width or 420
+        self._available_height = getattr(page, "height", None) or 700
+        self.menu_button = ft.IconButton(
+            icon=ft.Icons.MORE_VERT,
+            tooltip="Параметры чата",
+            width=48,
+            height=48,
+            on_click=self._open_options,
+        )
+        self.send_notice: ft.Control | None = None
         self.retry_key_button: ft.TextButton | None = None
         self.replace_key_button: ft.TextButton | None = None
         self.rename_button: ft.TextButton | None = None
@@ -106,6 +124,9 @@ class ChatWorkspaceView:
         return self.composer.value if self.composer is not None else ""
 
     def dispose(self) -> None:
+        self._disposed = True
+        self._chat_generation += 1
+        self.close_menu()
         self._page.drawer = None
         if self.composer is not None:
             self.composer.dispose()
@@ -123,6 +144,10 @@ class ChatWorkspaceView:
         previous_chat_id = (
             self._selected_chat.id if self._selected_chat is not None else None
         )
+        current_chat_id = selected_chat.id if selected_chat is not None else None
+        if previous_chat_id != current_chat_id:
+            self._chat_generation += 1
+            self.close_menu()
         self._chats = chats
         self._selected_chat = selected_chat
         self._interaction_state = interaction_state
@@ -130,16 +155,18 @@ class ChatWorkspaceView:
         self._key_limit = key_limit
         self._key_validation_in_progress = key_validation_in_progress
         self._new_chat_allowed = free_mode_allowed(key_validity)
-        current_chat_id = selected_chat.id if selected_chat is not None else None
         self._sync_interaction_components(force=previous_chat_id != current_chat_id)
+        self._refresh_menu()
         self._render_layout()
 
     def set_sending(self, sending: bool) -> None:
+        self._sending = sending
         if self.composer is not None:
             self.composer.set_busy(sending)
         for button in (self.rename_button, self.delete_button, self.limits_button):
             if button is not None:
                 button.disabled = sending
+        self._update_menu_control()
 
     def clear_editor_if_matches(self, expected: str) -> None:
         if self.composer is not None:
@@ -205,10 +232,14 @@ class ChatWorkspaceView:
         self,
         event: ft.LayoutSizeChangeEvent[ft.LayoutControl],
     ) -> None:
+        self._available_width = event.width
+        self._available_height = getattr(event, "height", self._available_height)
+        self._resize_menu()
         wide = event.width >= WIDE_LAYOUT_BREAKPOINT
         if wide == self._wide:
             return
         self._wide = wide
+        self._resize_menu()
         self._render_layout()
         self._layout.update()
 
@@ -278,6 +309,7 @@ class ChatWorkspaceView:
 
     def _build_chat_tile(self, chat: Chat) -> ft.ListTile:
         async def select_chat(_event: ft.Event[ft.ListTile]) -> None:
+            self.close_menu()
             if not self._wide:
                 await self._page.close_drawer()
             await self._on_select_chat(chat.id)
@@ -316,9 +348,16 @@ class ChatWorkspaceView:
         header_controls.extend(
             [
                 ft.Text(
-                    "Tokenlogue",
-                    theme_style=ft.TextThemeStyle.HEADLINE_SMALL,
+                    self._selected_chat.title
+                    if self._selected_chat is not None
+                    else "Tokenlogue",
+                    tooltip=self._selected_chat.title
+                    if self._selected_chat is not None
+                    else "Tokenlogue",
+                    theme_style=ft.TextThemeStyle.TITLE_MEDIUM,
                     expand=True,
+                    max_lines=1,
+                    overflow=ft.TextOverflow.ELLIPSIS,
                 ),
                 ft.IconButton(
                     icon=ft.Icons.ADD,
@@ -331,6 +370,7 @@ class ChatWorkspaceView:
                     tooltip="Заблокировать приложение",
                     on_click=self._handle_lock_icon,
                 ),
+                self.menu_button,
             ]
         )
         return ft.Column(
@@ -338,11 +378,10 @@ class ChatWorkspaceView:
             spacing=0,
             controls=[
                 ft.Container(
-                    padding=ft.Padding.symmetric(horizontal=12, vertical=8),
-                    content=ft.Row(controls=header_controls),
+                    padding=ft.Padding.symmetric(horizontal=8, vertical=4),
+                    content=ft.Row(spacing=0, controls=header_controls),
                 ),
                 ft.Divider(height=1),
-                self._build_key_status_panel(),
                 body,
             ],
         )
@@ -372,6 +411,22 @@ class ChatWorkspaceView:
                         disabled=not self._new_chat_allowed,
                         on_click=self._handle_new_chat_button,
                     ),
+                    *(
+                        [
+                            ft.Text(
+                                _key_status_presentation(
+                                    self._key_validity, self._key_limit
+                                )[0],
+                                color=ERROR_COLOR,
+                                text_align=ft.TextAlign.CENTER,
+                            ),
+                            ft.TextButton(
+                                "Параметры ключа", on_click=self._open_options
+                            ),
+                        ]
+                        if not self._new_chat_allowed
+                        else []
+                    ),
                     _history_warning(),
                 ],
             ),
@@ -385,149 +440,312 @@ class ChatWorkspaceView:
                 alignment=ft.Alignment.CENTER,
                 content=ft.ProgressRing(),
             )
+        assert self.message_history is not None and self.composer is not None
+        controls: list[ft.Control] = [self.message_history.control]
+        self.send_notice = self._build_send_notice(state)
+        if self.send_notice is not None:
+            controls.append(self.send_notice)
+        unknown = self._build_unknown_panel(state)
+        if unknown is not None:
+            controls.append(unknown)
+        controls.extend(
+            [
+                self.composer.control,
+                ft.Container(
+                    padding=ft.Padding.symmetric(horizontal=12, vertical=4),
+                    content=_history_warning(),
+                ),
+            ]
+        )
+        return ft.Column(expand=True, spacing=4, controls=controls)
 
-        async def rename_chat(_event: ft.Event[ft.TextButton]) -> None:
-            await self._on_rename_chat(chat.id)
-
-        async def delete_chat(_event: ft.Event[ft.TextButton]) -> None:
-            await self._on_delete_chat(chat.id)
-
-        mode_is_free = chat.mode is ChatMode.FREE
-        mode_label = "Бесплатный режим" if mode_is_free else "Платный режим"
-        mode_color = SUCCESS_COLOR if mode_is_free else ft.Colors.AMBER_300
-        details: list[ft.Control] = [
-            ft.Row(
-                wrap=True,
+    def _build_send_notice(self, state: ActiveChatState) -> ft.Control | None:
+        message = ""
+        action: ft.Control | None = None
+        if not state.budget.limits_configured:
+            message = "Перед отправкой настройте лимиты чата."
+            action = ft.TextButton(
+                "Настроить лимиты",
+                disabled=self._sending,
+                on_click=self._chat_action(self._on_configure_limits, state.chat.id),
+            )
+        elif state.budget.state is BudgetState.EXHAUSTED:
+            message = "Лимит чата исчерпан. Измените лимиты, чтобы продолжить."
+            action = ft.TextButton(
+                "Изменить лимиты",
+                disabled=self._sending,
+                on_click=self._chat_action(self._on_edit_limits, state.chat.id),
+            )
+        if not self._key_allows_chat(state.chat):
+            message = _key_status_presentation(self._key_validity, self._key_limit)[0]
+            action = ft.TextButton("Параметры ключа", on_click=self._open_options)
+        if not message:
+            return None
+        return ft.Container(
+            padding=ft.Padding.symmetric(horizontal=12, vertical=2),
+            content=ft.Column(
+                tight=True,
+                spacing=0,
                 controls=[
-                    ft.Text(chat.title, theme_style=ft.TextThemeStyle.HEADLINE_SMALL),
-                    ft.Container(
-                        bgcolor=ft.Colors.with_opacity(0.18, mode_color),
-                        border_radius=12,
-                        padding=ft.Padding.symmetric(horizontal=10, vertical=5),
-                        content=ft.Text(mode_label, color=mode_color, size=12),
-                    ),
+                    ft.Text(message, size=12, color=ft.Colors.AMBER_300),
+                    *([action] if action is not None else []),
                 ],
             ),
-            ft.Text(chat.requested_model_name, weight=ft.FontWeight.BOLD),
-            ft.Text(chat.requested_model_id, color=MUTED_COLOR, selectable=True),
+        )
+
+    def _key_allows_chat(self, chat: Chat) -> bool:
+        if chat.mode is ChatMode.FREE:
+            return free_mode_allowed(self._key_validity)
+        return paid_mode_allowed(self._key_validity, self._key_limit)
+
+    def _chat_action(self, callback: ChatCallback, chat_id: str, *, menu: bool = False):
+        generation = self._chat_generation
+        revision = self._menu_revision
+
+        async def invoke(_event: ft.Event) -> None:
+            if (
+                self._disposed
+                or self._sending
+                or generation != self._chat_generation
+                or self._selected_chat is None
+                or self._selected_chat.id != chat_id
+            ):
+                return
+            if menu and (self._menu_dialog is None or revision != self._menu_revision):
+                return
+            self.close_menu()
+            await callback(chat_id)
+
+        return invoke
+
+    def _menu_action(self, callback: AsyncCallback):
+        revision = self._menu_revision
+
+        async def invoke(_event: ft.Event) -> None:
+            if (
+                self._disposed
+                or self._menu_dialog is None
+                or revision != self._menu_revision
+            ):
+                return
+            self.close_menu()
+            await callback()
+
+        return invoke
+
+    def _build_menu_controls(self) -> list[ft.Control]:
+        controls: list[ft.Control] = [
+            ft.Text("Ключ OpenRouter", weight=ft.FontWeight.BOLD),
+            self._build_key_status_panel(),
         ]
+        chat, state = self._selected_chat, self._interaction_state
+        self.rename_button = None
+        self.delete_button = None
+        self.limits_button = None
+        if chat is None:
+            return controls
+        controls.extend(
+            [
+                ft.Divider(),
+                ft.Text("Чат", weight=ft.FontWeight.BOLD),
+                detail_row(
+                    "Режим", "Бесплатный" if chat.mode is ChatMode.FREE else "Платный"
+                ),
+                detail_row("Модель", chat.requested_model_name),
+                detail_row("ID модели", chat.requested_model_id),
+            ]
+        )
         if chat.mode is ChatMode.PAID:
-            details.append(
-                ft.Text(
-                    "Вход: "
-                    f"${format_price_per_million(chat.prompt_price_per_token)} "
-                    "за 1 млн токенов · выход: "
-                    f"${format_price_per_million(chat.completion_price_per_token)} "
-                    "за 1 млн токенов",
-                    size=12,
-                )
+            controls.extend(
+                [
+                    detail_row(
+                        "Входные токены, 1 млн",
+                        "$" + format_price_per_million(chat.prompt_price_per_token),
+                    ),
+                    detail_row(
+                        "Выходные токены, 1 млн",
+                        "$" + format_price_per_million(chat.completion_price_per_token),
+                    ),
+                ]
             )
+        if state is None or state.chat.id != chat.id:
+            return controls
+        budget = state.budget
+        remaining = state.remaining
+        controls.extend(
+            [
+                ft.Divider(),
+                ft.Text("Токены и бюджет", weight=ft.FontWeight.BOLD),
+                detail_row("Использовано токенов", str(budget.total_tokens_used)),
+                detail_row("Зарезервировано токенов", str(budget.reserved_tokens)),
+                detail_row(
+                    "Осталось токенов",
+                    str(remaining.tokens) if remaining.tokens is not None else "—",
+                ),
+                detail_row(
+                    "Лимит токенов",
+                    str(budget.token_limit) if budget.token_limit is not None else "—",
+                ),
+                detail_row(
+                    "Максимум следующего ответа",
+                    str(budget.max_completion_tokens)
+                    if budget.max_completion_tokens is not None
+                    else "—",
+                ),
+            ]
+        )
+        if chat.mode is ChatMode.PAID:
+            controls.extend(
+                [
+                    detail_row(
+                        "Фактическая стоимость",
+                        "$" + format_decimal_usd(budget.cost_used_usd),
+                    ),
+                    detail_row(
+                        "Зарезервированная стоимость",
+                        "$" + format_decimal_usd(budget.cost_reserved_usd),
+                    ),
+                    detail_row(
+                        "Остаток денежного бюджета",
+                        _money_or_unknown(remaining.cost_usd),
+                    ),
+                    detail_row(
+                        "Лимит расходов", _money_or_unknown(budget.cost_limit_usd)
+                    ),
+                ]
+            )
+        self.limits_button = ft.TextButton(
+            "Изменить лимиты" if budget.limits_configured else "Настроить лимиты",
+            icon=ft.Icons.TUNE,
+            disabled=self._sending,
+            on_click=self._chat_action(
+                self._on_edit_limits
+                if budget.limits_configured
+                else self._on_configure_limits,
+                chat.id,
+                menu=True,
+            ),
+        )
         self.rename_button = ft.TextButton(
             "Переименовать",
             icon=ft.Icons.EDIT_OUTLINED,
-            disabled=state.sending,
-            on_click=rename_chat,
+            disabled=self._sending,
+            on_click=self._chat_action(self._on_rename_chat, chat.id, menu=True),
         )
         self.delete_button = ft.TextButton(
             "Удалить чат",
             icon=ft.Icons.DELETE_OUTLINE,
+            disabled=self._sending,
             style=ft.ButtonStyle(color=ERROR_COLOR),
-            disabled=state.sending,
-            on_click=delete_chat,
+            on_click=self._chat_action(self._on_delete_chat, chat.id, menu=True),
         )
-        details.append(
-            ft.Row(wrap=True, controls=[self.rename_button, self.delete_button])
+        controls.extend(
+            [
+                self.limits_button,
+                self.rename_button,
+                ft.Divider(),
+                self.delete_button,
+            ]
         )
-        assert self.message_history is not None
-        controls: list[ft.Control] = [
-            ft.Container(
-                padding=ft.Padding(16, 12, 16, 4),
-                content=ft.Column(controls=details),
-            ),
-            self._build_budget_panel(state),
-        ]
-        unknown_panel = self._build_unknown_panel(state)
-        if unknown_panel is not None:
-            controls.append(unknown_panel)
-        controls.append(self.message_history.control)
-        if state.budget.limits_configured:
-            assert self.composer is not None
-            controls.append(self.composer.control)
-        controls.append(
-            ft.Container(
-                padding=ft.Padding.symmetric(horizontal=12, vertical=6),
-                content=_history_warning(),
-            )
-        )
-        return ft.Column(expand=True, spacing=8, controls=controls)
+        return controls
 
-    def _build_budget_panel(self, state: ActiveChatState) -> ft.Control:
-        budget = state.budget
-        if not budget.limits_configured:
+    @property
+    def menu_open(self) -> bool:
+        return self._menu_dialog is not None
 
-            async def configure(_event: ft.Event[ft.Button]) -> None:
-                await self._on_configure_limits(state.chat.id)
+    async def _open_options(self, _event: ft.Event) -> None:
+        await self.open_menu()
 
-            self.limits_button = ft.Button(
-                "Настроить лимиты",
-                icon=ft.Icons.TUNE,
-                disabled=state.sending,
-                on_click=configure,
-            )
-            return ft.Container(
-                margin=ft.Margin.symmetric(horizontal=12),
-                padding=12,
-                bgcolor=ft.Colors.with_opacity(0.15, ft.Colors.AMBER_300),
-                border_radius=12,
-                content=ft.Column(
-                    tight=True,
-                    controls=[
-                        ft.Text(
-                            "Чат доступен для чтения. Перед отправкой настройте лимиты.",
-                            color=ft.Colors.AMBER_300,
-                        ),
-                        self.limits_button,
-                    ],
-                ),
-            )
-
-        async def edit(_event: ft.Event[ft.TextButton]) -> None:
-            await self._on_edit_limits(state.chat.id)
-
-        self.limits_button = ft.TextButton(
-            "Изменить лимиты",
-            icon=ft.Icons.TUNE,
-            disabled=state.sending,
-            on_click=edit,
-        )
-        remaining_tokens = state.remaining.tokens
-        lines = [
-            f"Использовано токенов: {budget.total_tokens_used}",
-            f"Зарезервировано токенов: {budget.reserved_tokens}",
-            "Осталось токенов: "
-            f"{remaining_tokens if remaining_tokens is not None else '—'}",
-            f"Максимум следующего ответа: {budget.max_completion_tokens or '—'}",
-        ]
-        if state.chat.mode is ChatMode.PAID:
-            remaining_cost = state.remaining.cost_usd or Decimal("0")
-            lines.extend(
-                [
-                    f"Фактическая стоимость: ${format_decimal_usd(budget.cost_used_usd)}",
-                    "Зарезервированная стоимость: $"
-                    f"{format_decimal_usd(budget.cost_reserved_usd)}",
-                    f"Остаток денежного бюджета: ${format_decimal_usd(remaining_cost)}",
+    async def open_menu(self) -> None:
+        if self._disposed or self._menu_dialog is not None:
+            return
+        self._menu_revision += 1
+        self._menu_list = ft.ListView(spacing=8, padding=0, auto_scroll=False)
+        self._menu_container = ft.Container(content=self._menu_list)
+        dialog = ft.AlertDialog(
+            modal=False,
+            alignment=ft.Alignment.TOP_RIGHT,
+            inset_padding=ft.Padding(12, 60, 12, 12),
+            title_padding=ft.Padding(16, 4, 4, 0),
+            content_padding=ft.Padding(16, 0, 16, 12),
+            title=ft.Row(
+                controls=[
+                    ft.Text(
+                        "Параметры чата",
+                        expand=True,
+                        theme_style=ft.TextThemeStyle.TITLE_MEDIUM,
+                    ),
+                    ft.IconButton(
+                        icon=ft.Icons.CLOSE,
+                        tooltip="Закрыть параметры",
+                        autofocus=True,
+                        on_click=self._close_options,
+                    ),
                 ]
-            )
-        return ft.Container(
-            margin=ft.Margin.symmetric(horizontal=12),
-            padding=12,
-            bgcolor=PANEL_BACKGROUND,
-            border_radius=12,
-            content=ft.Column(
-                tight=True,
-                controls=[ft.Text(" · ".join(lines), size=12), self.limits_button],
             ),
+            content=self._menu_container,
+            on_dismiss=self._menu_dismissed,
         )
+        self._menu_dialog = dialog
+        self._resize_menu(update=False)
+        self._menu_list.controls = self._build_menu_controls()
+        self._page.show_dialog(dialog)
+
+    def _resize_menu(self, *, update: bool = True) -> None:
+        if self._menu_container is None or self._menu_dialog is None:
+            return
+        main_width = self._available_width - (321 if self._wide else 0)
+        self._menu_container.width = max(100, min(360, main_width - 56))
+        self._menu_container.height = max(64, min(520, self._available_height - 176))
+        if update:
+            self._update_menu_control()
+
+    def _update_menu_control(self) -> None:
+        if self._menu_dialog is not None:
+            try:
+                self._menu_dialog.update()
+            except (RuntimeError, AssertionError):
+                pass
+
+    def _refresh_menu(self) -> None:
+        if self._menu_dialog is None or self._menu_list is None:
+            return
+        self._menu_revision += 1
+        self._menu_list.controls = self._build_menu_controls()
+        self._update_menu_control()
+
+    def close_menu(self) -> None:
+        dialog = self._menu_dialog
+        self._menu_dialog = None
+        self._menu_list = None
+        self._menu_container = None
+        self._menu_revision += 1
+        self.retry_key_button = self.replace_key_button = None
+        self.rename_button = self.delete_button = None
+        self.limits_button = None
+        if dialog is not None:
+            # Закрываем именно своё окно, не снимая чужой диалог с вершины стека.
+            dialog.open = False
+            try:
+                dialog.update()
+            except (RuntimeError, AssertionError):
+                pass
+
+    async def _close_options(self, _event: ft.Event) -> None:
+        self.close_menu()
+        await self._focus_menu_button()
+
+    async def _menu_dismissed(self, event: ft.Event[ft.DialogControl]) -> None:
+        if event.control is self._menu_dialog:
+            self.close_menu()
+            await self._focus_menu_button()
+
+    async def _focus_menu_button(self) -> None:
+        if not self._disposed:
+            try:
+                await self.menu_button.focus()
+            except (RuntimeError, AssertionError):
+                pass
 
     def _build_unknown_panel(self, state: ActiveChatState) -> ft.Control | None:
         unknown_turn = next(
@@ -542,14 +760,20 @@ class ChatWorkspaceView:
             self.release_unknown_button = None
             return None
 
-        async def release(_event: ft.Event[ft.Button]) -> None:
-            await self._on_release_unknown(unknown_turn.id)
+        async def release(_chat_id: str) -> None:
+            current = self._interaction_state
+            if current is not None and any(
+                t.id == unknown_turn.id
+                and t.accounting_status is AccountingStatus.UNKNOWN
+                for t in current.turns
+            ):
+                await self._on_release_unknown(unknown_turn.id)
 
         self.release_unknown_button = ft.Button(
             "Освободить неизвестный резерв",
             icon=ft.Icons.WARNING_AMBER,
             disabled=state.sending,
-            on_click=release,
+            on_click=self._chat_action(release, state.chat.id),
         )
         cost_text = (
             ""
@@ -566,7 +790,7 @@ class ChatWorkspaceView:
                 controls=[
                     ft.Text(
                         "Результат предыдущего запроса неизвестен. Сохранён защитный "
-                        f"резерв {state.budget.reserved_tokens} токенов{cost_text}; это "
+                        f"резерв {state.budget.reserved_tokens} токенов{cost_text}. Это "
                         "не фактический расход.",
                         color=ft.Colors.AMBER_300,
                     ),
@@ -586,7 +810,7 @@ class ChatWorkspaceView:
                 "Повторить проверку ключа",
                 icon=ft.Icons.REFRESH,
                 disabled=self._key_validation_in_progress,
-                on_click=self._handle_retry_key,
+                on_click=self._menu_action(self._on_retry_key),
             )
             actions.append(self.retry_key_button)
         else:
@@ -595,12 +819,19 @@ class ChatWorkspaceView:
             self.replace_key_button = ft.TextButton(
                 "Заменить ключ",
                 icon=ft.Icons.KEY,
-                on_click=self._handle_replace_key,
+                on_click=self._menu_action(self._on_replace_key),
             )
             actions.append(self.replace_key_button)
         else:
             self.replace_key_button = None
         content: list[ft.Control] = [ft.Text(message, color=color)]
+        if self._key_limit.remaining is not None:
+            content.append(
+                detail_row(
+                    "Доступный лимит ключа",
+                    _money_or_unknown(self._key_limit.remaining),
+                )
+            )
         if self._key_validation_in_progress:
             content.append(
                 ft.Row(
@@ -613,23 +844,26 @@ class ChatWorkspaceView:
         if actions:
             content.append(ft.Row(wrap=True, controls=actions))
         return ft.Container(
-            margin=ft.Margin.symmetric(horizontal=12, vertical=8),
-            padding=12,
+            padding=8,
             bgcolor=ft.Colors.with_opacity(0.12, color),
             border_radius=12,
             content=ft.Column(tight=True, controls=content),
         )
 
     async def _handle_new_chat_button(self, _event: ft.Event[ft.Button]) -> None:
+        self.close_menu()
         await self._on_new_chat()
 
     async def _handle_new_chat_icon(self, _event: ft.Event[ft.IconButton]) -> None:
+        self.close_menu()
         await self._on_new_chat()
 
     async def _handle_lock_text(self, _event: ft.Event[ft.TextButton]) -> None:
+        self.close_menu()
         await self._on_lock()
 
     async def _handle_lock_icon(self, _event: ft.Event[ft.IconButton]) -> None:
+        self.close_menu()
         await self._on_lock()
 
     async def _handle_retry_key(self, _event: ft.Event[ft.TextButton]) -> None:
@@ -675,6 +909,10 @@ class RenameChatDialog:
             ],
             actions_alignment=ft.MainAxisAlignment.END,
         )
+
+    @property
+    def chat_id(self) -> str:
+        return self._chat_id
 
     async def _handle_click(self, _event: ft.Event[ft.Button]) -> None:
         await self._submit_title()
@@ -740,6 +978,10 @@ def _history_warning() -> ft.Control:
     )
 
 
+def _money_or_unknown(value: Decimal | None) -> str:
+    return "—" if value is None else "$" + format_decimal_usd(value)
+
+
 def _key_status_presentation(
     key_validity: KeyValidityState,
     key_limit: KeyLimitInfo,
@@ -763,7 +1005,7 @@ def _key_status_presentation(
     if key_validity is KeyValidityState.UNKNOWN:
         return (
             "Состояние ключа OpenRouter пока неизвестно. Локальная история и "
-            "бесплатный режим доступны; платный режим временно закрыт.",
+            "бесплатный режим доступны. Платный режим временно закрыт.",
             ft.Colors.AMBER_300,
             True,
             False,
@@ -772,6 +1014,13 @@ def _key_status_presentation(
         return (
             "Расходный лимит этого ключа исчерпан. "
             "Бесплатный режим остаётся доступным.",
+            ft.Colors.AMBER_300,
+            False,
+            False,
+        )
+    if key_limit.state is KeyLimitState.UNKNOWN:
+        return (
+            "Расходный лимит ключа пока неизвестен. Платный режим временно недоступен.",
             ft.Colors.AMBER_300,
             False,
             False,

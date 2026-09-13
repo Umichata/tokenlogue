@@ -47,9 +47,14 @@ TEST_CREDENTIAL = "definitely-fake-chat-ui-credential"
 class FakePage:
     def __init__(self) -> None:
         self.controls: list[ft.Control] = []
-        self.dialogs: list[ft.DialogControl] = []
+        self._dialogs: list[ft.DialogControl] = []
         self.drawer: ft.NavigationDrawer | None = None
         self.width = 400
+        self.height = 700
+
+    @property
+    def dialogs(self) -> list[ft.DialogControl]:
+        return [dialog for dialog in self._dialogs if dialog.open]
 
     def add(self, control: ft.Control) -> None:
         self.controls.append(control)
@@ -58,10 +63,14 @@ class FakePage:
         return None
 
     def show_dialog(self, dialog: ft.DialogControl) -> None:
-        self.dialogs.append(dialog)
+        dialog.open = True
+        self._dialogs.append(dialog)
 
     def pop_dialog(self) -> ft.DialogControl | None:
-        return self.dialogs.pop() if self.dialogs else None
+        dialog = self.dialogs[-1] if self.dialogs else None
+        if dialog is not None:
+            dialog.open = False
+        return dialog
 
     async def show_drawer(self) -> None:
         return None

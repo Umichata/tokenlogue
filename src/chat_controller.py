@@ -502,6 +502,7 @@ class ChatSessionController:
             dialog is None
             or self._operation_lock.locked()
             or not _is_identifier(chat_id)
+            or dialog.chat_id != chat_id
             or not isinstance(title, str)
         ):
             return
