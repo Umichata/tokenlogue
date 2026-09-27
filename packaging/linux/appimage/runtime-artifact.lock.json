@@ -8,6 +8,7 @@
   "recipe_fingerprint": "a8f4a650d47ec2f042160b33beec4c3f44d0484887c6977b8057e0723cc30336",
   "artifact_id": 10315337524,
   "artifact_name": "appimage-runtime-34749438406-1",
+  "archive_url": "https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/appimage-runtime-34749438406-1.zip",
   "archive_size": 391916671,
   "archive_sha256": "a9869ba745218ea8b0e2dec0c3da6af15b4d28fbd6e1ec1170afcadb758b06c9",
   "runtime_path": "runtime-x86_64",

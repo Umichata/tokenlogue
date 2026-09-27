@@ -13,11 +13,11 @@ You do not need to install or launch a separate runtime binary.
 
 ### Source bundle
 
-For the runtime used by preview `986c6ad`, open the
-[source bundle page](https://github.com/Umichata/tokenlogue/actions/runs/34749438406)
-and select `appimage-runtime-34749438406-1` under **Artifacts**.
-You may need to sign in to GitHub to download it. Actions keeps artifacts
-for a limited time, so save a local copy if you need these materials.
+For the runtime used by preview `986c6ad`, download
+[appimage-runtime-34749438406-1.zip](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/appimage-runtime-34749438406-1.zip)
+from the [published preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-linux-preview.986c6ad).
+No GitHub sign-in is needed. This is the original runtime bundle from
+producer run `34749438406`, attempt `1`.
 
 | File or directory | Contents |
 | --- | --- |
@@ -66,11 +66,11 @@ Runtime уже включён в [сборку для Linux](../../../../docs/li
 
 ### Комплект исходников
 
-Для runtime, включённого в предварительную сборку `986c6ad`, откройте
-[страницу комплекта исходников](https://github.com/Umichata/tokenlogue/actions/runs/34749438406)
-и выберите `appimage-runtime-34749438406-1` в разделе **Artifacts**.
-Для скачивания может потребоваться вход в GitHub. Actions хранит артефакты
-ограниченное время. Сохраните локальную копию, если вам нужны эти материалы.
+Для runtime, включённого в предварительную сборку `986c6ad`, скачайте
+[appimage-runtime-34749438406-1.zip](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/appimage-runtime-34749438406-1.zip)
+из [опубликованного выпуска](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-linux-preview.986c6ad).
+Вход в GitHub не нужен. Это оригинальный комплект runtime из запуска
+производителя `34749438406`, попытка `1`.
 
 | Файл или каталог | Содержимое |
 | --- | --- |

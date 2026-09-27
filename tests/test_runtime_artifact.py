@@ -21,6 +21,8 @@ from email.message import Message
 from pathlib import Path
 from unittest.mock import patch
 
+import yaml
+
 from tests.runtime_fixture import RuntimeFixture, encoded, sha
 
 SCRIPTS = Path(__file__).resolve().parents[1] / "packaging/linux/appimage"
@@ -49,6 +51,157 @@ class FakeGitHub:
     def download(self, artifact_id: int, destination: Path) -> None:
         self.downloads.append(artifact_id)
         shutil.copyfile(self.fixture.archive, destination)
+
+
+class RuntimeReleaseWorkflowTests(unittest.TestCase):
+    """Run the actual download step with fake HTTP and the real ZIP validator."""
+
+    def setUp(self) -> None:
+        self.temp = tempfile.TemporaryDirectory(prefix="runtime release test ")
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        self.fixture = RuntimeFixture(self.root)
+        self.fixture.lock["archive_url"] = "https://example.invalid/pinned-runtime.zip"
+        self.checkout = self.root / "checkout"
+        scripts = self.checkout / "packaging/linux/appimage"
+        for relative in (
+            "fetch_runtime.py",
+            "source_artifact.py",
+            "runtime/runtime_checks.py",
+            "runtime/runtime_inputs.py",
+        ):
+            target = scripts / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(SCRIPTS / relative, target)
+        self.lock_path = scripts / "runtime-artifact.lock.json"
+        self.lock_path.write_text(json.dumps(self.fixture.lock))
+        workflow = yaml.safe_load(
+            (SCRIPTS.parents[2] / ".github/workflows/build-linux.yml").read_text()
+        )
+        self.step = next(
+            step
+            for step in workflow["jobs"]["build-linux"]["steps"]
+            if step["name"]
+            == "Получить закреплённый standalone runtime и проверить материалы"
+        )
+        self.assertNotIn("GH_TOKEN", self.step.get("env", {}))
+        self.assertEqual(workflow["permissions"], {"contents": "read"})
+        self.bin = self.root / "bin"
+        self.bin.mkdir()
+        self.capture = self.root / "download.json"
+        for name, source in {
+            "uv": (
+                "import os,sys\n"
+                "assert sys.argv[1:4] == ['run','--locked','python']\n"
+                "os.execv(sys.executable,[sys.executable,*sys.argv[4:]])\n"
+            ),
+            "git": (
+                "import sys\n"
+                "assert sys.argv[1:] == ['rev-parse','HEAD']\n"
+                "print('f'*40)\n"
+            ),
+            "curl": (
+                "import json,os,shutil,sys\nfrom pathlib import Path\n"
+                "args=sys.argv[1:]\n"
+                "assert args[0]=='--disable'\n"
+                "assert '--fail' in args and '--location' in args\n"
+                "assert args[args.index('--proto')+1]=='=https'\n"
+                "assert args[args.index('--proto-redir')+1]=='=https'\n"
+                "assert '--header' not in args and '-H' not in args\n"
+                "Path(os.environ['DOWNLOAD_CAPTURE']).write_text(json.dumps(args))\n"
+                "if os.environ.get('HTTP_FAILURE'):sys.exit(22)\n"
+                "shutil.copyfile(os.environ['FIXTURE_ZIP'],args[args.index('--output')+1])\n"
+            ),
+        }.items():
+            path = self.bin / name
+            path.write_text(f"#!{sys.executable}\n" + source)
+            path.chmod(0o755)
+        (self.bin / "sitecustomize.py").write_text(
+            "import socket\n"
+            "def forbidden(*args,**kwargs):raise AssertionError('network forbidden')\n"
+            "socket.socket.connect=forbidden\n"
+            "socket.create_connection=forbidden\n"
+        )
+        self.output = self.checkout / "build/appimage/runtime-selected"
+        self.report = self.checkout / "build/linux-release/reports/runtime-inputs.json"
+
+    def run_step(
+        self, *, http_failure: bool = False
+    ) -> subprocess.CompletedProcess[str]:
+        environment = {
+            "PATH": str(self.bin) + os.pathsep + os.defpath,
+            "PYTHONPATH": str(self.bin),
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "FIXTURE_ZIP": str(self.fixture.archive),
+            "DOWNLOAD_CAPTURE": str(self.capture),
+        }
+        if http_failure:
+            environment["HTTP_FAILURE"] = "1"
+        return subprocess.run(
+            ["bash", "-c", self.step["run"]],
+            cwd=self.checkout,
+            env=environment,
+            capture_output=True,
+            text=True,
+        )
+
+    def test_empty_cache_uses_release_and_real_archive_validator_without_api(
+        self,
+    ) -> None:
+        result = self.run_step()
+        self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
+        self.assertEqual(
+            json.loads(self.capture.read_text())[-1], self.fixture.lock["archive_url"]
+        )
+        report = json.loads(self.report.read_text())
+        self.assertEqual(report["result"], "PASS")
+        self.assertEqual(report["mode"], "archive")
+        self.assertEqual(report["api_metadata"], "NOT_CHECKED")
+        self.assertEqual(report["crc"], "PASS")
+        self.assertEqual(report["artifact_id"], self.fixture.lock["artifact_id"])
+        self.assertEqual(
+            report["producer_commit"], self.fixture.lock["producer_commit"]
+        )
+        self.assertTrue((self.output / fetch_runtime.WORKFLOW_MEMBER).is_file())
+
+    def test_wrong_size_and_digest_do_not_publish_runtime(self) -> None:
+        original = self.fixture.archive.read_bytes()
+        for content in (original[:-1], bytes([original[0] ^ 1]) + original[1:]):
+            with self.subTest(size=len(content)):
+                self.fixture.archive.write_bytes(content)
+                result = self.run_step()
+                self.assertNotEqual(result.returncode, 0)
+                self.assertEqual(json.loads(self.report.read_text())["result"], "FAIL")
+                self.assertFalse(self.output.exists())
+
+    def test_damaged_zip_is_rejected_even_when_outer_pin_matches(self) -> None:
+        self.fixture.archive.write_bytes(b"not a ZIP")
+        lock = {
+            **self.fixture.lock,
+            "archive_size": 9,
+            "archive_sha256": sha(b"not a ZIP"),
+        }
+        self.lock_path.write_text(json.dumps(lock))
+        result = self.run_step()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(
+            json.loads(self.report.read_text())["category"], "archive_integrity"
+        )
+        self.assertFalse(self.output.exists())
+
+    def test_http_error_stops_before_validator_even_with_valid_cache(self) -> None:
+        self.assertEqual(self.run_step().returncode, 0)
+        self.report.unlink()
+        result = self.run_step(http_failure=True)
+        self.assertEqual(result.returncode, 22)
+        self.assertFalse(self.report.exists())
+
+    def test_existing_runtime_cache_is_reverified(self) -> None:
+        self.assertEqual(self.run_step().returncode, 0)
+        (self.output / "runtime-x86_64").write_bytes(b"damaged cached runtime")
+        result = self.run_step()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(json.loads(self.report.read_text())["result"], "FAIL")
 
 
 class RuntimeArtifactTests(unittest.TestCase):

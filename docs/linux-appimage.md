@@ -37,15 +37,15 @@ Wayland compatibility has not been verified.
 
 ### Download and verify
 
-Open the [preview artifact page on GitHub Actions](https://github.com/Umichata/tokenlogue/actions/runs/34791994271)
-and select `verified-appimage-34791994271` under **Artifacts**. Sign in to
-GitHub if required. Extract the downloaded ZIP. It contains the AppImage,
-`SHA256SUMS` and `provenance.json`.
-
-GitHub Actions keeps artifacts for a limited time and may require access
-through your account. The download link will stop working when the artifact
-expires. This preview is unsigned. Check the downloaded file against the
-values below.
+Open the [published preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-linux-preview.986c6ad)
+or download the [AppImage](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/Tokenlogue-0.1.0-986c6ad-x86_64.AppImage)
+and [APPIMAGE.SHA256SUMS](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/APPIMAGE.SHA256SUMS)
+directly into one folder. No GitHub sign-in is needed, and the AppImage
+does not need to be unpacked before ordinary startup.
+A [downloadable launch guide](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/DOWNLOAD.md#lang-en)
+and [source-material instructions](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/SOURCE_MATERIALS.md#lang-en)
+are available separately. This preview is unsigned. Check the downloaded file
+against the values below.
 
 | Property | Value |
 | --- | --- |
@@ -53,16 +53,16 @@ values below.
 | Size in bytes | `32622984` |
 | SHA-256 | `4a8b95ab7f36f7cc63533bf2c03be26c02b499e1d9861f24e5d8fb210616314a` |
 
-Open a terminal in the extracted folder containing the AppImage and
-`SHA256SUMS`, then run the command below.
+Open a terminal in the download folder containing the AppImage and
+`APPIMAGE.SHA256SUMS`, then run the command below.
 
 ```bash
-sha256sum --check SHA256SUMS
+sha256sum --check APPIMAGE.SHA256SUMS
 ```
 
 Continue only if the command reports `OK` for the exact filename above.
 The expected sum is also printed in the table. If it differs, download the
-original artifact again. Do not replace the expected sum with the checksum
+original file again. Do not replace the expected sum with the checksum
 of the file that failed verification. A checksum detects changed bytes but
 is not a publisher's signature.
 
@@ -70,7 +70,7 @@ is not a publisher's signature.
 
 ### Ordinary startup
 
-In the same extracted folder, grant execute permission.
+In the same download folder, grant execute permission.
 
 ```bash
 chmod u+x ./Tokenlogue-0.1.0-986c6ad-x86_64.AppImage
@@ -178,15 +178,14 @@ for its checksum and differences from this version.
 
 ### Скачивание и проверка
 
-Откройте [страницу артефакта в GitHub Actions](https://github.com/Umichata/tokenlogue/actions/runs/34791994271)
-и выберите `verified-appimage-34791994271` в разделе **Artifacts**. При
-необходимости войдите в GitHub. Распакуйте скачанный ZIP. В нём находятся
-AppImage, `SHA256SUMS` и `provenance.json`.
-
-GitHub Actions хранит артефакты ограниченное время и может запрашивать
-доступ через вашу учётную запись. После истечения срока хранения ссылка
-перестанет работать. Эта сборка не подписана. Сверьте скачанный файл
-со значениями ниже.
+Откройте [страницу опубликованной предварительной версии](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-linux-preview.986c6ad)
+или скачайте [AppImage](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/Tokenlogue-0.1.0-986c6ad-x86_64.AppImage)
+и [APPIMAGE.SHA256SUMS](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/APPIMAGE.SHA256SUMS)
+по прямым ссылкам в одну папку. Вход в GitHub не нужен. Перед обычным запуском
+AppImage не требуется распаковывать.
+Отдельно доступны [инструкция запуска](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/DOWNLOAD.md#lang-ru)
+и [инструкция по исходным материалам](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/SOURCE_MATERIALS.md#lang-ru).
+Эта сборка не подписана. Сверьте скачанный файл со значениями ниже.
 
 | Свойство | Значение |
 | --- | --- |
@@ -194,16 +193,16 @@ GitHub Actions хранит артефакты ограниченное врем
 | Размер в байтах | `32622984` |
 | SHA-256 | `4a8b95ab7f36f7cc63533bf2c03be26c02b499e1d9861f24e5d8fb210616314a` |
 
-Откройте терминал в распакованной папке с AppImage и `SHA256SUMS`, затем
+Откройте терминал в папке скачивания с AppImage и `APPIMAGE.SHA256SUMS`, затем
 выполните следующую команду.
 
 ```bash
-sha256sum --check SHA256SUMS
+sha256sum --check APPIMAGE.SHA256SUMS
 ```
 
 Продолжайте только после результата `OK` для точного имени файла из таблицы.
 Ожидаемая сумма также указана в таблице. При несовпадении заново скачайте
-исходный артефакт. Не заменяйте ожидаемую сумму хешем файла, который не прошёл
+исходный файл. Не заменяйте ожидаемую сумму хешем файла, который не прошёл
 проверку. Контрольная сумма обнаруживает изменение байтов, но не является
 подписью издателя.
 
@@ -211,7 +210,7 @@ sha256sum --check SHA256SUMS
 
 ### Обычный запуск
 
-В той же распакованной папке разрешите выполнение файла.
+В той же папке скачивания разрешите выполнение файла.
 
 ```bash
 chmod u+x ./Tokenlogue-0.1.0-986c6ad-x86_64.AppImage

@@ -15,13 +15,18 @@ is currently in Russian.
 
 ### Download and launch
 
-The [Linux guide](docs/linux-appimage.md#lang-en) explains how to download
-`Tokenlogue-0.1.0-986c6ad-x86_64.AppImage`, check its SHA-256 and run it.
+The [published Linux preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-linux-preview.986c6ad)
+provides the [AppImage](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/Tokenlogue-0.1.0-986c6ad-x86_64.AppImage)
+and its [checksum file](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/APPIMAGE.SHA256SUMS).
+Download both files into one folder. No GitHub sign-in is needed.
+The [Linux guide](docs/linux-appimage.md#lang-en) explains how to check the
+SHA-256 and run the application. A [downloadable launch guide](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/DOWNLOAD.md#lang-en)
+is also available.
 You need an x86-64-v2 compatible processor, system GTK3, graphics drivers
 and a working Secret Service for storing the API key. You do not need to install Python, uv or Flutter SDK separately.
 
-This unsigned preview is distributed through GitHub Actions with limited
-retention. It does not update automatically. Ready-to-use Windows, Android, DEB
+This preview is unsigned and does not update automatically.
+Ready-to-use Windows, Android, DEB
 and RPM packages are not available.
 
 ### How to use Tokenlogue
@@ -68,6 +73,8 @@ main dependencies and explains where to find their licenses in the AppImage.
 The [source materials guide](docs/source-materials.md#lang-en) links to the
 application source and a separate runtime bundle. It also explains which
 materials are still missing for rebuilding the full application offline.
+The [published source-material instructions](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/SOURCE_MATERIALS.md#lang-en)
+explain how to download and restore the collected files.
 
 <a name="lang-ru"></a>
 
@@ -82,13 +89,17 @@ Tokenlogue - настольное приложение для общения с 
 
 ### Скачивание и запуск
 
-В [руководстве для Linux](docs/linux-appimage.md#lang-ru) описано, как скачать
-`Tokenlogue-0.1.0-986c6ad-x86_64.AppImage`, проверить его SHA-256 и запустить.
+На [странице опубликованной предварительной версии для Linux](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-linux-preview.986c6ad)
+доступны [AppImage](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/Tokenlogue-0.1.0-986c6ad-x86_64.AppImage)
+и его [файл контрольной суммы](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/APPIMAGE.SHA256SUMS).
+Скачайте оба файла в одну папку. Вход в GitHub не нужен.
+В [руководстве для Linux](docs/linux-appimage.md#lang-ru) описаны проверка
+SHA-256 и запуск приложения. Также доступна [инструкция запуска отдельным файлом](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/DOWNLOAD.md#lang-ru).
 Нужны процессор с поддержкой x86-64-v2, системная GTK3, видеодрайверы
 и работающий Secret Service для хранения API-ключа. Отдельно устанавливать Python, uv или Flutter SDK не нужно.
 
-Эта неподписанная предварительная сборка распространяется через GitHub Actions
-с ограниченным сроком хранения. Автоматического обновления нет. Готовых пакетов
+У этой предварительной сборки нет цифровой подписи и автоматического обновления.
+Готовых пакетов
 для Windows и Android, а также пакетов DEB и RPM пока нет.
 
 ### Как пользоваться Tokenlogue
@@ -139,3 +150,5 @@ OpenRouter и подключение к интернету. У OpenRouter дей
 содержит ссылки на код приложения и отдельный комплект runtime. В нём также
 описано, каких материалов пока не хватает для пересборки всего приложения
 без подключения к сети.
+[Инструкция к опубликованным исходным материалам](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/SOURCE_MATERIALS.md#lang-ru)
+объясняет, как скачать и восстановить собранные файлы.

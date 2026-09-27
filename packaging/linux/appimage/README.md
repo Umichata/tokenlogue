@@ -26,7 +26,10 @@ to the applications menu. Run the file as your normal user.
 
 ### Before you start
 
-The file is distributed through GitHub Actions with limited retention.
+Download the file from the [public prerelease](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-linux-preview.986c6ad).
+The [AppImage](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/Tokenlogue-0.1.0-986c6ad-x86_64.AppImage)
+and its [checksum file](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/APPIMAGE.SHA256SUMS)
+are available without signing in to GitHub.
 It has no signature or automatic updater. Check its checksum before running
 it. The [Linux guide](../../../docs/linux-appimage.md#lang-en) describes
 the requirements, download verification and startup options.
@@ -69,7 +72,10 @@ AppImage Tokenlogue - неподписанная предварительная 
 
 ### Перед запуском
 
-Файл распространяется через GitHub Actions с ограниченным сроком хранения.
+Скачайте файл со [страницы опубликованной предварительной версии](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-linux-preview.986c6ad).
+[AppImage](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/Tokenlogue-0.1.0-986c6ad-x86_64.AppImage)
+и его [файл контрольной суммы](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/APPIMAGE.SHA256SUMS)
+доступны без входа в GitHub.
 Подписи и автоматического обновления нет. Перед запуском проверьте контрольную
 сумму. В [руководстве для Linux](../../../docs/linux-appimage.md#lang-ru)
 описаны требования, проверка загрузки и способы запуска.

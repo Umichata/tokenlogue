@@ -477,7 +477,7 @@ class AppImagePackagingTests(unittest.TestCase):
             "secret service",
             "wayland",
             "fuse",
-            "limited retention",
+            "public prerelease",
             "check its checksum before running",
             "неподписанная",
             'name="lang-en"',

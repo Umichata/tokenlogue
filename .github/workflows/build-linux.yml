@@ -5,7 +5,6 @@ on:
 
 permissions:
   contents: read
-  actions: read
 
 concurrency:
   group: linux-appimage-${{ github.workflow }}-${{ github.ref }}
@@ -160,11 +159,17 @@ jobs:
           } > build/linux-release/reports/appimage-tools.txt 2>&1
 
       - name: Получить закреплённый standalone runtime и проверить материалы
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
           set -Eeuo pipefail
+          runtime_archive=build/appimage/runtime-artifact.zip
+          mkdir -p build/appimage
+          runtime_url=$(uv run --locked python -c \
+            'import json; print(json.load(open("packaging/linux/appimage/runtime-artifact.lock.json"))["archive_url"])')
+          curl --disable --fail --location --silent --show-error \
+            --proto '=https' --proto-redir '=https' \
+            --output "$runtime_archive" "$runtime_url"
           uv run --locked python packaging/linux/appimage/fetch_runtime.py \
+            --archive "$runtime_archive" \
             --report build/linux-release/reports/runtime-inputs.json
 
       - name: Fetch pinned notice references

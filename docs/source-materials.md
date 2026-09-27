@@ -50,9 +50,10 @@ For use without a development environment, download the ready-to-use AppImage.
 ### Runtime source bundle
 
 The AppImage includes a small startup component called the runtime.
-Its [separate source bundle](https://github.com/Umichata/tokenlogue/actions/runs/34749438406)
-is the Actions artifact `appimage-runtime-34749438406-1`. You may need to sign in to GitHub to download it.
-Artifact retention is limited, so keep a local copy if you need the bundle.
+Its [separate source bundle](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/appimage-runtime-34749438406-1.zip)
+is available as `appimage-runtime-34749438406-1.zip` in the
+[published preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-linux-preview.986c6ad).
+No GitHub sign-in is needed. The ZIP contains the original runtime bundle.
 
 The bundle contains the runtime binary, source archives, recipes, patches,
 original Alpine packages, tool inventory, linked inputs, license texts and
@@ -61,7 +62,9 @@ explains its contents. The full bundle is separate from the AppImage.
 
 ### Which source materials are still missing
 
-The source collection for the full application is not yet complete.
+The completeness of the source collection for the full application has not
+yet been confirmed. The [published source-material instructions](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/SOURCE_MATERIALS.md#lang-en)
+explain how to download the collected files and restore them from seven parts.
 The runtime bundle covers the startup component. Additional Flutter SDK
 materials are needed, and an offline rebuild of the full application has
 not been verified.
@@ -82,7 +85,8 @@ The following dependency versions differ:
 | `flutter_secure_storage_linux` | `3.0.2` | `3.0.3` |
 | Ubuntu `libgcrypt20` | `1.9.4-3ubuntu3.2` | `1.9.4-3ubuntu3.3` |
 
-The new versions still need their own matching source files in the collection.
+Matching source files for these newer versions are included in the published
+collection. The historical archive retains its original versions.
 
 The [license guide](../packaging/linux/appimage/notices.md#lang-en) explains
 where to find the original license texts supplied with the application.
@@ -138,10 +142,10 @@ uv run --locked flet run
 ### Комплект исходников runtime
 
 В AppImage есть небольшой компонент запуска, называемый runtime.
-Его [отдельный комплект исходников](https://github.com/Umichata/tokenlogue/actions/runs/34749438406)
-находится в артефакте Actions `appimage-runtime-34749438406-1`. Для скачивания
-может потребоваться вход в GitHub. Срок хранения артефакта ограничен, поэтому
-сохраните локальную копию, если комплект вам нужен.
+Его [отдельный комплект исходников](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/appimage-runtime-34749438406-1.zip)
+доступен как `appimage-runtime-34749438406-1.zip` в
+[опубликованном выпуске](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-linux-preview.986c6ad).
+Вход в GitHub не нужен. ZIP содержит оригинальный комплект runtime.
 
 В комплект входят исполняемый runtime, архивы исходников, рецепты, патчи,
 оригинальные пакеты Alpine, список инструментов, файлы для линковки, тексты лицензий
@@ -151,7 +155,10 @@ uv run --locked flet run
 
 ### Каких исходных материалов пока не хватает
 
-Комплект исходников всего приложения пока неполон. Комплект runtime охватывает
+Полнота исходников всего приложения ещё не подтверждена.
+[Инструкция к опубликованным исходным материалам](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/SOURCE_MATERIALS.md#lang-ru)
+объясняет, как скачать собранные файлы и восстановить их из семи частей.
+Комплект runtime охватывает
 компонент запуска. Нужны дополнительные материалы Flutter SDK, а пересборка
 всего приложения без сети не проверена.
 
@@ -172,7 +179,8 @@ uv run --locked flet run
 | `flutter_secure_storage_linux` | `3.0.2` | `3.0.3` |
 | Ubuntu `libgcrypt20` | `1.9.4-3ubuntu3.2` | `1.9.4-3ubuntu3.3` |
 
-Для новых версий ещё нужно включить в комплект соответствующие им исходные файлы.
+Исходные файлы этих новых версий включены в опубликованный комплект.
+Исторический архив сохраняет первоначальные версии.
 
 [Руководство по лицензиям](../packaging/linux/appimage/notices.md#lang-ru)
 поможет найти оригинальные тексты лицензий, включённые в приложение.
