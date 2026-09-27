@@ -7,7 +7,7 @@
 ## English
 
 This guide covers the Linux preview `0.1.0` built from application commit
-`1472c00d38a87dddfa33cdb8c9c0d3b6aadb02f6`. Its interface is in Russian.
+`986c6adc3eda9820a3147c9b0088bacc0273f4da`. Its interface is in Russian.
 See the [user guide](user-guide.md#lang-en) for API-key setup and chat controls.
 
 [Requirements](#en-requirements) | [Download](#en-download) |
@@ -37,8 +37,8 @@ Wayland compatibility has not been verified.
 
 ### Download and verify
 
-Open the [preview artifact page on GitHub Actions](https://github.com/Umichata/tokenlogue/actions/runs/34759960235)
-and select `verified-appimage-34759960235` under **Artifacts**. Sign in to
+Open the [preview artifact page on GitHub Actions](https://github.com/Umichata/tokenlogue/actions/runs/34791994271)
+and select `verified-appimage-34791994271` under **Artifacts**. Sign in to
 GitHub if required. Extract the downloaded ZIP. It contains the AppImage,
 `SHA256SUMS` and `provenance.json`.
 
@@ -49,9 +49,9 @@ values below.
 
 | Property | Value |
 | --- | --- |
-| File | `Tokenlogue-0.1.0-1472c00-x86_64.AppImage` |
-| Size in bytes | `32618888` |
-| SHA-256 | `377554046e9e177ce0abb4d9ab0605d033098ebbe81ef6542b6261a796f7b6b4` |
+| File | `Tokenlogue-0.1.0-986c6ad-x86_64.AppImage` |
+| Size in bytes | `32622984` |
+| SHA-256 | `4a8b95ab7f36f7cc63533bf2c03be26c02b499e1d9861f24e5d8fb210616314a` |
 
 Open a terminal in the extracted folder containing the AppImage and
 `SHA256SUMS`, then run the command below.
@@ -73,13 +73,13 @@ is not a publisher's signature.
 In the same extracted folder, grant execute permission.
 
 ```bash
-chmod u+x ./Tokenlogue-0.1.0-1472c00-x86_64.AppImage
+chmod u+x ./Tokenlogue-0.1.0-986c6ad-x86_64.AppImage
 ```
 
 Then start the application as your normal user.
 
 ```bash
-./Tokenlogue-0.1.0-1472c00-x86_64.AppImage
+./Tokenlogue-0.1.0-986c6ad-x86_64.AppImage
 ```
 
 The Tokenlogue window will open. You can keep the AppImage in any convenient
@@ -94,7 +94,7 @@ installation and does not automatically add an entry to the applications menu.
 From the same folder, use the following option if FUSE is unavailable.
 
 ```bash
-./Tokenlogue-0.1.0-1472c00-x86_64.AppImage --appimage-extract-and-run
+./Tokenlogue-0.1.0-986c6ad-x86_64.AppImage --appimage-extract-and-run
 ```
 
 This option unpacks the AppImage into a temporary directory and starts
@@ -147,7 +147,7 @@ for its checksum and differences from this version.
 ## Русский
 
 Руководство относится к предварительной Linux-сборке `0.1.0` из коммита
-приложения `1472c00d38a87dddfa33cdb8c9c0d3b6aadb02f6`. Интерфейс на русском языке.
+приложения `986c6adc3eda9820a3147c9b0088bacc0273f4da`. Интерфейс на русском языке.
 Настройка API-ключа и управление чатами описаны в
 [руководстве пользователя](user-guide.md#lang-ru).
 
@@ -178,8 +178,8 @@ for its checksum and differences from this version.
 
 ### Скачивание и проверка
 
-Откройте [страницу артефакта в GitHub Actions](https://github.com/Umichata/tokenlogue/actions/runs/34759960235)
-и выберите `verified-appimage-34759960235` в разделе **Artifacts**. При
+Откройте [страницу артефакта в GitHub Actions](https://github.com/Umichata/tokenlogue/actions/runs/34791994271)
+и выберите `verified-appimage-34791994271` в разделе **Artifacts**. При
 необходимости войдите в GitHub. Распакуйте скачанный ZIP. В нём находятся
 AppImage, `SHA256SUMS` и `provenance.json`.
 
@@ -190,9 +190,9 @@ GitHub Actions хранит артефакты ограниченное врем
 
 | Свойство | Значение |
 | --- | --- |
-| Файл | `Tokenlogue-0.1.0-1472c00-x86_64.AppImage` |
-| Размер в байтах | `32618888` |
-| SHA-256 | `377554046e9e177ce0abb4d9ab0605d033098ebbe81ef6542b6261a796f7b6b4` |
+| Файл | `Tokenlogue-0.1.0-986c6ad-x86_64.AppImage` |
+| Размер в байтах | `32622984` |
+| SHA-256 | `4a8b95ab7f36f7cc63533bf2c03be26c02b499e1d9861f24e5d8fb210616314a` |
 
 Откройте терминал в распакованной папке с AppImage и `SHA256SUMS`, затем
 выполните следующую команду.
@@ -214,13 +214,13 @@ sha256sum --check SHA256SUMS
 В той же распакованной папке разрешите выполнение файла.
 
 ```bash
-chmod u+x ./Tokenlogue-0.1.0-1472c00-x86_64.AppImage
+chmod u+x ./Tokenlogue-0.1.0-986c6ad-x86_64.AppImage
 ```
 
 Затем запустите приложение от обычного пользователя.
 
 ```bash
-./Tokenlogue-0.1.0-1472c00-x86_64.AppImage
+./Tokenlogue-0.1.0-986c6ad-x86_64.AppImage
 ```
 
 Откроется окно Tokenlogue. AppImage можно хранить в любой удобной папке.
@@ -235,7 +235,7 @@ chmod u+x ./Tokenlogue-0.1.0-1472c00-x86_64.AppImage
 Если FUSE недоступен, выполните следующую команду в той же папке.
 
 ```bash
-./Tokenlogue-0.1.0-1472c00-x86_64.AppImage --appimage-extract-and-run
+./Tokenlogue-0.1.0-986c6ad-x86_64.AppImage --appimage-extract-and-run
 ```
 
 Эта команда распаковывает AppImage во временный каталог и запускает

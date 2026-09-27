@@ -6,7 +6,7 @@
 
 ## English
 
-The `1472c00` Linux preview includes the original notices and license texts
+The `986c6ad` Linux preview includes the original notices and license texts
 for its packaged components. This guide explains how to find and read
 those files. The [repository overview](../../../THIRD_PARTY_NOTICES.md#lang-en)
 lists the direct application dependencies.
@@ -28,7 +28,7 @@ If you want to read the notices without starting Tokenlogue, use an installed
 AppImage. Choose a destination name that does not already exist.
 
 ```bash
-unsquashfs -no-xattrs -o 678280 -d "./tokenlogue-notices" "./Tokenlogue-0.1.0-1472c00-x86_64.AppImage"
+unsquashfs -no-xattrs -o 678280 -d "./tokenlogue-notices" "./Tokenlogue-0.1.0-986c6ad-x86_64.AppImage"
 ```
 
 This extracts the filesystem to `tokenlogue-notices` without executing the
@@ -67,7 +67,7 @@ Rebuilding the full application from the available materials has not been verifi
 
 ## Русский
 
-Предварительная Linux-сборка `1472c00` содержит оригинальные уведомления
+Предварительная Linux-сборка `986c6ad` содержит оригинальные уведомления
 и тексты лицензий упакованных компонентов. В этом руководстве объясняется,
 как найти и прочитать эти файлы.
 [Обзор в репозитории](../../../THIRD_PARTY_NOTICES.md#lang-ru)
@@ -90,7 +90,7 @@ Rebuilding the full application from the available materials has not been verifi
 Выберите ещё не существующее имя каталога назначения.
 
 ```bash
-unsquashfs -no-xattrs -o 678280 -d "./tokenlogue-notices" "./Tokenlogue-0.1.0-1472c00-x86_64.AppImage"
+unsquashfs -no-xattrs -o 678280 -d "./tokenlogue-notices" "./Tokenlogue-0.1.0-986c6ad-x86_64.AppImage"
 ```
 
 Команда извлекает файловую систему в `tokenlogue-notices`, не выполняя

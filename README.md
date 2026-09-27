@@ -16,7 +16,7 @@ is currently in Russian.
 ### Download and launch
 
 The [Linux guide](docs/linux-appimage.md#lang-en) explains how to download
-`Tokenlogue-0.1.0-1472c00-x86_64.AppImage`, check its SHA-256 and run it.
+`Tokenlogue-0.1.0-986c6ad-x86_64.AppImage`, check its SHA-256 and run it.
 You need an x86-64-v2 compatible processor, system GTK3, graphics drivers
 and a working Secret Service for storing the API key. You do not need to install Python, uv or Flutter SDK separately.
 
@@ -83,7 +83,7 @@ Tokenlogue - настольное приложение для общения с 
 ### Скачивание и запуск
 
 В [руководстве для Linux](docs/linux-appimage.md#lang-ru) описано, как скачать
-`Tokenlogue-0.1.0-1472c00-x86_64.AppImage`, проверить его SHA-256 и запустить.
+`Tokenlogue-0.1.0-986c6ad-x86_64.AppImage`, проверить его SHA-256 и запустить.
 Нужны процессор с поддержкой x86-64-v2, системная GTK3, видеодрайверы
 и работающий Secret Service для хранения API-ключа. Отдельно устанавливать Python, uv или Flutter SDK не нужно.
 

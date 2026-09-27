@@ -7,7 +7,7 @@
 ## English
 
 The Tokenlogue AppImage is an unsigned preview for Linux x86_64.
-This page covers `Tokenlogue-0.1.0-1472c00-x86_64.AppImage`.
+This page covers `Tokenlogue-0.1.0-986c6ad-x86_64.AppImage`.
 The [Linux guide](../../../docs/linux-appimage.md#lang-en) explains how to
 download it, check the file and launch the application.
 
@@ -50,7 +50,7 @@ For available application sources and the gaps in their collection, see
 
 AppImage Tokenlogue - неподписанная предварительная сборка
 для Linux x86_64. На этой странице описан файл
-`Tokenlogue-0.1.0-1472c00-x86_64.AppImage`.
+`Tokenlogue-0.1.0-986c6ad-x86_64.AppImage`.
 В [руководстве для Linux](../../../docs/linux-appimage.md#lang-ru) объясняется,
 как скачать его, проверить и запустить приложение.
 

@@ -6,12 +6,12 @@
 
 ## English
 
-This page describes sources for the `0.1.0` Linux preview `1472c00`.
+This page describes sources for the `0.1.0` Linux preview `986c6ad`.
 To download the ready-to-use application, follow the [AppImage guide](linux-appimage.md#en-download).
 
 ### Application source
 
-The [application source at 1472c00](https://github.com/Umichata/tokenlogue/tree/1472c00d38a87dddfa33cdb8c9c0d3b6aadb02f6)
+The [application source at 986c6ad](https://github.com/Umichata/tokenlogue/tree/986c6adc3eda9820a3147c9b0088bacc0273f4da)
 is available under the [MIT License](../LICENSE). Use that revision when
 inspecting the code corresponding to this preview. A later repository revision
 can contain different application code or documentation.
@@ -72,11 +72,17 @@ Its Flutter engine dependency list references external Git repositories and
 CIPD assets that are not all archived. Compiler bootstrap, relinking,
 font subsetting and a full application rebuild have not been verified.
 
-The older collection is not a complete source bundle for
-`1472c00`. In particular, the new preview uses
-`flutter_secure_storage_linux` `3.0.3`, while the old collection records
-`3.0.2`. Ubuntu's `libgcrypt20` also changed from `1.9.4-3ubuntu3.2` to
-`1.9.4-3ubuntu3.3`. These dependency versions need their own matching source files.
+The older collection is not a complete source bundle for `986c6ad`.
+The following dependency versions differ:
+
+| Component | Collection for `14b87ac` | AppImage `986c6ad` |
+| --- | --- | --- |
+| Dart `archive` | `4.2.0` | `4.3.0` |
+| Dart `image` | `4.9.2` | `4.10.1` |
+| `flutter_secure_storage_linux` | `3.0.2` | `3.0.3` |
+| Ubuntu `libgcrypt20` | `1.9.4-3ubuntu3.2` | `1.9.4-3ubuntu3.3` |
+
+The new versions still need their own matching source files in the collection.
 
 The [license guide](../packaging/linux/appimage/notices.md#lang-en) explains
 where to find the original license texts supplied with the application.
@@ -88,12 +94,12 @@ where to find the original license texts supplied with the application.
 ## Русский
 
 Страница описывает исходники предварительной Linux-сборки `0.1.0` версии
-`1472c00`. Готовое приложение можно скачать по
+`986c6ad`. Готовое приложение можно скачать по
 [инструкции для AppImage](linux-appimage.md#ru-download).
 
 ### Исходники приложения
 
-[Исходный код приложения 1472c00](https://github.com/Umichata/tokenlogue/tree/1472c00d38a87dddfa33cdb8c9c0d3b6aadb02f6)
+[Исходный код приложения 986c6ad](https://github.com/Umichata/tokenlogue/tree/986c6adc3eda9820a3147c9b0088bacc0273f4da)
 доступен по [лицензии MIT](../LICENSE). Используйте эту версию для изучения кода
 данной предварительной сборки. Более поздняя версия репозитория может
 содержать другой код приложения или документацию.
@@ -156,11 +162,17 @@ uv run --locked flet run
 повторная линковка, формирование подмножеств шрифтов и пересборка всего
 приложения не проверены.
 
-Старый комплект не содержит всех исходников для версии
-`1472c00`. В частности, новая сборка использует
-`flutter_secure_storage_linux` `3.0.3`, а старый комплект описывает
-`3.0.2`. Версия Ubuntu-пакета `libgcrypt20` также изменилась с
-`1.9.4-3ubuntu3.2` на `1.9.4-3ubuntu3.3`. Для этих версий зависимостей нужны соответствующие им исходные файлы.
+Старый комплект не содержит всех исходников для версии `986c6ad`.
+Различаются версии следующих зависимостей:
+
+| Компонент | Комплект для `14b87ac` | AppImage `986c6ad` |
+| --- | --- | --- |
+| Dart `archive` | `4.2.0` | `4.3.0` |
+| Dart `image` | `4.9.2` | `4.10.1` |
+| `flutter_secure_storage_linux` | `3.0.2` | `3.0.3` |
+| Ubuntu `libgcrypt20` | `1.9.4-3ubuntu3.2` | `1.9.4-3ubuntu3.3` |
+
+Для новых версий ещё нужно включить в комплект соответствующие им исходные файлы.
 
 [Руководство по лицензиям](../packaging/linux/appimage/notices.md#lang-ru)
 поможет найти оригинальные тексты лицензий, включённые в приложение.

@@ -13,7 +13,7 @@ You do not need to install or launch a separate runtime binary.
 
 ### Source bundle
 
-For the runtime used by preview `1472c00`, open the
+For the runtime used by preview `986c6ad`, open the
 [source bundle page](https://github.com/Umichata/tokenlogue/actions/runs/34749438406)
 and select `appimage-runtime-34749438406-1` under **Artifacts**.
 You may need to sign in to GitHub to download it. Actions keeps artifacts
@@ -66,7 +66,7 @@ Runtime уже включён в [сборку для Linux](../../../../docs/li
 
 ### Комплект исходников
 
-Для runtime, включённого в предварительную сборку `1472c00`, откройте
+Для runtime, включённого в предварительную сборку `986c6ad`, откройте
 [страницу комплекта исходников](https://github.com/Umichata/tokenlogue/actions/runs/34749438406)
 и выберите `appimage-runtime-34749438406-1` в разделе **Artifacts**.
 Для скачивания может потребоваться вход в GitHub. Actions хранит артефакты
