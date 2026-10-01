@@ -333,7 +333,7 @@ class LinuxBuildPipelineTests(unittest.TestCase):
             "x86-64-v2",
             "Secret Service",
             "unsigned",
-            "limited retention",
+            "public prerelease",
             "source-materials.md#lang-en",
             "source-materials.md#lang-ru",
         ):
