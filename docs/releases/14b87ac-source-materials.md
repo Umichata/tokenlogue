@@ -7,7 +7,7 @@
 ## English
 
 This collection was assembled on 10 September 2026 for the older AppImage
-`14b87ac`. It is not the complete source bundle for preview `986c6ad`.
+`14b87ac`. It is not the complete source bundle for current preview `2b1f7d3`.
 See [current source materials](../source-materials.md#lang-en) for that version.
 
 ### Archive details
@@ -78,7 +78,7 @@ cover newer application code, runtime inputs or dependency versions.
 ## Русский
 
 Комплект собран 10 сентября 2026 года для прежнего AppImage `14b87ac`.
-Он не является полным комплектом исходников предварительной сборки `986c6ad`.
+Он не является полным комплектом исходников текущей предварительной сборки `2b1f7d3`.
 Для неё смотрите [текущие исходные материалы](../source-materials.md#lang-ru).
 
 ### Данные архива

@@ -15,13 +15,17 @@ is currently in Russian.
 
 ### Download and launch
 
-The [published Linux preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-linux-preview.986c6ad)
-provides the [AppImage](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/Tokenlogue-0.1.0-986c6ad-x86_64.AppImage)
-and its [checksum file](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/APPIMAGE.SHA256SUMS).
-Download both files into one folder. No GitHub sign-in is needed.
-The [Linux guide](docs/linux-appimage.md#lang-en) explains how to check the
-SHA-256 and run the application. A [downloadable launch guide](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/DOWNLOAD.md#lang-en)
-is also available.
+The current [published Linux preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-linux-preview.2b1f7d3)
+is `0.1.0` from commit `2b1f7d3`. It provides the
+[AppImage](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.2b1f7d3/Tokenlogue-0.1.0-2b1f7d3-x86_64.AppImage)
+and the [SHA256SUMS checksum file](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.2b1f7d3/SHA256SUMS).
+No GitHub sign-in is needed. Follow the [Linux guide](docs/linux-appimage.md#lang-en)
+to download all six preview files, check SHA256SUMS and run the application.
+
+| File | SHA-256 |
+| --- | --- |
+| `Tokenlogue-0.1.0-2b1f7d3-x86_64.AppImage` | `0852f9432cb089e31fef2722d84ce7124714588afb65d6f25cd64d0616a4779d` |
+
 You need an x86-64-v2 compatible processor, system GTK3, graphics drivers
 and a working Secret Service for storing the API key. You do not need to install Python, uv or Flutter SDK separately.
 
@@ -71,10 +75,13 @@ The [third-party software overview](THIRD_PARTY_NOTICES.md#lang-en) lists the
 main dependencies and explains where to find their licenses in the AppImage.
 
 The [source materials guide](docs/source-materials.md#lang-en) links to the
-application source and a separate runtime bundle. It also explains which
-materials are still missing for rebuilding the full application offline.
-The [published source-material instructions](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/SOURCE_MATERIALS.md#lang-en)
-explain how to download and restore the collected files.
+application source, the published baseline from preview `986c6ad` and its
+separate runtime bundle. Use that baseline together with
+`Tokenlogue-2b1f7d3-source-supplement.tar.gz` for the current preview.
+The [published source-material instructions](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.2b1f7d3/SOURCE_MATERIALS.md#lang-en)
+explain how to download, restore and select the collected files. Completeness
+of the full source set and a full offline rebuild remain unverified.
+The source review status remains `REVIEW_REQUIRED`.
 
 <a name="lang-ru"></a>
 
@@ -89,12 +96,18 @@ Tokenlogue - настольное приложение для общения с 
 
 ### Скачивание и запуск
 
-На [странице опубликованной предварительной версии для Linux](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-linux-preview.986c6ad)
-доступны [AppImage](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/Tokenlogue-0.1.0-986c6ad-x86_64.AppImage)
-и его [файл контрольной суммы](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/APPIMAGE.SHA256SUMS).
-Скачайте оба файла в одну папку. Вход в GitHub не нужен.
-В [руководстве для Linux](docs/linux-appimage.md#lang-ru) описаны проверка
-SHA-256 и запуск приложения. Также доступна [инструкция запуска отдельным файлом](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/DOWNLOAD.md#lang-ru).
+Текущая [опубликованная предварительная версия для Linux](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-linux-preview.2b1f7d3)
+имеет номер `0.1.0` и собрана из коммита `2b1f7d3`. Для неё доступны
+[AppImage](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.2b1f7d3/Tokenlogue-0.1.0-2b1f7d3-x86_64.AppImage)
+и [файл контрольных сумм SHA256SUMS](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.2b1f7d3/SHA256SUMS).
+Вход в GitHub не нужен. Следуйте [руководству для Linux](docs/linux-appimage.md#lang-ru),
+чтобы скачать все шесть файлов предварительной версии, проверить SHA256SUMS
+и запустить приложение.
+
+| Файл | SHA-256 |
+| --- | --- |
+| `Tokenlogue-0.1.0-2b1f7d3-x86_64.AppImage` | `0852f9432cb089e31fef2722d84ce7124714588afb65d6f25cd64d0616a4779d` |
+
 Нужны процессор с поддержкой x86-64-v2, системная GTK3, видеодрайверы
 и работающий Secret Service для хранения API-ключа. Отдельно устанавливать Python, uv или Flutter SDK не нужно.
 
@@ -147,8 +160,11 @@ OpenRouter и подключение к интернету. У OpenRouter дей
 основные зависимости и объясняет, где найти их лицензии внутри AppImage.
 
 [Руководство по исходным материалам](docs/source-materials.md#lang-ru)
-содержит ссылки на код приложения и отдельный комплект runtime. В нём также
-описано, каких материалов пока не хватает для пересборки всего приложения
-без подключения к сети.
-[Инструкция к опубликованным исходным материалам](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/SOURCE_MATERIALS.md#lang-ru)
-объясняет, как скачать и восстановить собранные файлы.
+содержит ссылки на код приложения, опубликованный базовый комплект версии
+`986c6ad` и его отдельный комплект runtime. Для текущей предварительной версии
+используйте этот базовый комплект вместе с
+`Tokenlogue-2b1f7d3-source-supplement.tar.gz`.
+[Инструкция к опубликованным исходным материалам](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.2b1f7d3/SOURCE_MATERIALS.md#lang-ru)
+объясняет, как скачать, восстановить и выбрать собранные файлы. Полнота всего
+исходного набора и полная пересборка без сети остаются непроверенными.
+Статус проверки исходных материалов остаётся `REVIEW_REQUIRED`.

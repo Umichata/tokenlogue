@@ -7,7 +7,7 @@
 ## English
 
 This guide covers the Linux preview `0.1.0` built from application commit
-`986c6adc3eda9820a3147c9b0088bacc0273f4da`. Its interface is in Russian.
+`2b1f7d30e612416d8d88adde18a44aa235a7fe25`. Its interface is in Russian.
 See the [user guide](user-guide.md#lang-en) for API-key setup and chat controls.
 
 [Requirements](#en-requirements) | [Download](#en-download) |
@@ -37,31 +37,38 @@ Wayland compatibility has not been verified.
 
 ### Download and verify
 
-Open the [published preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-linux-preview.986c6ad)
-or download the [AppImage](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/Tokenlogue-0.1.0-986c6ad-x86_64.AppImage)
-and [APPIMAGE.SHA256SUMS](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/APPIMAGE.SHA256SUMS)
-directly into one folder. No GitHub sign-in is needed, and the AppImage
-does not need to be unpacked before ordinary startup.
-A [downloadable launch guide](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/DOWNLOAD.md#lang-en)
-and [source-material instructions](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/SOURCE_MATERIALS.md#lang-en)
-are available separately. This preview is unsigned. Check the downloaded file
-against the values below.
+Open the [published preview 2b1f7d3](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-linux-preview.2b1f7d3)
+and download all six files into one folder:
+
+- [Tokenlogue-0.1.0-2b1f7d3-x86_64.AppImage](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.2b1f7d3/Tokenlogue-0.1.0-2b1f7d3-x86_64.AppImage)
+- [Tokenlogue-2b1f7d3-source-supplement.tar.gz](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.2b1f7d3/Tokenlogue-2b1f7d3-source-supplement.tar.gz)
+- [PROVENANCE.json](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.2b1f7d3/PROVENANCE.json)
+- [RELEASE_NOTES.md](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.2b1f7d3/RELEASE_NOTES.md)
+- [SOURCE_MATERIALS.md](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.2b1f7d3/SOURCE_MATERIALS.md)
+- [SHA256SUMS](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.2b1f7d3/SHA256SUMS)
+
+No GitHub sign-in is needed. The AppImage does not need to be unpacked before
+ordinary startup. Use this repository guide for launch instructions.
+The [source-material guide](source-materials.md#lang-en) explains how to use
+the supplement with the previous source bundle. This preview is unsigned.
+Check the downloaded AppImage against the values below.
 
 | Property | Value |
 | --- | --- |
-| File | `Tokenlogue-0.1.0-986c6ad-x86_64.AppImage` |
+| File | `Tokenlogue-0.1.0-2b1f7d3-x86_64.AppImage` |
 | Size in bytes | `32622984` |
-| SHA-256 | `4a8b95ab7f36f7cc63533bf2c03be26c02b499e1d9861f24e5d8fb210616314a` |
+| SHA-256 | `0852f9432cb089e31fef2722d84ce7124714588afb65d6f25cd64d0616a4779d` |
 
-Open a terminal in the download folder containing the AppImage and
-`APPIMAGE.SHA256SUMS`, then run the command below.
+Open a terminal in the download folder containing all six files, then run
+the command below.
 
 ```bash
-sha256sum --check APPIMAGE.SHA256SUMS
+sha256sum --check SHA256SUMS
 ```
 
-Continue only if the command reports `OK` for the exact filename above.
-The expected sum is also printed in the table. If it differs, download the
+The manifest lists the other five files, including the AppImage. All five
+must report `OK`. It does not contain a checksum for itself.
+The expected AppImage sum is also printed in the table. If it differs, download the
 original file again. Do not replace the expected sum with the checksum
 of the file that failed verification. A checksum detects changed bytes but
 is not a publisher's signature.
@@ -73,13 +80,13 @@ is not a publisher's signature.
 In the same download folder, grant execute permission.
 
 ```bash
-chmod u+x ./Tokenlogue-0.1.0-986c6ad-x86_64.AppImage
+chmod u+x ./Tokenlogue-0.1.0-2b1f7d3-x86_64.AppImage
 ```
 
 Then start the application as your normal user.
 
 ```bash
-./Tokenlogue-0.1.0-986c6ad-x86_64.AppImage
+./Tokenlogue-0.1.0-2b1f7d3-x86_64.AppImage
 ```
 
 The Tokenlogue window will open. You can keep the AppImage in any convenient
@@ -94,7 +101,7 @@ installation and does not automatically add an entry to the applications menu.
 From the same folder, use the following option if FUSE is unavailable.
 
 ```bash
-./Tokenlogue-0.1.0-986c6ad-x86_64.AppImage --appimage-extract-and-run
+./Tokenlogue-0.1.0-2b1f7d3-x86_64.AppImage --appimage-extract-and-run
 ```
 
 This option unpacks the AppImage into a temporary directory and starts
@@ -137,8 +144,10 @@ data. Older versions may not support a database updated by a newer version.
 
 The [source-material guide](source-materials.md#lang-en) describes the
 available sources and the remaining gaps in the collection.
+The [previous preview 986c6ad](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-linux-preview.986c6ad)
+remains available with the baseline source parts and runtime bundle.
 If you have version `14b87ac`, see the [earlier preview guide](releases/v0.1.0-linux-preview.1.md#lang-en)
-for its checksum and differences from this version.
+for its checksum and historical release details.
 
 [Back to Tokenlogue](../README.md#lang-en)
 
@@ -147,7 +156,7 @@ for its checksum and differences from this version.
 ## Русский
 
 Руководство относится к предварительной Linux-сборке `0.1.0` из коммита
-приложения `986c6adc3eda9820a3147c9b0088bacc0273f4da`. Интерфейс на русском языке.
+приложения `2b1f7d30e612416d8d88adde18a44aa235a7fe25`. Интерфейс на русском языке.
 Настройка API-ключа и управление чатами описаны в
 [руководстве пользователя](user-guide.md#lang-ru).
 
@@ -178,30 +187,38 @@ for its checksum and differences from this version.
 
 ### Скачивание и проверка
 
-Откройте [страницу опубликованной предварительной версии](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-linux-preview.986c6ad)
-или скачайте [AppImage](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/Tokenlogue-0.1.0-986c6ad-x86_64.AppImage)
-и [APPIMAGE.SHA256SUMS](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/APPIMAGE.SHA256SUMS)
-по прямым ссылкам в одну папку. Вход в GitHub не нужен. Перед обычным запуском
-AppImage не требуется распаковывать.
-Отдельно доступны [инструкция запуска](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/DOWNLOAD.md#lang-ru)
-и [инструкция по исходным материалам](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/SOURCE_MATERIALS.md#lang-ru).
-Эта сборка не подписана. Сверьте скачанный файл со значениями ниже.
+Откройте [страницу опубликованной предварительной версии 2b1f7d3](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-linux-preview.2b1f7d3)
+и скачайте все шесть файлов в одну папку:
+
+- [Tokenlogue-0.1.0-2b1f7d3-x86_64.AppImage](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.2b1f7d3/Tokenlogue-0.1.0-2b1f7d3-x86_64.AppImage)
+- [Tokenlogue-2b1f7d3-source-supplement.tar.gz](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.2b1f7d3/Tokenlogue-2b1f7d3-source-supplement.tar.gz)
+- [PROVENANCE.json](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.2b1f7d3/PROVENANCE.json)
+- [RELEASE_NOTES.md](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.2b1f7d3/RELEASE_NOTES.md)
+- [SOURCE_MATERIALS.md](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.2b1f7d3/SOURCE_MATERIALS.md)
+- [SHA256SUMS](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.2b1f7d3/SHA256SUMS)
+
+Вход в GitHub не нужен. Перед обычным запуском AppImage не требуется
+распаковывать. Инструкция запуска находится в этом руководстве репозитория.
+[Руководство по исходным материалам](source-materials.md#lang-ru) объясняет
+использование дополнения вместе с прежним комплектом исходников.
+Эта сборка не подписана. Сверьте скачанный AppImage со значениями ниже.
 
 | Свойство | Значение |
 | --- | --- |
-| Файл | `Tokenlogue-0.1.0-986c6ad-x86_64.AppImage` |
+| Файл | `Tokenlogue-0.1.0-2b1f7d3-x86_64.AppImage` |
 | Размер в байтах | `32622984` |
-| SHA-256 | `4a8b95ab7f36f7cc63533bf2c03be26c02b499e1d9861f24e5d8fb210616314a` |
+| SHA-256 | `0852f9432cb089e31fef2722d84ce7124714588afb65d6f25cd64d0616a4779d` |
 
-Откройте терминал в папке скачивания с AppImage и `APPIMAGE.SHA256SUMS`, затем
-выполните следующую команду.
+Откройте терминал в папке скачивания со всеми шестью файлами, затем выполните
+следующую команду.
 
 ```bash
-sha256sum --check APPIMAGE.SHA256SUMS
+sha256sum --check SHA256SUMS
 ```
 
-Продолжайте только после результата `OK` для точного имени файла из таблицы.
-Ожидаемая сумма также указана в таблице. При несовпадении заново скачайте
+В файле сумм перечислены остальные пять файлов, включая AppImage. Все пять
+должны получить результат `OK`. Сам файл сумм не содержит собственной суммы.
+Ожидаемая сумма AppImage также указана в таблице. При несовпадении заново скачайте
 исходный файл. Не заменяйте ожидаемую сумму хешем файла, который не прошёл
 проверку. Контрольная сумма обнаруживает изменение байтов, но не является
 подписью издателя.
@@ -213,13 +230,13 @@ sha256sum --check APPIMAGE.SHA256SUMS
 В той же папке скачивания разрешите выполнение файла.
 
 ```bash
-chmod u+x ./Tokenlogue-0.1.0-986c6ad-x86_64.AppImage
+chmod u+x ./Tokenlogue-0.1.0-2b1f7d3-x86_64.AppImage
 ```
 
 Затем запустите приложение от обычного пользователя.
 
 ```bash
-./Tokenlogue-0.1.0-986c6ad-x86_64.AppImage
+./Tokenlogue-0.1.0-2b1f7d3-x86_64.AppImage
 ```
 
 Откроется окно Tokenlogue. AppImage можно хранить в любой удобной папке.
@@ -234,7 +251,7 @@ chmod u+x ./Tokenlogue-0.1.0-986c6ad-x86_64.AppImage
 Если FUSE недоступен, выполните следующую команду в той же папке.
 
 ```bash
-./Tokenlogue-0.1.0-986c6ad-x86_64.AppImage --appimage-extract-and-run
+./Tokenlogue-0.1.0-2b1f7d3-x86_64.AppImage --appimage-extract-and-run
 ```
 
 Эта команда распаковывает AppImage во временный каталог и запускает
@@ -277,7 +294,9 @@ Tokenlogue без FUSE. Убедитесь, что во временном ка�
 
 [Руководство по исходным материалам](source-materials.md#lang-ru) описывает
 доступные исходники и недостающие части комплекта.
+[Прежняя предварительная версия 986c6ad](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-linux-preview.986c6ad)
+сохранена вместе с базовыми частями исходного архива и комплектом runtime.
 Для версии `14b87ac` используйте [описание прежней сборки](releases/v0.1.0-linux-preview.1.md#lang-ru).
-В нём приведены её контрольная сумма и отличия от этой версии.
+В нём приведены её контрольная сумма и сведения о прежней сборке.
 
 [К Tokenlogue](../README.md#lang-ru)

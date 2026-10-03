@@ -13,9 +13,9 @@ You do not need to install or launch a separate runtime binary.
 
 ### Source bundle
 
-For the runtime used by preview `986c6ad`, download
+Previews `2b1f7d3` and `986c6ad` use the same runtime. Download
 [appimage-runtime-34749438406-1.zip](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/appimage-runtime-34749438406-1.zip)
-from the [published preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-linux-preview.986c6ad).
+from the [previous preview 986c6ad](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-linux-preview.986c6ad).
 No GitHub sign-in is needed. This is the original runtime bundle from
 producer run `34749438406`, attempt `1`.
 
@@ -50,8 +50,8 @@ bundle includes the original sources, Alpine inputs and linked materials.
 Use the recipes and versions in this bundle when rebuilding this runtime.
 Changing them can produce a different binary.
 
-The source collection for the full application is not yet complete.
-Additional Flutter SDK and other application source materials are needed.
+Completeness of the full application source collection remains unconfirmed.
+Its status remains `REVIEW_REQUIRED`. A full offline rebuild has not been verified.
 See [available sources and limitations](../../../../docs/source-materials.md#lang-en)
 and the [license guide](../notices.md#lang-en).
 
@@ -66,9 +66,9 @@ Runtime уже включён в [сборку для Linux](../../../../docs/li
 
 ### Комплект исходников
 
-Для runtime, включённого в предварительную сборку `986c6ad`, скачайте
+В предварительных сборках `2b1f7d3` и `986c6ad` используется один runtime. Скачайте
 [appimage-runtime-34749438406-1.zip](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/appimage-runtime-34749438406-1.zip)
-из [опубликованного выпуска](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-linux-preview.986c6ad).
+из [прежнего выпуска 986c6ad](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-linux-preview.986c6ad).
 Вход в GitHub не нужен. Это оригинальный комплект runtime из запуска
 производителя `34749438406`, попытка `1`.
 
@@ -103,7 +103,7 @@ GCC 14.2.0-r4, zlib 1.3.2-r0, zstd 1.5.6-r2 и mimalloc2 2.1.7-r0.
 Для пересборки этого runtime используйте рецепты и версии из комплекта.
 Их изменение может привести к созданию другого исполняемого файла.
 
-Комплект исходников всего приложения пока неполон.
-Нужны дополнительные материалы Flutter SDK и другие исходники приложения.
+Полнота комплекта исходников всего приложения остаётся неподтверждённой.
+Статус остаётся `REVIEW_REQUIRED`. Полная пересборка без сети не проверена.
 Подробнее на страницах [доступных материалов и ограничений](../../../../docs/source-materials.md#lang-ru)
 и [лицензий](../notices.md#lang-ru).

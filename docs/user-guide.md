@@ -6,8 +6,8 @@
 
 ## English
 
-This guide describes the `0.1.0` preview `986c6ad`. The interface is in
-Russian. Russian labels below identify the controls you will see in the app.
+This guide describes the current [published `0.1.0` preview `2b1f7d3`](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-linux-preview.2b1f7d3).
+The interface is in Russian. Russian labels below identify the controls you will see in the app.
 For installation, use the [Linux AppImage guide](linux-appimage.md#lang-en).
 
 [Key and PIN](#en-access) | [Chats and menu](#en-chats) |
@@ -170,7 +170,7 @@ private content.
 
 ## Русский
 
-Руководство описывает предварительную сборку `0.1.0` версии `986c6ad`.
+Руководство описывает текущую [опубликованную предварительную сборку `0.1.0` версии `2b1f7d3`](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-linux-preview.2b1f7d3).
 Интерфейс на русском языке. Ниже используются названия элементов, которые
 видны в приложении. Установка описана в
 [руководстве по AppImage для Linux](linux-appimage.md#lang-ru).

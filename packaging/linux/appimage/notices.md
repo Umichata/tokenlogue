@@ -6,7 +6,7 @@
 
 ## English
 
-The `986c6ad` Linux preview includes the original notices and license texts
+The `2b1f7d3` Linux preview includes the original notices and license texts
 for its packaged components. This guide explains how to find and read
 those files. The [repository overview](../../../THIRD_PARTY_NOTICES.md#lang-en)
 lists the direct application dependencies.
@@ -28,7 +28,7 @@ If you want to read the notices without starting Tokenlogue, use an installed
 AppImage. Choose a destination name that does not already exist.
 
 ```bash
-unsquashfs -no-xattrs -o 678280 -d "./tokenlogue-notices" "./Tokenlogue-0.1.0-986c6ad-x86_64.AppImage"
+unsquashfs -no-xattrs -o 678280 -d "./tokenlogue-notices" "./Tokenlogue-0.1.0-2b1f7d3-x86_64.AppImage"
 ```
 
 This extracts the filesystem to `tokenlogue-notices` without executing the
@@ -57,9 +57,10 @@ Earlier previews may have an English-only component index.
 
 Source code is provided separately from these license texts. The
 [source materials guide](../../../docs/source-materials.md#lang-en) links to
-the application source and runtime bundle. It also describes the missing
-Flutter SDK materials that prevent the collection from being complete.
-Rebuilding the full application from the available materials has not been verified.
+the application source, the supplement and the previous source and runtime
+bundles. Completeness of the source collection remains unconfirmed, with
+status `REVIEW_REQUIRED`. Rebuilding the full application from the available
+materials has not been verified.
 
 [Back to the AppImage overview](README.md#lang-en)
 
@@ -67,7 +68,7 @@ Rebuilding the full application from the available materials has not been verifi
 
 ## Русский
 
-Предварительная Linux-сборка `986c6ad` содержит оригинальные уведомления
+Предварительная Linux-сборка `2b1f7d3` содержит оригинальные уведомления
 и тексты лицензий упакованных компонентов. В этом руководстве объясняется,
 как найти и прочитать эти файлы.
 [Обзор в репозитории](../../../THIRD_PARTY_NOTICES.md#lang-ru)
@@ -90,7 +91,7 @@ Rebuilding the full application from the available materials has not been verifi
 Выберите ещё не существующее имя каталога назначения.
 
 ```bash
-unsquashfs -no-xattrs -o 678280 -d "./tokenlogue-notices" "./Tokenlogue-0.1.0-986c6ad-x86_64.AppImage"
+unsquashfs -no-xattrs -o 678280 -d "./tokenlogue-notices" "./Tokenlogue-0.1.0-2b1f7d3-x86_64.AppImage"
 ```
 
 Команда извлекает файловую систему в `tokenlogue-notices`, не выполняя
@@ -120,8 +121,9 @@ Copyright-файл Debian может описывать файлы исходн�
 
 Исходный код предоставляется отдельно от текстов лицензий.
 [Руководство по исходным материалам](../../../docs/source-materials.md#lang-ru)
-содержит ссылки на код приложения и комплект runtime. В нём также описаны
-недостающие материалы Flutter SDK, из-за которых комплект остаётся неполным.
+содержит ссылки на код приложения, дополнение и прежние комплекты исходников
+и runtime. Полнота коллекции остаётся неподтверждённой, со статусом
+`REVIEW_REQUIRED`.
 Пересборка всего приложения из доступных материалов не проверена.
 
 [К обзору AppImage](README.md#lang-ru)

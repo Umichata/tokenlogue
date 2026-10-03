@@ -7,7 +7,9 @@
 ## English
 
 The Tokenlogue AppImage is an unsigned preview for Linux x86_64.
-This page covers `Tokenlogue-0.1.0-986c6ad-x86_64.AppImage`.
+This page covers preview `2b1f7d3` from application commit
+`2b1f7d30e612416d8d88adde18a44aa235a7fe25` and the file
+`Tokenlogue-0.1.0-2b1f7d3-x86_64.AppImage`.
 The [Linux guide](../../../docs/linux-appimage.md#lang-en) explains how to
 download it, check the file and launch the application.
 
@@ -26,13 +28,16 @@ to the applications menu. Run the file as your normal user.
 
 ### Before you start
 
-Download the file from the [public prerelease](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-linux-preview.986c6ad).
-The [AppImage](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/Tokenlogue-0.1.0-986c6ad-x86_64.AppImage)
-and its [checksum file](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/APPIMAGE.SHA256SUMS)
+Download the file from the [public prerelease](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-linux-preview.2b1f7d3).
+The [AppImage](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.2b1f7d3/Tokenlogue-0.1.0-2b1f7d3-x86_64.AppImage)
+and its [SHA256SUMS file](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.2b1f7d3/SHA256SUMS)
 are available without signing in to GitHub.
 It has no signature or automatic updater. Check its checksum before running
 it. The [Linux guide](../../../docs/linux-appimage.md#lang-en) describes
 the requirements, download verification and startup options.
+
+The AppImage SHA-256 is
+`0852f9432cb089e31fef2722d84ce7124714588afb65d6f25cd64d0616a4779d`.
 
 Compatibility depends on the system libraries and graphics environment.
 Wayland support has not been verified.
@@ -53,7 +58,8 @@ For available application sources and the gaps in their collection, see
 
 AppImage Tokenlogue - неподписанная предварительная сборка
 для Linux x86_64. На этой странице описан файл
-`Tokenlogue-0.1.0-986c6ad-x86_64.AppImage`.
+`Tokenlogue-0.1.0-2b1f7d3-x86_64.AppImage` предварительной версии `2b1f7d3`
+из коммита приложения `2b1f7d30e612416d8d88adde18a44aa235a7fe25`.
 В [руководстве для Linux](../../../docs/linux-appimage.md#lang-ru) объясняется,
 как скачать его, проверить и запустить приложение.
 
@@ -72,13 +78,16 @@ AppImage Tokenlogue - неподписанная предварительная 
 
 ### Перед запуском
 
-Скачайте файл со [страницы опубликованной предварительной версии](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-linux-preview.986c6ad).
-[AppImage](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/Tokenlogue-0.1.0-986c6ad-x86_64.AppImage)
-и его [файл контрольной суммы](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/APPIMAGE.SHA256SUMS)
+Скачайте файл со [страницы опубликованной предварительной версии](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-linux-preview.2b1f7d3).
+[AppImage](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.2b1f7d3/Tokenlogue-0.1.0-2b1f7d3-x86_64.AppImage)
+и его [файл SHA256SUMS](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.2b1f7d3/SHA256SUMS)
 доступны без входа в GitHub.
 Подписи и автоматического обновления нет. Перед запуском проверьте контрольную
 сумму. В [руководстве для Linux](../../../docs/linux-appimage.md#lang-ru)
 описаны требования, проверка загрузки и способы запуска.
+
+SHA-256 AppImage равна
+`0852f9432cb089e31fef2722d84ce7124714588afb65d6f25cd64d0616a4779d`.
 
 Совместимость зависит от системных библиотек и графической среды.
 Поддержка Wayland не проверена.
