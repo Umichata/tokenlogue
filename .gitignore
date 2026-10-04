@@ -60,6 +60,10 @@ test/
 export/
 .metadata
 
+# Versioned Android build recipe
+!packaging/android/
+!packaging/android/build_apk.py
+
 # Versioned packaging icon sources
 !packaging/icons/android/
 !packaging/icons/android/**

@@ -64,6 +64,7 @@ jni_flutter = "1.0.3"
 
 [tool.flet.android]
 min_sdk_version = 24
+dependencies = ["msgpack==1.1.2"]
 
 [tool.flet.android.manifest_application]
 allowBackup = "false"
