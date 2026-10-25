@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from enum import Enum
 
+from i18n import fresh_text, tr
+
 
 class ChatErrorType(str, Enum):
     INVALID_REQUEST = "invalid_request"
@@ -36,41 +38,35 @@ class ChatErrorType(str, Enum):
 
 
 SAFE_ERROR_MESSAGES: dict[ChatErrorType, str] = {
-    ChatErrorType.INVALID_REQUEST: "OpenRouter отклонил параметры запроса.",
-    ChatErrorType.AUTHENTICATION: "OpenRouter отклонил API-ключ.",
-    ChatErrorType.PAYMENT_REQUIRED: (
-        "OpenRouter сообщил о недостатке средств аккаунта или лимита ключа."
-    ),
-    ChatErrorType.PERMISSION_DENIED: "OpenRouter запретил этот запрос.",
-    ChatErrorType.CONTENT_POLICY_VIOLATION: "Ответ остановлен политикой содержимого.",
-    ChatErrorType.REFUSAL: "Модель отказалась сформировать ответ.",
-    ChatErrorType.TIMEOUT: "OpenRouter не завершил запрос вовремя.",
-    ChatErrorType.NETWORK_ERROR: "Не удалось завершить сетевой запрос.",
-    ChatErrorType.RATE_LIMIT_EXCEEDED: "OpenRouter временно ограничил частоту запросов.",
-    ChatErrorType.PROVIDER_UNAVAILABLE: "Провайдер модели временно недоступен.",
-    ChatErrorType.PROVIDER_OVERLOADED: "Провайдер модели временно перегружен.",
-    ChatErrorType.CONTEXT_LENGTH_EXCEEDED: "Контекст не помещается в окно модели.",
-    ChatErrorType.MAX_TOKENS_EXCEEDED: "Превышено ограничение длины ответа модели.",
-    ChatErrorType.TOKEN_LIMIT_EXCEEDED: "Токен-бюджет этого чата исчерпан.",
-    ChatErrorType.COST_LIMIT_EXCEEDED: "Денежный бюджет этого чата исчерпан.",
-    ChatErrorType.KEY_LIMIT_EXCEEDED: "Оценка превышает доступный лимит ключа.",
-    ChatErrorType.KEY_NOT_VALID: "Состояние ключа не разрешает этот запрос.",
-    ChatErrorType.MODEL_UNAVAILABLE: "Выбранная модель отсутствует в текущем каталоге.",
-    ChatErrorType.MODEL_PRICE_UNSAFE: "Текущую цену модели нельзя безопасно оценить.",
-    ChatErrorType.PRICE_RECONFIRMATION_REQUIRED: (
-        "Цена модели изменилась и требует нового подтверждения."
-    ),
-    ChatErrorType.PAID_CONFIRMATION_REQUIRED: (
-        "Платный запрос требует явного подтверждения."
-    ),
-    ChatErrorType.LIMITS_NOT_CONFIGURED: "Сначала настройте лимиты этого чата.",
-    ChatErrorType.TURN_ALREADY_ACTIVE: "В этом чате уже выполняется запрос.",
-    ChatErrorType.TURN_NOT_RETRYABLE: "Эту попытку нельзя повторить.",
-    ChatErrorType.MALFORMED_RESPONSE: "OpenRouter вернул ответ неожиданного формата.",
-    ChatErrorType.ACCOUNTING_UNKNOWN: "Токены или стоимость запроса неизвестны.",
-    ChatErrorType.INTERRUPTED: "Запрос был прерван при завершении приложения.",
+    ChatErrorType.INVALID_REQUEST: tr("service.error.invalid_request"),
+    ChatErrorType.AUTHENTICATION: tr("service.error.authentication"),
+    ChatErrorType.PAYMENT_REQUIRED: (tr("service.error.payment")),
+    ChatErrorType.PERMISSION_DENIED: tr("service.error.permission"),
+    ChatErrorType.CONTENT_POLICY_VIOLATION: tr("service.error.policy"),
+    ChatErrorType.REFUSAL: tr("service.error.refusal"),
+    ChatErrorType.TIMEOUT: tr("service.error.timeout"),
+    ChatErrorType.NETWORK_ERROR: tr("service.error.network"),
+    ChatErrorType.RATE_LIMIT_EXCEEDED: tr("service.error.rate"),
+    ChatErrorType.PROVIDER_UNAVAILABLE: tr("service.error.unavailable"),
+    ChatErrorType.PROVIDER_OVERLOADED: tr("service.error.overloaded"),
+    ChatErrorType.CONTEXT_LENGTH_EXCEEDED: tr("service.error.context"),
+    ChatErrorType.MAX_TOKENS_EXCEEDED: tr("service.error.completion"),
+    ChatErrorType.TOKEN_LIMIT_EXCEEDED: tr("service.error.tokens"),
+    ChatErrorType.COST_LIMIT_EXCEEDED: tr("service.error.cost"),
+    ChatErrorType.KEY_LIMIT_EXCEEDED: tr("service.error.key_limit"),
+    ChatErrorType.KEY_NOT_VALID: tr("service.error.key_state"),
+    ChatErrorType.MODEL_UNAVAILABLE: tr("service.error.model_missing"),
+    ChatErrorType.MODEL_PRICE_UNSAFE: tr("service.error.price_unsafe"),
+    ChatErrorType.PRICE_RECONFIRMATION_REQUIRED: (tr("service.error.price_confirm")),
+    ChatErrorType.PAID_CONFIRMATION_REQUIRED: (tr("service.error.paid_confirm")),
+    ChatErrorType.LIMITS_NOT_CONFIGURED: tr("service.error.limits"),
+    ChatErrorType.TURN_ALREADY_ACTIVE: tr("service.error.turn_active"),
+    ChatErrorType.TURN_NOT_RETRYABLE: tr("service.error.retry"),
+    ChatErrorType.MALFORMED_RESPONSE: tr("service.response_format"),
+    ChatErrorType.ACCOUNTING_UNKNOWN: tr("service.error.unknown"),
+    ChatErrorType.INTERRUPTED: tr("service.error.interrupted"),
 }
 
 
 def safe_error_message(error_type: ChatErrorType) -> str:
-    return SAFE_ERROR_MESSAGES[error_type]
+    return fresh_text(SAFE_ERROR_MESSAGES[error_type])

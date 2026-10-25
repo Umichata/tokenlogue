@@ -8,6 +8,7 @@ import secrets
 from collections.abc import Callable
 
 from auth.models import PinRecord
+from i18n import tr
 
 PIN_LENGTH = 4
 KDF_VERSION = 1
@@ -38,7 +39,7 @@ class PinHasher:
     def create_record(self, pin: str) -> PinRecord:
         """Создаёт новую случайную соль и verifier для корректного PIN."""
         if not is_valid_pin(pin):
-            raise ValueError("PIN должен состоять ровно из четырёх цифр")
+            raise ValueError(tr("service.pin_four_plain"))
         salt = self._token_bytes(KDF_SALT_BYTES)
         verifier = _derive_pin(pin, salt, self._iterations)
         return PinRecord(

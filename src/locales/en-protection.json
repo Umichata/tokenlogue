@@ -1,0 +1,16 @@
+{
+  "app.lock_with_warning": "{locked} {warning}",
+  "protection.access_closed": "Chat access is locked. Sign in again.",
+  "protection.unavailable": "Protected chats could not be opened. Your data has been preserved. Try signing in again.",
+  "protection.key_missing": "The protected chat key is missing or damaged. Your data has been preserved. No replacement key was created.",
+  "protection.initialization_unavailable": "Chat protection could not be completed safely. Your data has been preserved. Try signing in again. If the error continues, keep the existing application data for diagnosis.",
+  "service.database_in_use": "Another Tokenlogue process is using this data folder. Close that process before trying again. Close older versions before updating chat protection.",
+  "protection.binding_mismatch": "The sign-in data does not match the protected chats. Use device authentication to recover access if it is available.",
+  "protection.native_reason": "Authenticate with your device to choose a new Tokenlogue PIN.",
+  "protection.native_title": "Tokenlogue recovery",
+  "protection.native_cancel": "Cancel",
+  "protection.recovery_unavailable": "Device authentication is unavailable. Set up a device PIN, pattern, or password. Your existing app PIN and data have been preserved.",
+  "protection.recovery_cancelled": "Device authentication was not completed. Your existing PIN and chats have been preserved.",
+  "protection.sign_in_first": "Sign in with your existing app PIN, then open the ⋮ menu and choose Replace OpenRouter key. If you forgot your PIN, use device recovery when available. A new API key does not unlock existing chats.",
+  "protection.replace_key": "Enter your new OpenRouter key. Your app PIN and chats will be kept."
+}

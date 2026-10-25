@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from chat.models import Message, MessageRole, MessageStatus
 
@@ -18,7 +18,7 @@ class ContextWindowExceeded(ValueError):
 @dataclass(frozen=True)
 class ContextMessage:
     role: MessageRole
-    content: str
+    content: str = field(repr=False)
 
 
 @dataclass(frozen=True)

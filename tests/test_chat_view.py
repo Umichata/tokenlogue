@@ -263,7 +263,7 @@ class ChatViewTests(unittest.IsolatedAsyncioTestCase):
         self.assertIsNotNone(invalid.replace_key_button)
         self.assertFalse(invalid._new_chat_allowed)
         self.assertIsNotNone(restricted.retry_key_button)
-        self.assertIsNone(restricted.replace_key_button)
+        self.assertIsNotNone(restricted.replace_key_button)
         self.assertTrue(restricted._new_chat_allowed)
 
         invalid_message, *_ = _key_status_presentation(
@@ -340,7 +340,9 @@ class ChatViewTests(unittest.IsolatedAsyncioTestCase):
         assert old_delete_button is not None
         await rename_handler(ft.Event(name="click", control=view.rename_button))
         await delete_handler(ft.Event(name="click", control=old_delete_button))
-        self.assertEqual(deleted, [])
+        self.assertFalse(view.menu_open)
+        self.assertIs(view.delete_button, old_delete_button)
+        self.assertEqual(deleted, [chat.id])
         await view.open_menu()
         assert view.delete_button is not None
         delete_handler = cast(
@@ -350,7 +352,13 @@ class ChatViewTests(unittest.IsolatedAsyncioTestCase):
         await delete_handler(ft.Event(name="click", control=view.delete_button))
 
         self.assertEqual(renamed, [chat.id])
-        self.assertEqual(deleted, [chat.id])
+        self.assertEqual(deleted, [chat.id, chat.id])
+        self.assertFalse(view.menu_open)
+        view.dispose()
+        await rename_handler(ft.Event(name="click", control=view.rename_button))
+        await delete_handler(ft.Event(name="click", control=old_delete_button))
+        self.assertEqual(renamed, [chat.id])
+        self.assertEqual(deleted, [chat.id, chat.id])
 
 
 def _chat() -> Chat:

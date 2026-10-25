@@ -11,6 +11,9 @@ EXPECTED_PRODUCTION_DEPENDENCIES = {
     "flet==0.86.5",
     "flet-secure-storage==0.86.5",
     "httpx==0.28.1",
+    "pycryptodomex==3.23.0",
+    "cffi==2.0.0",
+    "pycparser==3.11",
 }
 EXPECTED_DEV_DEPENDENCIES = {
     "flet-cli==0.86.5",

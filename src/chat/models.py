@@ -146,7 +146,7 @@ class ModelCatalog:
 @dataclass(frozen=True)
 class Chat:
     id: str
-    title: str
+    title: str = field(repr=False)
     mode: ChatMode
     requested_model_id: str
     requested_model_name: str
@@ -160,6 +160,7 @@ class Chat:
     input_cache_write_price_per_token: Decimal = Decimal("0")
     pricing_overrides: tuple[PriceComponents, ...] = ()
     pricing_snapshot_complete: bool = True
+    title_origin: str = "legacy"
 
     @property
     def price_snapshot(self) -> PriceComponents:

@@ -6,9 +6,10 @@ from collections.abc import Awaitable, Callable
 
 import flet as ft
 
-from chat.accounting import AccountingStatus, TurnRecord, format_decimal_usd
+from chat.accounting import AccountingStatus, TurnRecord
 from chat.errors import safe_error_message
 from chat.models import Message, MessageRole, MessageStatus
+from i18n import money, number, tr
 from ui.styles import ERROR_COLOR, MUTED_COLOR, PANEL_BACKGROUND
 
 RetryCallback = Callable[[str], Awaitable[None]]
@@ -46,7 +47,7 @@ class MessageHistoryView:
                     expand=True,
                     alignment=ft.Alignment.CENTER,
                     content=ft.Text(
-                        "Сообщений пока нет",
+                        tr("history.empty"),
                         color=MUTED_COLOR,
                         text_align=ft.TextAlign.CENTER,
                     ),
@@ -73,16 +74,18 @@ class MessageHistoryView:
             for index, (label, value) in enumerate(metadata):
                 if index:
                     spans.append(ft.TextSpan(" · "))
-                spans.extend([ft.TextSpan(label + " "), ft.TextSpan(value)])
+                spans.extend(
+                    [ft.TextSpan(tr("meta.label", label=label)), ft.TextSpan(value)]
+                )
             details.append(ft.Text(spans=spans, size=11, color=MUTED_COLOR))
 
         if message.status is MessageStatus.PENDING:
-            details.append(ft.Text("Отправляется…", size=11, color=MUTED_COLOR))
+            details.append(ft.Text(tr("history.sending"), size=11, color=MUTED_COLOR))
         elif message.status is MessageStatus.FAILED:
             if not is_user:
                 details.append(
                     ft.Text(
-                        "Ответ получен не полностью",
+                        tr("history.partial"),
                         size=11,
                         color=ERROR_COLOR,
                     )
@@ -102,7 +105,7 @@ class MessageHistoryView:
             ):
                 details.append(
                     ft.TextButton(
-                        "Повторить",
+                        tr("common.retry"),
                         icon=ft.Icons.REFRESH,
                         on_click=self._retry_handler(message.turn_id),
                     )
@@ -145,14 +148,14 @@ def _message_metadata(
             turn.actual_model_id if turn is not None else None
         )
         if model:
-            parts.append(("Модель", model))
+            parts.append((tr("meta.model"), model))
     if turn is not None and turn.accounting_status is AccountingStatus.FINAL:
         if turn.prompt_tokens is not None:
-            parts.append(("Входные токены", str(turn.prompt_tokens)))
+            parts.append((tr("meta.prompt_tokens"), number(turn.prompt_tokens)))
         if turn.completion_tokens is not None:
-            parts.append(("Токены ответа", str(turn.completion_tokens)))
+            parts.append((tr("meta.completion_tokens"), number(turn.completion_tokens)))
         if turn.total_tokens is not None:
-            parts.append(("Всего", str(turn.total_tokens)))
+            parts.append((tr("meta.total"), number(turn.total_tokens)))
         if turn.cost_usd is not None:
-            parts.append(("Стоимость", "$" + format_decimal_usd(turn.cost_usd)))
+            parts.append((tr("meta.cost"), money(turn.cost_usd)))
     return parts

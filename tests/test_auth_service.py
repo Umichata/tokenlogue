@@ -5,10 +5,12 @@ from __future__ import annotations
 import asyncio
 import sys
 import tempfile
+import threading
 import unittest
 from datetime import UTC, datetime
 from decimal import Decimal
 from pathlib import Path
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
@@ -20,6 +22,7 @@ from auth.models import (  # noqa: E402
     InitialRoute,
     KeyLimitState,
     KeyValidityState,
+    PinRecord,
 )
 from auth.pin import PinHasher  # noqa: E402
 from auth.service import AuthService  # noqa: E402
@@ -86,6 +89,31 @@ class MemoryCredentials:
         self.registration_id = None
 
 
+class BlockingHasher(PinHasher):
+    def __init__(self) -> None:
+        super().__init__(iterations=1_000)
+        self.started = threading.Event()
+        self.release = threading.Event()
+
+    def create_record(self, pin: str) -> PinRecord:
+        self.started.set()
+        if not self.release.wait(timeout=5):
+            raise TimeoutError("Тест не освободил вычисление verifier")
+        return super().create_record(pin)
+
+
+class BlockingCredentials(MemoryCredentials):
+    def __init__(self) -> None:
+        super().__init__()
+        self.started = asyncio.Event()
+        self.release = asyncio.Event()
+
+    async def save_credentials(self, api_key: str, registration_id: str) -> None:
+        self.started.set()
+        await self.release.wait()
+        await super().save_credentials(api_key, registration_id)
+
+
 class MutableClock:
     def __init__(self, value: float) -> None:
         self.value = value
@@ -120,9 +148,11 @@ class AuthServiceTests(unittest.IsolatedAsyncioTestCase):
 
     async def _complete_setup(self) -> str:
         setup = await self.service.start_setup(TEST_CREDENTIAL)
-        self.assertIsNotNone(setup.pin)
-        pin = setup.pin or ""
-        completed = await self.service.complete_setup()
+        self.assertIsNotNone(setup.pending_setup_token)
+        pin = "0007"
+        completed = await self.service.complete_setup(
+            "0007", setup.pending_setup_token or ""
+        )
         self.assertEqual(completed.status, AuthStatus.AUTHENTICATED)
         return pin
 
@@ -131,14 +161,15 @@ class AuthServiceTests(unittest.IsolatedAsyncioTestCase):
     ) -> None:
         setup = await self.service.start_setup(TEST_CREDENTIAL)
 
-        self.assertEqual(setup.status, AuthStatus.PIN_CREATED)
-        self.assertIsNotNone(setup.pin)
-        self.assertEqual(len(setup.pin or ""), 4)
-        self.assertTrue((setup.pin or "").startswith("0"))
+        self.assertEqual(setup.status, AuthStatus.PIN_CHOICE_REQUIRED)
+        self.assertIsNotNone(setup.pending_setup_token)
+        self.assertIsNone(setup.pin)
         self.assertFalse((await self.credentials.inspect_state()).has_artifacts)
         self.assertIsNone(self.database.get_auth_state())
 
-        completed = await self.service.complete_setup()
+        completed = await self.service.complete_setup(
+            "0007", setup.pending_setup_token or ""
+        )
 
         self.assertEqual(completed.status, AuthStatus.AUTHENTICATED)
         secure_state = await self.credentials.inspect_state()
@@ -244,10 +275,12 @@ class AuthServiceTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_partial_secure_storage_failure_rolls_back_registration(self) -> None:
         setup = await self.service.start_setup(TEST_CREDENTIAL)
-        self.assertIsNotNone(setup.pin)
+        self.assertIsNotNone(setup.pending_setup_token)
         self.credentials.fail_save_after_write = True
 
-        result = await self.service.complete_setup()
+        result = await self.service.complete_setup(
+            "0007", setup.pending_setup_token or ""
+        )
 
         self.assertEqual(result.status, AuthStatus.STORAGE_ERROR)
         self.assertFalse((await self.credentials.inspect_state()).has_artifacts)
@@ -281,8 +314,113 @@ class AuthServiceTests(unittest.IsolatedAsyncioTestCase):
         first_result = await first
 
         self.assertEqual(second.status, AuthStatus.BUSY)
-        self.assertEqual(first_result.status, AuthStatus.PIN_CREATED)
+        self.assertEqual(first_result.status, AuthStatus.PIN_CHOICE_REQUIRED)
         self.assertEqual(validator.calls, 1)
+
+    async def test_canceled_validation_cannot_recreate_pending_setup(self) -> None:
+        validator = BlockingValidator(_accepted_key())
+        service = self._new_service(validator)
+        checking = asyncio.create_task(service.start_setup(TEST_CREDENTIAL))
+        await validator.started.wait()
+
+        service.cancel_pending_setup()
+        validator.release.set()
+        result = await checking
+        completed = await service.complete_setup("0007", "canceled-token")
+
+        self.assertEqual(result.status, AuthStatus.INVALID_STATE)
+        self.assertIsNone(result.pin)
+        self.assertEqual(completed.status, AuthStatus.INVALID_STATE)
+        self.assertFalse((await self.credentials.inspect_state()).has_artifacts)
+        self.assertIsNone(self.database.get_auth_state())
+
+    async def test_cancel_pending_preserves_existing_registration(self) -> None:
+        pin = await self._complete_setup()
+        previous = self.database.get_auth_state()
+        previous_credentials = await self.credentials.inspect_state()
+        self.service.cancel_pending_setup()
+        self.assertEqual(self.database.get_auth_state(), previous)
+        self.assertEqual(await self.credentials.inspect_state(), previous_credentials)
+        self.assertEqual(
+            (await self.service.login(pin)).status, AuthStatus.AUTHENTICATED
+        )
+
+    async def test_cancel_during_pin_hash_does_not_start_persistence(self) -> None:
+        hasher = BlockingHasher()
+        service = AuthService(
+            self.validator, self.credentials, self.database, pin_hasher=hasher
+        )
+        setup = await service.start_setup(TEST_CREDENTIAL)
+        completing = asyncio.create_task(
+            service.complete_setup("0007", setup.pending_setup_token or "")
+        )
+        started = await asyncio.to_thread(hasher.started.wait, 2)
+        self.assertTrue(started)
+
+        service.cancel_pending_setup()
+        hasher.release.set()
+        result = await completing
+
+        self.assertEqual(result.status, AuthStatus.INVALID_STATE)
+        self.assertIsNone(result.api_key)
+        self.assertFalse((await self.credentials.inspect_state()).has_artifacts)
+        self.assertIsNone(self.database.get_auth_state())
+
+    async def test_hash_failure_before_persistence_keeps_existing_registration(
+        self,
+    ) -> None:
+        setup = await self.service.start_setup("replacement-test-credential")
+        self.database.save_auth_state(
+            "existing-registration", self.hasher.create_record("0042")
+        )
+        await self.credentials.save_credentials(
+            TEST_CREDENTIAL, "existing-registration"
+        )
+        previous = self.database.get_auth_state()
+        previous_credentials = await self.credentials.inspect_state()
+        with patch.object(
+            self.hasher,
+            "create_record",
+            side_effect=ValueError("Искусственный сбой KDF"),
+        ):
+            result = await self.service.complete_setup(
+                "0007", setup.pending_setup_token or ""
+            )
+        self.assertEqual(result.status, AuthStatus.STORAGE_ERROR)
+        self.assertEqual(self.database.get_auth_state(), previous)
+        self.assertEqual(await self.credentials.inspect_state(), previous_credentials)
+
+    async def test_cancel_during_confirmed_commit_finishes_consistent_stores(
+        self,
+    ) -> None:
+        credentials = BlockingCredentials()
+        service = AuthService(
+            self.validator, credentials, self.database, pin_hasher=self.hasher
+        )
+        setup = await service.start_setup(TEST_CREDENTIAL)
+        completing = asyncio.create_task(
+            service.complete_setup("0007", setup.pending_setup_token or "")
+        )
+        await credentials.started.wait()
+        self.assertIsNotNone(self.database.get_auth_state())
+
+        service.cancel_pending_setup()
+        credentials.release.set()
+        result = await completing
+
+        self.assertEqual(result.status, AuthStatus.INVALID_STATE)
+        self.assertIsNone(result.api_key)
+        secure_state = await credentials.inspect_state()
+        stored = self.database.get_auth_state()
+        self.assertIsNotNone(stored)
+        assert stored is not None
+        self.assertTrue(secure_state.complete)
+        self.assertEqual(stored.registration_id, secure_state.registration_id)
+        self.assertEqual((await service.initialize()).initial_route, InitialRoute.PIN)
+        self.assertEqual(
+            (await service.login("0007")).status,
+            AuthStatus.AUTHENTICATED,
+        )
 
     async def test_reset_removes_both_authentication_stores(self) -> None:
         await self._complete_setup()
@@ -317,13 +455,49 @@ class AuthServiceTests(unittest.IsolatedAsyncioTestCase):
 
         result = await self.service.start_setup(TEST_CREDENTIAL)
 
-        self.assertEqual(result.status, AuthStatus.PIN_CREATED)
-        self.assertIsNotNone(result.pin)
+        self.assertEqual(result.status, AuthStatus.PIN_CHOICE_REQUIRED)
+        self.assertIsNotNone(result.pending_setup_token)
         self.assertEqual(result.key_validity, KeyValidityState.VALID)
         self.assertEqual(result.key_limit.state, KeyLimitState.NOT_SET)
         self.assertIsNone(result.key_limit.remaining)
         self.assertNotIn("положитель", result.message.casefold())
         self.assertNotIn("баланс", result.message.casefold())
+
+    async def test_setup_notice_requests_user_choice_for_every_accepted_limit(
+        self,
+    ) -> None:
+        cases = (
+            (KeyValidationStatus.ACCEPTED_WITHOUT_LIMIT, None, KeyLimitState.NOT_SET),
+            (
+                KeyValidationStatus.ACCEPTED_LIMIT_EXHAUSTED,
+                Decimal("0"),
+                KeyLimitState.EXHAUSTED,
+            ),
+            (
+                KeyValidationStatus.ACCEPTED_LIMIT_EXHAUSTED,
+                Decimal("-1"),
+                KeyLimitState.EXHAUSTED,
+            ),
+            (KeyValidationStatus.ACCEPTED, Decimal("5"), KeyLimitState.AVAILABLE),
+        )
+        for status, remaining, expected_limit in cases:
+            with self.subTest(status=status, remaining=remaining):
+                self.validator.result = KeyValidationResult(
+                    status, limit_remaining=remaining
+                )
+                with patch.object(
+                    self.hasher, "generate_pin", wraps=self.hasher.generate_pin
+                ) as generate:
+                    result = await self.service.start_setup(TEST_CREDENTIAL)
+                self.assertEqual(result.status, AuthStatus.PIN_CHOICE_REQUIRED)
+                self.assertEqual(result.key_limit.state, expected_limit)
+                self.assertIsNone(result.pin)
+                self.assertTrue(result.pending_setup_token)
+                generate.assert_not_called()
+                self.assertIsNone(self.database.get_auth_state())
+                self.assertFalse((await self.credentials.inspect_state()).has_artifacts)
+                self.assertIn("Выберите и сохраните PIN.", result.message)
+                self.assertNotIn("созданный PIN", result.message)
 
     async def test_zero_limit_key_can_complete_registration(self) -> None:
         self.validator.result = KeyValidationResult(
@@ -332,10 +506,12 @@ class AuthServiceTests(unittest.IsolatedAsyncioTestCase):
         )
 
         result = await self.service.start_setup(TEST_CREDENTIAL)
-        completed = await self.service.complete_setup()
+        completed = await self.service.complete_setup(
+            "0007", result.pending_setup_token or ""
+        )
 
-        self.assertEqual(result.status, AuthStatus.PIN_CREATED)
-        self.assertIsNotNone(result.pin)
+        self.assertEqual(result.status, AuthStatus.PIN_CHOICE_REQUIRED)
+        self.assertIsNotNone(result.pending_setup_token)
         self.assertEqual(result.key_validity, KeyValidityState.VALID)
         self.assertEqual(result.key_limit.state, KeyLimitState.EXHAUSTED)
         self.assertIn("Бесплатный режим остаётся доступным", result.message)
@@ -348,7 +524,7 @@ class AuthServiceTests(unittest.IsolatedAsyncioTestCase):
     async def test_positive_limit_is_available_key_limit_not_balance(self) -> None:
         result = await self.service.start_setup(TEST_CREDENTIAL)
 
-        self.assertEqual(result.status, AuthStatus.PIN_CREATED)
+        self.assertEqual(result.status, AuthStatus.PIN_CHOICE_REQUIRED)
         self.assertEqual(result.key_validity, KeyValidityState.VALID)
         self.assertEqual(result.key_limit.state, KeyLimitState.AVAILABLE)
         self.assertEqual(result.key_limit.remaining, Decimal("5"))
@@ -428,6 +604,106 @@ class AuthServiceTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(
             [chat.id for chat in repository.list_chats()],
             [chat_id],
+        )
+
+    async def test_setup_waits_for_user_pin_without_generating_one(self) -> None:
+        with patch.object(
+            self.hasher, "generate_pin", wraps=self.hasher.generate_pin
+        ) as generate:
+            setup = await self.service.start_setup(TEST_CREDENTIAL)
+        self.assertIsNone(setup.pin)
+        self.assertEqual(setup.status, AuthStatus.PIN_CHOICE_REQUIRED)
+        self.assertTrue(setup.pending_setup_token)
+        generate.assert_not_called()
+        self.assertIsNone(self.database.get_auth_state())
+        self.assertFalse((await self.credentials.inspect_state()).has_artifacts)
+
+    async def test_chosen_pin_is_exactly_persisted_and_survives_restart(self) -> None:
+        setup = await self.service.start_setup(TEST_CREDENTIAL)
+        result = await self.service.complete_setup(
+            "0042", setup.pending_setup_token or ""
+        )
+        self.assertEqual(result.status, AuthStatus.AUTHENTICATED)
+        restarted = self._new_service()
+        self.assertEqual(
+            (await restarted.login("0042")).status, AuthStatus.AUTHENTICATED
+        )
+        self.assertEqual((await restarted.login("0007")).status, AuthStatus.INVALID_PIN)
+
+    async def test_service_rejects_bad_chosen_pin_without_consuming_pending(
+        self,
+    ) -> None:
+        setup = await self.service.start_setup(TEST_CREDENTIAL)
+        token = setup.pending_setup_token or ""
+        for pin in (
+            "",
+            "123",
+            "12345",
+            "１２３４",
+            "١٢٣٤",
+            "12 4",
+            " 1234",
+            "1234 ",
+            "12a4",
+        ):
+            with self.subTest(pin=pin):
+                result = await self.service.complete_setup(pin, token)
+                self.assertEqual(result.status, AuthStatus.INVALID_PIN)
+                self.assertIsNone(self.database.get_auth_state())
+                self.assertFalse((await self.credentials.inspect_state()).has_artifacts)
+        self.assertEqual(
+            (await self.service.complete_setup("0042", token)).status,
+            AuthStatus.AUTHENTICATED,
+        )
+
+    async def test_old_setup_token_cannot_pair_new_key_with_old_pin(self) -> None:
+        old = await self.service.start_setup("first-synthetic-key")
+        self.service.cancel_pending_setup()
+        current = await self.service.start_setup("second-synthetic-key")
+        rejected = await self.service.complete_setup(
+            "0042", old.pending_setup_token or ""
+        )
+        self.assertEqual(rejected.status, AuthStatus.INVALID_STATE)
+        self.assertIsNone(self.database.get_auth_state())
+        completed = await self.service.complete_setup(
+            "0284", current.pending_setup_token or ""
+        )
+        self.assertEqual(completed.status, AuthStatus.AUTHENTICATED)
+        self.assertEqual(self.credentials.api_key, "second-synthetic-key")
+        self.assertEqual(
+            (await self.service.login("0284")).status, AuthStatus.AUTHENTICATED
+        )
+
+    async def test_suggested_pin_can_be_edited_before_confirmation(self) -> None:
+        setup = await self.service.start_setup(TEST_CREDENTIAL)
+        self.assertEqual(self.service.suggest_pin(), "0007")
+        self.assertEqual(self.service.suggest_pin(), "0007")
+        self.assertIsNone(self.database.get_auth_state())
+        result = await self.service.complete_setup(
+            "0815", setup.pending_setup_token or ""
+        )
+        self.assertEqual(result.status, AuthStatus.AUTHENTICATED)
+        self.assertEqual(
+            (await self.service.login("0815")).status, AuthStatus.AUTHENTICATED
+        )
+        self.assertEqual(
+            (await self.service.login("0007")).status, AuthStatus.INVALID_PIN
+        )
+
+    async def test_start_setup_cannot_replace_existing_registration_without_reset(
+        self,
+    ) -> None:
+        record = self.hasher.create_record("0918")
+        self.database.save_auth_state("legacy-registration", record)
+        await self.credentials.save_credentials(TEST_CREDENTIAL, "legacy-registration")
+        before = self.database.get_auth_state()
+        result = await self.service.start_setup("replacement-synthetic-key")
+        self.assertEqual(result.status, AuthStatus.PIN_REQUIRED)
+        self.assertEqual(self.validator.calls, 0)
+        self.assertEqual(self.database.get_auth_state(), before)
+        self.assertEqual(self.credentials.api_key, TEST_CREDENTIAL)
+        self.assertEqual(
+            (await self.service.login("0918")).status, AuthStatus.AUTHENTICATED
         )
 
     async def test_pin_records_use_unique_salts_and_versioned_parameters(self) -> None:

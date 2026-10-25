@@ -30,17 +30,21 @@ from chat.drafts import ChatDraftService  # noqa: E402
 from chat.sending import MessageSendingService  # noqa: E402
 from chat.service import ChatService  # noqa: E402
 from tests.draft_fakes import MemoryDraftRepository  # noqa: E402
-from ui.auth_view import KeyEntryView, PinDisplayView, PinLoginView  # noqa: E402
+from ui.auth_view import KeyEntryView, PinLoginView, PinSetupView  # noqa: E402
 
 
 class FakePage:
     def __init__(self) -> None:
         self.controls: list[ft.Control] = []
-        self.dialogs: list[ft.DialogControl] = []
+        self._dialogs: list[ft.DialogControl] = []
         self.update_calls = 0
         self.width = 400
         self.drawer: ft.NavigationDrawer | None = None
         self.drawer_open = False
+
+    @property
+    def dialogs(self) -> list[ft.DialogControl]:
+        return [dialog for dialog in self._dialogs if dialog.open]
 
     def add(self, control: ft.Control) -> None:
         self.controls.append(control)
@@ -49,10 +53,14 @@ class FakePage:
         self.update_calls += 1
 
     def show_dialog(self, dialog: ft.DialogControl) -> None:
-        self.dialogs.append(dialog)
+        dialog.open = True
+        self._dialogs.append(dialog)
 
     def pop_dialog(self) -> ft.DialogControl | None:
-        return self.dialogs.pop() if self.dialogs else None
+        dialog = self.dialogs[-1] if self.dialogs else None
+        if dialog is not None:
+            dialog.open = False
+        return dialog
 
     def run_task(self, handler: Any, *args: Any) -> asyncio.Task[Any]:
         return asyncio.create_task(handler(*args))
@@ -91,7 +99,10 @@ class FakeAuthService:
     async def login(self, _pin: str) -> AuthResult:
         return self.login_result
 
-    async def complete_setup(self) -> AuthResult:
+    def suggest_pin(self) -> str:
+        return "0007"
+
+    async def complete_setup(self, _pin: str, _pending_setup_token: str) -> AuthResult:
         return AuthResult(AuthStatus.INVALID_STATE)
 
     async def reset_authentication(self) -> AuthResult:
@@ -236,16 +247,21 @@ class AppControllerTests(unittest.IsolatedAsyncioTestCase):
         marker = "sensitive-test-marker"
         key_view = KeyEntryView(text_callback)
         key_view.key_field.value = marker
-        pin_view = PinDisplayView(marker, "", callback)
+        pin_view = PinSetupView("", text_callback, lambda: "0007", callback)
+        pin_view.pin_field.value = marker
+        pin_view.repeat_field.value = marker
 
         self.assertNotIn(marker, repr(key_view.key_field))
-        self.assertNotIn(marker, repr(pin_view.pin_text))
+        self.assertNotIn(marker, repr(pin_view.pin_field))
 
     async def test_pin_confirmation_button_has_visible_control_states(self) -> None:
         async def callback() -> None:
             return None
 
-        view = PinDisplayView("0000", "", callback)
+        async def text_callback(_value: str) -> None:
+            return None
+
+        view = PinSetupView("", text_callback, lambda: "0007", callback)
         style = view.confirm_button.style
         assert style is not None
         colors = style.bgcolor

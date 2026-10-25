@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
+from decimal import Decimal
 
 import flet as ft
 
@@ -12,9 +13,10 @@ from chat.models import (
     CatalogModel,
     ChatMode,
     ModelCatalog,
-    format_price_per_million,
     maximum_pricing,
 )
+from i18n import display_model_name, fresh_text, money, number, tr
+from ui.branding import BrandHeader, BrandLoader
 from ui.styles import (
     ERROR_COLOR,
     MUTED_COLOR,
@@ -35,18 +37,20 @@ class CatalogLoadingView:
         async def handle_cancel(_event: ft.Event[ft.TextButton]) -> None:
             await on_cancel()
 
+        self.progress = BrandLoader()
         self.control = build_screen(
             [
+                BrandHeader(),
                 ft.Text(
-                    "Загрузка каталога моделей",
+                    tr("catalog.loading"),
                     theme_style=ft.TextThemeStyle.HEADLINE_MEDIUM,
                 ),
-                ft.ProgressRing(),
+                ft.Row(controls=[self.progress]),
                 ft.Text(
-                    "Выполняется только чтение списка моделей OpenRouter.",
+                    tr("catalog.read_only"),
                     color=MUTED_COLOR,
                 ),
-                ft.TextButton("Отмена", on_click=handle_cancel),
+                ft.TextButton(tr("common.cancel"), on_click=handle_cancel),
             ]
         )
 
@@ -79,34 +83,32 @@ class ModeSelectionView:
             key_limit,
         )
         self.free_button = ft.Button(
-            "Выбрать бесплатный режим",
+            tr("mode.choose_free"),
             icon=ft.Icons.SAVINGS,
             style=primary_button_style(),
             disabled=not free_mode_allowed(key_validity),
             on_click=select_free,
         )
         self.paid_button = ft.Button(
-            "Выбрать платный режим",
+            tr("mode.choose_paid"),
             icon=ft.Icons.PAYMENTS,
             style=primary_button_style(),
             disabled=not paid_enabled,
             on_click=select_paid,
         )
         controls: list[ft.Control] = [
-            ft.Text("Новый чат", theme_style=ft.TextThemeStyle.HEADLINE_MEDIUM),
-            ft.Text("Сначала выберите режим использования модели."),
+            BrandHeader(),
+            ft.Text(tr("chat.untitled"), theme_style=ft.TextThemeStyle.HEADLINE_MEDIUM),
+            ft.Text(tr("mode.choose_first")),
             ft.Container(
                 bgcolor=PANEL_BACKGROUND,
                 border_radius=16,
                 padding=20,
                 content=ft.Column(
                     controls=[
-                        ft.Text("Бесплатный режим", weight=ft.FontWeight.BOLD),
+                        ft.Text(tr("mode.free_title"), weight=ft.FontWeight.BOLD),
                         ft.Text(
-                            "Бесплатный режим не расходует средства, но имеет "
-                            "ограничения по количеству запросов и доступности моделей. "
-                            "Используется openrouter/free или модель со всеми "
-                            "применимыми нулевыми компонентами цены.",
+                            tr("mode.free_help"),
                             color=MUTED_COLOR,
                         ),
                         self.free_button,
@@ -119,11 +121,9 @@ class ModeSelectionView:
                 padding=20,
                 content=ft.Column(
                     controls=[
-                        ft.Text("Платный режим", weight=ft.FontWeight.BOLD),
+                        ft.Text(tr("mode.paid_title"), weight=ft.FontWeight.BOLD),
                         ft.Text(
-                            "Перед созданием будет показано отдельное предупреждение "
-                            "о возможных расходах. Баланс аккаунта будет проверен "
-                            "OpenRouter при платном запросе.",
+                            tr("mode.paid_help"),
                             color=MUTED_COLOR,
                         ),
                         ft.Text(limit_notice, color=limit_notice_color),
@@ -133,8 +133,8 @@ class ModeSelectionView:
             ),
         ]
         if catalog.warning:
-            controls.append(ft.Text(catalog.warning, color=ERROR_COLOR))
-        controls.append(ft.TextButton("Назад к чатам", on_click=cancel))
+            controls.append(ft.Text(fresh_text(catalog.warning), color=ERROR_COLOR))
+        controls.append(ft.TextButton(tr("mode.back_chats"), on_click=cancel))
         self.control = build_screen(controls)
 
 
@@ -154,14 +154,13 @@ class ModelSelectionView:
             await on_cancel()
 
         self.search = ft.TextField(
-            label="Поиск модели",
-            hint_text="Название или ID",
+            label=tr("catalog.search"),
+            hint_text=tr("catalog.search_hint"),
             prefix_icon=ft.Icons.SEARCH,
             on_change=self._filter,
         )
         self.results = ft.ListView(expand=True, spacing=10)
         self._render_results(models)
-        mode_name = "бесплатного" if mode is ChatMode.FREE else "платного"
         self.control = ft.SafeArea(
             expand=True,
             maintain_bottom_view_padding=True,
@@ -173,12 +172,17 @@ class ModelSelectionView:
                         padding=20,
                         content=ft.Column(
                             controls=[
+                                BrandHeader(),
                                 ft.Text(
-                                    f"Выбор модели для {mode_name} чата",
+                                    tr(
+                                        "catalog.select_free"
+                                        if mode is ChatMode.FREE
+                                        else "catalog.select_paid"
+                                    ),
                                     theme_style=ft.TextThemeStyle.HEADLINE_SMALL,
                                 ),
                                 self.search,
-                                ft.TextButton("Назад", on_click=cancel),
+                                ft.TextButton(tr("common.back"), on_click=cancel),
                             ]
                         ),
                     ),
@@ -199,9 +203,7 @@ class ModelSelectionView:
 
     def _render_results(self, models: tuple[CatalogModel, ...]) -> None:
         if not models:
-            self.results.controls = [
-                ft.Text("Подходящие модели не найдены.", color=MUTED_COLOR)
-            ]
+            self.results.controls = [ft.Text(tr("catalog.none"), color=MUTED_COLOR)]
             return
         self.results.controls = [self._model_card(model) for model in models]
 
@@ -217,18 +219,18 @@ class ModelSelectionView:
         details: list[ft.Control] = [
             ft.Text(model.id, color=MUTED_COLOR, selectable=True),
             detail_row(
-                "Входные токены, 1 млн",
-                "$" + format_price_per_million(displayed_pricing.prompt),
+                tr("price.prompt_million"),
+                money_million(displayed_pricing.prompt),
             ),
             detail_row(
-                "Выходные токены, 1 млн",
-                "$" + format_price_per_million(displayed_pricing.completion),
+                tr("price.completion_million"),
+                money_million(displayed_pricing.completion),
             ),
         ]
         if self._mode is ChatMode.PAID:
             details.extend(_additional_price_controls(model))
         if model.recommended:
-            details.insert(0, ft.Text("Рекомендуется", color=SUCCESS_COLOR))
+            details.insert(0, ft.Text(tr("catalog.recommended"), color=SUCCESS_COLOR))
         return ft.Container(
             bgcolor=PANEL_BACKGROUND,
             border_radius=12,
@@ -236,10 +238,13 @@ class ModelSelectionView:
             content=ft.Column(
                 spacing=6,
                 controls=[
-                    ft.Text(model.name, weight=ft.FontWeight.BOLD),
+                    ft.Text(
+                        display_model_name(model.id, model.name),
+                        weight=ft.FontWeight.BOLD,
+                    ),
                     *details,
                     ft.Button(
-                        "Выбрать",
+                        tr("catalog.select"),
                         style=primary_button_style(),
                         on_click=select_model,
                     ),
@@ -260,6 +265,7 @@ def filter_models(
         if not normalized_query
         or normalized_query in model.name.casefold()
         or normalized_query in model.id.casefold()
+        or normalized_query in display_model_name(model.id, model.name).casefold()
     )
 
 
@@ -267,23 +273,26 @@ def key_limit_mode_notice(key_limit: KeyLimitInfo) -> tuple[str, str]:
     """Описывает лимит ключа, не называя его балансом аккаунта."""
     if key_limit.state is KeyLimitState.EXHAUSTED:
         return (
-            "Расходный лимит этого ключа исчерпан. Бесплатный режим остаётся доступным",
+            tr("key.exhausted_notice"),
             ERROR_COLOR,
         )
     if key_limit.state is KeyLimitState.NOT_SET:
         return (
-            "Для ключа не установлен отдельный расходный лимит. "
-            "Это не подтверждает наличие средств на аккаунте.",
+            tr("key.unlimited_notice"),
             MUTED_COLOR,
         )
     if key_limit.state is KeyLimitState.AVAILABLE:
         return (
-            f"Доступный лимит ключа {key_limit.remaining} USD. Это не баланс аккаунта.",
+            tr(
+                "key.available_notice",
+                amount=number(key_limit.remaining)
+                if key_limit.remaining is not None
+                else "—",
+            ),
             SUCCESS_COLOR,
         )
     return (
-        "Доступный лимит ключа не удалось проверить. Платный режим временно "
-        "недоступен. Бесплатный режим остаётся доступным.",
+        tr("key.unknown_limit_notice"),
         ERROR_COLOR,
     )
 
@@ -295,20 +304,17 @@ def key_access_mode_notice(
     """Показывает валидность отдельно от расходного лимита."""
     if key_validity is KeyValidityState.INVALID:
         return (
-            "Сохранённый ключ OpenRouter недействителен или отозван. "
-            "Замените ключ, чтобы продолжить работу с моделями.",
+            tr("key.invalid_notice"),
             ERROR_COLOR,
         )
     if key_validity is KeyValidityState.RESTRICTED:
         return (
-            "OpenRouter отклонил проверку разрешений ключа. Бесплатный запрос "
-            "также может завершиться ошибкой. Платный режим недоступен.",
+            tr("key.restricted_notice"),
             ft.Colors.AMBER_300,
         )
     if key_validity is KeyValidityState.UNKNOWN:
         return (
-            "Проверка ключа ещё не завершена. Бесплатный режим доступен, "
-            "платный режим временно закрыт.",
+            tr("key.checking_notice"),
             ft.Colors.AMBER_300,
         )
     return key_limit_mode_notice(key_limit)
@@ -318,36 +324,40 @@ def _additional_price_controls(model: CatalogModel) -> list[ft.Control]:
     pricing = maximum_pricing(model)
     details: list[ft.Control] = []
     if pricing.request > 0:
-        details.append(detail_row("За запрос", f"${pricing.request}"))
+        details.append(detail_row(tr("price.request"), money(pricing.request)))
     if pricing.internal_reasoning > 0:
         details.append(
             detail_row(
-                "Внутреннее рассуждение, 1 млн токенов",
-                "$" + format_price_per_million(pricing.internal_reasoning),
+                tr("price.reasoning_million"),
+                money_million(pricing.internal_reasoning),
             )
         )
     if pricing.input_cache_read > 0:
         details.append(
             detail_row(
-                "Чтение кэша, 1 млн токенов",
-                "$" + format_price_per_million(pricing.input_cache_read),
+                tr("price.cache_read_million"),
+                money_million(pricing.input_cache_read),
             )
         )
     if pricing.input_cache_write > 0:
         details.append(
             detail_row(
-                "Запись кэша, 1 млн токенов",
-                "$" + format_price_per_million(pricing.input_cache_write),
+                tr("price.cache_write_million"),
+                money_million(pricing.input_cache_write),
             )
         )
     if model.pricing_overrides:
         details.append(
             ft.Text(
-                "У модели есть переопределения цен. Показаны верхние значения.",
+                tr("price.overrides_help"),
                 size=12,
                 color=MUTED_COLOR,
             )
         )
     if not details:
         return []
-    return [ft.Text("Дополнительная цена", size=12, color=MUTED_COLOR), *details]
+    return [ft.Text(tr("price.additional"), size=12, color=MUTED_COLOR), *details]
+
+
+def money_million(value: Decimal) -> str:
+    return money(value * Decimal(1_000_000))

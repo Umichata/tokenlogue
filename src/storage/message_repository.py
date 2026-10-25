@@ -19,6 +19,14 @@ from chat.accounting import (
 )
 from chat.errors import ChatErrorType
 from chat.models import ChatMode, Message, MessageRole, MessageStatus
+from i18n import tr
+from storage.database_connections import (
+    ContentAccess,
+    encrypt_value,
+)
+from storage.database_connections import (
+    connection as protected_connection,
+)
 
 
 class BudgetConflictError(RuntimeError):
@@ -26,11 +34,14 @@ class BudgetConflictError(RuntimeError):
 
 
 class SqliteMessageRepository:
-    def __init__(self, database_path: str | Path) -> None:
+    def __init__(
+        self, database_path: str | Path, access: ContentAccess | None = None
+    ) -> None:
         self.path = Path(database_path)
+        self.access = access
 
     def get_chat_budget(self, chat_id: str) -> ChatBudget | None:
-        _require_identifier(chat_id, "чата")
+        _require_identifier(chat_id, tr("service.label.chat"))
         with self._connection() as connection:
             row = connection.execute(
                 "SELECT * FROM chat_budgets WHERE chat_id = ?",
@@ -39,7 +50,7 @@ class SqliteMessageRepository:
         return _budget_from_row(row) if row is not None else None
 
     def get_chat_mode(self, chat_id: str) -> ChatMode | None:
-        _require_identifier(chat_id, "чата")
+        _require_identifier(chat_id, tr("service.label.chat"))
         with self._connection() as connection:
             row = connection.execute(
                 "SELECT mode FROM chats WHERE id = ?",
@@ -57,12 +68,12 @@ class SqliteMessageRepository:
         cost_increase_confirmed: bool,
         updated_at: datetime,
     ) -> ChatBudget:
-        _require_identifier(chat_id, "чата")
-        _require_positive_int(token_limit, "токен-бюджет")
-        _require_positive_int(max_completion_tokens, "максимум ответа")
-        _require_decimal(cost_limit_usd, "денежный бюджет")
-        _require_bool(cost_increase_confirmed, "подтверждение денежного лимита")
-        with self._connection() as connection:
+        _require_identifier(chat_id, tr("service.label.chat"))
+        _require_positive_int(token_limit, tr("service.label.token_budget"))
+        _require_positive_int(max_completion_tokens, tr("service.label.completion"))
+        _require_decimal(cost_limit_usd, tr("service.label.money_budget"))
+        _require_bool(cost_increase_confirmed, tr("service.label.money_confirmation"))
+        with self._connection("write", chat_id=chat_id) as connection:
             connection.execute("BEGIN IMMEDIATE")
             row = connection.execute(
                 """
@@ -74,28 +85,22 @@ class SqliteMessageRepository:
                 (chat_id,),
             ).fetchone()
             if row is None:
-                raise KeyError("Чат не найден")
+                raise KeyError(tr("service.chat_missing"))
             mode = ChatMode(str(row["mode"]))
             current = _budget_from_row(row)
             minimum_tokens = current.total_tokens_used + current.reserved_tokens
             if token_limit < minimum_tokens:
-                raise BudgetConflictError(
-                    "Токен-бюджет меньше уже использованных и зарезервированных токенов"
-                )
+                raise BudgetConflictError(tr("service.tokens_below_used"))
             minimum_cost = current.cost_used_usd + current.cost_reserved_usd
             if cost_limit_usd < minimum_cost:
-                raise BudgetConflictError(
-                    "Денежный бюджет меньше использованной и зарезервированной суммы"
-                )
+                raise BudgetConflictError(tr("service.money_below_used"))
             if (
                 mode is ChatMode.PAID
                 and current.cost_limit_usd is not None
                 and cost_limit_usd > current.cost_limit_usd
                 and not cost_increase_confirmed
             ):
-                raise BudgetConflictError(
-                    "Увеличение денежного бюджета требует подтверждения"
-                )
+                raise BudgetConflictError(tr("service.money_increase_confirmation"))
             state = _calculate_state(
                 mode=mode,
                 token_limit=token_limit,
@@ -143,18 +148,24 @@ class SqliteMessageRepository:
         draft_revision: int | None = None,
     ) -> None:
         if not isinstance(reservation, BudgetReservation):
-            raise ValueError("Некорректный объект резервирования")
-        _require_identifier(reservation.turn_id, "попытки")
-        _require_identifier(reservation.user_message_id, "сообщения")
-        _require_identifier(reservation.chat_id, "чата")
-        _require_nonnegative_int(reservation.reserved_tokens, "резерв токенов")
-        _require_decimal(reservation.reserved_cost_usd, "денежный резерв")
-        _require_text(content, "текст сообщения")
-        _require_identifier(requested_model_id, "модели")
-        _require_bool(retry, "признак повтора")
+            raise ValueError(tr("service.reserve_object_invalid"))
+        _require_identifier(reservation.turn_id, tr("service.label.turn"))
+        _require_identifier(reservation.user_message_id, tr("service.label.message"))
+        _require_identifier(reservation.chat_id, tr("service.label.chat"))
+        _require_nonnegative_int(
+            reservation.reserved_tokens, tr("service.label.token_reserve")
+        )
+        _require_decimal(
+            reservation.reserved_cost_usd, tr("service.label.money_reserve")
+        )
+        _require_text(content, tr("service.label.message_text"))
+        _require_identifier(requested_model_id, tr("service.label.model"))
+        _require_bool(retry, tr("service.label.retry"))
         if draft_revision is not None:
-            _require_nonnegative_int(draft_revision, "ревизия черновика")
-        with self._connection() as connection:
+            _require_nonnegative_int(draft_revision, tr("service.label.draft_revision"))
+        with self._connection(
+            "reserve", chat_id=reservation.chat_id, record_id=reservation.turn_id
+        ) as connection:
             connection.execute("BEGIN IMMEDIATE")
             row = connection.execute(
                 """
@@ -166,30 +177,28 @@ class SqliteMessageRepository:
                 (reservation.chat_id,),
             ).fetchone()
             if row is None:
-                raise KeyError("Чат не найден")
+                raise KeyError(tr("service.chat_missing"))
             budget = _budget_from_row(row)
             mode = ChatMode(str(row["mode"]))
             if not budget.limits_configured:
-                raise BudgetConflictError("Лимиты чата не настроены")
+                raise BudgetConflictError(tr("service.limits_unconfigured"))
             if budget.state is BudgetState.ACCOUNTING_UNKNOWN:
-                raise BudgetConflictError("Учёт предыдущего запроса неизвестен")
+                raise BudgetConflictError(tr("service.previous_unknown"))
             if budget.token_limit is None:
-                raise BudgetConflictError("Токен-бюджет отсутствует")
+                raise BudgetConflictError(tr("service.token_budget_missing"))
             token_remaining = (
                 budget.token_limit - budget.total_tokens_used - budget.reserved_tokens
             )
             if reservation.reserved_tokens > token_remaining:
-                raise BudgetConflictError("Недостаточно токен-бюджета")
+                raise BudgetConflictError(tr("service.token_budget_insufficient"))
             new_cost_reserved = budget.cost_reserved_usd + reservation.reserved_cost_usd
             if mode is ChatMode.PAID:
                 if budget.cost_limit_usd is None:
-                    raise BudgetConflictError("Денежный бюджет отсутствует")
+                    raise BudgetConflictError(tr("service.money_budget_missing"))
                 if budget.cost_used_usd + new_cost_reserved > budget.cost_limit_usd:
-                    raise BudgetConflictError("Недостаточно денежного бюджета")
+                    raise BudgetConflictError(tr("service.money_budget_insufficient"))
             elif reservation.reserved_cost_usd != 0:
-                raise BudgetConflictError(
-                    "Бесплатный чат не может резервировать денежные средства"
-                )
+                raise BudgetConflictError(tr("service.free_cannot_reserve_money"))
             new_reserved_tokens = budget.reserved_tokens + reservation.reserved_tokens
             reservation_state = _calculate_state(
                 mode=mode,
@@ -236,7 +245,15 @@ class SqliteMessageRepository:
                         reservation.user_message_id,
                         reservation.chat_id,
                         reservation.turn_id,
-                        content,
+                        encrypt_value(
+                            connection,
+                            content,
+                            table="messages",
+                            field="content",
+                            record_id=reservation.user_message_id,
+                            chat_id=reservation.chat_id,
+                            role="user",
+                        ),
                         requested_model_id,
                         _datetime_text(reservation.created_at),
                         _datetime_text(reservation.created_at),
@@ -247,8 +264,20 @@ class SqliteMessageRepository:
                 # Keep a revision tombstone: an in-flight stale save of the
                 # consumed revision must never recreate its draft text.
                 connection.execute(
-                    "UPDATE chat_drafts SET content = '' WHERE chat_id = ? AND revision = ?",
-                    (reservation.chat_id, draft_revision),
+                    "UPDATE chat_drafts SET content = ? WHERE chat_id = ? AND revision = ?",
+                    (
+                        encrypt_value(
+                            connection,
+                            "",
+                            table="chat_drafts",
+                            field="content",
+                            record_id=reservation.chat_id,
+                            chat_id=reservation.chat_id,
+                            revision=draft_revision,
+                        ),
+                        reservation.chat_id,
+                        draft_revision,
+                    ),
                 )
 
             connection.execute(
@@ -270,8 +299,8 @@ class SqliteMessageRepository:
             )
 
     def mark_request_sent(self, turn_id: str, updated_at: datetime) -> None:
-        _require_identifier(turn_id, "попытки")
-        with self._connection() as connection:
+        _require_identifier(turn_id, tr("service.label.turn"))
+        with self._connection("reserve", record_id=turn_id) as connection:
             cursor = connection.execute(
                 """
                 UPDATE turns
@@ -281,7 +310,7 @@ class SqliteMessageRepository:
                 (_datetime_text(updated_at), turn_id),
             )
             if cursor.rowcount != 1:
-                raise BudgetConflictError("Попытка больше не активна")
+                raise BudgetConflictError(tr("service.turn_inactive"))
 
     def finalize_known_turn(
         self,
@@ -302,27 +331,29 @@ class SqliteMessageRepository:
         generated_title: str | None,
         updated_at: datetime,
     ) -> None:
-        _require_identifier(turn_id, "попытки")
-        _require_identifier(assistant_message_id, "сообщения")
+        _require_identifier(turn_id, tr("service.label.turn"))
+        _require_identifier(assistant_message_id, tr("service.label.message"))
         if content is not None:
-            _require_text(content, "ответ ассистента", allow_empty=True)
-        _require_bool(successful, "статус результата")
-        _require_identifier(requested_model_id, "модели")
+            _require_text(
+                content, tr("service.label.assistant_response"), allow_empty=True
+            )
+        _require_bool(successful, tr("service.label.result_status"))
+        _require_identifier(requested_model_id, tr("service.label.model"))
         for value, label in (
-            (prompt_tokens, "prompt-токены"),
-            (completion_tokens, "completion-токены"),
-            (total_tokens, "все токены"),
+            (prompt_tokens, tr("service.label.prompt_tokens")),
+            (completion_tokens, tr("service.label.completion_tokens")),
+            (total_tokens, tr("service.label.total_tokens")),
         ):
             _require_nonnegative_int(value, label)
-        _require_decimal(cost_usd, "стоимость результата")
+        _require_decimal(cost_usd, tr("service.label.result_cost"))
         safe_total = max(total_tokens, prompt_tokens + completion_tokens)
-        with self._connection() as connection:
+        with self._connection("finish", record_id=turn_id) as connection:
             connection.execute("BEGIN IMMEDIATE")
             turn, budget, mode = self._load_active_turn(connection, turn_id)
             new_reserved_tokens = budget.reserved_tokens - turn.reserved_tokens
             new_reserved_cost = budget.cost_reserved_usd - turn.reserved_cost_usd
             if new_reserved_tokens < 0 or new_reserved_cost < 0:
-                raise BudgetConflictError("Повреждены счётчики резерва")
+                raise BudgetConflictError(tr("service.reserve_corrupt"))
             new_prompt = budget.prompt_tokens_used + prompt_tokens
             new_completion = budget.completion_tokens_used + completion_tokens
             new_total = budget.total_tokens_used + safe_total
@@ -370,8 +401,22 @@ class SqliteMessageRepository:
                 (
                     TurnStatus.SENT.value if successful else TurnStatus.FAILED.value,
                     actual_model_id,
-                    generation_id,
-                    finish_reason,
+                    encrypt_value(
+                        connection,
+                        generation_id,
+                        table="turns",
+                        field="generation_id",
+                        record_id=turn_id,
+                        chat_id=turn.chat_id,
+                    ),
+                    encrypt_value(
+                        connection,
+                        finish_reason,
+                        table="turns",
+                        field="finish_reason",
+                        record_id=turn_id,
+                        chat_id=turn.chat_id,
+                    ),
                     prompt_tokens,
                     completion_tokens,
                     safe_total,
@@ -411,14 +456,26 @@ class SqliteMessageRepository:
                     updated_at=updated_at,
                 )
             if successful and generated_title:
-                connection.execute(
-                    """
-                    UPDATE chats
-                    SET title = ?, updated_at = ?
-                    WHERE id = ? AND title = 'Новый чат'
-                    """,
-                    (generated_title, _datetime_text(updated_at), turn.chat_id),
-                )
+                if getattr(connection, "cipher", None) is not None:
+                    connection.execute(
+                        "UPDATE chats SET title=?,title_origin='message',updated_at=? WHERE id=? AND title_origin='placeholder' AND title_is_manual=0",
+                        (
+                            encrypt_value(
+                                connection,
+                                generated_title,
+                                table="chats",
+                                field="title",
+                                record_id=turn.chat_id,
+                            ),
+                            _datetime_text(updated_at),
+                            turn.chat_id,
+                        ),
+                    )
+                else:
+                    connection.execute(
+                        "UPDATE chats SET title=?,updated_at=? WHERE id=? AND title='Новый чат' AND title_is_manual=0",
+                        (generated_title, _datetime_text(updated_at), turn.chat_id),
+                    )
             else:
                 connection.execute(
                     "UPDATE chats SET updated_at = ? WHERE id = ?",
@@ -431,14 +488,12 @@ class SqliteMessageRepository:
         error_type: ChatErrorType,
         updated_at: datetime,
     ) -> None:
-        _require_identifier(turn_id, "попытки")
-        with self._connection() as connection:
+        _require_identifier(turn_id, tr("service.label.turn"))
+        with self._connection("finish", record_id=turn_id) as connection:
             connection.execute("BEGIN IMMEDIATE")
             turn, budget, mode = self._load_active_turn(connection, turn_id)
             if turn.request_sent:
-                raise BudgetConflictError(
-                    "Отправленный запрос нельзя освободить локально"
-                )
+                raise BudgetConflictError(tr("service.sent_cannot_release"))
             self._release_reservation(
                 connection,
                 turn,
@@ -455,8 +510,8 @@ class SqliteMessageRepository:
         error_type: ChatErrorType,
         updated_at: datetime,
     ) -> None:
-        _require_identifier(turn_id, "попытки")
-        with self._connection() as connection:
+        _require_identifier(turn_id, tr("service.label.turn"))
+        with self._connection("finish", record_id=turn_id) as connection:
             connection.execute("BEGIN IMMEDIATE")
             turn, budget, mode = self._load_active_turn(connection, turn_id)
             self._release_reservation(
@@ -482,12 +537,14 @@ class SqliteMessageRepository:
         error_type: ChatErrorType,
         updated_at: datetime,
     ) -> None:
-        _require_identifier(turn_id, "попытки")
-        _require_identifier(assistant_message_id, "сообщения")
+        _require_identifier(turn_id, tr("service.label.turn"))
+        _require_identifier(assistant_message_id, tr("service.label.message"))
         if partial_content is not None:
-            _require_text(partial_content, "частичный ответ", allow_empty=True)
-        _require_identifier(requested_model_id, "модели")
-        with self._connection() as connection:
+            _require_text(
+                partial_content, tr("service.label.partial_response"), allow_empty=True
+            )
+        _require_identifier(requested_model_id, tr("service.label.model"))
+        with self._connection("finish", record_id=turn_id) as connection:
             connection.execute("BEGIN IMMEDIATE")
             turn, _budget, _mode = self._load_active_turn(connection, turn_id)
             connection.execute(
@@ -500,8 +557,22 @@ class SqliteMessageRepository:
                 """,
                 (
                     actual_model_id,
-                    generation_id,
-                    finish_reason,
+                    encrypt_value(
+                        connection,
+                        generation_id,
+                        table="turns",
+                        field="generation_id",
+                        record_id=turn_id,
+                        chat_id=turn.chat_id,
+                    ),
+                    encrypt_value(
+                        connection,
+                        finish_reason,
+                        table="turns",
+                        field="finish_reason",
+                        record_id=turn_id,
+                        chat_id=turn.chat_id,
+                    ),
                     error_type.value,
                     _datetime_text(updated_at),
                     turn_id,
@@ -547,18 +618,18 @@ class SqliteMessageRepository:
         turn_id: str,
         updated_at: datetime,
     ) -> None:
-        _require_identifier(turn_id, "попытки")
-        with self._connection() as connection:
+        _require_identifier(turn_id, tr("service.label.turn"))
+        with self._connection("write", record_id=turn_id) as connection:
             connection.execute("BEGIN IMMEDIATE")
             row = connection.execute(
                 "SELECT * FROM turns WHERE id = ?",
                 (turn_id,),
             ).fetchone()
             if row is None:
-                raise KeyError("Попытка не найдена")
+                raise KeyError(tr("service.turn_missing"))
             turn = _turn_from_row(row)
             if turn.accounting_status is not AccountingStatus.UNKNOWN:
-                raise BudgetConflictError("Резерв не имеет неизвестного учёта")
+                raise BudgetConflictError(tr("service.reserve_not_unknown"))
             budget_row = connection.execute(
                 "SELECT * FROM chat_budgets WHERE chat_id = ?",
                 (turn.chat_id,),
@@ -582,7 +653,7 @@ class SqliteMessageRepository:
             )
 
     def get_turn(self, turn_id: str) -> TurnRecord | None:
-        _require_identifier(turn_id, "попытки")
+        _require_identifier(turn_id, tr("service.label.turn"))
         with self._connection() as connection:
             row = connection.execute(
                 "SELECT * FROM turns WHERE id = ?",
@@ -591,7 +662,7 @@ class SqliteMessageRepository:
         return _turn_from_row(row) if row is not None else None
 
     def list_turns(self, chat_id: str) -> list[TurnRecord]:
-        _require_identifier(chat_id, "чата")
+        _require_identifier(chat_id, tr("service.label.chat"))
         with self._connection() as connection:
             rows = connection.execute(
                 """
@@ -604,7 +675,7 @@ class SqliteMessageRepository:
         return [_turn_from_row(row) for row in rows]
 
     def get_user_message_for_turn(self, turn_id: str) -> Message | None:
-        _require_identifier(turn_id, "попытки")
+        _require_identifier(turn_id, tr("service.label.turn"))
         with self._connection() as connection:
             row = connection.execute(
                 """
@@ -628,18 +699,18 @@ class SqliteMessageRepository:
         overrides_json: str,
         updated_at: datetime,
     ) -> None:
-        _require_identifier(chat_id, "чата")
+        _require_identifier(chat_id, tr("service.label.chat"))
         for value, label in (
-            (prompt_price, "цена prompt"),
-            (completion_price, "цена completion"),
-            (request_price, "цена запроса"),
-            (internal_reasoning_price, "цена рассуждения"),
-            (cache_read_price, "цена чтения кэша"),
-            (cache_write_price, "цена записи кэша"),
+            (prompt_price, tr("service.label.prompt_price")),
+            (completion_price, tr("service.label.completion_price")),
+            (request_price, tr("service.label.request_price")),
+            (internal_reasoning_price, tr("service.label.reasoning_price")),
+            (cache_read_price, tr("service.label.cache_read_price")),
+            (cache_write_price, tr("service.label.cache_write_price")),
         ):
             _require_decimal(value, label)
-        _require_text(overrides_json, "снимок overrides")
-        with self._connection() as connection:
+        _require_text(overrides_json, tr("service.label.overrides"))
+        with self._connection("write", chat_id=chat_id) as connection:
             cursor = connection.execute(
                 """
                 UPDATE chats
@@ -664,7 +735,7 @@ class SqliteMessageRepository:
                 ),
             )
             if cursor.rowcount != 1:
-                raise KeyError("Чат не найден")
+                raise KeyError(tr("service.chat_missing"))
 
     def _prepare_retry(
         self,
@@ -677,13 +748,13 @@ class SqliteMessageRepository:
             (reservation.turn_id, reservation.chat_id),
         ).fetchone()
         if row is None:
-            raise KeyError("Попытка не найдена")
+            raise KeyError(tr("service.turn_missing"))
         turn = _turn_from_row(row)
         if (
             turn.status is not TurnStatus.FAILED
             or turn.accounting_status is not AccountingStatus.RELEASED
         ):
-            raise BudgetConflictError("Попытка не готова к повтору")
+            raise BudgetConflictError(tr("service.turn_not_ready"))
         connection.execute(
             """
             UPDATE turns
@@ -728,10 +799,15 @@ class SqliteMessageRepository:
             (turn_id,),
         ).fetchone()
         if row is None:
-            raise KeyError("Попытка не найдена")
+            raise KeyError(tr("service.turn_missing"))
         turn = _turn_from_row(row)
+        if self.access is not None:
+            with self.access.authorize(
+                "finish", chat_id=turn.chat_id, record_id=turn.id
+            ):
+                pass
         if turn.status is not TurnStatus.PENDING:
-            raise BudgetConflictError("Попытка больше не активна")
+            raise BudgetConflictError(tr("service.turn_inactive"))
         budget_row = connection.execute(
             "SELECT * FROM chat_budgets WHERE chat_id = ?",
             (turn.chat_id,),
@@ -760,7 +836,7 @@ class SqliteMessageRepository:
         new_tokens = budget.reserved_tokens - turn.reserved_tokens
         new_cost = budget.cost_reserved_usd - turn.reserved_cost_usd
         if new_tokens < 0 or new_cost < 0:
-            raise BudgetConflictError("Повреждены счётчики резерва")
+            raise BudgetConflictError(tr("service.reserve_corrupt"))
         has_other_unknown = (
             connection.execute(
                 """
@@ -857,7 +933,15 @@ class SqliteMessageRepository:
                     message_id,
                     turn.chat_id,
                     turn.id,
-                    content,
+                    encrypt_value(
+                        connection,
+                        content,
+                        table="messages",
+                        field="content",
+                        record_id=message_id,
+                        chat_id=turn.chat_id,
+                        role="assistant",
+                    ),
                     MessageStatus.SENT.value
                     if successful
                     else MessageStatus.FAILED.value,
@@ -880,7 +964,15 @@ class SqliteMessageRepository:
             WHERE id = ?
             """,
             (
-                content,
+                encrypt_value(
+                    connection,
+                    content,
+                    table="messages",
+                    field="content",
+                    record_id=str(existing["id"]),
+                    chat_id=turn.chat_id,
+                    role="assistant",
+                ),
                 MessageStatus.SENT.value if successful else MessageStatus.FAILED.value,
                 requested_model_id,
                 actual_model_id,
@@ -893,15 +985,13 @@ class SqliteMessageRepository:
         )
 
     @contextmanager
-    def _connection(self) -> Iterator[sqlite3.Connection]:
-        connection = sqlite3.connect(self.path, timeout=5.0)
-        connection.row_factory = sqlite3.Row
-        connection.execute("PRAGMA foreign_keys = ON")
-        try:
-            with connection:
-                yield connection
-        finally:
-            connection.close()
+    def _connection(
+        self, operation: str = "read", *, chat_id: str = "", record_id: str = ""
+    ) -> Iterator[sqlite3.Connection]:
+        with protected_connection(
+            self.path, self.access, operation, chat_id=chat_id, record_id=record_id
+        ) as connection:
+            yield connection
 
 
 def _budget_from_row(row: sqlite3.Row) -> ChatBudget:
@@ -994,7 +1084,7 @@ def _calculate_state(
 
 def _decimal_text(value: Decimal) -> str:
     if not value.is_finite() or value < 0:
-        raise ValueError("Decimal должен быть конечным и неотрицательным")
+        raise ValueError(tr("service.decimal_invalid"))
     return str(value)
 
 
@@ -1018,7 +1108,7 @@ def _optional_int(value: object) -> int | None:
         return value
     if isinstance(value, str):
         return int(value)
-    raise TypeError("Некорректное целочисленное значение")
+    raise TypeError(tr("service.integer_invalid"))
 
 
 def _optional_decimal(value: object) -> Decimal | None:
@@ -1031,29 +1121,29 @@ def _optional_str(value: object) -> str | None:
 
 def _require_identifier(value: object, label: str) -> None:
     if not isinstance(value, str) or not value.strip():
-        raise ValueError(f"Некорректный идентификатор {label}")
+        raise ValueError(tr("service.identifier_invalid", field=label))
 
 
 def _require_text(value: object, label: str, *, allow_empty: bool = False) -> None:
     if not isinstance(value, str) or (not allow_empty and not value.strip()):
-        raise ValueError(f"Некорректный {label}")
+        raise ValueError(tr("service.field_invalid", field=label))
 
 
 def _require_nonnegative_int(value: object, label: str) -> None:
     if isinstance(value, bool) or not isinstance(value, int) or value < 0:
-        raise ValueError(f"Некорректный {label}")
+        raise ValueError(tr("service.field_invalid", field=label))
 
 
 def _require_positive_int(value: object, label: str) -> None:
     if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
-        raise ValueError(f"Некорректный {label}")
+        raise ValueError(tr("service.field_invalid", field=label))
 
 
 def _require_decimal(value: object, label: str) -> None:
     if not isinstance(value, Decimal) or not value.is_finite() or value < Decimal("0"):
-        raise ValueError(f"Некорректный {label}")
+        raise ValueError(tr("service.field_invalid", field=label))
 
 
 def _require_bool(value: object, label: str) -> None:
     if not isinstance(value, bool):
-        raise ValueError(f"Некорректный {label}")
+        raise ValueError(tr("service.field_invalid", field=label))

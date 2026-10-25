@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import sys
 import tempfile
 import unittest
+from dataclasses import replace
 from datetime import UTC, datetime
 from decimal import Decimal
 from pathlib import Path
@@ -13,7 +15,12 @@ from typing import cast
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from api.chat_completions import ChatCompletionResult  # noqa: E402
+import httpx  # noqa: E402
+
+from api.chat_completions import (  # noqa: E402
+    ChatCompletionResult,
+    ChatCompletionsClient,
+)
 from api.openrouter import KeyValidationResult, KeyValidationStatus  # noqa: E402
 from auth.models import KeyLimitInfo, KeyValidityState, PinRecord  # noqa: E402
 from chat.accounting import (  # noqa: E402
@@ -22,6 +29,7 @@ from chat.accounting import (  # noqa: E402
     BudgetState,
     ChatBudgetService,
     TurnStatus,
+    estimate_max_cost,
 )
 from chat.context import ContextMessage  # noqa: E402
 from chat.errors import ChatErrorType  # noqa: E402
@@ -33,6 +41,7 @@ from chat.models import (  # noqa: E402
     Message,
     MessageRole,
     MessageStatus,
+    PriceComponents,
     ProviderPriceLimit,
 )
 from chat.sending import MessageSendingService  # noqa: E402
@@ -200,6 +209,31 @@ class MessageSendingTests(unittest.IsolatedAsyncioTestCase):
         chat = self.chat_repository.get_chat("free")
         assert chat is not None
         self.assertEqual(chat.title, "Моё название")
+
+    async def test_manually_chosen_default_title_survives_restart_and_send(
+        self,
+    ) -> None:
+        await self._create_and_configure_free("free")
+        self.assertTrue(await self.chat_service.rename_chat("free", "  Новый   чат  "))
+        reopened = AuthDatabase(self.temp_dir.name)
+        self.assertEqual(reopened.path, self.database.path)
+        client = FakeCompletionClient([_success(cost="0")])
+
+        result = await self._service(client).send_message(
+            "free",
+            "message that must not replace the manual title",
+            api_key=TEST_CREDENTIAL,
+            key_validity=KeyValidityState.UNKNOWN,
+            key_limit=KeyLimitInfo.unknown(),
+        )
+
+        self.assertTrue(result.successful)
+        self.assertEqual(len(client.calls), 1)
+        self.assertEqual(len(self.message_repository.list_turns("free")), 1)
+        self.assertEqual(len(self.chat_repository.list_messages("free")), 2)
+        chat = self.chat_repository.get_chat("free")
+        assert chat is not None
+        self.assertEqual(chat.title, "Новый чат")
 
     async def test_paid_success_uses_fresh_checks_and_exact_cost(self) -> None:
         await self._create_and_configure_paid("paid")
@@ -1018,6 +1052,543 @@ class MessageSendingTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(result.error_type, ChatErrorType.KEY_NOT_VALID)
             self.assertEqual(client.calls, [])
 
+    async def test_large_free_maximum_is_only_an_upper_bound_for_preview_and_post(
+        self,
+    ) -> None:
+        for maximum in (1024, 8192, 10_000, 100_000):
+            with self.subTest(maximum=maximum):
+                chat_id = f"maximum-{maximum}"
+                await self._create_and_configure_free(
+                    chat_id, token_limit=200_000, max_completion_tokens=maximum
+                )
+                payloads: list[dict[str, object]] = []
+
+                def handler(request: httpx.Request) -> httpx.Response:
+                    self.assertEqual(request.method, "POST")
+                    self.assertEqual(
+                        str(request.url),
+                        "https://openrouter.ai/api/v1/chat/completions",
+                    )
+                    payloads.append(json.loads(request.content))
+                    return httpx.Response(200, json=_wire_success())
+
+                service = self._service(
+                    ChatCompletionsClient(transport=httpx.MockTransport(handler))
+                )
+                preview = await service.preview_message(
+                    chat_id,
+                    "Привет",
+                    api_key=TEST_CREDENTIAL,
+                    key_validity=KeyValidityState.UNKNOWN,
+                    key_limit=KeyLimitInfo.unknown(),
+                )
+                effective = min(maximum, 8192 - 52)
+                self.assertTrue(preview.allowed, preview.error_type)
+                self.assertEqual(preview.estimated_prompt_tokens, 52)
+                self.assertEqual(preview.max_completion_tokens, effective)
+                self.assertEqual(preview.reserved_tokens, 52 + effective)
+                self.assertEqual(preview.reserved_cost_usd, Decimal("0"))
+                self.assertEqual(payloads, [])
+                self.assertEqual(self.message_repository.list_turns(chat_id), [])
+                reservations = []
+
+                def capture_reservation(turn_id: str) -> None:
+                    reservations.append(self.message_repository.get_turn(turn_id))
+
+                sent = await service.send_message(
+                    chat_id,
+                    "Привет",
+                    api_key=TEST_CREDENTIAL,
+                    key_validity=KeyValidityState.UNKNOWN,
+                    key_limit=KeyLimitInfo.unknown(),
+                    on_reserved=capture_reservation,
+                )
+                self.assertTrue(sent.successful, sent.error_type)
+                self.assertEqual(len(payloads), 1)
+                self.assertEqual(payloads[0]["max_completion_tokens"], effective)
+                self.assertEqual(
+                    payloads[0]["messages"], [{"role": "user", "content": "Привет"}]
+                )
+                reservation = reservations[0]
+                assert reservation is not None
+                self.assertEqual(reservation.reserved_tokens, preview.reserved_tokens)
+                self.assertEqual(
+                    reservation.reserved_cost_usd, preview.reserved_cost_usd
+                )
+                self.assertEqual(self.catalog.calls, 0)
+
+    async def test_large_maximum_keeps_every_completed_unicode_pair(self) -> None:
+        await self._create_and_configure_free(
+            "history", token_limit=200_000, max_completion_tokens=100_000
+        )
+        contents = ("я" * 2000, "🙂" * 1000)
+        for index, (role, content) in enumerate(
+            zip((MessageRole.USER, MessageRole.ASSISTANT), contents, strict=True)
+        ):
+            self.chat_repository.create_message(
+                Message(
+                    id=f"message-{index}",
+                    chat_id="history",
+                    turn_id="complete",
+                    role=role,
+                    content=content,
+                    status=MessageStatus.SENT,
+                    requested_model_id=FREE_ROUTER_MODEL.id,
+                    actual_model_id=None,
+                    prompt_tokens=None,
+                    completion_tokens=None,
+                    total_tokens=None,
+                    created_at=NOW,
+                )
+            )
+        self.chat_repository.create_message(
+            Message(
+                id="failed",
+                chat_id="history",
+                turn_id="failed",
+                role=MessageRole.USER,
+                content="failed" * 2000,
+                status=MessageStatus.FAILED,
+                requested_model_id=FREE_ROUTER_MODEL.id,
+                actual_model_id=None,
+                prompt_tokens=None,
+                completion_tokens=None,
+                total_tokens=None,
+                created_at=NOW,
+            )
+        )
+        client = FakeCompletionClient([_success(cost="0")])
+        service = self._service(client)
+        preview = await service.preview_message(
+            "history",
+            "Привет",
+            api_key=TEST_CREDENTIAL,
+            key_validity=KeyValidityState.UNKNOWN,
+            key_limit=KeyLimitInfo.unknown(),
+        )
+        self.assertTrue(preview.allowed, preview.error_type)
+        self.assertEqual(preview.estimated_prompt_tokens, 8068)
+        self.assertEqual(preview.max_completion_tokens, 124)
+        sent = await service.send_message(
+            "history",
+            "Привет",
+            api_key=TEST_CREDENTIAL,
+            key_validity=KeyValidityState.UNKNOWN,
+            key_limit=KeyLimitInfo.unknown(),
+        )
+        self.assertTrue(sent.successful, sent.error_type)
+        self.assertEqual(client.calls[0]["max_completion_tokens"], 124)
+        messages = cast(tuple[ContextMessage, ...], client.calls[0]["messages"])
+        self.assertEqual([item.content for item in messages], [*contents, "Привет"])
+
+    async def test_minimum_answer_boundary_classifies_context_budget_and_provider(
+        self,
+    ) -> None:
+        text = "Ж🙂é"
+        prompt = 40 + len(text.encode("utf-8"))
+        cases = (
+            (prompt + 15, 100_000, None, ChatErrorType.CONTEXT_LENGTH_EXCEEDED),
+            (prompt + 16, 100_000, None, None),
+            (8192, prompt + 15, None, ChatErrorType.TOKEN_LIMIT_EXCEEDED),
+            (8192, prompt + 16, None, None),
+            (8192, 100_000, 15, ChatErrorType.MAX_TOKENS_EXCEEDED),
+            (8192, 100_000, 16, None),
+            (8192, 100_000, 0, ChatErrorType.MAX_TOKENS_EXCEEDED),
+        )
+        for index, (context, budget, provider, expected_error) in enumerate(cases):
+            with self.subTest(context=context, budget=budget, provider=provider):
+                chat_id = f"boundary-{index}"
+                model = replace(
+                    FREE_ROUTER_MODEL,
+                    id=f"vendor/{chat_id}",
+                    context_length=context,
+                    provider_max_completion_tokens=provider,
+                )
+                self.catalog.models = (model,)
+                self.chat_repository.create_chat(_chat(chat_id, ChatMode.FREE, model))
+                await self.budget_service.configure_chat_limits(
+                    chat_id,
+                    token_limit=budget,
+                    max_completion_tokens=min(budget, 100_000),
+                    cost_limit_usd=Decimal("0"),
+                    updated_at=NOW,
+                )
+                client = FakeCompletionClient([_success(cost="0")])
+                service = self._service(client)
+                preview = await service.preview_message(
+                    chat_id,
+                    text,
+                    api_key=TEST_CREDENTIAL,
+                    key_validity=KeyValidityState.UNKNOWN,
+                    key_limit=KeyLimitInfo.unknown(),
+                )
+                sent = await service.send_message(
+                    chat_id,
+                    text,
+                    api_key=TEST_CREDENTIAL,
+                    key_validity=KeyValidityState.UNKNOWN,
+                    key_limit=KeyLimitInfo.unknown(),
+                )
+                self.assertEqual(preview.error_type, expected_error)
+                self.assertEqual(sent.error_type, expected_error)
+                if expected_error is None:
+                    self.assertTrue(sent.successful)
+                    self.assertEqual(preview.max_completion_tokens, 16)
+                    self.assertEqual(client.calls[0]["max_completion_tokens"], 16)
+                else:
+                    self.assertEqual(client.calls, [])
+                    self.assertEqual(self.message_repository.list_turns(chat_id), [])
+                    state = self.message_repository.get_chat_budget(chat_id)
+                    assert state is not None
+                    self.assertEqual(state.reserved_tokens, 0)
+
+    async def test_paid_cost_and_key_budget_reduce_cap_consistently(self) -> None:
+        pricing_override = PriceComponents(
+            prompt=Decimal("0.000003"),
+            completion=Decimal("0.000005"),
+            request=Decimal("0.02"),
+            internal_reasoning=Decimal("0.000002"),
+            input_cache_read=Decimal("0.000001"),
+            input_cache_write=Decimal("0.000002"),
+        )
+        self.paid_model = replace(
+            self.paid_model,
+            provider_max_completion_tokens=100_000,
+            pricing_overrides=(pricing_override,),
+        )
+        self.catalog.models = (self.paid_model,)
+        for ceiling_name in ("chat", "key"):
+            with self.subTest(ceiling=ceiling_name):
+                chat_id = f"cost-{ceiling_name}"
+                self.chat_repository.create_chat(
+                    _chat(chat_id, ChatMode.PAID, self.paid_model)
+                )
+                allowed_cost = estimate_max_cost(self.paid_model.all_pricing, 52, 37)
+                await self.budget_service.configure_chat_limits(
+                    chat_id,
+                    token_limit=200_000,
+                    max_completion_tokens=100_000,
+                    cost_limit_usd=allowed_cost
+                    if ceiling_name == "chat"
+                    else Decimal("10"),
+                    cost_increase_confirmed=True,
+                    updated_at=NOW,
+                )
+                self.validator.result = KeyValidationResult(
+                    KeyValidationStatus.ACCEPTED,
+                    limit_remaining=(
+                        allowed_cost if ceiling_name == "key" else Decimal("10")
+                    ),
+                )
+                client = FakeCompletionClient([_success(cost="0.001")])
+                service = self._service(client)
+                preview = await service.preview_message(
+                    chat_id,
+                    "Привет",
+                    api_key=TEST_CREDENTIAL,
+                    key_validity=KeyValidityState.VALID,
+                    key_limit=KeyLimitInfo.from_validated_remaining(Decimal("10")),
+                )
+                self.assertTrue(preview.allowed, preview.error_type)
+                self.assertEqual(preview.max_completion_tokens, 37)
+                self.assertEqual(preview.reserved_tokens, 89)
+                self.assertEqual(preview.reserved_cost_usd, allowed_cost)
+                self.assertGreater(
+                    estimate_max_cost(self.paid_model.all_pricing, 52, 38), allowed_cost
+                )
+                validator_calls = self.validator.calls
+                catalog_calls = self.catalog.calls
+                reservations = []
+
+                def capture_reservation(turn_id: str) -> None:
+                    reservations.append(self.message_repository.get_turn(turn_id))
+
+                sent = await service.send_message(
+                    chat_id,
+                    "Привет",
+                    api_key=TEST_CREDENTIAL,
+                    key_validity=KeyValidityState.VALID,
+                    key_limit=KeyLimitInfo.from_validated_remaining(Decimal("10")),
+                    paid_confirmed=True,
+                    on_reserved=capture_reservation,
+                )
+                self.assertTrue(sent.successful, sent.error_type)
+                self.assertEqual(self.validator.calls, validator_calls + 1)
+                self.assertEqual(self.catalog.calls, catalog_calls + 1)
+                self.assertEqual(client.calls[0]["max_completion_tokens"], 37)
+                reservation = reservations[0]
+                assert reservation is not None
+                self.assertEqual(reservation.reserved_tokens, preview.reserved_tokens)
+                self.assertEqual(reservation.reserved_cost_usd, allowed_cost)
+
+    async def test_persisted_large_maximum_survives_restart_and_send_rechecks_it(
+        self,
+    ) -> None:
+        await self._create_and_configure_free(
+            "restart", token_limit=100_000, max_completion_tokens=100_000
+        )
+        database = AuthDatabase(self.temp_dir.name)
+        repository = SqliteMessageRepository(database.path)
+        chats = SqliteChatRepository(database.path)
+        client = FakeCompletionClient([_success(cost="0")])
+        service = MessageSendingService(
+            ChatService(chats, now=lambda: NOW),
+            repository,
+            client,
+            self.catalog,
+            self.validator,
+            now=lambda: NOW,
+        )
+        preview = await service.preview_message(
+            "restart",
+            "Привет",
+            api_key=TEST_CREDENTIAL,
+            key_validity=KeyValidityState.UNKNOWN,
+            key_limit=KeyLimitInfo.unknown(),
+        )
+        self.assertTrue(preview.allowed, preview.error_type)
+        self.assertEqual(preview.max_completion_tokens, 8140)
+        unchanged = repository.get_chat_budget("restart")
+        assert unchanged is not None
+        self.assertEqual(unchanged.max_completion_tokens, 100_000)
+        await self.budget_service.update_chat_limits(
+            "restart",
+            token_limit=100,
+            max_completion_tokens=100,
+            cost_limit_usd=Decimal("0"),
+            updated_at=NOW,
+        )
+        sent = await service.send_message(
+            "restart",
+            "Привет",
+            api_key=TEST_CREDENTIAL,
+            key_validity=KeyValidityState.UNKNOWN,
+            key_limit=KeyLimitInfo.unknown(),
+        )
+        self.assertTrue(sent.successful, sent.error_type)
+        self.assertEqual(client.calls[0]["max_completion_tokens"], 48)
+
+    async def test_timeout_reserve_survives_limits_restart_and_is_per_chat(
+        self,
+    ) -> None:
+        await self._create_and_configure_free("timeout")
+        await self._create_and_configure_free("independent")
+        requests = []
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            requests.append(json.loads(request.content))
+            if len(requests) == 1:
+                raise httpx.ReadTimeout("synthetic timeout", request=request)
+            return httpx.Response(200, json=_wire_success())
+
+        client = ChatCompletionsClient(transport=httpx.MockTransport(handler))
+        service = self._service(client)
+        first = await service.send_message(
+            "timeout",
+            "first",
+            api_key=TEST_CREDENTIAL,
+            key_validity=KeyValidityState.UNKNOWN,
+            key_limit=KeyLimitInfo.unknown(),
+        )
+        self.assertEqual(first.error_type, ChatErrorType.TIMEOUT)
+        self.assertTrue(first.accounting_unknown)
+        self.assertEqual(len(requests), 1)
+        before = self.message_repository.get_chat_budget("timeout")
+        assert before is not None
+        self.assertGreater(before.reserved_tokens, 0)
+        await self.budget_service.update_chat_limits(
+            "timeout",
+            token_limit=200_000,
+            max_completion_tokens=100_000,
+            cost_limit_usd=Decimal("0"),
+            updated_at=NOW,
+        )
+        restarted_repository = SqliteMessageRepository(
+            AuthDatabase(self.temp_dir.name).path
+        )
+        restarted = MessageSendingService(
+            self.chat_service,
+            restarted_repository,
+            client,
+            self.catalog,
+            self.validator,
+            now=lambda: NOW,
+        )
+        blocked = await restarted.preview_message(
+            "timeout",
+            "next",
+            api_key=TEST_CREDENTIAL,
+            key_validity=KeyValidityState.UNKNOWN,
+            key_limit=KeyLimitInfo.unknown(),
+        )
+        self.assertEqual(blocked.error_type, ChatErrorType.ACCOUNTING_UNKNOWN)
+        assert first.turn_id is not None
+        retry = await restarted.retry_failed_turn(
+            first.turn_id,
+            api_key=TEST_CREDENTIAL,
+            key_validity=KeyValidityState.UNKNOWN,
+            key_limit=KeyLimitInfo.unknown(),
+        )
+        self.assertEqual(retry.error_type, ChatErrorType.TURN_NOT_RETRYABLE)
+        self.assertEqual(len(requests), 1)
+        second = await restarted.send_message(
+            "independent",
+            "fresh",
+            api_key=TEST_CREDENTIAL,
+            key_validity=KeyValidityState.UNKNOWN,
+            key_limit=KeyLimitInfo.unknown(),
+        )
+        self.assertTrue(second.successful, second.error_type)
+        self.assertEqual(len(requests), 2)
+        after = restarted_repository.get_chat_budget("timeout")
+        assert after is not None
+        self.assertEqual(after.state, BudgetState.ACCOUNTING_UNKNOWN)
+        self.assertEqual(after.reserved_tokens, before.reserved_tokens)
+
+    async def test_paid_minimum_cost_boundary_has_no_reservation_on_failure(
+        self,
+    ) -> None:
+        for ceiling in ("chat", "key"):
+            for tokens in (15, 16):
+                with self.subTest(ceiling=ceiling, tokens=tokens):
+                    chat_id = f"minimum-{ceiling}-{tokens}"
+                    model = replace(
+                        self.paid_model, provider_max_completion_tokens=100_000
+                    )
+                    self.catalog.models = (model,)
+                    self.chat_repository.create_chat(
+                        _chat(chat_id, ChatMode.PAID, model)
+                    )
+                    allowed_cost = estimate_max_cost(model.all_pricing, 52, tokens)
+                    await self.budget_service.configure_chat_limits(
+                        chat_id,
+                        token_limit=100_000,
+                        max_completion_tokens=100_000,
+                        cost_limit_usd=(
+                            allowed_cost if ceiling == "chat" else Decimal("10")
+                        ),
+                        cost_increase_confirmed=True,
+                        updated_at=NOW,
+                    )
+                    self.validator.result = KeyValidationResult(
+                        KeyValidationStatus.ACCEPTED,
+                        limit_remaining=(
+                            allowed_cost if ceiling == "key" else Decimal("10")
+                        ),
+                    )
+                    client = FakeCompletionClient([_success(cost="0.001")])
+                    service = self._service(client)
+                    preview = await service.preview_message(
+                        chat_id,
+                        "Привет",
+                        api_key=TEST_CREDENTIAL,
+                        key_validity=KeyValidityState.VALID,
+                        key_limit=KeyLimitInfo.from_validated_remaining(Decimal("10")),
+                    )
+                    sent = await service.send_message(
+                        chat_id,
+                        "Привет",
+                        api_key=TEST_CREDENTIAL,
+                        key_validity=KeyValidityState.VALID,
+                        key_limit=KeyLimitInfo.from_validated_remaining(Decimal("10")),
+                        paid_confirmed=True,
+                    )
+                    if tokens == 16:
+                        self.assertTrue(preview.allowed, preview.error_type)
+                        self.assertTrue(sent.successful, sent.error_type)
+                        self.assertEqual(preview.max_completion_tokens, 16)
+                        self.assertEqual(client.calls[0]["max_completion_tokens"], 16)
+                        self.assertEqual(preview.reserved_cost_usd, allowed_cost)
+                    else:
+                        expected = (
+                            ChatErrorType.COST_LIMIT_EXCEEDED
+                            if ceiling == "chat"
+                            else ChatErrorType.KEY_LIMIT_EXCEEDED
+                        )
+                        self.assertEqual(preview.error_type, expected)
+                        self.assertEqual(sent.error_type, expected)
+                        self.assertEqual(client.calls, [])
+                        self.assertEqual(
+                            self.message_repository.list_turns(chat_id), []
+                        )
+
+    async def test_unknown_context_is_not_replaced_with_a_fictional_window(
+        self,
+    ) -> None:
+        model = replace(FREE_ROUTER_MODEL, id="vendor/unknown", context_length=None)
+        self.catalog.models = (model,)
+        self.chat_repository.create_chat(_chat("unknown", ChatMode.FREE, model))
+        await self.budget_service.configure_chat_limits(
+            "unknown",
+            token_limit=100_000,
+            max_completion_tokens=100_000,
+            cost_limit_usd=Decimal("0"),
+            updated_at=NOW,
+        )
+        client = FakeCompletionClient([_success(cost="0")])
+        service = self._service(client)
+        preview = await service.preview_message(
+            "unknown",
+            "short",
+            api_key=TEST_CREDENTIAL,
+            key_validity=KeyValidityState.UNKNOWN,
+            key_limit=KeyLimitInfo.unknown(),
+        )
+        sent = await service.send_message(
+            "unknown",
+            "short",
+            api_key=TEST_CREDENTIAL,
+            key_validity=KeyValidityState.UNKNOWN,
+            key_limit=KeyLimitInfo.unknown(),
+        )
+        self.assertEqual(preview.error_type, ChatErrorType.CONTEXT_LENGTH_EXCEEDED)
+        self.assertEqual(sent.error_type, ChatErrorType.CONTEXT_LENGTH_EXCEEDED)
+        self.assertEqual(client.calls, [])
+        self.assertEqual(self.message_repository.list_turns("unknown"), [])
+
+    async def test_exhausted_chat_budget_is_distinct_from_model_context(self) -> None:
+        await self._create_and_configure_free("exhausted", token_limit=100)
+        client = FakeCompletionClient(
+            [
+                replace(
+                    _success(cost="0"),
+                    prompt_tokens=80,
+                    completion_tokens=20,
+                    total_tokens=100,
+                )
+            ]
+        )
+        service = self._service(client)
+        first = await service.send_message(
+            "exhausted",
+            "hello",
+            api_key=TEST_CREDENTIAL,
+            key_validity=KeyValidityState.UNKNOWN,
+            key_limit=KeyLimitInfo.unknown(),
+        )
+        self.assertTrue(first.successful)
+        preview = await service.preview_message(
+            "exhausted",
+            "short",
+            api_key=TEST_CREDENTIAL,
+            key_validity=KeyValidityState.UNKNOWN,
+            key_limit=KeyLimitInfo.unknown(),
+        )
+        sent = await service.send_message(
+            "exhausted",
+            "short",
+            api_key=TEST_CREDENTIAL,
+            key_validity=KeyValidityState.UNKNOWN,
+            key_limit=KeyLimitInfo.unknown(),
+        )
+        self.assertEqual(preview.error_type, ChatErrorType.TOKEN_LIMIT_EXCEEDED)
+        self.assertEqual(sent.error_type, ChatErrorType.TOKEN_LIMIT_EXCEEDED)
+        self.assertEqual(len(client.calls), 1)
+        self.assertEqual(len(self.message_repository.list_turns("exhausted")), 1)
+        budget = self.message_repository.get_chat_budget("exhausted")
+        assert budget is not None
+        self.assertEqual(budget.reserved_tokens, 0)
+
     def _service(self, completion_client) -> MessageSendingService:
         return MessageSendingService(
             self.chat_service,
@@ -1154,6 +1725,25 @@ def _known_error(error_type: ChatErrorType) -> ChatCompletionResult:
         error_type=error_type,
         accounting_unknown=False,
     )
+
+
+def _wire_success() -> dict[str, object]:
+    return {
+        "id": "synthetic-generation",
+        "model": "vendor/synthetic:free",
+        "choices": [
+            {
+                "message": {"role": "assistant", "content": "answer"},
+                "finish_reason": "stop",
+            }
+        ],
+        "usage": {
+            "prompt_tokens": 20,
+            "completion_tokens": 10,
+            "total_tokens": 30,
+            "cost": 0,
+        },
+    }
 
 
 def _ambiguous_timeout() -> ChatCompletionResult:

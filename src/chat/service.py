@@ -22,6 +22,8 @@ from chat.models import (
     is_free_model,
     is_paid_model,
 )
+from i18n import tr
+from storage.access_context import repository_session
 
 
 class ChatRepository(Protocol):
@@ -69,6 +71,7 @@ class ChatService:
         self._now = now or (lambda: datetime.now(UTC))
         self._uuid_factory = uuid_factory
 
+    @repository_session("_repository")
     async def create_chat(
         self,
         mode: ChatMode,
@@ -80,7 +83,7 @@ class ChatService:
         paid_confirmed: bool = False,
     ) -> Chat:
         if not isinstance(paid_confirmed, bool):
-            raise ChatPolicyError("Некорректное подтверждение платного режима")
+            raise ChatPolicyError(tr("service.paid_confirmation_invalid"))
         selected_model = validate_model_for_mode(
             mode,
             model,
@@ -93,6 +96,7 @@ class ChatService:
         await asyncio.to_thread(self._repository.create_chat, chat)
         return chat
 
+    @repository_session("_repository")
     async def create_chat_with_limits(
         self,
         mode: ChatMode,
@@ -107,7 +111,7 @@ class ChatService:
         paid_confirmed: bool = False,
     ) -> Chat:
         if not isinstance(paid_confirmed, bool):
-            raise ChatPolicyError("Некорректное подтверждение платного режима")
+            raise ChatPolicyError(tr("service.paid_confirmation_invalid"))
         selected_model = validate_model_for_mode(
             mode,
             model,
@@ -132,22 +136,25 @@ class ChatService:
         )
         return chat
 
+    @repository_session("_repository")
     async def list_chats(self) -> list[Chat]:
         return await asyncio.to_thread(self._repository.list_chats)
 
+    @repository_session("_repository")
     async def get_chat(self, chat_id: str) -> Chat | None:
-        _require_identifier(chat_id, "чата")
+        _require_identifier(chat_id, tr("service.label.chat"))
         return await asyncio.to_thread(self._repository.get_chat, chat_id)
 
+    @repository_session("_repository")
     async def rename_chat(self, chat_id: str, title: str) -> bool:
-        _require_identifier(chat_id, "чата")
+        _require_identifier(chat_id, tr("service.label.chat"))
         if not isinstance(title, str):
-            raise ValueError("Название чата должно быть текстом")
+            raise ValueError(tr("service.title_text"))
         normalized = " ".join(title.split())
         if not normalized:
-            raise ValueError("Название чата не может быть пустым")
+            raise ValueError(tr("service.title_empty"))
         if len(normalized) > 120:
-            raise ValueError("Название чата слишком длинное")
+            raise ValueError(tr("service.title_long"))
         return await asyncio.to_thread(
             self._repository.rename_chat,
             chat_id,
@@ -155,20 +162,23 @@ class ChatService:
             _as_utc(self._now()),
         )
 
+    @repository_session("_repository")
     async def touch_chat(self, chat_id: str) -> bool:
-        _require_identifier(chat_id, "чата")
+        _require_identifier(chat_id, tr("service.label.chat"))
         return await asyncio.to_thread(
             self._repository.touch_chat,
             chat_id,
             _as_utc(self._now()),
         )
 
+    @repository_session("_repository")
     async def delete_chat(self, chat_id: str) -> bool:
-        _require_identifier(chat_id, "чата")
+        _require_identifier(chat_id, tr("service.label.chat"))
         return await asyncio.to_thread(self._repository.delete_chat, chat_id)
 
+    @repository_session("_repository")
     async def list_messages(self, chat_id: str) -> list[Message]:
-        _require_identifier(chat_id, "чата")
+        _require_identifier(chat_id, tr("service.label.chat"))
         return await asyncio.to_thread(self._repository.list_messages, chat_id)
 
     def _build_chat(self, mode: ChatMode, selected_model: CatalogModel) -> Chat:
@@ -176,6 +186,7 @@ class ChatService:
         return Chat(
             id=str(self._uuid_factory()),
             title="Новый чат",
+            title_origin="placeholder",
             mode=mode,
             requested_model_id=selected_model.id,
             requested_model_name=selected_model.name,
@@ -209,12 +220,12 @@ def validate_model_for_mode(
 ) -> CatalogModel:
     """Не позволяет UI превратить бесплатный выбор в платный."""
     if not isinstance(mode, ChatMode) or not isinstance(model, CatalogModel):
-        raise ChatPolicyError("Некорректный режим или модель чата")
+        raise ChatPolicyError(tr("service.mode_model_invalid"))
     if not isinstance(paid_confirmed, bool):
-        raise ChatPolicyError("Некорректное подтверждение платного режима")
+        raise ChatPolicyError(tr("service.paid_confirmation_invalid"))
     if mode is ChatMode.FREE:
         if not free_mode_allowed(key_validity):
-            raise ChatPolicyError("Недействительный ключ запрещает модельные запросы")
+            raise ChatPolicyError(tr("service.invalid_key_blocks"))
         if model.id == FREE_ROUTER_MODEL.id:
             return FREE_ROUTER_MODEL
         if (
@@ -222,7 +233,7 @@ def validate_model_for_mode(
             or model not in catalog.free_models
             or not is_free_model(model)
         ):
-            raise ChatPolicyError("Для бесплатного чата нужна модель с нулевыми ценами")
+            raise ChatPolicyError(tr("service.free_model_required"))
         return model
 
     if mode is ChatMode.PAID:
@@ -233,14 +244,12 @@ def validate_model_for_mode(
             or model not in catalog.paid_models
             or not is_paid_model(model)
         ):
-            raise ChatPolicyError("Для платного чата нужна совместимая платная модель")
+            raise ChatPolicyError(tr("service.paid_model_required"))
         if not paid_confirmed:
-            raise PaidConfirmationRequired(
-                "Создание платного чата требует явного подтверждения"
-            )
+            raise PaidConfirmationRequired(tr("service.paid_creation_confirmation"))
         return model
 
-    raise ChatPolicyError("Неизвестный режим чата")
+    raise ChatPolicyError(tr("service.mode_unknown"))
 
 
 def _as_utc(value: datetime) -> datetime:
@@ -251,4 +260,4 @@ def _as_utc(value: datetime) -> datetime:
 
 def _require_identifier(value: object, label: str) -> None:
     if not isinstance(value, str) or not value.strip():
-        raise ValueError(f"Некорректный идентификатор {label}")
+        raise ValueError(tr("service.identifier_invalid", field=label))

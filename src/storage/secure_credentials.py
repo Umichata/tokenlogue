@@ -7,6 +7,7 @@ from typing import Any, Protocol
 import flet_secure_storage as fss
 
 from auth.models import CredentialState
+from i18n import tr
 
 SECURE_STORAGE_NAMESPACE = "io.github.umichata.tokenlogue"
 API_KEY_STORAGE_NAME = f"{SECURE_STORAGE_NAMESPACE}.openrouter_api_key.v1"
@@ -49,13 +50,36 @@ class FletSecureCredentials:
             )
         )
 
+    @property
+    def storage_backend(self) -> SecureStorageBackend:
+        """Передаёт один backend координатору с отдельными aliases данных."""
+        return self._storage
+
+    async def replace_api_key(self, api_key: str) -> None:
+        """Сохраняет новый API-ключ без удаления PIN, регистрации и DEK."""
+        if not api_key:
+            raise ValueError(tr("service.registration_missing"))
+        old = await self.get_api_key()
+        if old is None:
+            raise SecureCredentialsError(tr("service.secure_read_failed"))
+        try:
+            await self._storage.set(API_KEY_STORAGE_NAME, api_key)
+            if await self._storage.get(API_KEY_STORAGE_NAME) != api_key:
+                raise SecureCredentialsError(tr("service.secure_save_failed"))
+        except Exception:
+            try:
+                await self._storage.set(API_KEY_STORAGE_NAME, old)
+            except Exception:
+                pass
+            raise SecureCredentialsError(tr("service.secure_save_failed")) from None
+
     async def inspect_state(self) -> CredentialState:
         """Читает только метаданные регистрации, не извлекая API-ключ."""
         try:
             has_api_key = await self._storage.contains_key(API_KEY_STORAGE_NAME)
             registration_id = await self._storage.get(REGISTRATION_ID_STORAGE_NAME)
         except Exception:
-            raise SecureCredentialsError("Защищённое хранилище недоступно") from None
+            raise SecureCredentialsError(tr("service.secure_unavailable")) from None
         return CredentialState(
             has_api_key=has_api_key,
             registration_id=registration_id or None,
@@ -64,24 +88,20 @@ class FletSecureCredentials:
     async def save_credentials(self, api_key: str, registration_id: str) -> None:
         """Сохраняет связанные записи регистрации с компенсацией при ошибке."""
         if not api_key or not registration_id:
-            raise ValueError("Данные регистрации не могут быть пустыми")
+            raise ValueError(tr("service.registration_missing"))
         try:
             await self._storage.set(REGISTRATION_ID_STORAGE_NAME, registration_id)
             await self._storage.set(API_KEY_STORAGE_NAME, api_key)
         except Exception:
             await self._best_effort_remove()
-            raise SecureCredentialsError(
-                "Не удалось сохранить данные в защищённом хранилище"
-            ) from None
+            raise SecureCredentialsError(tr("service.secure_save_failed")) from None
 
     async def get_api_key(self) -> str | None:
         """Извлекает ключ после успешной локальной проверки PIN."""
         try:
             value = await self._storage.get(API_KEY_STORAGE_NAME)
         except Exception:
-            raise SecureCredentialsError(
-                "Не удалось прочитать защищённое хранилище"
-            ) from None
+            raise SecureCredentialsError(tr("service.secure_read_failed")) from None
         return value if value else None
 
     async def delete_credentials(self) -> None:
@@ -93,9 +113,7 @@ class FletSecureCredentials:
             except Exception:
                 failed = True
         if failed:
-            raise SecureCredentialsError(
-                "Не удалось очистить защищённое хранилище"
-            ) from None
+            raise SecureCredentialsError(tr("service.secure_clear_failed")) from None
 
     async def _best_effort_remove(self) -> None:
         for key in (API_KEY_STORAGE_NAME, REGISTRATION_ID_STORAGE_NAME):

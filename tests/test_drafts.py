@@ -224,7 +224,10 @@ class DraftMigrationTests(unittest.TestCase):
     def test_v4_to_v5_preserves_registration_lock_history_chats_and_accounting(
         self,
     ) -> None:
-        with tempfile.TemporaryDirectory() as data_dir:
+        with (
+            tempfile.TemporaryDirectory() as data_dir,
+            patch.object(database_module, "SCHEMA_VERSION", 5),
+        ):
             original = self._legacy_database(data_dir)
             before = snapshot(original.path)
             migrated = AuthDatabase(data_dir)

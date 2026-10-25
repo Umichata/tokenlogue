@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from decimal import Decimal
 from enum import Enum
@@ -19,6 +19,8 @@ from chat.models import (
     ProviderPriceLimit,
     maximum_pricing,
 )
+from i18n import tr
+from storage.access_context import repository_session
 
 ZERO = Decimal("0")
 DEFAULT_CHAT_TOKEN_LIMIT = 8192
@@ -77,8 +79,8 @@ class TurnRecord:
     status: TurnStatus
     requested_model_id: str
     actual_model_id: str | None
-    generation_id: str | None
-    finish_reason: str | None
+    generation_id: str | None = field(repr=False)
+    finish_reason: str | None = field(repr=False)
     prompt_tokens: int | None
     completion_tokens: int | None
     total_tokens: int | None
@@ -122,30 +124,30 @@ def parse_chat_limit_input(
     cost_limit_usd: str | None,
 ) -> ChatLimitConfiguration:
     if not isinstance(mode, ChatMode):
-        raise ValueError("Неизвестный режим чата")
+        raise ValueError(tr("service.mode_unknown"))
     if not isinstance(token_limit, str) or not isinstance(
         max_completion_tokens,
         str,
     ):
-        raise ValueError("Токеновые лимиты должны быть текстовыми значениями")
+        raise ValueError(tr("service.limit_tokens_text"))
     if cost_limit_usd is not None and not isinstance(cost_limit_usd, str):
-        raise ValueError("Денежный лимит должен быть текстовым значением")
+        raise ValueError(tr("service.limit_money_text"))
     normalized_token_limit = _parse_ascii_positive_int(
         token_limit,
-        "Общий лимит токенов",
+        tr("service.limit_total_label"),
     )
     normalized_completion_limit = _parse_ascii_positive_int(
         max_completion_tokens,
-        "Максимум токенов ответа",
+        tr("service.limit_completion_label"),
     )
     normalized_cost: Decimal | None = None
     if mode is ChatMode.PAID:
         if cost_limit_usd is None or not cost_limit_usd.strip():
-            raise ValueError("Для платного чата укажите денежный лимит")
+            raise ValueError(tr("service.paid_limit_required"))
         try:
             normalized_cost = Decimal(cost_limit_usd.strip())
         except (ArithmeticError, ValueError) as error:
-            raise ValueError("Денежный лимит должен быть числом") from error
+            raise ValueError(tr("service.money_number")) from error
     cost = validate_limit_configuration(
         mode,
         normalized_token_limit,
@@ -166,30 +168,30 @@ def validate_limit_configuration(
     cost_limit_usd: Decimal | None,
 ) -> Decimal:
     if not isinstance(mode, ChatMode):
-        raise ValueError("Неизвестный режим чата")
+        raise ValueError(tr("service.mode_unknown"))
     if isinstance(token_limit, bool) or not isinstance(token_limit, int):
-        raise ValueError("Токен-бюджет должен быть целым числом")
+        raise ValueError(tr("service.token_integer"))
     if token_limit <= 0:
-        raise ValueError("Токен-бюджет должен быть положительным")
+        raise ValueError(tr("service.token_positive"))
     if isinstance(max_completion_tokens, bool) or not isinstance(
         max_completion_tokens, int
     ):
-        raise ValueError("Максимальная длина ответа должна быть целым числом")
+        raise ValueError(tr("service.completion_integer"))
     if max_completion_tokens < 16:
-        raise ValueError("Максимальная длина ответа не может быть меньше 16")
+        raise ValueError(tr("service.completion_minimum"))
     if max_completion_tokens > token_limit:
-        raise ValueError("Максимальная длина ответа превышает токен-бюджет")
+        raise ValueError(tr("service.completion_budget"))
 
     if mode is ChatMode.FREE:
         if cost_limit_usd not in {None, ZERO}:
-            raise ValueError("Денежный лимит бесплатного чата всегда равен нулю")
+            raise ValueError(tr("service.free_money_zero"))
         return ZERO
     if cost_limit_usd is None:
-        raise ValueError("Для платного чата требуется денежный бюджет")
+        raise ValueError(tr("service.paid_budget_required"))
     if not isinstance(cost_limit_usd, Decimal):
-        raise ValueError("Денежный бюджет должен использовать Decimal")
+        raise ValueError(tr("service.money_decimal"))
     if not cost_limit_usd.is_finite() or cost_limit_usd <= 0:
-        raise ValueError("Денежный бюджет должен быть положительным и конечным")
+        raise ValueError(tr("service.money_positive"))
     return cost_limit_usd
 
 
@@ -230,11 +232,11 @@ def estimate_max_cost(
 ) -> Decimal:
     """Не применяет скидки и выбирает худший из известных overrides."""
     if not pricing or prompt_tokens < 0 or completion_tokens < 0:
-        raise ValueError("Некорректные данные оценки стоимости")
+        raise ValueError(tr("service.estimate_invalid"))
     estimates = []
     for item in pricing:
         if not item.valid:
-            raise ValueError("Цена не может быть безопасно оценена")
+            raise ValueError(tr("service.price_unsafe"))
         prompt_cost = (
             item.prompt + item.input_cache_read + item.input_cache_write
         ) * prompt_tokens
@@ -271,7 +273,7 @@ def model_price_change(chat: Chat, current: CatalogModel) -> ModelPriceChange | 
 
 def confirmed_pricing(chat: Chat) -> tuple[PriceComponents, ...]:
     if not chat.pricing_snapshot_complete:
-        raise ValueError("Снимок цены требует подтверждения")
+        raise ValueError(tr("service.price_confirmation"))
     return (chat.price_snapshot, *chat.pricing_overrides)
 
 
@@ -287,7 +289,7 @@ def confirmed_provider_price_limit(chat: Chat) -> ProviderPriceLimit:
 
 def _maximum_components(pricing: tuple[PriceComponents, ...]) -> PriceComponents:
     if not pricing or not all(item.valid for item in pricing):
-        raise ValueError("Некорректный снимок цены")
+        raise ValueError(tr("service.price_snapshot_invalid"))
     return PriceComponents(
         prompt=max(item.prompt for item in pricing),
         completion=max(item.completion for item in pricing),
@@ -333,6 +335,7 @@ class ChatBudgetService:
         self._repository = repository
         self._now = now or (lambda: datetime.now(UTC))
 
+    @repository_session("_repository")
     async def configure_chat_limits(
         self,
         chat_id: str,
@@ -343,15 +346,15 @@ class ChatBudgetService:
         cost_increase_confirmed: bool = False,
         updated_at: datetime | None = None,
     ) -> ChatBudget:
-        _require_identifier(chat_id, "чата")
+        _require_identifier(chat_id, tr("service.label.chat"))
         if not isinstance(cost_increase_confirmed, bool):
-            raise ValueError("Некорректное подтверждение денежного лимита")
+            raise ValueError(tr("service.money_confirmation_invalid"))
         mode = await asyncio.to_thread(self._repository.get_chat_mode, chat_id)
         if mode is None:
-            raise KeyError("Чат не найден")
+            raise KeyError(tr("service.chat_missing"))
         current = await self.get_chat_budget(chat_id)
         if current.limits_configured:
-            raise ValueError("Лимиты чата уже настроены")
+            raise ValueError(tr("service.limits_exist"))
         normalized_cost = validate_limit_configuration(
             mode,
             token_limit,
@@ -359,7 +362,7 @@ class ChatBudgetService:
             cost_limit_usd,
         )
         if mode is ChatMode.PAID and not cost_increase_confirmed:
-            raise ValueError("Денежный бюджет требует явного подтверждения")
+            raise ValueError(tr("service.money_confirmation_required"))
         return await asyncio.to_thread(
             self._repository.set_chat_limits,
             chat_id,
@@ -370,6 +373,7 @@ class ChatBudgetService:
             updated_at=_as_utc(updated_at or self._now()),
         )
 
+    @repository_session("_repository")
     async def update_chat_limits(
         self,
         chat_id: str,
@@ -380,15 +384,15 @@ class ChatBudgetService:
         cost_increase_confirmed: bool = False,
         updated_at: datetime | None = None,
     ) -> ChatBudget:
-        _require_identifier(chat_id, "чата")
+        _require_identifier(chat_id, tr("service.label.chat"))
         if not isinstance(cost_increase_confirmed, bool):
-            raise ValueError("Некорректное подтверждение денежного лимита")
+            raise ValueError(tr("service.money_confirmation_invalid"))
         mode = await asyncio.to_thread(self._repository.get_chat_mode, chat_id)
         if mode is None:
-            raise KeyError("Чат не найден")
+            raise KeyError(tr("service.chat_missing"))
         current = await self.get_chat_budget(chat_id)
         if not current.limits_configured:
-            raise ValueError("Лимиты чата ещё не настроены")
+            raise ValueError(tr("service.limits_missing"))
         normalized_cost = validate_limit_configuration(
             mode,
             token_limit,
@@ -405,20 +409,24 @@ class ChatBudgetService:
             updated_at=_as_utc(updated_at or self._now()),
         )
 
+    @repository_session("_repository")
     async def get_chat_budget(self, chat_id: str) -> ChatBudget:
-        _require_identifier(chat_id, "чата")
+        _require_identifier(chat_id, tr("service.label.chat"))
         budget = await asyncio.to_thread(self._repository.get_chat_budget, chat_id)
         if budget is None:
-            raise KeyError("Чат не найден")
+            raise KeyError(tr("service.chat_missing"))
         return budget
 
+    @repository_session("_repository")
     async def calculate_remaining_budget(self, chat_id: str) -> RemainingBudget:
         return calculate_remaining_budget(await self.get_chat_budget(chat_id))
 
+    @repository_session("_repository")
     async def list_chat_turns(self, chat_id: str) -> list[TurnRecord]:
-        _require_identifier(chat_id, "чата")
+        _require_identifier(chat_id, tr("service.label.chat"))
         return await asyncio.to_thread(self._repository.list_turns, chat_id)
 
+    @repository_session("_repository")
     async def release_unknown_reservation(
         self,
         turn_id: str,
@@ -426,9 +434,9 @@ class ChatBudgetService:
         confirmed: bool,
         updated_at: datetime | None = None,
     ) -> None:
-        _require_identifier(turn_id, "попытки")
+        _require_identifier(turn_id, tr("service.label.turn"))
         if confirmed is not True:
-            raise ValueError("Снятие неизвестного резерва требует подтверждения")
+            raise ValueError(tr("service.release_confirmation"))
         await asyncio.to_thread(
             self._repository.release_unknown_reservation,
             turn_id,
@@ -445,10 +453,10 @@ def _as_utc(value: datetime) -> datetime:
 def _parse_ascii_positive_int(value: str, label: str) -> int:
     normalized = value.strip()
     if not normalized or not normalized.isascii() or not normalized.isdecimal():
-        raise ValueError(f"{label} должен быть положительным целым числом")
+        raise ValueError(tr("service.positive_integer", field=label))
     return int(normalized)
 
 
 def _require_identifier(value: object, label: str) -> None:
     if not isinstance(value, str) or not value.strip():
-        raise ValueError(f"Некорректный идентификатор {label}")
+        raise ValueError(tr("service.identifier_invalid", field=label))

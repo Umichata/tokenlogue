@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import asyncio
 import inspect
 import sys
 import unittest
+from collections.abc import Awaitable, Callable
 from dataclasses import replace
 from decimal import Decimal
 from pathlib import Path
@@ -20,6 +22,13 @@ from auth.models import KeyLimitInfo, KeyLimitState, KeyValidityState  # noqa: E
 from chat.accounting import BudgetState, RemainingBudget  # noqa: E402
 from chat.models import Chat, ChatMode  # noqa: E402
 from chat_interaction_controller import ActiveChatState  # noqa: E402
+from i18n import (  # noqa: E402
+    configure_localization,
+    localize_tree,
+    set_language,
+    tr,
+)
+from preferences import PreferencesStore  # noqa: E402
 from tests.test_chat_view import FakePage, _chat, _state  # noqa: E402
 from ui.chat_view import ChatWorkspaceView  # noqa: E402
 
@@ -48,6 +57,8 @@ def texts(control: ft.Control) -> list[str]:
 
 class ChatMenuTests(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
+        configure_localization(PreferencesStore())
+        self.addCleanup(configure_localization, PreferencesStore())
         self.page = FakePage(420)
         self.calls: list[tuple[str, tuple[str, ...]]] = []
         self.chat = _chat()
@@ -144,8 +155,6 @@ class ChatMenuTests(unittest.IsolatedAsyncioTestCase):
                     "Ключ OpenRouter",
                     "Использовано токенов",
                     "ID модели",
-                    "Переименовать",
-                    "Удалить чат",
                 ):
                     self.assertNotIn(label, normal)
                 assert view.message_history is not None
@@ -253,8 +262,8 @@ class ChatMenuTests(unittest.IsolatedAsyncioTestCase):
             and all(isinstance(item, ft.Text) for item in c.controls)
         }
         self.assertEqual(rows["Остаток денежного бюджета"], "—")
-        self.assertEqual(rows["Фактическая стоимость"], "$0.12")
-        self.assertEqual(rows["Зарезервированная стоимость"], "$0.03")
+        self.assertEqual(rows["Фактическая стоимость"], "0,12 USD")
+        self.assertEqual(rows["Зарезервированная стоимость"], "0,03 USD")
         self.assertEqual(rows["Зарезервировано токенов"], "123")
         self.assertIn("Лимит расходов", rows)
         updated = replace(
@@ -267,8 +276,9 @@ class ChatMenuTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("900", texts(dialog))
         self.assertNotIn("123", texts(dialog))
         assert view._menu_list is not None
-        self.assertIs(view._menu_list.controls[-1], view.delete_button)
-        self.assertIsInstance(view._menu_list.controls[-2], ft.Divider)
+        self.assertIs(view._menu_list.controls[-1], view.limits_button)
+        self.assertNotIn(view.rename_button, list(walk(dialog)))
+        self.assertNotIn(view.delete_button, list(walk(dialog)))
 
     async def test_empty_chat_menu_has_only_key_state_and_no_chat_actions(self) -> None:
         view = self.view()
@@ -327,6 +337,292 @@ class ChatMenuTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(view.retry_key_button.disabled)
         self.assertIn("Проверка ключа OpenRouter…", texts(self.page.dialogs[-1]))
         self.assertEqual(self.calls, [])
+
+    async def test_key_refresh_stays_open_with_same_controls_during_success_or_error(
+        self,
+    ) -> None:
+        for result in (KeyValidityState.VALID, KeyValidityState.UNKNOWN):
+            with self.subTest(result=result):
+                view = self.view(key_validity=KeyValidityState.UNKNOWN)
+                view.restore_editor("  Сохранить\n🙂 черновик  ")
+                await view.open_menu()
+                dialog, menu_list = view._menu_dialog, view._menu_list
+                assert menu_list is not None and view.retry_key_button is not None
+                button, panel = view.retry_key_button, menu_list.controls[1]
+                started, release = asyncio.Event(), asyncio.Event()
+                calls = 0
+
+                async def refresh() -> None:
+                    nonlocal calls
+                    calls += 1
+                    self.update(
+                        view,
+                        self.chat,
+                        _state(self.chat),
+                        key_validity=KeyValidityState.UNKNOWN,
+                        key_validation_in_progress=True,
+                    )
+                    started.set()
+                    await release.wait()
+                    self.update(view, self.chat, _state(self.chat), key_validity=result)
+
+                view._on_retry_key = refresh
+                # Создаём обработчик с текущей тестовой реализацией сервиса.
+                self.update(
+                    view,
+                    self.chat,
+                    _state(self.chat),
+                    key_validity=KeyValidityState.UNKNOWN,
+                )
+                button = view.retry_key_button
+                assert button is not None
+                panel = menu_list.controls[1]
+                pending = asyncio.create_task(self.click(button))
+                try:
+                    await asyncio.wait_for(started.wait(), timeout=1)
+                    self.assertTrue(view.menu_open)
+                    self.assertIs(view._menu_dialog, dialog)
+                    self.assertIs(view._menu_list, menu_list)
+                    self.assertIs(menu_list.controls[1], panel)
+                    self.assertIs(view.retry_key_button, button)
+                    self.assertTrue(button.disabled)
+                    await self.click(button)
+                    self.assertEqual(calls, 1)
+                finally:
+                    release.set()
+                    await pending
+                self.assertTrue(view.menu_open)
+                self.assertIs(view._menu_dialog, dialog)
+                self.assertIs(view._menu_list, menu_list)
+                self.assertIs(view.retry_key_button, button)
+                self.assertFalse(button.disabled)
+                self.assertEqual(view.editor_value, "  Сохранить\n🙂 черновик  ")
+                self.assertEqual(len(self.page.dialogs), 1)
+                view.dispose()
+                self.page.dialogs.clear()
+
+    async def test_valid_key_has_explicit_enabled_refresh_action(self) -> None:
+        for limit in (
+            KeyLimitInfo.unknown(),
+            KeyLimitInfo.from_validated_remaining(None),
+            KeyLimitInfo.from_validated_remaining(Decimal("0")),
+            KeyLimitInfo.from_validated_remaining(Decimal("5")),
+        ):
+            with self.subTest(limit=limit):
+                view = self.view(key_limit=limit)
+                await view.open_menu()
+                self.assertIsNotNone(view.retry_key_button)
+                assert view.retry_key_button is not None
+                self.assertEqual(view.retry_key_button.content, "Обновить статус ключа")
+                self.assertFalse(view.retry_key_button.disabled)
+                await self.click(view.retry_key_button)
+                self.assertTrue(view.menu_open)
+                view.dispose()
+
+    async def test_replacement_is_visible_for_all_states_limits_modes_and_layouts(
+        self,
+    ) -> None:
+        for language in ("ru", "en"):
+            set_language(language)
+            for width in (420, 1280):
+                self.page.width = width
+                for validity in KeyValidityState:
+                    for limit in (
+                        KeyLimitInfo.unknown(),
+                        KeyLimitInfo.from_validated_remaining(None),
+                        KeyLimitInfo.from_validated_remaining(Decimal("0")),
+                        KeyLimitInfo.from_validated_remaining(Decimal("5")),
+                    ):
+                        for mode in (ChatMode.FREE, ChatMode.PAID, None):
+                            with self.subTest(
+                                language=language,
+                                width=width,
+                                validity=validity,
+                                limit=limit.state,
+                                mode=mode,
+                            ):
+                                chat = replace(self.chat, mode=mode or ChatMode.FREE)
+                                view = self.view(
+                                    chat,
+                                    _state(chat),
+                                    key_validity=validity,
+                                    key_limit=limit,
+                                )
+                                if mode is None:
+                                    view.update_workspace(
+                                        [],
+                                        None,
+                                        None,
+                                        key_validity=validity,
+                                        key_limit=limit,
+                                        key_validation_in_progress=False,
+                                    )
+                                await view.open_menu()
+                                button = view.replace_key_button
+                                assert button is not None
+                                self.assertTrue(button.visible)
+                                self.assertFalse(button.disabled)
+                                self.assertIn(
+                                    tr("key.replace"), texts(self.page.dialogs[-1])
+                                )
+                                self.assertIsInstance(button.content, ft.Text)
+                                assert isinstance(button.content, ft.Text)
+                                self.assertFalse(button.content.no_wrap)
+                                view.dispose()
+                                self.page.dialogs.clear()
+
+    async def test_replacement_stays_visible_and_rejects_queued_click_while_sending(
+        self,
+    ) -> None:
+        view = self.view()
+        view.restore_editor("  Сохранить\n🙂 черновик  ")
+        await view.open_menu()
+        button = view.replace_key_button
+        assert button is not None
+        view.set_sending(True)
+        self.assertIs(view.replace_key_button, button)
+        self.assertTrue(button.visible)
+        self.assertTrue(button.disabled)
+        self.assertIn(tr("key.replace_wait_send"), texts(self.page.dialogs[-1]))
+        await self.click(button)
+        self.assertTrue(view.menu_open)
+        self.assertEqual(self.calls, [])
+        self.assertEqual(view.editor_value, "  Сохранить\n🙂 черновик  ")
+        view.set_sending(False)
+        self.assertIs(view.replace_key_button, button)
+        self.assertFalse(button.disabled)
+        assert view._key_panel is not None
+        self.assertFalse(view._key_panel.replacement_notice.visible)
+        await self.click(button)
+        self.assertFalse(view.menu_open)
+        self.assertEqual(self.calls, [("replace", ())])
+        await self.click(button)
+        self.assertEqual(self.calls, [("replace", ())])
+
+    async def test_replacement_callback_is_fresh_after_status_and_language_change(
+        self,
+    ) -> None:
+        view = self.view()
+        await view.open_menu()
+        button = view.replace_key_button
+        assert button is not None
+        old_callback = button.on_click
+        assert old_callback is not None
+        original_dialog, original_list = view._menu_dialog, view._menu_list
+        original_parent = next(
+            control
+            for control in walk(self.page.dialogs[-1])
+            if isinstance(control, ft.Column) and button in control.controls
+        )
+        self.update(
+            view,
+            self.chat,
+            _state(self.chat),
+            key_validity=KeyValidityState.RESTRICTED,
+        )
+        set_language("en")
+        localize_tree(self.page.dialogs[-1])
+        self.assertIs(view.replace_key_button, button)
+        self.assertIs(view._menu_dialog, original_dialog)
+        self.assertIs(view._menu_list, original_list)
+        self.assertIn(button, original_parent.controls)
+        self.assertIn("Replace OpenRouter key", texts(self.page.dialogs[-1]))
+        await cast(Callable[[ft.Event], Awaitable[None]], old_callback)(
+            ft.Event(name="click", control=button)
+        )
+        self.assertEqual(self.calls, [])
+        self.assertTrue(view.menu_open)
+        await self.click(button)
+        self.assertEqual(self.calls, [("replace", ())])
+        self.assertFalse(view.menu_open)
+
+    async def test_pending_key_refresh_rejects_queued_click_before_state_refresh(
+        self,
+    ) -> None:
+        view = self.view(key_validity=KeyValidityState.UNKNOWN)
+        started, release = asyncio.Event(), asyncio.Event()
+        calls = 0
+
+        async def refresh() -> None:
+            nonlocal calls
+            calls += 1
+            started.set()
+            await release.wait()
+
+        view._on_retry_key = refresh
+        await view.open_menu()
+        button = view.retry_key_button
+        assert button is not None
+        pending = asyncio.create_task(self.click(button))
+        try:
+            await asyncio.wait_for(started.wait(), timeout=1)
+            self.assertTrue(view.menu_open)
+            self.assertTrue(button.disabled)
+            await self.click(button)
+            self.assertEqual(calls, 1)
+        finally:
+            release.set()
+            await pending
+        self.assertFalse(button.disabled)
+
+    async def test_dismiss_or_chat_change_or_lock_does_not_reopen_after_refresh(
+        self,
+    ) -> None:
+        for navigation in ("dismiss", "chat_change", "lock"):
+            with self.subTest(navigation=navigation):
+                view = self.view(key_validity=KeyValidityState.UNKNOWN)
+                view.restore_editor("Синтетический черновик")
+                started, release = asyncio.Event(), asyncio.Event()
+                calls = 0
+
+                async def refresh() -> None:
+                    nonlocal calls
+                    calls += 1
+                    self.update(
+                        view,
+                        self.chat,
+                        _state(self.chat),
+                        key_validity=KeyValidityState.UNKNOWN,
+                        key_validation_in_progress=True,
+                    )
+                    started.set()
+                    await release.wait()
+                    self.update(view, self.chat, _state(self.chat))
+
+                view._on_retry_key = refresh
+                await view.open_menu()
+                button, dialog = view.retry_key_button, view._menu_dialog
+                assert button is not None and dialog is not None
+                pending = asyncio.create_task(self.click(button))
+                try:
+                    await asyncio.wait_for(started.wait(), timeout=1)
+                    self.assertTrue(view.menu_open)
+                    if navigation == "dismiss":
+                        with patch.object(
+                            ft.IconButton, "focus", new_callable=AsyncMock
+                        ):
+                            await view._menu_dismissed(
+                                ft.Event(name="dismiss", control=dialog)
+                            )
+                    elif navigation == "chat_change":
+                        other = replace(self.chat, id="other")
+                        self.update(view, other, _state(other))
+                    else:
+                        view.dispose()
+                    self.assertFalse(view.menu_open)
+                finally:
+                    release.set()
+                    await pending
+                await self.click(button)
+                self.assertEqual(calls, 1)
+                self.assertFalse(view.menu_open)
+                self.assertEqual(len(self.page.dialogs), 1)
+                if navigation == "dismiss":
+                    self.assertEqual(view.editor_value, "Синтетический черновик")
+                if navigation == "lock":
+                    self.assertIsNone(self.page.drawer)
+                view.dispose()
+                self.page.dialogs.clear()
 
 
 if __name__ == "__main__":

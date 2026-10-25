@@ -7,6 +7,8 @@ import inspect
 import json
 import uuid
 from collections.abc import Awaitable, Callable
+from contextlib import nullcontext
+from contextvars import ContextVar
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from decimal import Decimal
@@ -33,11 +35,9 @@ from chat.accounting import (
 )
 from chat.context import (
     FREE_ROUTER_CONTEXT_LENGTH,
-    REQUEST_OVERHEAD_TOKENS,
     ContextMessage,
     ContextWindowExceeded,
     build_conversation_context,
-    estimate_message_tokens,
 )
 from chat.errors import ChatErrorType, safe_error_message
 from chat.models import (
@@ -51,6 +51,13 @@ from chat.models import (
     is_free_model,
 )
 from chat.service import ChatService
+from i18n import tr
+from storage.access_context import (
+    await_task_completion,
+    finish_worker,
+    repository_session,
+)
+from storage.data_access import CompletionLease, DataAccess
 
 MIN_COMPLETION_TOKENS = 16
 TITLE_MAX_LENGTH = 60
@@ -239,6 +246,10 @@ class MessageSendingService:
     ) -> None:
         self._chat_service = chat_service
         self._messages = message_repository
+        self._access: DataAccess | None = getattr(message_repository, "access", None)
+        self._completion_lease: ContextVar[CompletionLease | None] = ContextVar(
+            f"send_lease_{id(self)}", default=None
+        )
         self._completion_client = completion_client
         self._catalog_client = catalog_client
         self._key_validator = key_validator
@@ -247,6 +258,7 @@ class MessageSendingService:
         self._uuid_factory = uuid_factory
         self._chat_locks: dict[str, asyncio.Lock] = {}
 
+    @repository_session("_messages")
     async def preview_message(
         self,
         chat_id: str,
@@ -290,6 +302,7 @@ class MessageSendingService:
             )
         return _preview_from_preflight(preflight)
 
+    @repository_session("_messages")
     async def preview_failed_turn(
         self,
         turn_id: str,
@@ -347,6 +360,7 @@ class MessageSendingService:
             key_limit_update=preview.key_limit_update,
         )
 
+    @repository_session("_messages")
     async def send_message(
         self,
         chat_id: str,
@@ -398,6 +412,7 @@ class MessageSendingService:
                 draft_revision=draft_revision,
             )
 
+    @repository_session("_messages")
     async def retry_failed_turn(
         self,
         turn_id: str,
@@ -446,6 +461,7 @@ class MessageSendingService:
                 on_reserved=on_reserved,
             )
 
+    @repository_session("_messages")
     async def reconfirm_model_price(
         self,
         chat_id: str,
@@ -454,20 +470,20 @@ class MessageSendingService:
         confirmed: bool,
     ) -> None:
         if not _valid_identifier(chat_id):
-            raise ValueError("Некорректный идентификатор чата")
+            raise ValueError(tr("service.chat_id_invalid"))
         if not isinstance(api_key, str) or not api_key.strip():
-            raise ValueError("Ключ сессии отсутствует")
+            raise ValueError(tr("service.session_key_missing"))
         if confirmed is not True:
-            raise ValueError("Изменение цены требует явного подтверждения")
+            raise ValueError(tr("service.price_explicit_confirmation"))
         chat = await self._chat_service.get_chat(chat_id)
         if chat is None:
-            raise KeyError("Чат не найден")
+            raise KeyError(tr("service.chat_missing"))
         models = await self._catalog_client.fetch_models(api_key)
         current = _find_model(models, chat.requested_model_id)
         if current is None:
-            raise ValueError("Модель отсутствует в текущем каталоге")
+            raise ValueError(tr("service.model_missing"))
         if not current.pricing_is_complete:
-            raise ValueError("Цена модели не может быть безопасно подтверждена")
+            raise ValueError(tr("service.price_confirmation_unsafe"))
         await asyncio.to_thread(
             self._messages.update_price_snapshot,
             chat_id,
@@ -482,6 +498,46 @@ class MessageSendingService:
         )
 
     async def _send_locked(
+        self,
+        chat_id: str,
+        text: str,
+        *,
+        api_key: str,
+        key_validity: KeyValidityState,
+        key_limit: KeyLimitInfo,
+        turn_id: str,
+        user_message_id: str,
+        retry: bool,
+        paid_confirmed: bool,
+        on_reserved: ReservationCallback | None,
+        draft_revision: int | None = None,
+    ) -> SendMessageResult:
+        lease = (
+            self._access.completion("send", chat_id, turn_id)
+            if self._access is not None
+            else None
+        )
+        token = self._completion_lease.set(lease)
+        try:
+            return await self._send_authorized(
+                chat_id,
+                text,
+                api_key=api_key,
+                key_validity=key_validity,
+                key_limit=key_limit,
+                turn_id=turn_id,
+                user_message_id=user_message_id,
+                retry=retry,
+                paid_confirmed=paid_confirmed,
+                on_reserved=on_reserved,
+                draft_revision=draft_revision,
+            )
+        finally:
+            self._completion_lease.reset(token)
+            if lease is not None:
+                lease.close()
+
+    async def _send_authorized(
         self,
         chat_id: str,
         text: str,
@@ -538,7 +594,7 @@ class MessageSendingService:
         except asyncio.CancelledError:
             reserved = False
             try:
-                await reservation_task
+                await await_task_completion(reservation_task)
                 reserved = True
             except Exception:
                 pass
@@ -563,7 +619,7 @@ class MessageSendingService:
         except asyncio.CancelledError:
             marked_sent = False
             try:
-                await mark_sent_task
+                await await_task_completion(mark_sent_task)
                 marked_sent = True
             except Exception:
                 pass
@@ -592,6 +648,14 @@ class MessageSendingService:
             except Exception:
                 pass
 
+        if self._access is not None:
+            try:
+                self._access.assert_current()
+            except Exception:
+                await self._release_without_http(
+                    turn_id, ChatErrorType.INTERRUPTED, request_marked=True
+                )
+                return _local_failure(ChatErrorType.INTERRUPTED, turn_id=turn_id)
         try:
             result = await self._completion_client.complete(
                 api_key,
@@ -717,29 +781,23 @@ class MessageSendingService:
         )
         if context_length is None or context_length <= MIN_COMPLETION_TOKENS:
             raise _PreflightFailure(ChatErrorType.CONTEXT_LENGTH_EXCEEDED)
-        provider_completion_limit = (
-            model.provider_max_completion_tokens or budget.max_completion_tokens
-        )
-        completion_cap = min(
-            budget.max_completion_tokens,
-            provider_completion_limit,
-        )
+        completion_cap = budget.max_completion_tokens
+        if model.provider_max_completion_tokens is not None:
+            completion_cap = min(completion_cap, model.provider_max_completion_tokens)
         if completion_cap < MIN_COMPLETION_TOKENS:
             raise _PreflightFailure(ChatErrorType.MAX_TOKENS_EXCEEDED)
         token_remaining = (
             budget.token_limit - budget.total_tokens_used - budget.reserved_tokens
         )
-        minimum_prompt = REQUEST_OVERHEAD_TOKENS + estimate_message_tokens(text)
-        completion_cap = min(completion_cap, token_remaining - minimum_prompt)
-        if completion_cap < MIN_COMPLETION_TOKENS:
-            raise _PreflightFailure(ChatErrorType.TOKEN_LIMIT_EXCEEDED)
         history = await self._chat_service.list_messages(chat_id)
         try:
             context = build_conversation_context(
                 history,
                 text,
                 context_length=context_length,
-                completion_reserve=completion_cap,
+                # Сначала сохраняем всю историю с минимальным ответом.
+                # Пользовательский максимум ограничивает ответ, а не prompt.
+                completion_reserve=MIN_COMPLETION_TOKENS,
                 require_full_history=True,
             )
         except ContextWindowExceeded:
@@ -751,6 +809,30 @@ class MessageSendingService:
         )
         if effective_completion < MIN_COMPLETION_TOKENS:
             raise _PreflightFailure(ChatErrorType.TOKEN_LIMIT_EXCEEDED)
+        if chat.mode is ChatMode.PAID:
+            if budget.cost_limit_usd is None:
+                raise _PreflightFailure(ChatErrorType.LIMITS_NOT_CONFIGURED)
+            cost_remaining = (
+                budget.cost_limit_usd - budget.cost_used_usd - budget.cost_reserved_usd
+            )
+            effective_completion = _cap_completion_by_cost(
+                effective_completion,
+                pricing,
+                context.estimated_prompt_tokens,
+                cost_remaining,
+                ChatErrorType.COST_LIMIT_EXCEEDED,
+            )
+            if (
+                current_key_limit.state is KeyLimitState.AVAILABLE
+                and current_key_limit.remaining is not None
+            ):
+                effective_completion = _cap_completion_by_cost(
+                    effective_completion,
+                    pricing,
+                    context.estimated_prompt_tokens,
+                    current_key_limit.remaining,
+                    ChatErrorType.KEY_LIMIT_EXCEEDED,
+                )
         reserved_tokens = context.estimated_prompt_tokens + effective_completion
         reserved_cost = (
             Decimal("0")
@@ -761,20 +843,6 @@ class MessageSendingService:
                 effective_completion,
             )
         )
-        if chat.mode is ChatMode.PAID:
-            if budget.cost_limit_usd is None:
-                raise _PreflightFailure(ChatErrorType.LIMITS_NOT_CONFIGURED)
-            cost_remaining = (
-                budget.cost_limit_usd - budget.cost_used_usd - budget.cost_reserved_usd
-            )
-            if reserved_cost > cost_remaining:
-                raise _PreflightFailure(ChatErrorType.COST_LIMIT_EXCEEDED)
-            if (
-                current_key_limit.state is KeyLimitState.AVAILABLE
-                and current_key_limit.remaining is not None
-                and reserved_cost > current_key_limit.remaining
-            ):
-                raise _PreflightFailure(ChatErrorType.KEY_LIMIT_EXCEEDED)
         remaining_cost = (
             None
             if chat.mode is ChatMode.FREE or budget.cost_limit_usd is None
@@ -818,99 +886,112 @@ class MessageSendingService:
         preflight: ChatPreflight,
         result: ChatCompletionResult,
     ) -> SendMessageResult:
-        timestamp = _as_utc(self._now())
-        if result.error_type is ChatErrorType.AUTHENTICATION:
-            self._publish_key_validity(KeyValidityState.INVALID)
-        if result.has_complete_usage:
-            assert result.prompt_tokens is not None
-            assert result.completion_tokens is not None
-            assert result.total_tokens is not None
-            assert result.cost_usd is not None
-            await asyncio.to_thread(
-                self._messages.finalize_known_turn,
-                turn_id,
-                assistant_message_id=str(self._uuid_factory()),
-                content=result.content,
-                successful=result.successful,
-                requested_model_id=preflight.chat.requested_model_id,
-                actual_model_id=result.actual_model_id,
-                generation_id=result.generation_id,
-                finish_reason=result.finish_reason,
-                prompt_tokens=result.prompt_tokens,
-                completion_tokens=result.completion_tokens,
-                total_tokens=result.total_tokens,
-                cost_usd=result.cost_usd,
-                error_type=result.error_type,
-                generated_title=(
-                    _title_from_message(user_text) if result.successful else None
-                ),
-                updated_at=timestamp,
-            )
-        elif result.accounting_unknown:
-            await asyncio.to_thread(
-                self._messages.mark_unknown_outcome,
-                turn_id,
-                assistant_message_id=str(self._uuid_factory()),
-                partial_content=result.content,
-                requested_model_id=preflight.chat.requested_model_id,
-                actual_model_id=result.actual_model_id,
-                generation_id=result.generation_id,
-                finish_reason=result.finish_reason,
-                error_type=result.error_type or ChatErrorType.ACCOUNTING_UNKNOWN,
-                updated_at=timestamp,
-            )
-        else:
-            await asyncio.to_thread(
-                self._messages.release_known_failure,
-                turn_id,
-                result.error_type or ChatErrorType.MALFORMED_RESPONSE,
-                timestamp,
-            )
-        return SendMessageResult(
-            turn_id=turn_id,
-            successful=result.successful and result.has_complete_usage,
-            truncated=result.truncated,
-            content=result.content,
-            error_type=result.error_type,
-            safe_message=(
-                safe_error_message(result.error_type)
-                if result.error_type is not None
-                else (
-                    safe_error_message(ChatErrorType.ACCOUNTING_UNKNOWN)
-                    if result.accounting_unknown
-                    else None
+        lease = self._completion_lease.get()
+        with lease.use() if lease is not None else nullcontext():
+            timestamp = _as_utc(self._now())
+            if result.error_type is ChatErrorType.AUTHENTICATION:
+                self._publish_key_validity(KeyValidityState.INVALID)
+            if result.has_complete_usage:
+                assert result.prompt_tokens is not None
+                assert result.completion_tokens is not None
+                assert result.total_tokens is not None
+                assert result.cost_usd is not None
+                await finish_worker(
+                    asyncio.to_thread(
+                        self._messages.finalize_known_turn,
+                        turn_id,
+                        assistant_message_id=str(self._uuid_factory()),
+                        content=result.content,
+                        successful=result.successful,
+                        requested_model_id=preflight.chat.requested_model_id,
+                        actual_model_id=result.actual_model_id,
+                        generation_id=result.generation_id,
+                        finish_reason=result.finish_reason,
+                        prompt_tokens=result.prompt_tokens,
+                        completion_tokens=result.completion_tokens,
+                        total_tokens=result.total_tokens,
+                        cost_usd=result.cost_usd,
+                        error_type=result.error_type,
+                        generated_title=(
+                            _title_from_message(user_text)
+                            if result.successful
+                            else None
+                        ),
+                        updated_at=timestamp,
+                    )
                 )
-            ),
-            retry_after=result.retry_after,
-            accounting_unknown=result.accounting_unknown,
-            key_validity_update=(
-                KeyValidityState.INVALID
-                if result.error_type is ChatErrorType.AUTHENTICATION
-                else preflight.fresh_key_validity
-            ),
-            key_limit_update=(
-                KeyLimitInfo.unknown()
-                if result.error_type is ChatErrorType.AUTHENTICATION
-                else preflight.fresh_key_limit
-            ),
-        )
+            elif result.accounting_unknown:
+                await finish_worker(
+                    asyncio.to_thread(
+                        self._messages.mark_unknown_outcome,
+                        turn_id,
+                        assistant_message_id=str(self._uuid_factory()),
+                        partial_content=result.content,
+                        requested_model_id=preflight.chat.requested_model_id,
+                        actual_model_id=result.actual_model_id,
+                        generation_id=result.generation_id,
+                        finish_reason=result.finish_reason,
+                        error_type=result.error_type
+                        or ChatErrorType.ACCOUNTING_UNKNOWN,
+                        updated_at=timestamp,
+                    )
+                )
+            else:
+                await finish_worker(
+                    asyncio.to_thread(
+                        self._messages.release_known_failure,
+                        turn_id,
+                        result.error_type or ChatErrorType.MALFORMED_RESPONSE,
+                        timestamp,
+                    )
+                )
+            return SendMessageResult(
+                turn_id=turn_id,
+                successful=result.successful and result.has_complete_usage,
+                truncated=result.truncated,
+                content=result.content,
+                error_type=result.error_type,
+                safe_message=(
+                    safe_error_message(result.error_type)
+                    if result.error_type is not None
+                    else (
+                        safe_error_message(ChatErrorType.ACCOUNTING_UNKNOWN)
+                        if result.accounting_unknown
+                        else None
+                    )
+                ),
+                retry_after=result.retry_after,
+                accounting_unknown=result.accounting_unknown,
+                key_validity_update=(
+                    KeyValidityState.INVALID
+                    if result.error_type is ChatErrorType.AUTHENTICATION
+                    else preflight.fresh_key_validity
+                ),
+                key_limit_update=(
+                    KeyLimitInfo.unknown()
+                    if result.error_type is ChatErrorType.AUTHENTICATION
+                    else preflight.fresh_key_limit
+                ),
+            )
 
     async def _release_before_send(
         self,
         turn_id: str,
         error_type: ChatErrorType,
     ) -> None:
-        try:
-            await asyncio.shield(
-                asyncio.to_thread(
-                    self._messages.release_local_failure,
-                    turn_id,
-                    error_type,
-                    _as_utc(self._now()),
+        lease = self._completion_lease.get()
+        with lease.use() if lease is not None else nullcontext():
+            try:
+                await finish_worker(
+                    asyncio.to_thread(
+                        self._messages.release_local_failure,
+                        turn_id,
+                        error_type,
+                        _as_utc(self._now()),
+                    )
                 )
-            )
-        except Exception:
-            return
+            except Exception:
+                return
 
     async def _release_without_http(
         self,
@@ -919,49 +1000,80 @@ class MessageSendingService:
         *,
         request_marked: bool,
     ) -> None:
-        operation = (
-            self._messages.release_known_failure
-            if request_marked
-            else self._messages.release_local_failure
-        )
-        try:
-            await asyncio.shield(
-                asyncio.to_thread(
-                    operation,
-                    turn_id,
-                    error_type,
-                    _as_utc(self._now()),
-                )
+        lease = self._completion_lease.get()
+        with lease.use() if lease is not None else nullcontext():
+            operation = (
+                self._messages.release_known_failure
+                if request_marked
+                else self._messages.release_local_failure
             )
-        except Exception:
-            return
+            try:
+                await finish_worker(
+                    asyncio.to_thread(
+                        operation,
+                        turn_id,
+                        error_type,
+                        _as_utc(self._now()),
+                    )
+                )
+            except Exception:
+                return
 
     async def _mark_cancelled_unknown(
         self,
         turn_id: str,
         preflight: ChatPreflight,
     ) -> None:
-        try:
-            await asyncio.shield(
-                asyncio.to_thread(
-                    self._messages.mark_unknown_outcome,
-                    turn_id,
-                    assistant_message_id=str(self._uuid_factory()),
-                    partial_content=None,
-                    requested_model_id=preflight.chat.requested_model_id,
-                    actual_model_id=None,
-                    generation_id=None,
-                    finish_reason=None,
-                    error_type=ChatErrorType.ACCOUNTING_UNKNOWN,
-                    updated_at=_as_utc(self._now()),
+        lease = self._completion_lease.get()
+        with lease.use() if lease is not None else nullcontext():
+            try:
+                await finish_worker(
+                    asyncio.to_thread(
+                        self._messages.mark_unknown_outcome,
+                        turn_id,
+                        assistant_message_id=str(self._uuid_factory()),
+                        partial_content=None,
+                        requested_model_id=preflight.chat.requested_model_id,
+                        actual_model_id=None,
+                        generation_id=None,
+                        finish_reason=None,
+                        error_type=ChatErrorType.ACCOUNTING_UNKNOWN,
+                        updated_at=_as_utc(self._now()),
+                    )
                 )
-            )
-        except Exception:
-            return
+            except Exception:
+                return
 
     def _publish_key_validity(self, validity: KeyValidityState) -> None:
         if self._on_key_validity_changed is not None:
             self._on_key_validity_changed(validity)
+
+
+def _cap_completion_by_cost(
+    maximum: int,
+    pricing: tuple[PriceComponents, ...],
+    prompt_tokens: int,
+    remaining_cost: Decimal,
+    error_type: ChatErrorType,
+) -> int:
+    """Сохраняет минимальный ответ и точный верхний предел всех известных цен."""
+    if estimate_max_cost(pricing, prompt_tokens, maximum) <= remaining_cost:
+        return maximum
+    if (
+        estimate_max_cost(pricing, prompt_tokens, MIN_COMPLETION_TOKENS)
+        > remaining_cost
+    ):
+        raise _PreflightFailure(error_type)
+    # Цены неотрицательны, поэтому оценка монотонна и поиск не теряет Decimal.
+    lower = MIN_COMPLETION_TOKENS
+    upper = maximum - 1
+    while lower < upper:
+        candidate = (lower + upper + 1) // 2
+        if estimate_max_cost(pricing, prompt_tokens, candidate) <= remaining_cost:
+            lower = candidate
+        else:
+            upper = candidate - 1
+    return lower
 
 
 def _find_model(

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Prepare an isolated Flet 0.86.5 template and build one test x86_64 APK."""
+"""Prepare an isolated Flet 0.86.5 template and build one test APK for a chosen ABI."""
 
 from __future__ import annotations
 
@@ -8,6 +8,7 @@ import hashlib
 import json
 import os
 import re
+import runpy
 import shutil
 import stat
 import subprocess
@@ -18,14 +19,46 @@ from pathlib import Path, PurePosixPath
 from urllib.parse import urlsplit
 from zipfile import ZipFile
 
-RECIPE_VERSION = "2"
+RECIPE_VERSION = "4"
 TEMPLATE_SIZE = 489103
 TEMPLATE_SHA256 = "8f95dc20ef6d901d9b5ee59f00e33d19f1d2bc6be8d6d3b800c4aab3d7315b73"
 TEMPLATE_URL = (
     "https://github.com/flet-dev/flet/releases/download/v0.86.5/flet-build-template.zip"
 )
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-OWN_FILES = ("packaging/android/build_apk.py", "tests/test_android_build.py")
+OWN_FILES = (
+    "packaging/android/build_apk.py",
+    "packaging/android/native_paths.dart",
+    "packaging/android/native_paths.kt",
+    "packaging/android/recovery_bridge.dart",
+    "packaging/android/recovery_template.py",
+    "src/assets/branding/tokenlogue-loading-static.png",
+    "src/assets/branding/tokenlogue-loading.webp",
+    "src/assets/branding/tokenlogue-logo-transparent.png",
+    "src/i18n.py",
+    "src/locales/en-protection.json",
+    "src/locales/en-recovery.json",
+    "src/locales/en-services.json",
+    "src/locales/en.json",
+    "src/locales/ru-protection.json",
+    "src/locales/ru-recovery.json",
+    "src/locales/ru-services.json",
+    "src/locales/ru.json",
+    "src/platform_security/__init__.py",
+    "src/platform_security/device_recovery.py",
+    "src/preferences.py",
+    "src/service_errors.py",
+    "src/storage/access_context.py",
+    "src/storage/data_access.py",
+    "src/storage/data_protection.py",
+    "src/storage/database_connections.py",
+    "src/storage/encrypted_migration.py",
+    "src/storage/encryption_initialization.py",
+    "src/storage/field_cipher.py",
+    "src/ui/branding.py",
+    "src/ui/language_selector.py",
+    "tests/test_android_build.py",
+)
 OLD_AGP = 'id("com.android.application") version "8.11.1" apply false'
 NEW_AGP = 'id("com.android.application") version "8.13.2" apply false'
 SETTINGS = "build/{{cookiecutter.out_dir}}/android/settings.gradle.kts"
@@ -44,7 +77,13 @@ def write_json(path: Path, value: object) -> None:
     path.write_text(json.dumps(value, indent=2, ensure_ascii=False) + "\n", "utf-8")
 
 
-def prepare_template(archive: Path, destination: Path) -> tuple[Path, str]:
+def prepare_template(
+    archive: Path,
+    destination: Path,
+    *,
+    with_device_recovery: bool = False,
+    android_abi: str = "x86_64",
+) -> tuple[Path, str]:
     """Validate before extraction and include all derived bytes in the path identity."""
     if archive.stat().st_size != TEMPLATE_SIZE or sha256(archive) != TEMPLATE_SHA256:
         raise ValueError("Official Flet 0.86.5 template size or SHA-256 differs")
@@ -81,6 +120,11 @@ def prepare_template(archive: Path, destination: Path) -> tuple[Path, str]:
     if b'signingConfig = signingConfigs.getByName("debug")' not in files[APP_GRADLE][0]:
         raise ValueError("Missing default test signing in official template")
     files[SETTINGS] = (settings.replace(OLD_AGP.encode(), NEW_AGP.encode()), mode)
+    if with_device_recovery:
+        recipe = runpy.run_path(
+            str(PROJECT_ROOT / "packaging/android/recovery_template.py")
+        )
+        recipe["add_device_recovery"](files, PROJECT_ROOT, android_abi=android_abi)
     content = hashlib.sha256(RECIPE_VERSION.encode())
     for name, (data, file_mode) in sorted(files.items()):
         content.update(name.encode() + b"\0" + str(file_mode).encode() + b"\0")
@@ -178,9 +222,15 @@ def check_configuration(repo: Path, environment: dict[str, str]) -> None:
         )
     if (
         metadata["project"]["requires-python"] != ">=3.12,<3.13"
-        or not {"flet==0.86.5", "flet-secure-storage==0.86.5"}.issubset(
-            metadata["project"]["dependencies"]
-        )
+        or set(metadata["project"]["dependencies"])
+        != {
+            "flet==0.86.5",
+            "flet-secure-storage==0.86.5",
+            "httpx==0.28.1",
+            "pycryptodomex==3.23.0",
+            "cffi==2.0.0",
+            "pycparser==3.11",
+        }
         or android.get("dependencies") != ["msgpack==1.1.2"]
         or android.get("min_sdk_version") != 24
         or flet.get("bundle_id") != "io.github.umichata.tokenlogue"
@@ -310,6 +360,8 @@ def main() -> int:
     parser.add_argument("--run-dir", type=Path, required=True)
     parser.add_argument("--jdk-home", type=Path, required=True)
     parser.add_argument("--sdk-root", type=Path, required=True)
+    parser.add_argument("--arch", choices=("x86_64", "arm64-v8a"), default="x86_64")
+    parser.add_argument("--build-number", type=int)
     parser.add_argument(
         "--template-zip",
         type=Path,
@@ -318,7 +370,12 @@ def main() -> int:
         ),
     )
     parser.add_argument("--prepare-only", action="store_true")
+    parser.add_argument(
+        "--device-recovery", action=argparse.BooleanOptionalAction, default=True
+    )
     args = parser.parse_args()
+    if args.build_number is not None and args.build_number <= 0:
+        parser.error("Build number must be a positive integer")
     run = args.run_dir.expanduser().resolve()
     if run.is_relative_to(PROJECT_ROOT):
         parser.error("Run directory must stay outside the source repository")
@@ -330,7 +387,12 @@ def main() -> int:
         )
         environment = build_environment(jdk, sdk, run)
         check_configuration(PROJECT_ROOT, environment)
-        template, identity = prepare_template(args.template_zip.expanduser(), run)
+        template, identity = prepare_template(
+            args.template_zip.expanduser(),
+            run,
+            with_device_recovery=args.device_recovery,
+            android_abi=args.arch,
+        )
         source = run / "source"
         inventory = snapshot(PROJECT_ROOT, source)
         command = [
@@ -338,15 +400,21 @@ def main() -> int:
             "build",
             "apk",
             "--arch",
-            "x86_64",
+            args.arch,
             "--template",
             str(template),
             "-vv",
         ]
+        if args.build_number is not None:
+            command.extend(["--build-number", str(args.build_number)])
         write_json(
             run / "preparation.json",
             {
                 "recipe_version": RECIPE_VERSION,
+                "device_recovery": args.device_recovery,
+                "native_paths_abi": args.arch if args.device_recovery else None,
+                "arch": args.arch,
+                "build_number_override": args.build_number,
                 "template_url": TEMPLATE_URL,
                 "template_zip": str(args.template_zip),
                 "template_zip_sha256": TEMPLATE_SHA256,

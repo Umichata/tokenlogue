@@ -3,12 +3,15 @@
 from __future__ import annotations
 
 import importlib
+import io
 import json
 import os
 import stat
+import subprocess
 import sys
 import tempfile
 import unittest
+from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 from unittest.mock import patch
 from zipfile import ZipFile, ZipInfo
@@ -169,6 +172,30 @@ class AndroidBuildTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "symlink"):
                 helper.snapshot(repo, self.root / "snapshot")
 
+    def test_snapshot_imports_production_initialization_without_checkout_fallback(
+        self,
+    ) -> None:
+        """Новый модуль должен попадать в изолированную копию до git add."""
+        destination = self.root / "production-snapshot"
+        helper.snapshot(PROJECT, destination)
+        code = """
+import sys
+from pathlib import Path
+sys.path.insert(0, sys.argv[1])
+from storage.data_protection import DataProtection
+import storage.encryption_initialization as initialization
+assert DataProtection.__module__ == 'storage.data_protection'
+assert Path(initialization.__file__).resolve() == Path(sys.argv[1]) / 'storage/encryption_initialization.py'
+"""
+        result = subprocess.run(
+            [sys.executable, "-I", "-c", code, str(destination / "src")],
+            cwd=self.root,
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
     def test_log_preserves_both_streams_and_failure_exit_code(self) -> None:
         run = self.root / "run"
         run.mkdir()
@@ -200,6 +227,21 @@ class AndroidBuildTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "Production signing") as caught:
                 helper.check_configuration(repo, {variable: "private-value"})
             self.assertNotIn("private-value", str(caught.exception))
+
+    def test_crypto_dependency_versions_and_namespace_are_strict(self) -> None:
+        repo = self.root / "crypto-config"
+        repo.mkdir()
+        current = (PROJECT / "pyproject.toml").read_text()
+        for before, after in (
+            ("pycryptodomex==3.23.0", "pycryptodome==3.23.0"),
+            ("pycryptodomex==3.23.0", "pycryptodomex>=3.23.0"),
+            ("cffi==2.0.0", "cffi==2.1.1"),
+            ("pycparser==3.11", "pycparser==3.10"),
+        ):
+            with self.subTest(requirement=before):
+                (repo / "pyproject.toml").write_text(current.replace(before, after))
+                with self.assertRaisesRegex(ValueError, "pinned Android configuration"):
+                    helper.check_configuration(repo, {})
 
     def test_environment_is_scoped_and_only_socks_all_proxy_is_removed(self) -> None:
         run = self.root / "run"
@@ -239,6 +281,315 @@ class AndroidBuildTests(unittest.TestCase):
                     self.root / "jdk", self.root / "sdk", self.root / "run"
                 )
         self.assertEqual(legacy.read_text(), "untouched legacy settings")
+
+    def test_selected_abi_reaches_runner_and_preparation_metadata(self) -> None:
+        archive = self.archive()
+        repo = self.root / "repo"
+        for name in ("src/main.py", *helper.OWN_FILES):
+            path = repo / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text("current source bytes", "utf-8")
+        (repo / "pyproject.toml").write_bytes((PROJECT / "pyproject.toml").read_bytes())
+        for index, (options, arch, prepare_only) in enumerate(
+            (
+                ([], "x86_64", False),
+                (["--arch", "x86_64"], "x86_64", False),
+                (["--arch", "arm64-v8a"], "arm64-v8a", False),
+                (["--arch", "arm64-v8a", "--prepare-only"], "arm64-v8a", True),
+            )
+        ):
+            with self.subTest(arch=arch, options=options):
+                run = self.root / f"run-{index}"
+                argv = [
+                    "build_apk.py",
+                    "--no-device-recovery",
+                    "--run-dir",
+                    str(run),
+                    "--jdk-home",
+                    str(self.root / "jdk"),
+                    "--sdk-root",
+                    str(self.root / "sdk"),
+                    "--template-zip",
+                    str(archive),
+                    *options,
+                ]
+                with (
+                    patch.object(sys, "argv", argv),
+                    patch.object(helper, "PROJECT_ROOT", repo),
+                    patch.object(helper.Path, "home", return_value=self.root),
+                    patch.dict(os.environ, {"HOME": "/unchanged-home"}, clear=True),
+                    patch.object(
+                        helper.subprocess,
+                        "check_output",
+                        side_effect=[b"src/main.py\0pyproject.toml\0", "test-head\n"],
+                    ),
+                    patch.object(helper, "check_tools") as check_tools,
+                    patch.object(helper, "run_logged", return_value=7) as runner,
+                    redirect_stdout(io.StringIO()),
+                ):
+                    self.assertEqual(helper.main(), 0 if prepare_only else 7)
+                metadata = json.loads((run / "preparation.json").read_text())
+                command = [
+                    str(repo / ".venv/bin/flet"),
+                    "build",
+                    "apk",
+                    "--arch",
+                    arch,
+                    "--template",
+                    metadata["template"],
+                    "-vv",
+                ]
+                self.assertEqual(metadata["arch"], arch)
+                self.assertEqual(metadata["command"], command)
+                self.assertEqual(
+                    metadata["build"], "NOT_RUN" if prepare_only else "PENDING"
+                )
+                self.assertEqual(
+                    (run / "source/src/main.py").read_text(), "current source bytes"
+                )
+                if prepare_only:
+                    check_tools.assert_not_called()
+                    runner.assert_not_called()
+                else:
+                    check_tools.assert_called_once_with(
+                        repo, self.root / "jdk", self.root / "sdk"
+                    )
+                    runner.assert_called_once()
+                    actual_command, cwd, environment, actual_run = runner.call_args.args
+                    self.assertEqual(actual_command, command)
+                    self.assertEqual(cwd, run / "source")
+                    self.assertEqual(actual_run, run)
+                    self.assertEqual(environment["HOME"], "/unchanged-home")
+                    self.assertEqual(
+                        environment["XDG_CONFIG_HOME"], str(run / "flutter-config")
+                    )
+
+    def test_unsupported_abi_is_rejected_before_preparation_or_flet(self) -> None:
+        run = self.root / "unsupported-run"
+        for arch in ("armeabi-v7a", "aarch64", "universal", "x86_64,arm64-v8a"):
+            with self.subTest(arch=arch):
+                argv = [
+                    "build_apk.py",
+                    "--no-device-recovery",
+                    "--run-dir",
+                    str(run),
+                    "--jdk-home",
+                    str(self.root / "jdk"),
+                    "--sdk-root",
+                    str(self.root / "sdk"),
+                    "--arch",
+                    arch,
+                ]
+                with (
+                    patch.object(sys, "argv", argv),
+                    patch.object(helper, "build_environment") as environment,
+                    patch.object(helper, "prepare_template") as template,
+                    patch.object(helper, "check_tools") as check_tools,
+                    patch.object(helper, "run_logged") as runner,
+                    redirect_stderr(io.StringIO()),
+                    self.assertRaises(SystemExit) as caught,
+                ):
+                    helper.main()
+                self.assertEqual(caught.exception.code, 2)
+                environment.assert_not_called()
+                template.assert_not_called()
+                check_tools.assert_not_called()
+                runner.assert_not_called()
+                self.assertFalse(run.exists())
+
+    def test_untracked_branding_is_explicit_but_foreign_ui_is_excluded(self) -> None:
+        repo = self.root / "repo"
+        for name in (
+            *helper.OWN_FILES,
+            "src/main.py",
+            "src/ui/branding.py",
+            "src/ui/foreign.py",
+        ):
+            path = repo / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text("current allowed source", "utf-8")
+        with patch.object(
+            helper.subprocess, "check_output", return_value=b"src/main.py\0"
+        ):
+            inventory = helper.snapshot(repo, self.root / "snapshot")
+        entries = {entry["path"]: entry for entry in inventory}
+        self.assertIn("src/ui/branding.py", entries)
+        target = self.root / "snapshot/src/ui/branding.py"
+        self.assertEqual(
+            target.read_bytes(), (repo / "src/ui/branding.py").read_bytes()
+        )
+        self.assertEqual(entries["src/ui/branding.py"]["sha256"], helper.sha256(target))
+        self.assertFalse((self.root / "snapshot/src/ui/foreign.py").exists())
+
+    def test_untracked_branding_assets_keep_binary_bytes_and_exclude_alternatives(
+        self,
+    ) -> None:
+        repo = self.root / "repo"
+        assets = (
+            "src/assets/branding/tokenlogue-logo-transparent.png",
+            "src/assets/branding/tokenlogue-loading.webp",
+            "src/assets/branding/tokenlogue-loading-static.png",
+        )
+        excluded = (
+            "src/assets/branding/foreign.png",
+            "src/assets/branding/tokenlogue-loading.apng",
+            "src/assets/branding/source/private.json",
+            "docs/assets/tokenlogue-logo-transparent.png",
+        )
+        for name in (*helper.OWN_FILES, "src/main.py", *assets, *excluded):
+            path = repo / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(b"\x00\xff\x89\x00" + name.encode())
+            path.chmod(0o640)
+        destination = self.root / "snapshot"
+        with patch.object(
+            helper.subprocess, "check_output", return_value=b"src/main.py\0"
+        ):
+            inventory = helper.snapshot(repo, destination)
+        entries = {entry["path"]: entry for entry in inventory}
+        for name in assets:
+            with self.subTest(asset=name):
+                self.assertIn(name, entries)
+                copied = destination / name
+                self.assertEqual(copied.read_bytes(), (repo / name).read_bytes())
+                self.assertEqual(entries[name]["sha256"], helper.sha256(copied))
+                self.assertEqual(entries[name]["size"], copied.stat().st_size)
+                self.assertEqual(entries[name]["mode"], 0o640)
+        for name in excluded:
+            self.assertNotIn(name, entries)
+            self.assertFalse((destination / name).exists())
+
+    def test_explicit_build_number_reaches_flet_and_metadata(self) -> None:
+        archive = self.archive()
+        repo = self.root / "repo"
+        for name in ("src/main.py", *helper.OWN_FILES):
+            path = repo / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text("current source", "utf-8")
+        (repo / "pyproject.toml").write_bytes((PROJECT / "pyproject.toml").read_bytes())
+        run = self.root / "build-number"
+        argv = [
+            "build_apk.py",
+            "--no-device-recovery",
+            "--run-dir",
+            str(run),
+            "--jdk-home",
+            str(self.root / "jdk"),
+            "--sdk-root",
+            str(self.root / "sdk"),
+            "--template-zip",
+            str(archive),
+            "--arch",
+            "arm64-v8a",
+            "--build-number",
+            "2",
+        ]
+        with (
+            patch.object(sys, "argv", argv),
+            patch.object(helper, "PROJECT_ROOT", repo),
+            patch.object(helper.Path, "home", return_value=self.root),
+            patch.dict(os.environ, {}, clear=True),
+            patch.object(
+                helper.subprocess,
+                "check_output",
+                side_effect=[b"src/main.py\0pyproject.toml\0", "test-head\n"],
+            ),
+            patch.object(helper, "check_tools"),
+            patch.object(helper, "run_logged", return_value=0) as runner,
+            redirect_stdout(io.StringIO()),
+            redirect_stderr(io.StringIO()),
+        ):
+            self.assertEqual(helper.main(), 0)
+        metadata = json.loads((run / "preparation.json").read_text())
+        self.assertEqual(metadata["build_number_override"], 2)
+        command = metadata["command"]
+        self.assertEqual(command[command.index("--build-number") + 1], "2")
+        self.assertEqual(command[command.index("--arch") + 1], "arm64-v8a")
+        self.assertEqual(runner.call_args.args[0], command)
+        self.assertEqual(
+            (repo / "pyproject.toml").read_bytes(),
+            (PROJECT / "pyproject.toml").read_bytes(),
+        )
+
+    def test_main_enables_recovery_recipe_by_default(self) -> None:
+        repo = self.root / "default-recovery"
+        repo.mkdir()
+        (repo / "pyproject.toml").write_bytes((PROJECT / "pyproject.toml").read_bytes())
+        run = self.root / "default-recovery-run"
+        argv = [
+            "build_apk.py",
+            "--run-dir",
+            str(run),
+            "--jdk-home",
+            "jdk",
+            "--sdk-root",
+            "sdk",
+            "--prepare-only",
+        ]
+        with (
+            patch.object(sys, "argv", argv),
+            patch.object(helper, "PROJECT_ROOT", repo),
+            patch.object(helper, "check_tools"),
+            patch.object(
+                helper,
+                "build_environment",
+                return_value={
+                    name: "scoped"
+                    for name in (
+                        "JAVA_HOME",
+                        "ANDROID_HOME",
+                        "ANDROID_SDK_ROOT",
+                        "ANDROID_USER_HOME",
+                        "XDG_CONFIG_HOME",
+                        "GRADLE_USER_HOME",
+                        "PATH",
+                    )
+                },
+            ),
+            patch.object(
+                helper,
+                "prepare_template",
+                return_value=(self.root / "template", "identity"),
+            ) as prepare,
+            patch.object(helper, "snapshot", return_value=[]),
+            patch.object(helper.subprocess, "check_output", return_value="test-head\n"),
+            patch.dict(os.environ, {}, clear=True),
+            redirect_stdout(io.StringIO()),
+            redirect_stderr(io.StringIO()),
+        ):
+            self.assertEqual(helper.main(), 0)
+        self.assertTrue(prepare.call_args.kwargs["with_device_recovery"])
+        self.assertTrue(
+            json.loads((run / "preparation.json").read_text())["device_recovery"]
+        )
+
+    def test_nonpositive_build_number_is_rejected_without_preparation(self) -> None:
+        for number in ("0", "-1", "text"):
+            run = self.root / ("bad-build-" + number)
+            argv = [
+                "build_apk.py",
+                "--no-device-recovery",
+                "--run-dir",
+                str(run),
+                "--jdk-home",
+                "jdk",
+                "--sdk-root",
+                "sdk",
+                "--build-number",
+                number,
+            ]
+            with (
+                patch.object(sys, "argv", argv),
+                patch.object(helper, "run_logged") as runner,
+                patch.object(helper, "build_environment") as environment,
+                redirect_stderr(io.StringIO()),
+                self.assertRaises(SystemExit) as caught,
+            ):
+                helper.main()
+            self.assertEqual(caught.exception.code, 2)
+            environment.assert_not_called()
+            runner.assert_not_called()
+            self.assertFalse(run.exists())
 
 
 if __name__ == "__main__":

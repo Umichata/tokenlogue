@@ -18,15 +18,26 @@ from chat.models import (
     MessageStatus,
     PriceComponents,
 )
+from i18n import tr
+from storage.database_connections import (
+    ContentAccess,
+    encrypt_value,
+)
+from storage.database_connections import (
+    connection as protected_connection,
+)
 
 
 class SqliteChatRepository:
-    def __init__(self, database_path: str | Path) -> None:
+    def __init__(
+        self, database_path: str | Path, access: ContentAccess | None = None
+    ) -> None:
         self.path = Path(database_path)
+        self.access = access
 
     def create_chat(self, chat: Chat) -> None:
         _require_chat(chat)
-        with self._connection() as connection:
+        with self._connection("write", chat_id=chat.id) as connection:
             connection.execute("BEGIN IMMEDIATE")
             _insert_chat(connection, chat)
             _insert_budget(
@@ -49,27 +60,27 @@ class SqliteChatRepository:
         """Атомарно сохраняет чат и его первоначально подтверждённый бюджет."""
         _require_chat(chat)
         if isinstance(token_limit, bool) or not isinstance(token_limit, int):
-            raise ValueError("Токен-бюджет должен быть целым числом")
+            raise ValueError(tr("service.token_integer"))
         if token_limit <= 0:
-            raise ValueError("Токен-бюджет должен быть положительным")
+            raise ValueError(tr("service.token_positive"))
         if isinstance(max_completion_tokens, bool) or not isinstance(
             max_completion_tokens,
             int,
         ):
-            raise ValueError("Максимум ответа должен быть целым числом")
+            raise ValueError(tr("service.completion_integer_short"))
         if max_completion_tokens < 16 or max_completion_tokens > token_limit:
-            raise ValueError("Некорректный максимум токенов ответа")
+            raise ValueError(tr("service.completion_invalid"))
         if (
             not isinstance(cost_limit_usd, Decimal)
             or not cost_limit_usd.is_finite()
             or cost_limit_usd < 0
         ):
-            raise ValueError("Некорректный денежный бюджет")
+            raise ValueError(tr("service.money_invalid"))
         if chat.mode is ChatMode.FREE and cost_limit_usd != 0:
-            raise ValueError("Бесплатный чат не имеет денежного бюджета")
+            raise ValueError(tr("service.free_no_money"))
         if chat.mode is ChatMode.PAID and cost_limit_usd <= 0:
-            raise ValueError("Платному чату требуется положительный денежный бюджет")
-        with self._connection() as connection:
+            raise ValueError(tr("service.paid_positive_money"))
+        with self._connection("write", chat_id=chat.id) as connection:
             connection.execute("BEGIN IMMEDIATE")
             _insert_chat(connection, chat)
             _insert_budget(
@@ -92,7 +103,7 @@ class SqliteChatRepository:
         return [_chat_from_row(row) for row in rows]
 
     def get_chat(self, chat_id: str) -> Chat | None:
-        _require_identifier(chat_id, "чата")
+        _require_identifier(chat_id, tr("service.label.chat"))
         with self._connection() as connection:
             row = connection.execute(
                 "SELECT * FROM chats WHERE id = ?",
@@ -101,22 +112,36 @@ class SqliteChatRepository:
         return _chat_from_row(row) if row is not None else None
 
     def rename_chat(self, chat_id: str, title: str, updated_at: datetime) -> bool:
-        _require_identifier(chat_id, "чата")
-        _require_text(title, "название чата")
-        with self._connection() as connection:
+        _require_identifier(chat_id, tr("service.label.chat"))
+        _require_text(title, tr("service.label.title"))
+        with self._connection("write", chat_id=chat_id) as connection:
             cursor = connection.execute(
                 """
                 UPDATE chats
-                SET title = ?, updated_at = ?
+                SET title = ?, title_is_manual = 1, updated_at = ?
                 WHERE id = ?
                 """,
-                (title, _serialize_datetime(updated_at), chat_id),
+                (
+                    encrypt_value(
+                        connection,
+                        title,
+                        table="chats",
+                        field="title",
+                        record_id=chat_id,
+                    ),
+                    _serialize_datetime(updated_at),
+                    chat_id,
+                ),
             )
+            if getattr(connection, "cipher", None) is not None:
+                connection.execute(
+                    "UPDATE chats SET title_origin = 'manual' WHERE id = ?", (chat_id,)
+                )
         return cursor.rowcount == 1
 
     def touch_chat(self, chat_id: str, updated_at: datetime) -> bool:
-        _require_identifier(chat_id, "чата")
-        with self._connection() as connection:
+        _require_identifier(chat_id, tr("service.label.chat"))
+        with self._connection("write", chat_id=chat_id) as connection:
             cursor = connection.execute(
                 "UPDATE chats SET updated_at = ? WHERE id = ?",
                 (_serialize_datetime(updated_at), chat_id),
@@ -124,24 +149,24 @@ class SqliteChatRepository:
         return cursor.rowcount == 1
 
     def delete_chat(self, chat_id: str) -> bool:
-        _require_identifier(chat_id, "чата")
-        with self._connection() as connection:
+        _require_identifier(chat_id, tr("service.label.chat"))
+        with self._connection("write", chat_id=chat_id) as connection:
             cursor = connection.execute("DELETE FROM chats WHERE id = ?", (chat_id,))
         return cursor.rowcount == 1
 
     def create_message(self, message: Message) -> None:
         """Подготавливает локальную запись сообщения для следующего этапа."""
         if not isinstance(message, Message):
-            raise ValueError("Некорректное сообщение")
-        _require_identifier(message.id, "сообщения")
-        _require_identifier(message.chat_id, "чата")
-        _require_identifier(message.turn_id, "попытки")
+            raise ValueError(tr("service.message_invalid"))
+        _require_identifier(message.id, tr("service.label.message"))
+        _require_identifier(message.chat_id, tr("service.label.chat"))
+        _require_identifier(message.turn_id, tr("service.label.turn"))
         _require_text(
             message.content,
-            "текст сообщения",
+            tr("service.label.message_text"),
             allow_empty=message.role is MessageRole.ASSISTANT,
         )
-        with self._connection() as connection:
+        with self._connection("write", chat_id=message.chat_id) as connection:
             connection.execute(
                 """
                 INSERT INTO messages (
@@ -166,7 +191,15 @@ class SqliteChatRepository:
                     message.chat_id,
                     message.turn_id,
                     message.role.value,
-                    message.content,
+                    encrypt_value(
+                        connection,
+                        message.content,
+                        table="messages",
+                        field="content",
+                        record_id=message.id,
+                        chat_id=message.chat_id,
+                        role=message.role.value,
+                    ),
                     message.status.value,
                     message.requested_model_id,
                     message.actual_model_id,
@@ -179,7 +212,7 @@ class SqliteChatRepository:
             )
 
     def list_messages(self, chat_id: str) -> list[Message]:
-        _require_identifier(chat_id, "чата")
+        _require_identifier(chat_id, tr("service.label.chat"))
         with self._connection() as connection:
             rows = connection.execute(
                 """
@@ -199,15 +232,13 @@ class SqliteChatRepository:
         return [_message_from_row(row) for row in rows]
 
     @contextmanager
-    def _connection(self) -> Iterator[sqlite3.Connection]:
-        connection = sqlite3.connect(self.path, timeout=5.0)
-        connection.row_factory = sqlite3.Row
-        connection.execute("PRAGMA foreign_keys = ON")
-        try:
-            with connection:
-                yield connection
-        finally:
-            connection.close()
+    def _connection(
+        self, operation: str = "read", *, chat_id: str = "", record_id: str = ""
+    ) -> Iterator[sqlite3.Connection]:
+        with protected_connection(
+            self.path, self.access, operation, chat_id=chat_id, record_id=record_id
+        ) as connection:
+            yield connection
 
 
 def _chat_from_row(row: sqlite3.Row) -> Chat:
@@ -233,6 +264,9 @@ def _chat_from_row(row: sqlite3.Row) -> Chat:
         ),
         pricing_overrides=_parse_overrides(str(row["pricing_overrides_json"])),
         pricing_snapshot_complete=bool(row["pricing_snapshot_complete"]),
+        title_origin=str(row["title_origin"])
+        if "title_origin" in row.keys()
+        else "legacy",
     )
 
 
@@ -283,7 +317,9 @@ def _insert_chat(connection: sqlite3.Connection, chat: Chat) -> None:
         """,
         (
             chat.id,
-            chat.title,
+            encrypt_value(
+                connection, chat.title, table="chats", field="title", record_id=chat.id
+            ),
             chat.mode.value,
             chat.requested_model_id,
             chat.requested_model_name,
@@ -299,6 +335,12 @@ def _insert_chat(connection: sqlite3.Connection, chat: Chat) -> None:
             _serialize_datetime(chat.updated_at),
         ),
     )
+
+    if getattr(connection, "cipher", None) is not None:
+        connection.execute(
+            "UPDATE chats SET title_origin=?,title_is_manual=? WHERE id=?",
+            (chat.title_origin, int(chat.title_origin == "manual"), chat.id),
+        )
 
 
 def _insert_budget(
@@ -349,7 +391,7 @@ def _optional_int(value: object) -> int | None:
         return value
     if isinstance(value, str):
         return int(value)
-    raise TypeError("Некорректное целочисленное значение в базе чатов")
+    raise TypeError(tr("service.chat_integer_invalid"))
 
 
 def _serialize_overrides(overrides: tuple[PriceComponents, ...]) -> str:
@@ -374,13 +416,13 @@ def _parse_overrides(value: str) -> tuple[PriceComponents, ...]:
     try:
         payload = json.loads(value)
     except json.JSONDecodeError as error:
-        raise ValueError("Повреждён снимок цен чата") from error
+        raise ValueError(tr("service.storage_title_snapshot")) from error
     if not isinstance(payload, list):
-        raise ValueError("Повреждён снимок цен чата")
+        raise ValueError(tr("service.storage_title_snapshot"))
     parsed: list[PriceComponents] = []
     for item in payload:
         if not isinstance(item, dict):
-            raise ValueError("Повреждён снимок цен чата")
+            raise ValueError(tr("service.storage_title_snapshot"))
         try:
             pricing = PriceComponents(
                 prompt=Decimal(str(item["prompt"])),
@@ -391,26 +433,26 @@ def _parse_overrides(value: str) -> tuple[PriceComponents, ...]:
                 input_cache_write=Decimal(str(item["input_cache_write"])),
             )
         except (KeyError, ValueError) as error:
-            raise ValueError("Повреждён снимок цен чата") from error
+            raise ValueError(tr("service.storage_title_snapshot")) from error
         if not pricing.valid:
-            raise ValueError("Повреждён снимок цен чата")
+            raise ValueError(tr("service.storage_title_snapshot"))
         parsed.append(pricing)
     return tuple(parsed)
 
 
 def _require_chat(value: object) -> None:
     if not isinstance(value, Chat):
-        raise ValueError("Некорректный объект чата")
-    _require_identifier(value.id, "чата")
-    _require_text(value.title, "название чата")
-    _require_identifier(value.requested_model_id, "модели")
+        raise ValueError(tr("service.chat_object_invalid"))
+    _require_identifier(value.id, tr("service.label.chat"))
+    _require_text(value.title, tr("service.label.title"))
+    _require_identifier(value.requested_model_id, tr("service.label.model"))
 
 
 def _require_identifier(value: object, label: str) -> None:
     if not isinstance(value, str) or not value.strip():
-        raise ValueError(f"Некорректный идентификатор {label}")
+        raise ValueError(tr("service.identifier_invalid", field=label))
 
 
 def _require_text(value: object, label: str, *, allow_empty: bool = False) -> None:
     if not isinstance(value, str) or (not allow_empty and not value.strip()):
-        raise ValueError(f"Некорректный {label}")
+        raise ValueError(tr("service.field_invalid", field=label))

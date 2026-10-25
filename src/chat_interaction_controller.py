@@ -19,6 +19,7 @@ from chat.errors import ChatErrorType, safe_error_message
 from chat.models import Chat, Message
 from chat.sending import MessageSendingService, MessageSendPreview, SendMessageResult
 from chat.service import ChatService
+from i18n import tr
 
 
 @dataclass(frozen=True)
@@ -94,15 +95,15 @@ class ChatInteractionController:
         self._active_chat_id = None
 
     async def select_chat(self, chat_id: str) -> ActiveChatState:
-        _require_identifier(chat_id, "чата")
+        _require_identifier(chat_id, tr("service.label.chat"))
         if not self._active:
-            raise RuntimeError("Чат-сессия неактивна")
+            raise RuntimeError(tr("service.session_inactive"))
         self._generation += 1
         self._active_chat_id = chat_id
         return await self.load_state(chat_id)
 
     async def load_state(self, chat_id: str) -> ActiveChatState:
-        _require_identifier(chat_id, "чата")
+        _require_identifier(chat_id, tr("service.label.chat"))
         chat, messages, budget, turns = await asyncio.gather(
             self._chat_service.get_chat(chat_id),
             self._chat_service.list_messages(chat_id),
@@ -110,7 +111,7 @@ class ChatInteractionController:
             self._budget_service.list_chat_turns(chat_id),
         )
         if chat is None:
-            raise KeyError("Чат не найден")
+            raise KeyError(tr("service.chat_missing"))
         return ActiveChatState(
             chat=chat,
             messages=tuple(messages),
@@ -260,13 +261,13 @@ class ChatInteractionController:
         *,
         cost_increase_confirmed: bool,
     ) -> ActiveChatState:
-        _require_identifier(chat_id, "чата")
+        _require_identifier(chat_id, tr("service.label.chat"))
         if not isinstance(configuration, ChatLimitConfiguration):
-            raise ValueError("Некорректная конфигурация лимитов")
+            raise ValueError(tr("service.limit_config_invalid"))
         if not isinstance(cost_increase_confirmed, bool):
-            raise ValueError("Некорректное подтверждение денежного лимита")
+            raise ValueError(tr("service.money_confirmation_invalid"))
         if self._operation_lock.locked():
-            raise RuntimeError("Нельзя менять лимиты во время отправки")
+            raise RuntimeError(tr("service.limits_during_send"))
         generation = self._generation
         async with self._operation_lock:
             current = await self._budget_service.get_chat_budget(chat_id)
@@ -283,7 +284,7 @@ class ChatInteractionController:
                 cost_increase_confirmed=cost_increase_confirmed,
             )
         if not self._matches(chat_id, generation):
-            raise RuntimeError("Активный чат изменился")
+            raise RuntimeError(tr("service.active_chat_changed"))
         return await self.load_state(chat_id)
 
     async def release_unknown(
@@ -293,12 +294,12 @@ class ChatInteractionController:
         *,
         confirmed: bool,
     ) -> ActiveChatState:
-        _require_identifier(chat_id, "чата")
-        _require_identifier(turn_id, "попытки")
+        _require_identifier(chat_id, tr("service.label.chat"))
+        _require_identifier(turn_id, tr("service.label.turn"))
         if confirmed is not True:
-            raise ValueError("Снятие неизвестного резерва требует подтверждения")
+            raise ValueError(tr("service.release_confirmation"))
         if self._operation_lock.locked():
-            raise RuntimeError("Другая операция ещё выполняется")
+            raise RuntimeError(tr("service.other_operation"))
         generation = self._generation
         async with self._operation_lock:
             await self._budget_service.release_unknown_reservation(
@@ -306,18 +307,18 @@ class ChatInteractionController:
                 confirmed=confirmed,
             )
         if not self._matches(chat_id, generation):
-            raise RuntimeError("Активный чат изменился")
+            raise RuntimeError(tr("service.active_chat_changed"))
         return await self.load_state(chat_id)
 
     async def reconfirm_price(self, chat_id: str, *, confirmed: bool) -> None:
-        _require_identifier(chat_id, "чата")
+        _require_identifier(chat_id, tr("service.label.chat"))
         if confirmed is not True:
-            raise ValueError("Изменение цены требует явного подтверждения")
+            raise ValueError(tr("service.price_explicit_confirmation"))
         if self._operation_lock.locked():
-            raise RuntimeError("Другая операция ещё выполняется")
+            raise RuntimeError(tr("service.other_operation"))
         session = self._session_provider()
         if session is None:
-            raise RuntimeError("Чат-сессия неактивна")
+            raise RuntimeError(tr("service.session_inactive"))
         generation = self._generation
         async with self._operation_lock:
             await self._sending_service.reconfirm_model_price(
@@ -326,7 +327,7 @@ class ChatInteractionController:
                 confirmed=confirmed,
             )
         if not self._matches(chat_id, generation):
-            raise RuntimeError("Активный чат изменился")
+            raise RuntimeError(tr("service.active_chat_changed"))
 
     def _matches(self, chat_id: str, generation: int) -> bool:
         return (
@@ -433,4 +434,4 @@ def _is_identifier(value: object) -> bool:
 
 def _require_identifier(value: object, label: str) -> None:
     if not _is_identifier(value):
-        raise ValueError(f"Некорректный идентификатор {label}")
+        raise ValueError(tr("service.identifier_invalid", field=label))

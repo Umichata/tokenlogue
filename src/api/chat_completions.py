@@ -25,10 +25,10 @@ TOKENS_PER_MILLION = Decimal("1000000")
 @dataclass(frozen=True)
 class ChatCompletionResult:
     content: str | None = field(repr=False)
-    generation_id: str | None
+    generation_id: str | None = field(repr=False)
     requested_model_id: str
     actual_model_id: str | None
-    finish_reason: str | None
+    finish_reason: str | None = field(repr=False)
     prompt_tokens: int | None
     completion_tokens: int | None
     total_tokens: int | None

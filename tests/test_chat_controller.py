@@ -36,9 +36,13 @@ from tests.draft_fakes import MemoryDraftRepository  # noqa: E402
 class FakePage:
     def __init__(self) -> None:
         self.controls: list[ft.Control] = []
-        self.dialogs: list[ft.DialogControl] = []
+        self._dialogs: list[ft.DialogControl] = []
         self.drawer: ft.NavigationDrawer | None = None
         self.width = 400
+
+    @property
+    def dialogs(self) -> list[ft.DialogControl]:
+        return [dialog for dialog in self._dialogs if dialog.open]
 
     def add(self, control: ft.Control) -> None:
         self.controls.append(control)
@@ -47,10 +51,14 @@ class FakePage:
         return None
 
     def show_dialog(self, dialog: ft.DialogControl) -> None:
-        self.dialogs.append(dialog)
+        dialog.open = True
+        self._dialogs.append(dialog)
 
     def pop_dialog(self) -> ft.DialogControl | None:
-        return self.dialogs.pop() if self.dialogs else None
+        dialog = self.dialogs[-1] if self.dialogs else None
+        if dialog is not None:
+            dialog.open = False
+        return dialog
 
     async def show_drawer(self) -> None:
         return None
@@ -262,6 +270,85 @@ class ChatControllerTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(controller.session_active)
         self.assertTrue(controller.workspace_visible)
         self.assertEqual(self.catalog_service.get_calls, 0)
+
+    async def test_replacement_rejects_pending_send_inactive_and_disposed_sessions(
+        self,
+    ) -> None:
+        controller = self._controller()
+        await controller.request_key_replacement()
+        self.assertEqual(self.replace_calls, 0)
+        await controller.activate(
+            "synthetic-session", KeyValidityState.VALID, self.available_limit
+        )
+        view = controller._workspace_view
+        assert view is not None
+        view.set_sending(True)
+        await controller.request_key_replacement()
+        self.assertEqual(self.replace_calls, 0)
+        view.set_sending(False)
+        await controller.request_key_replacement()
+        self.assertEqual(self.replace_calls, 1)
+        controller.deactivate()
+        await controller.request_key_replacement()
+        self.assertEqual(self.replace_calls, 1)
+        await controller.activate(
+            "synthetic-session-new", KeyValidityState.VALID, self.available_limit
+        )
+        controller.dispose()
+        await controller.request_key_replacement()
+        self.assertEqual(self.replace_calls, 1)
+
+    async def test_replacement_request_latch_is_bound_to_session_generation(
+        self,
+    ) -> None:
+        controller = self._controller()
+        first_started, first_release = asyncio.Event(), asyncio.Event()
+        second_started, second_release = asyncio.Event(), asyncio.Event()
+        calls = 0
+
+        async def replace_key() -> None:
+            nonlocal calls
+            calls += 1
+            if calls == 1:
+                first_started.set()
+                await first_release.wait()
+            else:
+                second_started.set()
+                await second_release.wait()
+
+        controller._on_replace_key = replace_key
+        await controller.activate(
+            "synthetic-session", KeyValidityState.VALID, self.available_limit
+        )
+        first = asyncio.create_task(controller.request_key_replacement())
+        second = None
+        try:
+            await asyncio.wait_for(first_started.wait(), timeout=1)
+            await asyncio.gather(
+                controller.request_key_replacement(),
+                controller.request_key_replacement(),
+            )
+            self.assertEqual(calls, 1)
+            first_generation = controller.session_generation
+            controller.deactivate()
+            await controller.activate(
+                "synthetic-session-new", KeyValidityState.VALID, self.available_limit
+            )
+            self.assertNotEqual(controller.session_generation, first_generation)
+            second = asyncio.create_task(controller.request_key_replacement())
+            await asyncio.wait_for(second_started.wait(), timeout=1)
+            self.assertEqual(calls, 2)
+            first_release.set()
+            await first
+            await controller.request_key_replacement()
+            self.assertEqual(calls, 2)
+        finally:
+            first_release.set()
+            second_release.set()
+            await first
+            if second is not None:
+                await second
+            controller.dispose()
 
     async def test_unknown_session_opens_before_slow_http_finishes(self) -> None:
         self.chat_service.chats = [_existing_chat()]
@@ -721,6 +808,10 @@ def _available_key() -> KeyValidationResult:
 
 
 async def _wait_for_key_validation(controller: ChatSessionController) -> None:
+    task = controller._key_validation_task
+    if task is not None:
+        await asyncio.wait_for(asyncio.shield(task), timeout=0.5)
+
     async def wait_until_finished() -> None:
         while controller.key_validation_in_progress:
             await asyncio.sleep(0.001)

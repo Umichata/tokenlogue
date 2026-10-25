@@ -1,9 +1,10 @@
 """Пользовательские экраны мобильного приложения."""
 
 from .auth_view import (
+    DeviceRecoveryView,
     KeyEntryView,
-    PinDisplayView,
     PinLoginView,
+    PinSetupView,
     StorageErrorView,
     build_reset_dialog,
 )
@@ -28,6 +29,7 @@ from .model_selection_view import (
 from .styles import configure_page
 
 __all__ = [
+    "DeviceRecoveryView",
     "CatalogLoadingView",
     "ChatWorkspaceView",
     "ChatLimitsDialog",
@@ -35,7 +37,7 @@ __all__ = [
     "ModeSelectionView",
     "ModelSelectionView",
     "NewChatLimitsView",
-    "PinDisplayView",
+    "PinSetupView",
     "PinLoginView",
     "RenameChatDialog",
     "StorageErrorView",

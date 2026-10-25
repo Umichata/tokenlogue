@@ -23,7 +23,7 @@ from chat.drafts import DRAFT_STORAGE_MESSAGE, DraftStorageError  # noqa: E402
 from chat.errors import ChatErrorType  # noqa: E402
 from chat.models import FREE_ROUTER_MODEL, ChatMode  # noqa: E402
 from chat_controller import ChatSessionController  # noqa: E402
-from storage.database import AuthDatabase  # noqa: E402
+from storage.database import SCHEMA_VERSION, AuthDatabase  # noqa: E402
 from tests import test_chat_ui_integration as ui_fixture  # noqa: E402
 from tests.test_chat_ui_integration import (  # noqa: E402
     BlockingCompletionClient,
@@ -347,6 +347,56 @@ class ChatDraftUiTests(unittest.IsolatedAsyncioTestCase):
         await self.controller.select_chat(self.a)
         self.assertEqual(self._text(), EXACT_TEXT)
 
+    async def test_lock_revokes_access_before_slow_latest_draft_write(self) -> None:
+        view = self.controller._workspace_view
+        assert view is not None and view.composer is not None
+        view.composer.message_field.value = EXACT_TEXT
+        started, release = threading.Event(), threading.Event()
+        save = self.fixture.draft_repository.save_draft
+
+        def delayed(draft):
+            started.set()
+            if not release.wait(3):
+                raise TimeoutError("Тест не освободил запись черновика")
+            return save(draft)
+
+        with patch.object(self.fixture.draft_repository, "save_draft", delayed):
+            locking = asyncio.create_task(self.controller.lock_application())
+            self.assertTrue(await asyncio.to_thread(started.wait, 1))
+            try:
+                self.assertFalse(self.controller.session_active)
+                self.assertFalse(self.controller.workspace_visible)
+            finally:
+                release.set()
+                await locking
+        self.assertEqual(
+            self.fixture.draft_repository.get_draft(self.a).text, EXACT_TEXT
+        )
+        await self.fixture._activate(self.controller)
+        self.assertEqual(self.controller.selected_chat_id, self.a)
+        self.assertEqual(self._text(), EXACT_TEXT)
+
+    async def test_lock_write_failure_keeps_cached_text_and_warns_after_login(
+        self,
+    ) -> None:
+        view = self.controller._workspace_view
+        assert view is not None and view.composer is not None
+        view.composer.message_field.value = EXACT_TEXT
+        with patch.object(
+            self.fixture.draft_repository,
+            "save_draft",
+            side_effect=sqlite3.OperationalError("Искусственный сбой записи"),
+        ):
+            await self.controller.lock_application()
+        self.assertFalse(self.controller.session_active)
+        self.assertTrue(self.controller.draft_save_failed)
+        await self.fixture._activate(self.controller)
+        self.assertEqual(self.controller.selected_chat_id, self.a)
+        self.assertEqual(self._text(), EXACT_TEXT)
+        restored = self.controller._workspace_view
+        assert restored is not None and restored.composer is not None
+        self.assertEqual(restored.composer.status.value, DRAFT_STORAGE_MESSAGE)
+
     async def test_lock_and_old_view_event_do_not_replace_new_session_draft(
         self,
     ) -> None:
@@ -366,7 +416,9 @@ class ChatDraftUiTests(unittest.IsolatedAsyncioTestCase):
             self.fixture.draft_repository.get_draft(self.a).text, "new session"
         )
         with closing(sqlite3.connect(self.fixture.chat_repository.path)) as connection:
-            self.assertEqual(connection.execute("PRAGMA user_version").fetchone()[0], 5)
+            self.assertEqual(
+                connection.execute("PRAGMA user_version").fetchone()[0], SCHEMA_VERSION
+            )
 
     async def test_other_chat_draft_never_enters_request_context(self) -> None:
         await self.controller.select_chat(self.b)

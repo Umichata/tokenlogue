@@ -20,12 +20,11 @@ from chat.models import (
     is_paid_model,
     is_standard_text_chat_model,
 )
+from i18n import tr
 
 OPENROUTER_MODELS_URL = "https://openrouter.ai/api/v1/models"
 DEFAULT_CATALOG_TTL_SECONDS = 300.0
-CATALOG_WARNING = (
-    "Список отдельных бесплатных моделей временно недоступен. Платный режим отключён."
-)
+CATALOG_WARNING = tr("service.catalog_warning")
 # Канонические ключи внешнего pricing из GET /api/v1/models.
 PRICE_FIELDS = {
     "prompt",

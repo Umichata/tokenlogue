@@ -89,6 +89,37 @@ class ContextTests(unittest.TestCase):
             ["recent", "answer", "current"],
         )
 
+    def test_full_history_at_minimum_reserve_is_preserved_at_exact_boundary(
+        self,
+    ) -> None:
+        history = [
+            _message("u", "turn", MessageRole.USER, "Привет", MessageStatus.SENT),
+            _message("a", "turn", MessageRole.ASSISTANT, "🙂", MessageStatus.SENT),
+        ]
+        text = "é"
+        prompt = 32 + sum(estimate_message_tokens(item.content) for item in history)
+        prompt += estimate_message_tokens(text)
+        context = build_conversation_context(
+            history,
+            text,
+            context_length=prompt + 16,
+            completion_reserve=16,
+            require_full_history=True,
+        )
+        self.assertEqual(context.estimated_prompt_tokens, prompt)
+        self.assertFalse(context.history_truncated)
+        self.assertEqual(
+            [item.content for item in context.messages], ["Привет", "🙂", text]
+        )
+        with self.assertRaises(ContextWindowExceeded):
+            build_conversation_context(
+                history,
+                text,
+                context_length=prompt + 15,
+                completion_reserve=16,
+                require_full_history=True,
+            )
+
     def test_current_message_is_rejected_before_api_when_it_does_not_fit(self) -> None:
         with self.assertRaises(ContextWindowExceeded):
             build_conversation_context(

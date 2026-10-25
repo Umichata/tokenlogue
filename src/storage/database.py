@@ -9,9 +9,12 @@ from contextlib import contextmanager
 from pathlib import Path
 
 from auth.models import LoginAttemptState, PinRecord, StoredAuthState
+from i18n import tr
+from storage.database_connections import connection as protected_connection
 
 DATABASE_FILENAME = "tokenlogue.sqlite3"
-SCHEMA_VERSION = 5
+SCHEMA_VERSION = 6
+ENCRYPTED_SCHEMA_VERSION = 7
 
 
 class UnsupportedSchemaVersion(RuntimeError):
@@ -69,7 +72,7 @@ class AuthDatabase:
     def save_auth_state(self, registration_id: str, record: PinRecord) -> None:
         """Атомарно связывает PIN verifier с идентификатором регистрации."""
         if not registration_id:
-            raise ValueError("Идентификатор регистрации не может быть пустым")
+            raise ValueError(tr("service.registration_empty"))
         with self._connection() as connection:
             connection.execute(
                 """
@@ -138,7 +141,7 @@ class AuthDatabase:
                 """
             ).fetchone()
             if row is None:
-                raise RuntimeError("Данные PIN отсутствуют")
+                raise RuntimeError(tr("service.pin_missing"))
 
             locked_until = (
                 float(row["locked_until"]) if row["locked_until"] is not None else None
@@ -176,38 +179,47 @@ class AuthDatabase:
             2: _migrate_2_to_3,
             3: _migrate_3_to_4,
             4: _migrate_4_to_5,
+            5: _migrate_5_to_6,
         }
-        with self._connection() as connection:
+        with self._connection(allow_create=not self.path.exists()) as connection:
             connection.execute("BEGIN IMMEDIATE")
             current_version = int(
                 connection.execute("PRAGMA user_version").fetchone()[0]
             )
-            if current_version > SCHEMA_VERSION:
-                raise UnsupportedSchemaVersion(
-                    "Версия базы данных новее версии приложения"
-                )
+            if (
+                current_version == ENCRYPTED_SCHEMA_VERSION
+                and connection.execute(
+                    "SELECT 1 FROM sqlite_master WHERE type='table' AND name='content_protection'"
+                ).fetchone()
+                is None
+            ):
+                raise UnsupportedSchemaVersion(tr("service.schema_newer"))
+            if current_version > ENCRYPTED_SCHEMA_VERSION:
+                raise UnsupportedSchemaVersion(tr("service.schema_newer"))
 
             while current_version < SCHEMA_VERSION:
                 migration = migrations.get(current_version)
                 if migration is None:
-                    raise UnsupportedSchemaVersion(
-                        "Для версии базы данных отсутствует миграция"
-                    )
+                    raise UnsupportedSchemaVersion(tr("service.migration_missing"))
                 migration(connection)
                 current_version += 1
                 connection.execute(f"PRAGMA user_version = {current_version}")
-            _recover_interrupted_turns(connection)
+            if current_version < ENCRYPTED_SCHEMA_VERSION:
+                _recover_interrupted_turns(connection)
 
     @contextmanager
-    def _connection(self) -> Iterator[sqlite3.Connection]:
-        connection = sqlite3.connect(self.path, timeout=5.0)
-        connection.row_factory = sqlite3.Row
-        connection.execute("PRAGMA foreign_keys = ON")
-        try:
-            with connection:
-                yield connection
-        finally:
-            connection.close()
+    def _connection(
+        self, *, allow_create: bool = False
+    ) -> Iterator[sqlite3.Connection]:
+        with protected_connection(
+            self.path, auth_only=True, allow_create=allow_create
+        ) as connection:
+            yield connection
+
+    def recover_interrupted_turns(self) -> None:
+        """Восстанавливает учёт после разрешённого открытия защищённой базы."""
+        with self._connection() as connection:
+            _recover_interrupted_turns(connection)
 
 
 def _migrate_0_to_1(connection: sqlite3.Connection) -> None:
@@ -515,6 +527,14 @@ def _migrate_4_to_5(connection: sqlite3.Connection) -> None:
     )
 
 
+def _migrate_5_to_6(connection: sqlite3.Connection) -> None:
+    # Прежняя схема не различала ручное и автоматическое название.
+    connection.execute(
+        "ALTER TABLE chats ADD COLUMN title_is_manual INTEGER NOT NULL DEFAULT 0 "
+        "CHECK (title_is_manual IN (0, 1))"
+    )
+
+
 def _recover_interrupted_turns(connection: sqlite3.Connection) -> None:
     timestamp = "strftime('%Y-%m-%dT%H:%M:%f+00:00', 'now')"
     connection.execute(
@@ -541,7 +561,7 @@ def _recover_interrupted_turns(connection: sqlite3.Connection) -> None:
         f"""
         UPDATE chat_budgets
         SET state = 'accounting_unknown', updated_at = {timestamp}
-        WHERE EXISTS (
+        WHERE state != 'accounting_unknown' AND EXISTS (
             SELECT 1 FROM turns
             WHERE turns.chat_id = chat_budgets.chat_id
               AND turns.accounting_status = 'unknown'
@@ -555,7 +575,7 @@ def _database_path(data_dir: str | Path | None) -> Path:
     if data_dir is None:
         storage_data = os.environ.get("FLET_APP_STORAGE_DATA")
         if not storage_data:
-            raise RuntimeError("FLET_APP_STORAGE_DATA не задан")
+            raise RuntimeError(tr("service.storage_path_missing"))
         base_dir = Path(storage_data)
     else:
         base_dir = Path(data_dir)

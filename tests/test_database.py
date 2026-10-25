@@ -19,6 +19,9 @@ from storage.database import (  # noqa: E402
     SCHEMA_VERSION,
     AuthDatabase,
     UnsupportedSchemaVersion,
+    _migrate_3_to_4,
+    _migrate_4_to_5,
+    _migrate_5_to_6,
 )
 
 REGISTRATION_ID = "registration-test-id"
@@ -206,6 +209,96 @@ class AuthDatabaseTests(unittest.TestCase):
             self.assertIsNone(budget["cost_limit_usd"])
             self.assertEqual(turn["status"], "sent")
 
+    def test_version_five_upgrade_keeps_pin_history_draft_and_unknown_reserve(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as data_dir:
+            path = Path(data_dir) / DATABASE_FILENAME
+            _create_version_five_database(path)
+            with closing(sqlite3.connect(path)) as connection:
+                auth_before = connection.execute("SELECT * FROM auth_state").fetchall()
+                chat_before = connection.execute("SELECT * FROM chats").fetchall()
+                history_before = connection.execute("SELECT * FROM messages").fetchall()
+                turns_before = connection.execute("SELECT * FROM turns").fetchall()
+                drafts_before = connection.execute(
+                    "SELECT * FROM chat_drafts"
+                ).fetchall()
+                budget_before = connection.execute(
+                    "SELECT token_limit, cost_limit_usd, reserved_tokens, "
+                    "cost_reserved_usd, state FROM chat_budgets"
+                ).fetchall()
+
+            AuthDatabase(data_dir)
+
+            with closing(sqlite3.connect(path)) as connection:
+                self.assertEqual(
+                    connection.execute("PRAGMA user_version").fetchone()[0], 6
+                )
+                self.assertEqual(
+                    connection.execute("SELECT * FROM auth_state").fetchall(),
+                    auth_before,
+                )
+                self.assertEqual(
+                    connection.execute("SELECT * FROM messages").fetchall(),
+                    history_before,
+                )
+                self.assertEqual(
+                    connection.execute("SELECT * FROM turns").fetchall(), turns_before
+                )
+                self.assertEqual(
+                    connection.execute("SELECT * FROM chat_drafts").fetchall(),
+                    drafts_before,
+                )
+                rows = connection.execute("SELECT * FROM chats").fetchall()
+                self.assertEqual([row[:-1] for row in rows], chat_before)
+                self.assertEqual([row[-1] for row in rows], [0])
+                self.assertEqual(
+                    connection.execute(
+                        "SELECT token_limit, cost_limit_usd, reserved_tokens, "
+                        "cost_reserved_usd, state FROM chat_budgets"
+                    ).fetchall(),
+                    budget_before,
+                )
+                self.assertEqual(
+                    connection.execute("PRAGMA integrity_check").fetchone()[0], "ok"
+                )
+                self.assertEqual(
+                    connection.execute("PRAGMA foreign_key_check").fetchall(), []
+                )
+
+    def test_version_five_upgrade_failure_rolls_back_column_and_version(self) -> None:
+        with tempfile.TemporaryDirectory() as data_dir:
+            path = Path(data_dir) / DATABASE_FILENAME
+            _create_version_five_database(path)
+
+            def fail_after_column(connection: sqlite3.Connection) -> None:
+                _migrate_5_to_6(connection)
+                raise RuntimeError("synthetic migration failure")
+
+            with patch("storage.database._migrate_5_to_6", fail_after_column):
+                with self.assertRaisesRegex(RuntimeError, "synthetic migration"):
+                    AuthDatabase(data_dir)
+            with closing(sqlite3.connect(path)) as connection:
+                self.assertEqual(
+                    connection.execute("PRAGMA user_version").fetchone()[0], 5
+                )
+                self.assertNotIn(
+                    "title_is_manual",
+                    [row[1] for row in connection.execute("PRAGMA table_info(chats)")],
+                )
+                self.assertEqual(
+                    connection.execute("SELECT COUNT(*) FROM auth_state").fetchone()[0],
+                    1,
+                )
+                self.assertEqual(
+                    connection.execute("SELECT COUNT(*) FROM chat_drafts").fetchone()[
+                        0
+                    ],
+                    1,
+                )
+            reopened = AuthDatabase(data_dir)
+            self.assertIsNotNone(reopened.get_auth_state())
+
     def test_rejects_unknown_newer_schema(self) -> None:
         with tempfile.TemporaryDirectory() as data_dir:
             database_path = Path(data_dir) / DATABASE_FILENAME
@@ -236,6 +329,26 @@ class AuthDatabaseTests(unittest.TestCase):
             "reserved_tokens",
         ):
             self.assertEqual(turn_columns[name], "INTEGER")
+
+
+def _create_version_five_database(path: Path) -> None:
+    _create_version_three_database(path)
+    with closing(sqlite3.connect(path)) as connection:
+        with connection:
+            _migrate_3_to_4(connection)
+            _migrate_4_to_5(connection)
+            connection.execute("PRAGMA user_version = 5")
+            connection.execute(
+                "INSERT INTO chat_drafts VALUES ('existing-chat', 7, 'Старый черновик')"
+            )
+            connection.execute(
+                "UPDATE turns SET accounting_status = 'unknown', "
+                "reserved_tokens = 16, reserved_cost_usd = '0.01'"
+            )
+            connection.execute(
+                "UPDATE chat_budgets SET state = 'accounting_unknown', "
+                "reserved_tokens = 16, cost_reserved_usd = '0.01'"
+            )
 
 
 def _create_version_one_database(path: Path) -> None:

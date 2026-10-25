@@ -20,7 +20,7 @@ class AuthStatus(str, Enum):
 
     SETUP_REQUIRED = "setup_required"
     PIN_REQUIRED = "pin_required"
-    PIN_CREATED = "pin_created"
+    PIN_CHOICE_REQUIRED = "pin_choice_required"
     AUTHENTICATED = "authenticated"
     INVALID_PIN = "invalid_pin"
     LOCKED = "locked"
@@ -141,6 +141,7 @@ class AuthResult:
     message: str = ""
     initial_route: InitialRoute | None = None
     pin: str | None = field(default=None, repr=False)
+    pending_setup_token: str | None = field(default=None, repr=False)
     api_key: str | None = field(default=None, repr=False)
     lock_seconds_remaining: int = 0
     key_validity: KeyValidityState = KeyValidityState.UNKNOWN

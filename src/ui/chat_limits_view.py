@@ -21,9 +21,10 @@ from chat.models import (
     Chat,
     ChatMode,
     PriceComponents,
-    format_price_per_million,
 )
 from chat.sending import MessageSendPreview
+from i18n import display_model_name, fresh_text, money, number, tr
+from ui.branding import BrandHeader, BrandLoader
 from ui.styles import ERROR_COLOR, MUTED_COLOR, detail_row, primary_button_style
 
 LimitSubmitCallback = Callable[[str, str, str | None], Awaitable[None]]
@@ -37,7 +38,7 @@ class ChatLimitsForm:
         on_submit: LimitSubmitCallback,
         *,
         initial_budget: ChatBudget | None = None,
-        submit_label: str = "Сохранить лимиты",
+        submit_label: str | None = None,
     ) -> None:
         self._mode = mode
         self._on_submit = on_submit
@@ -48,12 +49,12 @@ class ChatLimitsForm:
             initial_budget.max_completion_tokens if initial_budget is not None else None
         )
         self.token_limit = ft.TextField(
-            label="Общий лимит токенов чата",
+            label=tr("limits.total"),
             value=str(initial_token_limit or DEFAULT_CHAT_TOKEN_LIMIT),
             keyboard_type=ft.KeyboardType.NUMBER,
         )
         self.max_completion_tokens = ft.TextField(
-            label="Максимум токенов одного ответа",
+            label=tr("limits.completion"),
             value=str(initial_completion_limit or DEFAULT_MAX_COMPLETION_TOKENS),
             keyboard_type=ft.KeyboardType.NUMBER,
         )
@@ -61,15 +62,13 @@ class ChatLimitsForm:
         fields: list[ft.Control] = [
             self.token_limit,
             ft.Text(
-                "Общий лимит учитывает prompt- и completion-токены всех запросов "
-                "этого чата.",
+                tr("limits.total_help"),
                 size=12,
                 color=MUTED_COLOR,
             ),
             self.max_completion_tokens,
             ft.Text(
-                "Максимум ответа применяется отдельно к одному ответу. До завершения "
-                "запроса токены учитываются как защитный резерв.",
+                tr("limits.completion_help"),
                 size=12,
                 color=MUTED_COLOR,
             ),
@@ -82,7 +81,7 @@ class ChatLimitsForm:
                 else SUGGESTED_PAID_COST_LIMIT_USD
             )
             self.cost_limit = ft.TextField(
-                label="Денежный лимит чата, USD",
+                label=tr("limits.money"),
                 value=format_decimal_usd(suggested),
                 keyboard_type=ft.KeyboardType.NUMBER,
             )
@@ -90,9 +89,7 @@ class ChatLimitsForm:
                 [
                     self.cost_limit,
                     ft.Text(
-                        "Предложенное значение нужно подтвердить самостоятельно. "
-                        "Это локальный предохранитель, а не гарантия баланса "
-                        "OpenRouter. Денежный резерв учитывается до результата запроса.",
+                        tr("limits.money_help"),
                         size=12,
                         color=MUTED_COLOR,
                     ),
@@ -100,16 +97,11 @@ class ChatLimitsForm:
             )
         self.error = ft.Text("", color=ERROR_COLOR, visible=False)
         self.submit_button = ft.Button(
-            submit_label,
+            submit_label if submit_label is not None else tr("limits.save"),
             style=primary_button_style(),
             on_click=self._handle_click,
         )
-        self.progress = ft.ProgressRing(
-            width=18,
-            height=18,
-            stroke_width=2,
-            visible=False,
-        )
+        self.progress = BrandLoader(size=26, active=False)
         self.control = ft.Column(
             tight=True,
             spacing=12,
@@ -133,10 +125,10 @@ class ChatLimitsForm:
             max_completion_tokens,
             str,
         ):
-            self.show_error("Лимиты должны быть введены текстом")
+            self.show_error(tr("limits.text_error"))
             return
         if cost_limit is not None and not isinstance(cost_limit, str):
-            self.show_error("Денежный лимит должен быть введён текстом")
+            self.show_error(tr("limits.money_text_error"))
             return
         await self._on_submit(
             token_limit,
@@ -150,10 +142,10 @@ class ChatLimitsForm:
         if self.cost_limit is not None:
             self.cost_limit.disabled = busy
         self.submit_button.disabled = busy
-        self.progress.visible = busy
+        self.progress.set_active(busy)
 
     def show_error(self, message: str) -> None:
-        self.error.value = message
+        self.error.value = fresh_text(message)
         self.error.visible = bool(message)
 
 
@@ -169,12 +161,19 @@ class NewChatLimitsView:
             await on_cancel()
 
         submit_label = (
-            "Создать бесплатный чат" if mode is ChatMode.FREE else "Создать платный чат"
+            tr("limits.create_free")
+            if mode is ChatMode.FREE
+            else tr("limits.create_paid")
         )
         self.form = ChatLimitsForm(mode, on_submit, submit_label=submit_label)
         controls: list[ft.Control] = [
-            ft.Text("Настройка лимитов", theme_style=ft.TextThemeStyle.HEADLINE_MEDIUM),
-            ft.Text(model.name, weight=ft.FontWeight.BOLD),
+            BrandHeader(),
+            ft.Text(
+                tr("limits.configure"), theme_style=ft.TextThemeStyle.HEADLINE_MEDIUM
+            ),
+            ft.Text(
+                display_model_name(model.id, model.name), weight=ft.FontWeight.BOLD
+            ),
             ft.Text(model.id, selectable=True, color=MUTED_COLOR),
         ]
         if mode is ChatMode.PAID:
@@ -184,13 +183,16 @@ class NewChatLimitsView:
                     border_radius=12,
                     padding=12,
                     content=ft.Text(
-                        "Запросы к этой модели могут расходовать баланс OpenRouter.",
+                        tr("limits.paid_warning"),
                         color=ft.Colors.AMBER_300,
                     ),
                 )
             )
         controls.extend(
-            [self.form.control, ft.TextButton("Назад", on_click=handle_cancel)]
+            [
+                self.form.control,
+                ft.TextButton(tr("common.back"), on_click=handle_cancel),
+            ]
         )
         self.control = ft.SafeArea(
             expand=True,
@@ -218,9 +220,9 @@ class ChatLimitsDialog:
         self.control = ft.AlertDialog(
             modal=True,
             scrollable=True,
-            title=ft.Text("Настроить лимиты чата"),
+            title=ft.Text(tr("limits.dialog")),
             content=self.form.control,
-            actions=[ft.TextButton("Отмена", on_click=handle_cancel)],
+            actions=[ft.TextButton(tr("common.cancel"), on_click=handle_cancel)],
             actions_alignment=ft.MainAxisAlignment.END,
         )
 
@@ -238,42 +240,42 @@ def build_paid_request_dialog(
 
     return ft.AlertDialog(
         modal=True,
-        title=ft.Text("Подтвердить платный запрос?"),
+        title=ft.Text(tr("paid.confirm_title")),
         scrollable=True,
         content=ft.Column(
             tight=True,
             controls=[
                 ft.Text(
-                    preview.model_name or "Платная модель", weight=ft.FontWeight.BOLD
+                    preview.model_name or tr("paid.model"), weight=ft.FontWeight.BOLD
                 ),
                 ft.Text(preview.model_id or "", selectable=True, color=MUTED_COLOR),
                 detail_row(
-                    "Оценка входных токенов",
+                    tr("paid.prompt_estimate"),
                     _number_or_unknown(preview.estimated_prompt_tokens),
                 ),
                 detail_row(
-                    "Максимум токенов ответа",
+                    tr("paid.completion_maximum"),
                     _number_or_unknown(preview.max_completion_tokens),
                 ),
                 detail_row(
-                    "Максимальный денежный резерв",
+                    tr("paid.reserve_maximum"),
                     _money_or_unknown(preview.reserved_cost_usd),
                 ),
                 detail_row(
-                    "Остаток бюджета после резерва",
+                    tr("paid.remaining"),
                     _money_or_unknown(preview.remaining_cost_after_reservation),
                 ),
                 ft.Text(
-                    "Это защитная верхняя оценка, а не точная будущая стоимость.",
+                    tr("paid.estimate_help"),
                     size=12,
                     color=MUTED_COLOR,
                 ),
             ],
         ),
         actions=[
-            ft.TextButton("Отмена", on_click=handle_cancel),
+            ft.TextButton(tr("common.cancel"), on_click=handle_cancel),
             ft.Button(
-                "Отправить платный запрос",
+                tr("paid.send"),
                 icon=ft.Icons.PAYMENTS,
                 style=primary_button_style(),
                 on_click=handle_confirm,
@@ -296,25 +298,25 @@ def build_price_reconfirmation_dialog(
 
     return ft.AlertDialog(
         modal=True,
-        title=ft.Text("Цена модели изменилась"),
+        title=ft.Text(tr("paid.price_changed")),
         scrollable=True,
         content=ft.Column(
             tight=True,
             controls=[
-                ft.Text("Ранее подтверждённые верхние цены"),
+                ft.Text(tr("paid.old_prices")),
                 *_price_component_rows(change.confirmed),
-                ft.Text("Текущие верхние цены"),
+                ft.Text(tr("paid.current_prices")),
                 *_price_component_rows(change.current),
                 ft.Text(
-                    "Запрос не будет отправлен, пока новые цены не подтверждены.",
+                    tr("paid.confirm_required"),
                     color=ft.Colors.AMBER_300,
                 ),
             ],
         ),
         actions=[
-            ft.TextButton("Отмена", on_click=handle_cancel),
+            ft.TextButton(tr("common.cancel"), on_click=handle_cancel),
             ft.Button(
-                "Подтвердить новые цены",
+                tr("paid.confirm_prices"),
                 style=primary_button_style(),
                 on_click=handle_confirm,
             ),
@@ -337,18 +339,18 @@ def build_cost_increase_dialog(
 
     return ft.AlertDialog(
         modal=True,
-        title=ft.Text("Увеличить денежный лимит?"),
+        title=ft.Text(tr("paid.increase_title")),
         scrollable=True,
         content=ft.Column(
             tight=True,
             controls=[
-                detail_row("Текущий лимит", "$" + format_decimal_usd(old_value)),
-                detail_row("Новый лимит", "$" + format_decimal_usd(new_value)),
+                detail_row(tr("paid.old_limit"), money(old_value)),
+                detail_row(tr("paid.new_limit"), money(new_value)),
             ],
         ),
         actions=[
-            ft.TextButton("Отмена", on_click=handle_cancel),
-            ft.Button("Подтвердить увеличение", on_click=handle_confirm),
+            ft.TextButton(tr("common.cancel"), on_click=handle_cancel),
+            ft.Button(tr("paid.confirm_increase"), on_click=handle_confirm),
         ],
         actions_alignment=ft.MainAxisAlignment.END,
     )
@@ -367,15 +369,17 @@ def build_release_unknown_dialog(
 
     return ft.AlertDialog(
         modal=True,
-        title=ft.Text("Освободить неизвестный резерв?"),
+        title=ft.Text(tr("reserve.release_title")),
         content=ft.Text(
-            "Запрос мог быть обработан и тарифицирован OpenRouter. Освобождаются "
-            f"только локальные резервы: {turn.reserved_tokens} токенов и "
-            f"${format_decimal_usd(turn.reserved_cost_usd)}."
+            tr(
+                "reserve.release_body",
+                tokens=number(turn.reserved_tokens),
+                amount=money(turn.reserved_cost_usd),
+            )
         ),
         actions=[
-            ft.TextButton("Отмена", on_click=handle_cancel),
-            ft.Button("Освободить резерв", on_click=handle_confirm),
+            ft.TextButton(tr("common.cancel"), on_click=handle_cancel),
+            ft.Button(tr("reserve.release"), on_click=handle_confirm),
         ],
         actions_alignment=ft.MainAxisAlignment.END,
     )
@@ -383,31 +387,31 @@ def build_release_unknown_dialog(
 
 def _price_component_rows(pricing: PriceComponents) -> list[ft.Control]:
     return [
+        detail_row(tr("price.prompt_million"), money_million(pricing.prompt)),
+        detail_row(tr("price.completion_million"), money_million(pricing.completion)),
+        detail_row(tr("price.request"), money(pricing.request)),
         detail_row(
-            "Входные токены, 1 млн", "$" + format_price_per_million(pricing.prompt)
+            tr("price.reasoning_million"),
+            money_million(pricing.internal_reasoning),
         ),
         detail_row(
-            "Выходные токены, 1 млн", "$" + format_price_per_million(pricing.completion)
-        ),
-        detail_row("За запрос", "$" + format_decimal_usd(pricing.request)),
-        detail_row(
-            "Внутреннее рассуждение, 1 млн токенов",
-            "$" + format_price_per_million(pricing.internal_reasoning),
+            tr("price.cache_read_million"),
+            money_million(pricing.input_cache_read),
         ),
         detail_row(
-            "Чтение кэша, 1 млн токенов",
-            "$" + format_price_per_million(pricing.input_cache_read),
-        ),
-        detail_row(
-            "Запись кэша, 1 млн токенов",
-            "$" + format_price_per_million(pricing.input_cache_write),
+            tr("price.cache_write_million"),
+            money_million(pricing.input_cache_write),
         ),
     ]
 
 
 def _number_or_unknown(value: int | None) -> str:
-    return "—" if value is None else str(value)
+    return "—" if value is None else number(value)
 
 
 def _money_or_unknown(value: Decimal | None) -> str:
-    return "—" if value is None else "$" + format_decimal_usd(value)
+    return "—" if value is None else money(value)
+
+
+def money_million(value: Decimal) -> str:
+    return money(value * Decimal(1_000_000))

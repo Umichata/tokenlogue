@@ -1,0 +1,186 @@
+{
+  "format_version": 1,
+  "source_materials_status": "REVIEW_REQUIRED",
+  "captured_at": "2026-10-11",
+  "python_requirements": {
+    "pycryptodomex": "3.23.0",
+    "cffi": "2.0.0",
+    "pycparser": "3.11"
+  },
+  "dart_packages": [
+    {
+      "name": "local_auth",
+      "version": "3.0.2",
+      "archive_sha256": "ecf24edf2283c509ecd217e3595f6f71034b68888d28ad1dae6bfa0857b816ac",
+      "metadata_url": "https://pub.dev/api/packages/local_auth/versions/3.0.2"
+    },
+    {
+      "name": "local_auth_android",
+      "version": "2.2.0",
+      "archive_sha256": "76c389998fe95cff4352644776ab5775f24ddd58f179dbf3df1b9c268cbbadc4",
+      "metadata_url": "https://pub.dev/api/packages/local_auth_android/versions/2.2.0"
+    },
+    {
+      "name": "local_auth_platform_interface",
+      "version": "1.1.0",
+      "archive_sha256": "f98b8e388588583d3f781f6806e4f4c9f9e189d898d27f0c249b93a1973dd122",
+      "metadata_url": "https://pub.dev/api/packages/local_auth_platform_interface/versions/1.1.0"
+    },
+    {
+      "name": "local_auth_darwin",
+      "version": "2.0.4",
+      "archive_sha256": "b1b2d938cc3511512e552d92e782e055b8dc29c83e21c59e6ecfc6bd79ab0744",
+      "metadata_url": "https://pub.dev/api/packages/local_auth_darwin/versions/2.0.4"
+    },
+    {
+      "name": "local_auth_windows",
+      "version": "2.0.2",
+      "archive_sha256": "d72b8a441e5e6a679902f87c51529fcce65f442d77598484cf35454c3d733eda",
+      "metadata_url": "https://pub.dev/api/packages/local_auth_windows/versions/2.0.2"
+    },
+    {
+      "name": "flutter_secure_storage",
+      "version": "10.3.1",
+      "archive_sha256": "7686b1d6a29985dcbb808c59518226e603e3bfa7c0ddfd1a0d00e4cda77c868e",
+      "metadata_url": "https://pub.dev/api/packages/flutter_secure_storage/versions/10.3.1"
+    }
+  ],
+  "source_archives": [
+    {
+      "path": "sources/pycryptodomex-3.23.0.tar.gz",
+      "url": "https://files.pythonhosted.org/packages/c9/85/e24bf90972a30b0fcd16c73009add1d7d7cd9140c2498a68252028899e41/pycryptodomex-3.23.0.tar.gz",
+      "sha256": "71909758f010c82bc99b0abf4ea12012c98962fbf0583c2164f8b84533c2e4da",
+      "size": 4922157,
+      "package": "pycryptodomex",
+      "version": "3.23.0",
+      "source": "official PyPI sdist"
+    },
+    {
+      "path": "sources/cffi-2.0.0.tar.gz",
+      "url": "https://files.pythonhosted.org/packages/eb/56/b1ba7935a17738ae8453301356628e8147c79dbb825bcbc73dc7401f9846/cffi-2.0.0.tar.gz",
+      "sha256": "44d1b5909021139fe36001ae048dbdde8214afa20200eda0f64c068cac5d5529",
+      "size": 523588,
+      "package": "cffi",
+      "version": "2.0.0",
+      "source": "official PyPI sdist"
+    },
+    {
+      "path": "sources/pycparser-3.11.tar.gz",
+      "url": "https://files.pythonhosted.org/packages/da/a8/c5fdbeee588bb8ada9458774f43adf1bdd30bd59157055142183e769a024/pycparser-3.11.tar.gz",
+      "sha256": "d875f09c3507d00e1aba0eecc6dcadc1352f30fff09dc6bff2f1c2935e97c2bc",
+      "size": 113796,
+      "package": "pycparser",
+      "version": "3.11",
+      "source": "official PyPI sdist"
+    },
+    {
+      "path": "sources/mobile-forge-0fadbfab0d63d11164030dfddc955ed980e32e2c.tar.gz",
+      "url": "https://codeload.github.com/flet-dev/mobile-forge/tar.gz/0fadbfab0d63d11164030dfddc955ed980e32e2c",
+      "sha256": "c4bb9a967db97fc4a6a4e480ad5b86ae0a015ebe36a13fad5048a7b292ce0251",
+      "size": 795325
+    },
+    {
+      "path": "sources/local_auth-3.0.2.tar.gz",
+      "url": "https://pub.dev/api/archives/local_auth-3.0.2.tar.gz",
+      "sha256": "ecf24edf2283c509ecd217e3595f6f71034b68888d28ad1dae6bfa0857b816ac",
+      "size": 243625,
+      "package": "local_auth",
+      "version": "3.0.2",
+      "source": "official pub.dev package archive"
+    },
+    {
+      "path": "sources/local_auth_android-2.2.0.tar.gz",
+      "url": "https://pub.dev/api/archives/local_auth_android-2.2.0.tar.gz",
+      "sha256": "76c389998fe95cff4352644776ab5775f24ddd58f179dbf3df1b9c268cbbadc4",
+      "size": 34397,
+      "package": "local_auth_android",
+      "version": "2.2.0",
+      "source": "official pub.dev package archive"
+    },
+    {
+      "path": "sources/local_auth_platform_interface-1.1.0.tar.gz",
+      "url": "https://pub.dev/api/archives/local_auth_platform_interface-1.1.0.tar.gz",
+      "sha256": "f98b8e388588583d3f781f6806e4f4c9f9e189d898d27f0c249b93a1973dd122",
+      "size": 9181,
+      "package": "local_auth_platform_interface",
+      "version": "1.1.0",
+      "source": "official pub.dev package archive"
+    },
+    {
+      "path": "sources/local_auth_darwin-2.0.4.tar.gz",
+      "url": "https://pub.dev/api/archives/local_auth_darwin-2.0.4.tar.gz",
+      "sha256": "b1b2d938cc3511512e552d92e782e055b8dc29c83e21c59e6ecfc6bd79ab0744",
+      "size": 213469,
+      "package": "local_auth_darwin",
+      "version": "2.0.4",
+      "source": "official pub.dev package archive"
+    },
+    {
+      "path": "sources/local_auth_windows-2.0.2.tar.gz",
+      "url": "https://pub.dev/api/archives/local_auth_windows-2.0.2.tar.gz",
+      "sha256": "d72b8a441e5e6a679902f87c51529fcce65f442d77598484cf35454c3d733eda",
+      "size": 41365,
+      "package": "local_auth_windows",
+      "version": "2.0.2",
+      "source": "official pub.dev package archive"
+    },
+    {
+      "path": "sources/flutter_secure_storage-10.3.1.tar.gz",
+      "url": "https://pub.dev/api/archives/flutter_secure_storage-10.3.1.tar.gz",
+      "sha256": "7686b1d6a29985dcbb808c59518226e603e3bfa7c0ddfd1a0d00e4cda77c868e",
+      "size": 382423,
+      "package": "flutter_secure_storage",
+      "version": "10.3.1",
+      "source": "official pub.dev package archive"
+    }
+  ],
+  "android_wheels": [
+    {
+      "filename": "cffi-2.0.0-1-cp312-cp312-android_24_arm64_v8a.whl",
+      "url": "https://pypi.flet.dev/-/ver_19qZEZ/cffi-2.0.0-1-cp312-cp312-android_24_arm64_v8a.whl",
+      "sha256": "fd1f4eeb3217fe2aea9b8f027122d7e4baf11d227d9438f2a41828136a125f0a",
+      "size": 195625,
+      "python": "cp312",
+      "android_min_api": 24,
+      "abi": "arm64-v8a"
+    },
+    {
+      "filename": "cffi-2.0.0-1-cp312-cp312-android_24_x86_64.whl",
+      "url": "https://pypi.flet.dev/-/ver_tcueu/cffi-2.0.0-1-cp312-cp312-android_24_x86_64.whl",
+      "sha256": "3deba888dcff1084e0384fb33de6e791fdb41f2126a33b09e4ab62a25ad48d6b",
+      "size": 199213,
+      "python": "cp312",
+      "android_min_api": 24,
+      "abi": "x86_64"
+    },
+    {
+      "filename": "pycryptodomex-3.23.0-2-cp312-cp312-android_24_arm64_v8a.whl",
+      "url": "https://pypi.flet.dev/-/ver_OhOs6/pycryptodomex-3.23.0-2-cp312-cp312-android_24_arm64_v8a.whl",
+      "sha256": "6178a0e5a17285a088f4ce7a5db9dd6f073b4e2f5da2aa48d87c78117b229b86",
+      "size": 1637848,
+      "python": "cp312",
+      "android_min_api": 24,
+      "abi": "arm64-v8a"
+    },
+    {
+      "filename": "pycryptodomex-3.23.0-2-cp312-cp312-android_24_x86_64.whl",
+      "url": "https://pypi.flet.dev/-/ver_83z15/pycryptodomex-3.23.0-2-cp312-cp312-android_24_x86_64.whl",
+      "sha256": "fc6c2b58d8d71f8c4c350f0bab86440599efde27dd17d56bd03f4ab9ca6c5f0e",
+      "size": 1655238,
+      "python": "cp312",
+      "android_min_api": 24,
+      "abi": "x86_64"
+    }
+  ],
+  "mobile_forge_revision": "0fadbfab0d63d11164030dfddc955ed980e32e2c",
+  "open_questions": [
+    "The CFFI recipe names host libffi without a version. Exact statically linked libffi source and full build provenance remain unconfirmed.",
+    "Native wheel binary reproducibility and a complete offline Android toolchain build have not been established.",
+    "Earlier source-material completeness limitations remain open."
+  ],
+  "bounded_crypto_policy": {
+    "field_max_bytes": 16777216,
+    "aad_max_bytes": 16777216,
+    "note": "PyCryptodomex3.24 GCM maximum-length fix reviewed. This bound is below corrected maximum. No claim of library-wide vulnerability absence."
+  }
+}

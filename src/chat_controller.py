@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Awaitable, Callable
+from dataclasses import dataclass
 from enum import Enum
 
 import flet as ft
@@ -15,7 +16,7 @@ from auth.key_validation import interpret_key_validation
 from auth.models import KeyLimitInfo, KeyValidityState
 from chat.accounting import ChatBudgetService, parse_chat_limit_input
 from chat.drafts import DRAFT_STORAGE_MESSAGE, ChatDraftService, DraftStorageError
-from chat.models import CatalogModel, ChatMode, ModelCatalog
+from chat.models import CatalogModel, Chat, ChatMode, ModelCatalog
 from chat.sending import MessageSendingService
 from chat.service import ChatPolicyError, ChatService
 from chat_interaction_controller import (
@@ -24,6 +25,9 @@ from chat_interaction_controller import (
     ChatSessionContext,
 )
 from chat_workspace_controller import ChatWorkspaceController
+from i18n import tr
+from service_errors import localized_error_text
+from storage.data_access import DataAccess
 from ui import (
     CatalogLoadingView,
     ChatWorkspaceView,
@@ -46,6 +50,14 @@ class _ChatScreen(str, Enum):
     LIMITS_SELECTION = "limits_selection"
 
 
+@dataclass(frozen=True)
+class _ChatActionContext:
+    session: int
+    request: int
+    view: ChatWorkspaceView
+    chat_id: str
+
+
 class ChatSessionController:
     """Хранит только краткоживущее состояние разблокированной чат-сессии."""
 
@@ -62,8 +74,10 @@ class ChatSessionController:
         on_lock: AsyncCallback,
         on_replace_key: AsyncCallback,
         on_storage_error: StorageErrorCallback,
+        data_access: DataAccess | None = None,
     ) -> None:
         self._page = page
+        self._data_access = data_access
         self._key_validator = key_validator
         self._chat_service = chat_service
         self._catalog_service = catalog_service
@@ -80,6 +94,8 @@ class ChatSessionController:
         self._operation_lock = asyncio.Lock()
         self._pending_model: CatalogModel | None = None
         self._delete_chat_id: str | None = None
+        self._delete_dialog: ft.AlertDialog | None = None
+        self._chat_dialog_context: _ChatActionContext | None = None
         self._dialog_request_pending = False
         self._dialog_request_id = 0
         self._disposed = False
@@ -93,6 +109,8 @@ class ChatSessionController:
         self._key_validity = KeyValidityState.UNKNOWN
         self._key_limit = KeyLimitInfo.unknown()
         self._key_validation_in_progress = False
+        self._key_replacement_generation: int | None = None
+        self._draft_save_failed = False
         self._screen = _ChatScreen.WORKSPACE
         self._interaction = ChatInteractionController(
             chat_service,
@@ -112,6 +130,10 @@ class ChatSessionController:
     @property
     def session_active(self) -> bool:
         return self._session_api_key is not None
+
+    @property
+    def session_generation(self) -> int:
+        return self._session_generation
 
     @property
     def workspace_visible(self) -> bool:
@@ -168,12 +190,12 @@ class ChatSessionController:
         self._catalog = None
         self._pending_mode = None
         self._pending_model = None
-        self._selected_chat_id = None
         self._workspace_state = None
         self._new_limits_view = None
         self._key_validity = KeyValidityState.UNKNOWN
         self._key_limit = KeyLimitInfo.unknown()
         self._key_validation_in_progress = False
+        self._key_replacement_generation = None
         self._cancel_key_validation()
         self._dialog_request_pending = False
         self._dialog_request_id += 1
@@ -198,7 +220,10 @@ class ChatSessionController:
             or self._workspace_controller.has_dialog()
         ):
             return
+        generation = self._session_generation
         if not await self._workspace_controller.flush_editor():
+            return
+        if generation != self._session_generation or self._session_api_key is None:
             return
         task = asyncio.current_task()
         if task is None:
@@ -334,7 +359,7 @@ class ChatSessionController:
                 cost_limit_usd,
             )
         except ValueError as error:
-            view.form.show_error(str(error))
+            view.form.show_error(localized_error_text(error))
             self._page.update()
             return
         view.form.set_busy(True)
@@ -360,7 +385,7 @@ class ChatSessionController:
                     and generation == self._session_generation
                 ):
                     view.form.set_busy(False)
-                    view.form.show_error(str(error))
+                    view.form.show_error(localized_error_text(error))
                     self._page.update()
                 return
             except Exception:
@@ -369,7 +394,7 @@ class ChatSessionController:
                     and generation == self._session_generation
                 ):
                     view.form.set_busy(False)
-                    view.form.show_error("Не удалось создать локальный чат")
+                    view.form.show_error(tr("service.chat_create_failed"))
                     self._page.update()
                 return
         if self._disposed or generation != self._session_generation:
@@ -388,175 +413,214 @@ class ChatSessionController:
             or not _is_identifier(chat_id)
         ):
             return
+        generation = self._session_generation
         if not await self._workspace_controller.flush_editor():
             return
+        if generation != self._session_generation or self._session_api_key is None:
+            return
+        self._dismiss_chat_dialog()
         self._workspace_controller.cancel_confirmation_for_navigation()
         self._workspace_controller.begin_navigation(chat_id)
         self._selected_chat_id = chat_id
-        await self._show_workspace(expected_generation=self._session_generation)
+        await self._show_workspace(expected_generation=generation)
+
+    def _chat_action_matches(self, context: _ChatActionContext | None) -> bool:
+        return (
+            context is not None
+            and not self._disposed
+            and self.session_active
+            and context.session == self._session_generation
+            and context.request == self._dialog_request_id
+            and context.view is self._workspace_view
+            and context.chat_id == self._selected_chat_id
+            and self._screen is _ChatScreen.WORKSPACE
+        )
+
+    async def _load_chat_action(
+        self, chat_id: str
+    ) -> tuple[Chat, _ChatActionContext] | None:
+        if (
+            self._disposed
+            or not self.session_active
+            or self._workspace_view is None
+            or self._selected_chat_id != chat_id
+            or self._delete_chat_id is not None
+            or self._rename_dialog is not None
+            or self._dialog_request_pending
+            or self._workspace_controller.busy
+            or self._workspace_controller.has_dialog()
+            or not _is_identifier(chat_id)
+        ):
+            return None
+        self._dialog_request_pending = True
+        self._dialog_request_id += 1
+        context = _ChatActionContext(
+            self._session_generation,
+            self._dialog_request_id,
+            self._workspace_view,
+            chat_id,
+        )
+        try:
+            chat = await self._chat_service.get_chat(chat_id)
+        except Exception:
+            if self._chat_action_matches(context):
+                self._show_chat_action_error(tr("service.chat_open_failed"))
+            return None
+        finally:
+            if context.request == self._dialog_request_id:
+                self._dialog_request_pending = False
+        if (
+            chat is None
+            or not self._chat_action_matches(context)
+            or self._workspace_controller.busy
+            or self._workspace_controller.has_dialog()
+        ):
+            return None
+        return chat, context
 
     async def request_delete_chat(self, chat_id: str) -> None:
-        if (
-            self._disposed
-            or self._session_api_key is None
-            or self._delete_chat_id is not None
-            or self._rename_dialog is not None
-            or self._dialog_request_pending
-            or self._workspace_controller.busy
-            or self._workspace_controller.has_dialog()
-            or not _is_identifier(chat_id)
-        ):
+        loaded = await self._load_chat_action(chat_id)
+        if loaded is None:
             return
-        generation = self._session_generation
-        self._dialog_request_pending = True
-        self._dialog_request_id += 1
-        request_id = self._dialog_request_id
-        try:
-            chat = await self._chat_service.get_chat(chat_id)
-        except Exception:
-            if generation == self._session_generation and not self._disposed:
-                self._report_storage_error("Не удалось открыть локальный чат.")
-            return
-        finally:
-            if request_id == self._dialog_request_id:
-                self._dialog_request_pending = False
-        if chat is None or self._disposed or generation != self._session_generation:
-            return
+        chat, context = loaded
+
+        async def confirm(target: str) -> None:
+            if self._delete_dialog is dialog and self._chat_action_matches(context):
+                await self.confirm_delete_chat(target)
+
+        def cancel() -> None:
+            if self._delete_dialog is dialog and self._chat_action_matches(context):
+                self.cancel_delete_chat()
+
+        dialog = build_delete_chat_dialog(chat, on_confirm=confirm, on_cancel=cancel)
         self._delete_chat_id = chat_id
-        self._page.show_dialog(
-            build_delete_chat_dialog(
-                chat,
-                on_confirm=self.confirm_delete_chat,
-                on_cancel=self.cancel_delete_chat,
-            )
-        )
+        self._delete_dialog = dialog
+        self._chat_dialog_context = context
+        self._page.show_dialog(dialog)
 
     async def confirm_delete_chat(self, chat_id: str) -> None:
+        context, dialog = self._chat_dialog_context, self._delete_dialog
         if (
-            not _is_identifier(chat_id)
+            not self._chat_action_matches(context)
+            or dialog is None
             or self._delete_chat_id != chat_id
             or self._operation_lock.locked()
+            or self._workspace_controller.busy
         ):
             return
-        self._delete_chat_id = None
-        self._page.pop_dialog()
-        generation = self._session_generation
+        assert context is not None
         async with self._operation_lock:
-            try:
-                await self._chat_service.delete_chat(chat_id)
-            except Exception:
-                if generation == self._session_generation and not self._disposed:
-                    self._report_storage_error("Не удалось удалить локальный чат.")
+            if not await self._workspace_controller.flush_editor():
                 return
-            if generation != self._session_generation or self._disposed:
+            if (
+                not self._chat_action_matches(context)
+                or self._delete_dialog is not dialog
+            ):
+                return
+            for button in dialog.actions:
+                button.disabled = True
+            self._page.update()
+            try:
+                deleted = await self._chat_service.delete_chat(chat_id)
+            except Exception:
+                if self._chat_action_matches(context) and self._delete_dialog is dialog:
+                    self._dismiss_chat_dialog()
+                    self._show_chat_action_error(tr("service.chat_delete_failed"))
+                return
+            if (
+                not self._chat_action_matches(context)
+                or self._delete_dialog is not dialog
+            ):
+                return
+            self._dismiss_chat_dialog()
+            if not deleted:
+                self._show_chat_action_error(tr("service.delete_already_missing"))
                 return
             self._drafts.forget(chat_id)
-            if self._selected_chat_id == chat_id:
-                self._clear_workspace()
-                self._selected_chat_id = None
-            await self._show_workspace(expected_generation=generation)
+            self._clear_workspace()
+            self._selected_chat_id = None
+            await self._show_workspace(expected_generation=context.session)
 
     def cancel_delete_chat(self) -> None:
-        if self._delete_chat_id is None:
-            return
-        self._delete_chat_id = None
-        self._page.pop_dialog()
+        if self._delete_dialog is not None:
+            self._dismiss_chat_dialog()
 
     async def request_rename_chat(self, chat_id: str) -> None:
-        if (
-            self._disposed
-            or self._session_api_key is None
-            or self._rename_dialog is not None
-            or self._delete_chat_id is not None
-            or self._dialog_request_pending
-            or self._workspace_controller.busy
-            or self._workspace_controller.has_dialog()
-            or not _is_identifier(chat_id)
-        ):
+        loaded = await self._load_chat_action(chat_id)
+        if loaded is None:
             return
-        generation = self._session_generation
-        self._dialog_request_pending = True
-        self._dialog_request_id += 1
-        request_id = self._dialog_request_id
-        try:
-            chat = await self._chat_service.get_chat(chat_id)
-        except Exception:
-            if generation == self._session_generation and not self._disposed:
-                self._report_storage_error("Не удалось открыть локальный чат.")
-            return
-        finally:
-            if request_id == self._dialog_request_id:
-                self._dialog_request_pending = False
-        if chat is None or self._disposed or generation != self._session_generation:
-            return
-        self._rename_dialog = RenameChatDialog(
-            chat,
-            on_confirm=self.confirm_rename_chat,
-            on_cancel=self.cancel_rename_chat,
-        )
-        self._page.show_dialog(self._rename_dialog.control)
+        chat, context = loaded
+
+        async def confirm(target: str, title: str) -> None:
+            if self._rename_dialog is dialog and self._chat_action_matches(context):
+                await self.confirm_rename_chat(target, title)
+
+        def cancel() -> None:
+            if self._rename_dialog is dialog and self._chat_action_matches(context):
+                self.cancel_rename_chat()
+
+        dialog = RenameChatDialog(chat, on_confirm=confirm, on_cancel=cancel)
+        self._rename_dialog = dialog
+        self._chat_dialog_context = context
+        self._page.show_dialog(dialog.control)
 
     async def confirm_rename_chat(self, chat_id: str, title: str) -> None:
-        dialog = self._rename_dialog
+        dialog, context = self._rename_dialog, self._chat_dialog_context
         if (
             dialog is None
+            or not self._chat_action_matches(context)
             or self._operation_lock.locked()
-            or not _is_identifier(chat_id)
+            or self._workspace_controller.busy
             or dialog.chat_id != chat_id
             or not isinstance(title, str)
         ):
             return
+        assert context is not None
         dialog.set_busy(True)
         dialog.show_error("")
         self._page.update()
-        generation = self._session_generation
         async with self._operation_lock:
+            if not await self._workspace_controller.flush_editor():
+                if self._rename_dialog is dialog and self._chat_action_matches(context):
+                    dialog.set_busy(False)
+                    dialog.show_error(DRAFT_STORAGE_MESSAGE)
+                    self._page.update()
+                return
+            if (
+                not self._chat_action_matches(context)
+                or self._rename_dialog is not dialog
+            ):
+                return
+            error_message = ""
             try:
                 renamed = await self._chat_service.rename_chat(chat_id, title)
+                if not renamed:
+                    error_message = tr("service.chat_already_missing")
             except ValueError as error:
-                if (
-                    self._disposed
-                    or generation != self._session_generation
-                    or self._rename_dialog is not dialog
-                ):
-                    return
-                dialog.set_busy(False)
-                dialog.show_error(str(error))
-                self._page.update()
-                return
+                error_message = localized_error_text(error)
             except Exception:
-                if (
-                    self._disposed
-                    or generation != self._session_generation
-                    or self._rename_dialog is not dialog
-                ):
-                    return
+                error_message = tr("service.title_save_failed")
+            if (
+                not self._chat_action_matches(context)
+                or self._rename_dialog is not dialog
+            ):
+                return
+            if error_message:
                 dialog.set_busy(False)
-                dialog.show_error("Не удалось сохранить название чата")
+                dialog.show_error(error_message)
                 self._page.update()
                 return
-            if not renamed:
-                if (
-                    self._disposed
-                    or generation != self._session_generation
-                    or self._rename_dialog is not dialog
-                ):
-                    return
-                dialog.set_busy(False)
-                dialog.show_error("Чат уже отсутствует")
-                self._page.update()
-                return
-            if self._rename_dialog is dialog:
-                self._rename_dialog = None
-                self._page.pop_dialog()
-            if generation == self._session_generation and not self._disposed:
-                await self._show_workspace(expected_generation=generation)
+            self._dismiss_chat_dialog()
+            await self._show_workspace(expected_generation=context.session)
 
     def cancel_rename_chat(self) -> None:
-        if self._rename_dialog is None:
-            return
-        self._rename_dialog = None
-        self._page.pop_dialog()
+        if self._rename_dialog is not None:
+            self._dismiss_chat_dialog()
+
+    def _show_chat_action_error(self, message: str) -> None:
+        if self._workspace_view is not None:
+            self._workspace_view.show_message(message)
+            self._page.update()
 
     async def request_configure_limits(self, chat_id: str) -> None:
         await self._workspace_controller.request_configure_limits(chat_id)
@@ -611,7 +675,6 @@ class ChatSessionController:
         if (
             self._disposed
             or self._session_api_key is None
-            or self._key_validity is KeyValidityState.VALID
             or self._key_validation_task is not None
         ):
             return
@@ -621,35 +684,73 @@ class ChatSessionController:
         await self._refresh_after_key_validation(generation)
 
     async def request_key_replacement(self) -> None:
-        """Передаёт замену ключа в явный подтверждаемый reset-сценарий."""
+        """Передаёт замену API-ключа из свободной разблокированной сессии."""
+        view = self._workspace_view
         if (
             self._disposed
             or self._session_api_key is None
-            or self._key_validity is not KeyValidityState.INVALID
+            or view is None
+            or view.key_replacement_busy
+            or self._key_validation_in_progress
+            or self._key_validation_task is not None
+            or self._workspace_controller.busy
+            or self._workspace_controller.has_dialog()
+            or self._dialog_request_pending
+            or self._chat_dialog_context is not None
+            or self._operation_lock.locked()
+            or self._key_replacement_generation is not None
         ):
             return
-        await self._on_replace_key()
+        generation = self._session_generation
+        self._key_replacement_generation = generation
+        try:
+            await self._on_replace_key()
+        finally:
+            if self._key_replacement_generation == generation:
+                self._key_replacement_generation = None
+
+    @property
+    def draft_save_failed(self) -> bool:
+        return self._draft_save_failed
+
+    def begin_lock(self) -> None:
+        """Отзывает доступ до первого await и удерживает последнюю правку в памяти."""
+        if self._disposed:
+            return
+        self._workspace_controller.capture_editor()
+        self._drafts.prepare_lock()
+        if self._data_access is not None:
+            self._data_access.lock()
+        self.deactivate()
 
     async def lock_application(self) -> None:
         if self._disposed or self._session_api_key is None:
             return
-        generation = self._session_generation
-        await self.flush_drafts()
-        if generation != self._session_generation or self._disposed:
-            return
-        self.deactivate()
+        self.begin_lock()
         await self._on_lock()
+        generation = self._session_generation
+        saved = await self.flush_drafts()
+        if (
+            not saved
+            and not self._disposed
+            and generation == self._session_generation
+            and not self.session_active
+        ):
+            await self._on_lock()
 
     async def flush_drafts(self) -> bool:
         if not await self._workspace_controller.flush_editor():
+            self._draft_save_failed = True
             return False
         try:
             await self._drafts.flush_all()
         except DraftStorageError:
+            self._draft_save_failed = True
             if self._workspace_view is not None:
                 self._workspace_view.show_message(DRAFT_STORAGE_MESSAGE)
                 self._page.update()
             return False
+        self._draft_save_failed = False
         return True
 
     def _start_key_validation(self) -> bool:
@@ -771,7 +872,7 @@ class ChatSessionController:
             chats = await self._chat_service.list_chats()
         except Exception:
             if expected_generation == self._session_generation and not self._disposed:
-                self._report_storage_error("Не удалось загрузить локальные чаты.")
+                self._report_storage_error(tr("service.chats_load_failed"))
             return
         if (
             self._disposed
@@ -801,7 +902,7 @@ class ChatSessionController:
                     expected_generation == self._session_generation
                     and not self._disposed
                 ):
-                    self._report_storage_error("Не удалось загрузить историю чата.")
+                    self._report_storage_error(tr("service.history_load_failed"))
                 return
             if not self._workspace_request_matches(expected_generation, request_id):
                 return
@@ -813,9 +914,7 @@ class ChatSessionController:
                         self._workspace_view.show_message(DRAFT_STORAGE_MESSAGE)
                         self._page.update()
                     else:
-                        self._report_storage_error(
-                            "Не удалось загрузить локальный черновик."
-                        )
+                        self._report_storage_error(tr("service.draft_load_failed"))
                 return
         if not self._workspace_request_matches(expected_generation, request_id):
             return
@@ -959,16 +1058,24 @@ class ChatSessionController:
         self._catalog_task = None
 
     def _dismiss_chat_dialog(self) -> None:
-        dialog_count = sum(
-            (
-                self._delete_chat_id is not None,
-                self._rename_dialog is not None,
-            )
+        self._dialog_request_id += 1
+        self._dialog_request_pending = False
+        dialogs = (
+            self._delete_dialog,
+            self._rename_dialog.control if self._rename_dialog is not None else None,
         )
-        for _ in range(dialog_count):
-            self._page.pop_dialog()
         self._delete_chat_id = None
+        self._delete_dialog = None
         self._rename_dialog = None
+        self._chat_dialog_context = None
+        for dialog in dialogs:
+            if dialog is not None:
+                # Снимаем только принадлежащий действию диалог, сохраняя чужой стек.
+                dialog.open = False
+                try:
+                    dialog.update()
+                except (RuntimeError, AssertionError):
+                    pass
 
 
 def _is_identifier(value: object) -> bool:

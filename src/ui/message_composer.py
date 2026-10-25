@@ -6,6 +6,8 @@ from collections.abc import Awaitable, Callable
 
 import flet as ft
 
+from i18n import fresh_text, tr
+from ui.branding import BrandLoader
 from ui.styles import ERROR_COLOR, MUTED_COLOR, PANEL_BACKGROUND, primary_button_style
 
 MessageSubmitCallback = Callable[[str], Awaitable[None]]
@@ -25,8 +27,8 @@ class MessageComposer:
         self._enabled = enabled
         self._busy = False
         self.message_field = ft.TextField(
-            label="Сообщение",
-            hint_text="Введите сообщение",
+            label=tr("composer.message"),
+            hint_text=tr("composer.hint"),
             multiline=True,
             min_lines=1,
             max_lines=5,
@@ -36,22 +38,17 @@ class MessageComposer:
             on_submit=self._handle_submit,
         )
         self.send_button = ft.Button(
-            "Отправить",
+            tr("composer.send"),
             icon=ft.Icons.SEND,
             style=primary_button_style(),
             disabled=True,
             on_click=self._handle_click,
         )
-        self.progress = ft.ProgressRing(
-            width=18,
-            height=18,
-            stroke_width=2,
-            visible=False,
-        )
+        self.progress = BrandLoader(size=26, active=False)
         self.status = ft.Text("", color=MUTED_COLOR, visible=False, selectable=True)
         self.progress_row = ft.Row(
             visible=False,
-            controls=[self.progress, ft.Text("Ожидание ответа…")],
+            controls=[self.progress, ft.Text(tr("composer.waiting"), expand=True)],
         )
         self.control = ft.Container(
             bgcolor=PANEL_BACKGROUND,
@@ -113,6 +110,7 @@ class MessageComposer:
 
     def dispose(self) -> None:
         self._disposed = True
+        self.progress.dispose()
 
     def set_busy(self, busy: bool) -> None:
         self._busy = busy
@@ -128,7 +126,7 @@ class MessageComposer:
             self._apply_state()
 
     def show_message(self, message: str, *, error: bool = True) -> None:
-        self.status.value = message
+        self.status.value = fresh_text(message)
         self.status.color = ERROR_COLOR if error else MUTED_COLOR
         self.status.visible = bool(message)
 
@@ -137,5 +135,5 @@ class MessageComposer:
         has_text = isinstance(value, str) and bool(value.strip())
         self.message_field.disabled = not self._enabled or self._busy
         self.send_button.disabled = not self._enabled or self._busy or not has_text
-        self.progress.visible = self._busy
+        self.progress.set_active(self._busy)
         self.progress_row.visible = self._busy
