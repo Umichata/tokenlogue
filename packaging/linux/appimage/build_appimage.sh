@@ -41,6 +41,23 @@ remove_optional_jni() {
     rm -f -- "$appdir/usr/lib/tokenlogue/lib/libdartjni.so"
 }
 
+remove_optional_crypto_selftests() {
+    local appdir=$1
+    local package_dir="$appdir/usr/lib/tokenlogue/site-packages/Cryptodome"
+    local selftests_dir="$package_dir/SelfTest"
+
+    # Публичные тестовые ключи не нужны приложению и не входят в runtime AES/GCM.
+    if [[ ! -e "$selftests_dir" && ! -L "$selftests_dir" ]]; then
+        return 0
+    fi
+    [[ -d "$selftests_dir" && ! -L "$selftests_dir" ]] || \
+        die "unexpected Crypto SelfTest path in AppDir"
+    [[ "$(realpath -e -- "$package_dir")" == "$package_dir" ]] || \
+        die "Crypto package path must not contain symlinks"
+    rm -rf -- "$selftests_dir"
+    printf 'Removed upstream Crypto self-tests: %s\n' "${selftests_dir#"$appdir"/}"
+}
+
 reject_forbidden_staging_files() {
     local appdir=$1
     local forbidden
@@ -183,6 +200,7 @@ mkdir -p \
 
 cp -a -- "$source_bundle/." "$appdir/usr/lib/tokenlogue/"
 remove_optional_jni "$appdir"
+remove_optional_crypto_selftests "$appdir"
 cp -- "$script_dir/AppRun" "$appdir/AppRun"
 
 cat > "$appdir/usr/bin/tokenlogue" <<'LAUNCHER'

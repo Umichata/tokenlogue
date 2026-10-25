@@ -487,6 +487,233 @@ class AppImagePackagingTests(unittest.TestCase):
         self.assertIn("no signature or automatic updater", text)
 
 
+class CryptoSelfTestStagingTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.temp = tempfile.TemporaryDirectory(prefix="crypto staging ")
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        self.source = self.root / "source bundle"
+        self.appdir = self.root / "Tokenlogue.AppDir"
+        self.staging_bundle = self.appdir / "usr/lib/tokenlogue"
+        self.staging_bundle.mkdir(parents=True)
+        self.source.mkdir()
+
+    def _fragment(self, *, copy_first: bool) -> str:
+        text = (APPIMAGE_DIR / "build_appimage.sh").read_text(encoding="utf-8")
+        function = re.search(
+            r"^remove_optional_crypto_selftests\(\) \{\n.*?^\}",
+            text,
+            re.MULTILINE | re.DOTALL,
+        )
+        self.assertIsNotNone(function, "staging must remove upstream self-tests")
+        assert function is not None
+        die = re.search(r"^die\(\) \{\n.*?^\}", text, re.MULTILINE | re.DOTALL)
+        assert die is not None
+        copy_command = 'cp -a -- "$source_bundle/." "$appdir/usr/lib/tokenlogue/"'
+        remove_command = 'remove_optional_crypto_selftests "$appdir"'
+        self.assertEqual(text.count(remove_command), 1)
+        self.assertLess(text.index(copy_command), text.index(remove_command))
+        self.assertLess(
+            text.index(remove_command),
+            text.index('"$linuxdeploy" "${linuxdeploy_args[@]}"'),
+        )
+        self.assertLess(
+            text.index(remove_command),
+            text.index('"$script_dir/notices.py" collect'),
+        )
+        return (
+            "set -Eeuo pipefail\n"
+            + die.group(0)
+            + "\n"
+            + function.group(0)
+            + "\nsource_bundle=$1\nappdir=$2\n"
+            + (copy_command + "\n" if copy_first else "")
+            + remove_command
+            + "\n"
+        )
+
+    def _run_prune(
+        self, *, copy_first: bool = True
+    ) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            [
+                "bash",
+                "-c",
+                self._fragment(copy_first=copy_first),
+                "crypto-fixture",
+                str(self.source),
+                str(self.appdir),
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+    def _write_source(self, relative: str, data: bytes) -> Path:
+        path = self.source / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(data)
+        return path
+
+    @staticmethod
+    def _snapshot(root: Path) -> dict[str, tuple[bytes, int]]:
+        return {
+            path.relative_to(root).as_posix(): (
+                path.read_bytes(),
+                stat.S_IMODE(path.stat().st_mode),
+            )
+            for path in root.rglob("*")
+            if path.is_file()
+        }
+
+    def test_public_pem_fixture_is_removed_only_from_staging(self) -> None:
+        package = "site-packages/Cryptodome/"
+        fixture = package + "SelfTest/Cipher/test_pkcs1_15.pyc"
+        files = {
+            fixture: b"compiled fixture " + b"-----BEGIN " + b"RSA PRIVATE KEY-----",
+            package + "SelfTest/Signature/test_pss.py": b"upstream test fixture",
+            package + "Cipher/AES.pyc": b"AES runtime",
+            package + "Cipher/_mode_gcm.pyc": b"GCM runtime",
+            package + "Cipher/_raw_aes.abi3.so": b"\x7fELF\0AES native runtime",
+            package + "Hash/SHA256.pyc": b"hash runtime",
+            package + "SelfTest.extra/keep.pyc": b"similar name remains",
+            package + "nested/SelfTest/keep.pyc": b"only the exact subtree is removed",
+            "site-packages/other/SelfTest/keep.pyc": b"other package remains",
+            "site-packages/pycryptodomex-3.23.0.dist-info/LICENSE.rst": b"license",
+            "site-packages/pycryptodomex-3.23.0.dist-info/RECORD": b"metadata",
+            "tokenlogue": b"application runtime",
+        }
+        for relative, data in files.items():
+            self._write_source(relative, data)
+        (self.source / "tokenlogue").chmod(0o755)
+        before = self._snapshot(self.source)
+        # Выполняем копирование из recipe до вызова настоящей функции удаления.
+        subprocess.run(
+            [
+                "bash",
+                "-c",
+                'cp -a -- "$1/." "$2/usr/lib/tokenlogue/"',
+                "copy-fixture",
+                str(self.source),
+                str(self.appdir),
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        with self.assertRaisesRegex(SystemExit, "Secret-like data"):
+            sanitize_paths.check_staged_contents(
+                self.appdir, str(self.source).encode(), check_secrets=True
+            )
+        result = self._run_prune(copy_first=False)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self._snapshot(self.source), before)
+        self.assertEqual(
+            self._snapshot(self.staging_bundle),
+            {
+                name: data
+                for name, data in before.items()
+                if not name.startswith(package + "SelfTest/")
+            },
+        )
+        sanitize_paths.check_staged_contents(
+            self.appdir, str(self.source).encode(), check_secrets=True
+        )
+
+    def test_absent_selftests_preserve_the_runtime(self) -> None:
+        self._write_source("site-packages/Cryptodome/Cipher/AES.pyc", b"AES runtime")
+        self._write_source("site-packages/other/keep.pyc", b"neighbor")
+        before = self._snapshot(self.source)
+        result = self._run_prune()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self._snapshot(self.source), before)
+        self.assertEqual(self._snapshot(self.staging_bundle), before)
+
+    def test_missing_crypto_package_is_allowed(self) -> None:
+        self._write_source("tokenlogue", b"runtime")
+        result = self._run_prune()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(
+            self._snapshot(self.source), self._snapshot(self.staging_bundle)
+        )
+
+    def test_selftest_and_parent_symlinks_cannot_delete_external_files(self) -> None:
+        for link_parent in (False, True):
+            with self.subTest(link_parent=link_parent):
+                appdir = (
+                    self.root
+                    / ("parent" if link_parent else "selftest")
+                    / "Tokenlogue.AppDir"
+                )
+                appdir.mkdir(parents=True)
+                external = self.root / (
+                    "outside-parent" if link_parent else "outside-test"
+                )
+                external.mkdir()
+                payload = external / (
+                    "SelfTest/keep.pyc" if link_parent else "keep.pyc"
+                )
+                payload.parent.mkdir(exist_ok=True)
+                payload.write_bytes(b"external original must remain")
+                package = appdir / "usr/lib/tokenlogue/site-packages/Cryptodome"
+                if link_parent:
+                    package.parent.mkdir(parents=True)
+                    package.symlink_to(external, target_is_directory=True)
+                else:
+                    package.mkdir(parents=True)
+                    (package / "SelfTest").symlink_to(
+                        external, target_is_directory=True
+                    )
+                before = self._snapshot(external)
+                original_appdir = self.appdir
+                self.appdir = appdir
+                try:
+                    result = self._run_prune(copy_first=False)
+                finally:
+                    self.appdir = original_appdir
+                self.assertNotEqual(result.returncode, 0, result.stdout)
+                self.assertEqual(self._snapshot(external), before)
+                self.assertTrue(
+                    package.is_symlink()
+                    if link_parent
+                    else (package / "SelfTest").is_symlink()
+                )
+
+    def test_non_directory_selftest_is_rejected_without_changes(self) -> None:
+        path = self.staging_bundle / "site-packages/Cryptodome/SelfTest"
+        path.parent.mkdir(parents=True)
+        path.write_bytes(b"unexpected original file")
+        result = self._run_prune(copy_first=False)
+        self.assertNotEqual(result.returncode, 0, result.stdout)
+        self.assertEqual(path.read_bytes(), b"unexpected original file")
+
+    def test_secret_checks_still_reject_runtime_and_notice_values(self) -> None:
+        self._write_source("site-packages/Cryptodome/SelfTest/fixture.pyc", b"test")
+        self._write_source("site-packages/Cryptodome/Cipher/AES.pyc", b"AES runtime")
+        result = self._run_prune()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        for relative in (
+            "usr/lib/tokenlogue/site-packages/Cryptodome/Cipher/AES.pyc",
+            "usr/share/doc/tokenlogue/notices.json",
+        ):
+            with self.subTest(relative=relative):
+                path = self.appdir / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                token = b"ghp_" + b"synthetic" * 4
+                original = path.read_bytes() if path.exists() else None
+                path.write_bytes(token)
+                with self.assertRaisesRegex(SystemExit, "Secret-like data") as caught:
+                    sanitize_paths.check_staged_contents(
+                        self.appdir, str(self.source).encode(), check_secrets=True
+                    )
+                self.assertNotIn(token.decode(), str(caught.exception))
+                self.assertEqual(path.read_bytes(), token)
+                if original is None:
+                    path.unlink()
+                else:
+                    path.write_bytes(original)
+
+
 class StagedContentChecksTests(unittest.TestCase):
     def setUp(self) -> None:
         self.temp = tempfile.TemporaryDirectory(prefix="staged-content-")
