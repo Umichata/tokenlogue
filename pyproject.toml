@@ -64,6 +64,7 @@ exclude = [
 # Сохраняем совместимость с JNI 1.0.0, закреплённым в Flet 0.86.5.
 [tool.flet.flutter.pubspec.dependency_overrides]
 jni_flutter = "1.0.3"
+shared_preferences_android = "2.4.28"
 
 [tool.flet.android]
 min_sdk_version = 24
