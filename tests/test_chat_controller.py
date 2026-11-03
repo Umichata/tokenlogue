@@ -20,6 +20,7 @@ from auth.contracts import KeyValidator  # noqa: E402
 from auth.models import KeyLimitInfo, KeyValidityState  # noqa: E402
 from chat.accounting import BudgetState, ChatBudget, ChatBudgetService  # noqa: E402
 from chat.drafts import ChatDraftService  # noqa: E402
+from chat.metrics import LastRequestMetrics, LastRequestState  # noqa: E402
 from chat.models import (  # noqa: E402
     FREE_ROUTER_MODEL,
     CatalogModel,
@@ -93,7 +94,6 @@ class FakeChatService:
         cost_limit_usd: Decimal,
         paid_confirmed: bool = False,
     ) -> Chat:
-        _ = (catalog, key_validity, key_limit)
         self.create_calls.append(
             (
                 mode,
@@ -140,11 +140,9 @@ class FakeChatService:
         return len(self.chats) != original_length
 
     async def rename_chat(self, chat_id: str, title: str) -> bool:
-        _ = (chat_id, title)
         return True
 
     async def list_messages(self, chat_id: str) -> list[object]:
-        _ = chat_id
         return []
 
 
@@ -156,8 +154,10 @@ class FakeBudgetService:
         return self.budgets.setdefault(chat_id, _budget(chat_id, configured=False))
 
     async def list_chat_turns(self, chat_id: str) -> list[object]:
-        _ = chat_id
         return []
+
+    async def get_last_request(self, chat_id: str) -> LastRequestMetrics:
+        return LastRequestMetrics(LastRequestState.NONE)
 
 
 class FakeCatalogService:
@@ -165,14 +165,22 @@ class FakeCatalogService:
         self.catalog = catalog
         self.get_calls = 0
         self.clear_calls = 0
+        self._cached: ModelCatalog | None = None
+
+    def peek_catalog(self) -> ModelCatalog | None:
+        return self._cached
+
+    def cache_remaining_seconds(self) -> float | None:
+        return None
 
     async def get_catalog(self, api_key: str) -> ModelCatalog:
-        _ = api_key
         self.get_calls += 1
+        self._cached = self.catalog
         return self.catalog
 
     def clear_cache(self) -> None:
         self.clear_calls += 1
+        self._cached = None
 
 
 class FakeKeyValidator:

@@ -60,6 +60,7 @@ class DataAccess:
         self._cipher: FieldCipher | None = None
         self._epoch = 0
         self._leases = 0
+        self._deleted = False
         self._session: ContextVar[int | None] = ContextVar(
             f"tokenlogue_session_{id(self)}", default=None
         )
@@ -84,8 +85,17 @@ class DataAccess:
 
     def open(self, cipher: FieldCipher) -> None:
         with self._mutex:
+            if self._deleted:
+                raise DataAccessError()
             self._epoch += 1
             self._cipher = cipher
+
+    def revoke_for_deletion(self) -> None:
+        """Необратимо отзывает также completion leases старого профиля."""
+        with self._mutex:
+            self._deleted = True
+            self._epoch += 1
+            self._cipher = None
 
     def lock(self) -> None:
         with self._mutex:
@@ -95,8 +105,10 @@ class DataAccess:
     def assert_current(self) -> None:
         with self._mutex:
             captured = self._session.get()
-            if self._cipher is None or (
-                captured is not None and captured != self._epoch
+            if (
+                self._deleted
+                or self._cipher is None
+                or (captured is not None and captured != self._epoch)
             ):
                 raise DataAccessError()
 
@@ -142,6 +154,8 @@ class DataAccess:
         if operation not in {"read", "write", "reserve", "finish", "draft"}:
             raise DataAccessError()
         with self._mutex:
+            if self._deleted:
+                raise DataAccessError()
             lease = self._lease.get()
             leased = bool(
                 lease is not None

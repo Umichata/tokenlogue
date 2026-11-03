@@ -304,7 +304,9 @@ class ChatDraftUiTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(
             self.fixture.draft_repository.get_draft(self.b).text, "draft B"
         )
-        self.assertEqual(self.client.calls, 1)
+        # Navigation revoked the pre-dispatch operation while the SQLite worker
+        # was still pending. No request may leave that stale workspace.
+        self.assertEqual(self.client.calls, 0)
 
     async def test_retry_of_existing_turn_does_not_touch_new_draft(self) -> None:
         controller, _ = self.fixture._controller(

@@ -381,28 +381,29 @@ class MessageSendingTests(unittest.IsolatedAsyncioTestCase):
         limited = _paid_model(provider_max_completion_tokens=40)
         self.paid_model = limited
         self.catalog.models = (limited,)
-        await self._create_and_configure_paid(
-            "paid",
-            token_limit=100,
-            max_completion_tokens=80,
-        )
-        client = FakeCompletionClient([_success(cost="0.001")])
+        for token_limit, expected in ((100, 40), (70, 20)):
+            with self.subTest(token_limit=token_limit):
+                chat_id = f"paid-{token_limit}"
+                await self._create_and_configure_paid(
+                    chat_id,
+                    token_limit=token_limit,
+                    max_completion_tokens=64,
+                )
+                client = FakeCompletionClient([_success(cost="0.001")])
 
-        result = await self._service(client).send_message(
-            "paid",
-            "x" * 10,
-            api_key=TEST_CREDENTIAL,
-            key_validity=KeyValidityState.VALID,
-            key_limit=KeyLimitInfo.from_validated_remaining(None),
-            paid_confirmed=True,
-        )
+                result = await self._service(client).send_message(
+                    chat_id,
+                    "x" * 10,
+                    api_key=TEST_CREDENTIAL,
+                    key_validity=KeyValidityState.VALID,
+                    key_limit=KeyLimitInfo.from_validated_remaining(None),
+                    paid_confirmed=True,
+                )
 
-        self.assertTrue(result.successful)
-        effective = client.calls[0]["max_completion_tokens"]
-        self.assertIsInstance(effective, int)
-        assert isinstance(effective, int)
-        self.assertLessEqual(effective, 40)
-        self.assertGreaterEqual(effective, 16)
+                self.assertTrue(result.successful)
+                effective = client.calls[0]["max_completion_tokens"]
+                self.assertIsInstance(effective, int)
+                self.assertEqual(effective, expected)
 
     async def test_oversized_current_prompt_is_blocked_before_http(self) -> None:
         await self._create_and_configure_free(

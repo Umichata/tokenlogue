@@ -102,27 +102,48 @@ class ModelCatalogService:
         self._clock = clock
         self._cached: ModelCatalog | None = None
         self._expires_at = 0.0
+        self._generation = 0
         self._lock = asyncio.Lock()
 
-    async def get_catalog(self, api_key: str) -> ModelCatalog:
-        now = self._clock()
-        if self._cached is not None and now < self._expires_at:
+    def peek_catalog(self) -> ModelCatalog | None:
+        """Return only a still-current in-memory snapshot, without any request."""
+        if self._cached is not None and self._clock() < self._expires_at:
             return self._cached
+        return None
+
+    def cache_remaining_seconds(self) -> float | None:
+        """Expose cache age for an idle UI timer, without retaining a key."""
+        if self._cached is None:
+            return None
+        return max(0.0, self._expires_at - self._clock())
+
+    async def get_catalog(self, api_key: str) -> ModelCatalog:
+        generation = self._generation
+        cached = self.peek_catalog()
+        if cached is not None:
+            return cached
 
         async with self._lock:
-            now = self._clock()
-            if self._cached is not None and now < self._expires_at:
-                return self._cached
+            # A waiter from an old protected session must not fetch with its
+            # previous credential or consume the next session's cache.
+            if generation != self._generation:
+                return _classify_catalog(None)
+            cached = self.peek_catalog()
+            if cached is not None:
+                return cached
             try:
                 models = await self._client.fetch_models(api_key)
             except Exception:
                 models = None
             catalog = _classify_catalog(models)
+            if generation != self._generation:
+                return _classify_catalog(None)
             self._cached = catalog
-            self._expires_at = now + self._ttl_seconds
+            self._expires_at = self._clock() + self._ttl_seconds
             return catalog
 
     def clear_cache(self) -> None:
+        self._generation += 1
         self._cached = None
         self._expires_at = 0.0
 

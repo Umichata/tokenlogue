@@ -1,0 +1,4 @@
+{
+  "protection_route.enter_pin": "Enter your app PIN to continue with this test. After signing in, choose Start test explicitly.",
+  "protection_route.wait_for_pin": "PIN entry is temporarily limited. Wait for the countdown, then sign in. The test still needs an explicit start."
+}

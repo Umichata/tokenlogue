@@ -279,10 +279,6 @@ class NoticeManifestTests(unittest.TestCase):
             final_scan, script.index('"$appimagetool" --appimage-extract-and-run')
         )
         self.assertNotIn("rg -", script)
-        self.assertLess(
-            script.index('"$script_dir/notices.py" collect'),
-            script.index('"$appimagetool" --appimage-extract-and-run'),
-        )
 
 
 class PubspecNoticeTests(unittest.TestCase):

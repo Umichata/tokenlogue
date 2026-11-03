@@ -5,6 +5,11 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from decimal import Decimal
 from enum import Enum
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from auth.pin_policy import PinLock
+    from storage.recovery_code import RecoveryCodeIssue
 
 
 class InitialRoute(str, Enum):
@@ -21,6 +26,9 @@ class AuthStatus(str, Enum):
     SETUP_REQUIRED = "setup_required"
     PIN_REQUIRED = "pin_required"
     PIN_CHOICE_REQUIRED = "pin_choice_required"
+    RECOVERY_CODE_ISSUED = "recovery_code_issued"
+    RECOVERY_CODE_SAVED = "recovery_code_saved"
+    PROFILE_DELETED = "profile_deleted"
     AUTHENTICATED = "authenticated"
     INVALID_PIN = "invalid_pin"
     LOCKED = "locked"
@@ -52,6 +60,8 @@ class LoginAttemptState:
 
     failed_attempts: int
     locked_until: float | None
+    lock_state: PinLock | None = field(default=None, repr=False)
+    lock_seconds_remaining: int = 0
 
 
 @dataclass(frozen=True)
@@ -146,3 +156,4 @@ class AuthResult:
     lock_seconds_remaining: int = 0
     key_validity: KeyValidityState = KeyValidityState.UNKNOWN
     key_limit: KeyLimitInfo = field(default_factory=KeyLimitInfo.unknown)
+    recovery_code_issue: RecoveryCodeIssue | None = field(default=None, repr=False)

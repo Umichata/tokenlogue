@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import secrets
 import uuid
 from collections.abc import Callable
 from datetime import UTC, datetime
@@ -22,11 +23,15 @@ from chat.models import (
     is_free_model,
     is_paid_model,
 )
+from chat.paid_consent import PaidConsent
 from i18n import tr
-from storage.access_context import repository_session
+from storage.access_context import finish_worker, repository_session
 
 
 class ChatRepository(Protocol):
+    def set_paid_without_confirmation(
+        self, chat_id: str, enabled: bool, revision: str, updated_at: datetime
+    ) -> bool: ...
     def create_chat(self, chat: Chat) -> None: ...
 
     def create_chat_with_limits(
@@ -70,6 +75,81 @@ class ChatService:
         self._repository = repository
         self._now = now or (lambda: datetime.now(UTC))
         self._uuid_factory = uuid_factory
+        self._paid_scope = object()
+        self._paid_epochs: dict[str, int] = {}
+        self._paid_changes_pending: dict[str, int] = {}
+
+    def paid_consent(self, chat: Chat) -> PaidConsent | None:
+        if (
+            chat.mode is not ChatMode.PAID
+            or chat.paid_without_confirmation is not True
+            or not chat.paid_policy_revision
+            or self._paid_changes_pending.get(chat.id, 0) > 0
+        ):
+            return None
+        return PaidConsent(
+            chat.id,
+            chat.paid_policy_revision,
+            self._paid_epochs.get(chat.id, 0),
+            self._paid_scope,
+            getattr(getattr(self._repository, "access", None), "epoch", None),
+        )
+
+    def paid_consent_is_current(self, consent: PaidConsent) -> bool:
+        return (
+            consent.scope is self._paid_scope
+            and self._paid_changes_pending.get(consent.chat_id, 0) == 0
+            and consent.epoch == self._paid_epochs.get(consent.chat_id, 0)
+            and consent.session_epoch
+            == getattr(getattr(self._repository, "access", None), "epoch", None)
+        )
+
+    def paid_consent_matches(self, chat: Chat, consent: PaidConsent) -> bool:
+        return (
+            self.paid_consent_is_current(consent)
+            and chat.id == consent.chat_id
+            and chat.mode is ChatMode.PAID
+            and chat.paid_without_confirmation is True
+            and chat.paid_policy_revision == consent.revision
+        )
+
+    @repository_session("_repository")
+    async def set_paid_without_confirmation(self, chat_id: str, enabled: bool) -> Chat:
+        _require_identifier(chat_id, tr("service.label.chat"))
+        if type(enabled) is not bool:
+            raise ValueError(tr("service.paid_confirmation_invalid"))
+        # Revocation is visible before awaiting SQLite, including failed writes.
+        # A pending dispatch must not retain a permission while a change queues.
+        self._paid_epochs[chat_id] = self._paid_epochs.get(chat_id, 0) + 1
+        self._paid_changes_pending[chat_id] = (
+            self._paid_changes_pending.get(chat_id, 0) + 1
+        )
+
+        async def change_and_readback() -> Chat:
+            changed = await asyncio.to_thread(
+                self._repository.set_paid_without_confirmation,
+                chat_id,
+                enabled,
+                secrets.token_hex(16),
+                _as_utc(self._now()),
+            )
+            if not changed:
+                raise KeyError(tr("service.chat_missing"))
+            chat = await asyncio.to_thread(self._repository.get_chat, chat_id)
+            if chat is None:
+                raise KeyError(tr("service.chat_missing"))
+            return chat
+
+        try:
+            # A cancelled owner must not release consent while its SQLite worker
+            # can still commit. The counted fence also covers post-write readback.
+            return await finish_worker(change_and_readback())
+        finally:
+            remaining = self._paid_changes_pending[chat_id] - 1
+            if remaining:
+                self._paid_changes_pending[chat_id] = remaining
+            else:
+                del self._paid_changes_pending[chat_id]
 
     @repository_session("_repository")
     async def create_chat(

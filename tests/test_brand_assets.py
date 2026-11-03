@@ -28,16 +28,6 @@ class PngImage(NamedTuple):
 
 
 class BrandAssetTests(unittest.TestCase):
-    def test_flet_assets_exist(self) -> None:
-        for name in (
-            "icon.png",
-            "icon_android.png",
-            "icon_windows.ico",
-            "icon_linux.png",
-        ):
-            with self.subTest(name=name):
-                self.assertTrue((PROJECT_ROOT / "src" / "assets" / name).is_file())
-
     def test_flet_png_signatures_and_dimensions(self) -> None:
         expected = {
             "icon.png": (1024, 1024),

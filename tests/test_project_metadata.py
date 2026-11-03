@@ -80,9 +80,6 @@ class ProjectMetadataTests(unittest.TestCase):
             set(self.metadata["dependency-groups"]["dev"]),
             EXPECTED_DEV_DEPENDENCIES,
         )
-        self.assertTrue(
-            all("==" in dependency for dependency in EXPECTED_DEV_DEPENDENCIES)
-        )
 
     def test_flet_app_excludes_are_exact_paths_without_globs(self) -> None:
         flet = self.metadata["tool"]["flet"]

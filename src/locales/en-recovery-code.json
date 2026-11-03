@@ -1,0 +1,21 @@
+{
+  "recovery_code.settings": "Recovery code",
+  "recovery_code.enter_title": "Recover with a code",
+  "recovery_code.enter_instructions": "Enter your saved recovery code to choose a new PIN and keep your conversations.",
+  "recovery_code.not_enrolled": "This profile has no active recovery code. Use your previous PIN or a system recovery method you set up earlier. Your conversations are kept.",
+  "recovery_code.code_label": "Saved recovery code",
+  "recovery_code.verify": "Verify code",
+  "recovery_code.system_optional": "Use Linux system recovery",
+  "recovery_code.confirm_pin_instructions": "Confirm your app PIN to create a recovery code. A previous code stays valid until you confirm its replacement.",
+  "recovery_code.generate": "Create a recovery code",
+  "recovery_code.save_title": "Save your recovery code",
+  "recovery_code.save_instructions": "Shown once. Anyone with this code can replace your PIN. Save it separately, then repeat it below. Each code works once and cannot restore a lost conversation key. Your previous code stays valid until you confirm this one.",
+  "recovery_code.repeat_label": "Repeat the saved recovery code",
+  "recovery_code.confirm_saved": "Confirm saved code",
+  "recovery_code.copy": "Copy code",
+  "recovery_code.clipboard_notice": "Clipboard history may keep a copy.",
+  "recovery_code.protection_notice": "{watcher}",
+  "recovery_code.verified_notice": "Code verified. Choose a new PIN. Your conversations are kept.",
+  "recovery_code.saved_notice": "Your recovery code is ready. Keep it separately from Tokenlogue.",
+  "recovery_code.cancelled_notice": "Recovery cancelled. Your PIN and conversations are kept."
+}

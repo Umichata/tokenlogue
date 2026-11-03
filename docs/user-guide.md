@@ -7,8 +7,8 @@
 ## English
 
 This guide describes the current [published `0.1.0` preview `2b1f7d3`](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-linux-preview.2b1f7d3).
-The [current-source section](#en-current) describes newer setup, Android
-locking, chat panel controls and language selection. Those changes are not
+The [current-source section](#en-current) describes newer setup, system locking,
+Linux PIN recovery, local profile deletion, chat panel controls and language selection. Those changes are not
 part of the published Linux preview. The published preview has a Russian
 interface, so its instructions use Russian control labels. Current builds
 also offer English. The current-build instructions below use English labels
@@ -17,8 +17,8 @@ For installation of the published preview, use the
 [Linux AppImage guide](linux-appimage.md#lang-en).
 
 [Key and PIN in the Linux preview](#en-access) | [Current builds](#en-current) |
-[Panel and language](#en-workspace) |
-[Chats and menu](#en-chats) |
+[Delete local profile](#en-delete) | [Panel and language](#en-workspace) |
+[Chats and menu](#en-chats) | [Metrics and estimate](#en-chat-metrics) |
 [Messages and drafts](#en-drafts) | [Limits](#en-limits) | [Data](#en-data)
 
 <a name="en-access"></a>
@@ -79,9 +79,116 @@ unlock Tokenlogue. Enter your PIN to continue with the selected chat,
 history and draft. Opening the keyboard or briefly losing focus alone does
 not lock the app. The header lock button remains available on every platform.
 
+On Linux Mint 22.3 Cinnamon/X11, the screen locker becoming active, a session
+switch or suspend closes the workspace and cancels an unfinished recovery
+attempt. Your latest draft is saved. A request already sent keeps its reserve
+and may still save its response and accounting. Unlocking the desktop or
+returning from sleep does not open chats. Enter your app PIN or start a fresh
+recovery check. Minimizing the window, changing focus or opening the polkit
+prompt alone does not lock Tokenlogue.
+
+<a name="en-protection-check"></a>
+
+#### Local protection checks
+
+On Linux, saving the checked key and chosen PIN for a new protected profile
+automatically opens `Check local protection` before chats. The saved PIN is
+already active. The screen explains what will happen and waits for your
+explicit `Start check`. Saving a key or PIN does not unexpectedly lock the OS.
+The test does not need a selected chat or a previous manual screen lock.
+
+`Start check` first prepares the supported desktop screen-locking service.
+A service that has not started yet is not a reason to disable the button
+forever. Preparation has a time limit and shows its outcome. If it cannot
+finish, read the explanation and retry. Do not change desktop lock settings
+or install system policy just to start the check.
+
+The OS then locks through its normal screen locker. Unlock it normally and
+enter your saved Tokenlogue PIN. You do not need to enter your API key or
+create a profile again. A confirmed result belongs to that same check and
+remains visible after sign-in. Choose `Open chats` to finish the step.
+The offer to create a recovery code follows this step and can be left for
+later. Replacing an existing key does not restart this first-run step.
+
+If you restart before finishing the step, sign in with your saved PIN to
+resume it. You may instead choose `Continue with manual locking`. This keeps
+the result explicitly unconfirmed and opens the profile for normal use.
+Lock Tokenlogue manually until the screen check is confirmed. Remembering
+that this setup step was handled is separate from the saved check history.
+
+The shield at the far right of the PIN screen's app header opens the same
+`Local protection` panel as the chat shield. The language selector remains
+available in the header. Protection no longer takes a permanent line beneath
+the PIN instruction. Opening the panel leaves any digits already entered
+unchanged and does not unlock conversations or request an OS action.
+
+Choose `Test screen lock` or `Test sleep protection` while locked to continue
+through your ordinary PIN sign-in. Incorrect PIN and the existing countdown
+still apply. You can cancel the choice from the PIN form or reopen the panel
+and close it. After successful sign-in the selected test has an explicit
+`Start test` action. Entering PIN alone never locks or suspends the OS.
+A choice expires and is cancelled by recovery, deletion, another system lock
+or restart. Choose the test again if needed.
+
+In an open profile, the shield beside the far-right `⋮` opens `Local protection`
+immediately. The menu also opens that same panel. `Test screen lock` is available
+with an empty chat list and in a new desktop session before its first screen lock. It uses the same check
+as the setup step, saves the current draft and waits for your explicit action.
+A short conflicting operation or another running check can temporarily make
+it busy. Finish that operation and retry.
+
+Screen locking and sleep have separate histories with the time of their last
+completed checks. Green means the real OS cycle and Tokenlogue's normal
+protection were confirmed. A screen check does not confirm sleep. Testing
+one mechanism leaves the other result intact.
+
+`Test sleep protection` is available beside `Test screen lock` after sign-in,
+including an empty chat list. Read its explanation before pressing it.
+The computer will sleep. Your draft is saved first. Wake the computer,
+unlock the OS normally and enter your app PIN. Unlocking the OS never opens
+Tokenlogue automatically or sends a draft. A previous screen test is not
+required. The two tests cannot run together. Opening the menu or saving
+registration never starts sleep. Ordinary sleep from the OS menu still
+protects the app and does not erase the screen result.
+
+Results survive restarting Tokenlogue, rebooting this device, normal sleep,
+PIN sign-in, language changes and menu rebuilding. A temporary reconnect
+shows the previous check separately from a warning about current monitoring.
+Once trusted compatible monitoring returns, the saved confirmation becomes
+current without another manual test. A changed protection contract or an
+unsupported locker can require a new check. A different computer or OS
+account has its own history. Copying a chat profile or preferences does not
+copy device confirmation. Device check history is not part of chat exports.
+Deleting a chat profile leaves this device history in place.
+
+A denied request, cancellation or an attempt without proven sleep does not
+create a new success or erase a previous check. A real failure is red for
+the affected mechanism and keeps the time of its previous success in details.
+Emergency closure protects data but never makes a failed test pass.
+A save error means a current result may be correct but has not been remembered
+for the next launch. Never treat old green history as proof that unavailable
+monitoring is working now. Use manual app locking while a warning remains.
+
+Use one active local Cinnamon/X11 desktop and one display. Additional displays,
+ambiguous sessions, other desktops and Wayland can limit monitoring. The OS
+must permit ordinary suspend for the sleep button. Do not change system
+security policies just to run a test. Current Windows builds are not provided.
+Android keeps its existing background locking. Its protection panel explains
+the available device protection and has no desktop tests.
+
+<a name="en-key-replacement"></a>
+
+#### Signing in and replacing the key
+
 Updating an existing installation keeps its PIN, including a PIN generated
 by an older version. You do not need to reset access to use the update.
-Five incorrect sign-in attempts still cause a 30-second lockout.
+Three incorrect app PIN checks lock PIN entry for five minutes, or 300 seconds.
+The first two failures show the attempts remaining. Sign-in and PIN confirmation
+before creating a recovery code share this limit. A correct PIN cannot bypass
+an active lockout. The countdown shows minutes and seconds and continues across
+restart, sleep, backgrounding and language changes. Recovery and profile deletion
+remain available. After the lockout ends, a new cycle of attempts is available.
+An update preserves recorded failures and an active lockout.
 
 To replace any saved OpenRouter API key, first sign in with your current app
 PIN. Open `⋮` and choose `Replace OpenRouter key`. This action is available for
@@ -97,6 +204,99 @@ and budgets stay the same. There is no new PIN setup. `Refresh key status`
 remains a separate action and keeps the menu open. Replacing an API key does
 not recover a forgotten PIN or revoke the previous key at OpenRouter.
 
+<a name="en-paid-confirmation"></a>
+
+#### Paid requests without confirmation
+
+In a paid chat, use `Without confirmation` in the strip above the conversation.
+It is available before the first message and starts off in new chats.
+An existing chat keeps its saved choice after an update. Enabling it sends
+nothing by itself. It allows requests
+to be sent immediately and spend funds within the chat's current limits.
+
+With it on, the first request, later requests and retries have no paid-request
+warning, notification or confirmation dialog. Price changes also need no
+separate paid-request confirmation. Current prices and the required reserve
+are recalculated before sending. A request that fails key, budget or other
+checks is not sent. Increasing the spending limit still requires its own
+confirmation. The setting does not increase limits or hide actual errors.
+
+Turn the checkbox off to require confirmation for the next request and every
+later request. The choice is saved only for this chat and profile. It survives
+language changes, locking, switching chats and restarting. If saving fails,
+the checkbox returns to the saved choice and an error is shown.
+Changing the choice, navigating or locking does not submit a queued request.
+After unlocking, choose Send again when you are ready. Hover over or long-press
+the checkbox for its explanation. The adjacent help button also opens it
+from the keyboard without changing the setting.
+
+<a name="en-chat-metrics"></a>
+
+#### Chat metrics and the estimate while typing
+
+Above a paid conversation, `Chat available` is the remaining spending
+budget after actual costs and active reserves. `Last request` is the confirmed
+cost of the latest sent attempt, including a retry of an older message.
+`Key remaining` is visible directly in the paid-chat strip when the current
+API key has a known positive remaining spending limit. It is a separate value
+from the chat budget and the OpenRouter account balance.
+
+`Key limit exhausted` shows zero or a negative remainder as exhausted.
+A negative remainder does not add funds to the chat. Small positive amounts
+remain distinct from zero. `Key limit not set` means that this key has no
+separate spending limit. It is not an invalid key or an infinite account
+balance. `Key data unavailable` means that a reliable remainder is unknown,
+rather than a confirmed zero.
+
+Hover over or long-press the key metric for its explanation and the actual
+receipt time when known. Use the existing `Refresh key status` action to
+refresh it. A failed background refresh can keep an older snapshot with its
+original date. Redrawing the strip does not make those data fresh. Typing
+uses the local estimate and does not refresh the key metadata.
+
+A standard request key cannot use the documented management-key source for
+account totals. Tokenlogue does not request a management key or derive an
+account balance from usage or the chat budget. If no key limit is set, its
+numeric remainder is unavailable by design. The tooltip explains this
+distinction without keeping an account-balance warning in the main strip.
+
+For free chats, `Tokens remaining` belongs to the chat budget, including active
+reserves. `Last request` is its authoritative input-and-response total. It is
+not the server's global free quota. New chats show `No requests`. A sent attempt
+with unresolved accounting shows `Reconciling` or `Unknown`, rather than zero
+or the previous attempt's cost. A local cancellation before sending keeps the
+previous actual result. Older histories with unrecoverable dispatch order can
+show `Unknown` until a new request is sent. Their messages and accounting stay
+in place.
+
+Under the editor, the estimate changes as you type, delete, paste or replace
+text. It includes the same eligible history and effective response maximum
+used by sending. Token counts are a conservative local UTF-8-based estimate,
+not exact model tokenization. The response maximum and possible cost are upper
+bounds for the known configuration, not predicted actual usage or a charge.
+A free configuration can show $0. Incomplete or expired paid-model information
+shows `Cost unknown`. Very small positive amounts remain distinct from zero.
+
+The estimate makes no request, reserve or paid decision. It does not change
+your budgets or confirmation setting. Real checks still run when you send.
+An empty or oversized draft is not presented as a ready request. Changing
+chats, locking or deleting a profile discards an old calculation.
+
+When the keyboard or a short window leaves little room, the rename and delete
+shortcuts and the bottom reminder are tucked away. Close the keyboard or make
+the window taller to show them again. The editor stays in place while the
+history and estimate use the available space.
+
+<a name="en-pin-recovery"></a>
+
+#### Recovering a PIN
+
+Opening `Forgot PIN?` does not change your PIN. Locking the OS or suspending
+cancels an unfinished recovery and clears entered values. Until the new PIN
+has been saved, the previous PIN still works. Passing a device check only
+lets you choose a new PIN and does not save it. A new PIN already saved before
+the lock stays active when you return. Start a fresh recovery attempt if needed.
+
 On Android 11 or later, `Forgot PIN?` starts a separate system check of the device PIN,
 pattern or password. Supported biometrics may be offered as an alternative.
 A fingerprint is not required. The device needs to have a supported screen
@@ -107,18 +307,148 @@ stays closed until the new PIN is saved. Cancelling before that confirmation
 keeps the previous PIN and conversations. If the system check fails or is
 cancelled, sign in with your previous PIN or start a new check.
 
-Device recovery is unavailable on Android 7–10 and on Linux. Normal app PIN
-sign-in remains available. Keep your app PIN somewhere safe.
-Entering a valid OpenRouter key and choosing another PIN cannot open an
-existing protected conversation database. Recovery on Android also depends
-on the original protected encryption key still being available.
+On Linux, save a recovery code before you forget your PIN. Current builds offer
+one after the local-protection setup step is handled. In an existing unlocked profile, open `⋮` and
+choose `Recovery code`. Enter your current app PIN again to issue or replace
+it. You must be signed in to create a code.
+
+The code has 32 Base32 characters shown in groups of four. Anyone who has it
+can replace your app PIN. Save it separately in a password manager or on paper,
+then enter that saved code to confirm. It is shown only on that screen.
+The app does not copy it automatically. If you choose to copy it, a clipboard
+manager may retain its own copy. Closing the screen hides the full code and
+you cannot reveal that same code again. You can issue another after sign-in
+and another app PIN confirmation.
+
+A previous working code remains valid until you confirm its replacement.
+Cancelling issuance or a failed save keeps the working code and app PIN.
+A successfully replaced code stops working.
+
+`Forgot PIN?` opens code entry as the main Linux method. It needs no
+administrator rights, system policy or Linux password. Enter the code saved
+for this profile. Uppercase and lowercase ASCII letters, ASCII spaces and
+hyphens are accepted. The code must contain all 32 Base32 characters. Tabs,
+line breaks, Unicode lookalikes and partial codes are not accepted. Failed
+Five incorrect code checks cause a separate 30-second lockout, including
+after restarting the app. This does not change the app PIN limit.
+
+After the code is verified, choose and repeat a new four-digit PIN and select
+`Save new PIN`. Conversations stay closed until saving completes. Cancelling
+before the change is accepted keeps the working PIN and code. The saved new
+PIN consumes the used code. It cannot recover the profile again. Save and
+confirm the new code offered afterwards. If you close the app first, the new
+PIN still works. Sign in with it and use `Recovery code` in `⋮` to issue another.
+
+If a code was never issued for this profile, Tokenlogue explains that it
+cannot create one while the profile is locked. You need the previous app PIN,
+a previously issued code or a working trusted system recovery method.
+Installing this update does not recover an already forgotten PIN retroactively.
+Your data is kept. A new OpenRouter key, an unlocked keyring or an Android
+profile from another device does not authorize opening the Linux conversations.
+
+`Use Linux system recovery` remains a separate, explicitly selected
+method. On Linux Mint 22.3 Cinnamon/X11 it uses a fresh polkit confirmation of
+your own Linux account. Enter your Linux password only in that system prompt,
+never into Tokenlogue. A different administrator account does not replace
+confirmation of your account. It needs a separately installed Tokenlogue policy
+and a working desktop agent. An unavailable or refused check keeps chats
+closed and explains the failure. Code recovery does not require this setup.
+See [the Linux guide](linux-appimage.md#en-current-protection) for this optional
+method. Normal PIN sign-in remains available. Android 7–10 has no system recovery.
+
+Keep your app PIN somewhere safe. Entering a valid OpenRouter key and choosing
+another PIN cannot open an existing protected conversation database. Recovery
+on either platform also needs the original protected encryption key. It cannot
+recreate a missing key for data that is already encrypted. A recovery code is
+an additional sign-in method, not a backup of the encryption key or database.
 
 In current builds, `Rename` and `Delete chat`
 appear directly below the selected chat's title, even when the menu is closed.
 A name you save here stays unchanged after later messages and restarts.
 Renaming preserves the conversation and draft. Deletion asks for confirmation
 and removes only that chat's local history and draft. Key status, model
-information and limits remain in `⋮`.
+information and limits remain in `⋮`. The separate `Delete local profile` action
+at the bottom removes the whole profile after confirmation.
+
+<a name="en-delete"></a>
+
+### Delete a local profile and start again
+
+This action exists in current Linux and Android builds. It is separate from
+PIN recovery and from `Replace OpenRouter key` after sign-in. Recovery keeps
+conversations when you can provide an existing valid proof and the original
+encryption key is available. Deletion gives up the selected local profile.
+It does not read, decrypt or recover its old conversations.
+
+After sign-in, open `⋮` and choose `Delete local profile` at the bottom of the
+menu. It is available with a selected chat and with an empty workspace. If a
+send or another dialog is active, finish or cancel it first. Cancelling deletion
+returns to the same chat and keeps your saved draft. Refreshing the key status
+does not replace the confirmation.
+
+On the PIN screen, choose `Delete local profile`. It remains available during
+a PIN lockout and when recovery codes or system recovery cannot be used.
+The forgotten PIN, recovery code, Linux password, administrator rights and
+network access are not required. The actions appear in this order:
+
+1. `Sign in`.
+2. `Delete local profile`.
+3. `Forgot PIN?`.
+
+Key replacement is available only after sign-in through `⋮`. Entering a new
+API key is still part of setting up a newly created profile.
+
+Confirm deletion separately:
+
+1. Read the dialog about losing local conversations, access settings, limits
+   and spending records.
+2. To keep the profile, choose `Keep profile`. To proceed, enter the shown
+   phrase `DELETE PROFILE` exactly, including its space.
+3. Choose `Delete profile` only when you intend to give up
+   this local history. An incorrect phrase does not enable that button.
+
+For a supported existing Linux data folder, the dialog also explains that
+Tokenlogue will make its own folder private before checking the profile again.
+This uses the same confirmation and needs no administrator rights. Merely
+opening or cancelling the dialog changes neither permissions nor profile data.
+Shared folders, network storage and folders whose ownership cannot be safely
+confirmed are refused. Do not change permissions or remove files manually.
+
+If preparation or checking fails before data deletion, the message says that
+deletion has not started and tells you how to retry or ask for help. If the
+folder was already made private, it stays private and the profile is kept.
+Return to the PIN screen and open a new confirmation. This state is different
+from accepted deletion that still needs `Finish deletion`.
+
+Anyone who can use this screen can confirm deletion. The phrase prevents an
+accidental click and confirms intent. It does not establish identity or protect
+against someone deliberately deleting the local profile.
+
+Before deletion has been accepted, changing language, closing the dialog or
+a system lock cancels the confirmation. An old dialog or a second click cannot
+start another deletion. Once data deletion has started, it must finish. Closing the app
+at that point does not turn a partly deleted profile into a new working one.
+On restart Tokenlogue continues the accepted deletion. If storage cannot
+complete or verify it, chats stay closed and new setup remains unavailable.
+Choose `Finish deletion` to retry without the forgotten PIN.
+
+After success, enter an API key again and choose a new PIN. You may save your
+still-valid OpenRouter key again. Linux then offers a new recovery code to
+save and confirm. The new profile has new registration and encryption keys,
+an empty chat list and no old selected chat or draft. Former PINs, recovery
+codes and unfinished recovery attempts cannot open or modify it. Language
+and chat-panel layout choices are kept.
+
+Only this profile's active local data and its associated keys are removed.
+Other applications, external exports and backups remain in place. Physical
+erasure of SSD blocks, swap, system snapshots or external copies is not
+promised. This action does not revoke your key at OpenRouter, delete your
+account or cancel requests already sent and their cost. It makes no remote
+key-revocation request.
+
+`Replace OpenRouter key` continues to require sign-in and keeps the PIN,
+encryption key and conversations. Use the recovery route if you want to keep
+old history. A newly entered API key alone cannot unlock that history.
 
 <a name="en-workspace"></a>
 
@@ -138,6 +468,11 @@ a new unnamed chat follows the interface language. Existing titles stay as
 saved when their origin is uncertain. A title taken from your first message
 also stays in its original language.
 
+While issuing a recovery code or recovering a PIN on Linux, changing language
+cancels the unfinished attempt. A language change also cancels an unconfirmed
+profile-deletion dialog on either platform. Start again in the selected language.
+A new PIN that has already been saved remains valid.
+
 The button at the top left is always available. In a wide window it hides
 or shows the chat list. With the list hidden, the conversation and editor
 use the freed space. The app remembers the wide-window choice when you
@@ -151,8 +486,9 @@ wide again. The selected chat, reading position, draft and pending request
 are preserved when you toggle the panel or language.
 
 `Rename` and `Delete chat` remain below the selected title. The `+` and lock
-buttons stay at the right, with `⋮` at the far right. If the menu contains
-more information than fits on screen, scroll inside it.
+buttons stay at the right, with `⋮` at the far right. On Linux, the compact
+protection shield sits next to `⋮` and opens its protection details. If the menu
+contains more information than fits on screen, scroll inside it.
 
 <a name="en-chats"></a>
 
@@ -244,9 +580,11 @@ released. An unknown cost is not treated as zero. A reservation is a local
 budget limit, not a charge to your OpenRouter account. Check that account
 for the service's actual billing records.
 
-Each paid request has a confirmation showing its model and estimated reserve.
-If prices change, another confirmation is required. Increasing a chat's
-monetary cap also requires confirmation. Cancel the dialog to leave the request unsent or keep the previous limit.
+In the published preview, every paid request asks for confirmation with the
+model and preliminary reserve. A price change requires another confirmation.
+Current builds keep this default and offer the [per-chat setting](#en-paid-confirmation)
+to send without paid-request confirmation. Increasing the chat's spending
+limit still needs confirmation. Cancel the dialog to leave the request unsent or keep the previous limit.
 
 #### If a request's result is unknown
 
@@ -334,15 +672,17 @@ private content.
 ## Русский
 
 Руководство описывает текущую [опубликованную предварительную сборку `0.1.0` версии `2b1f7d3`](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-linux-preview.2b1f7d3).
-[Раздел о текущих исходниках](#ru-current) описывает новую настройку PIN
-и блокировку Android в сборках из текущих исходников. Эти изменения не входят
+[Раздел о текущих исходниках](#ru-current) описывает новую настройку PIN,
+системную блокировку и восстановление PIN в Linux, удаление локального профиля,
+панель чатов и выбор языка.
+Эти изменения не входят
 в опубликованную сборку для Linux. Интерфейс на русском языке. Ниже используются
 названия элементов, которые видны в приложении. Установка опубликованной
 сборки описана в [руководстве по AppImage для Linux](linux-appimage.md#lang-ru).
 
 [Ключ и PIN в сборке Linux](#ru-access) | [Текущие сборки](#ru-current) |
-[Панель и язык](#ru-workspace) |
-[Чаты и меню](#ru-chats) |
+[Удаление локального профиля](#ru-delete) | [Панель и язык](#ru-workspace) |
+[Чаты и меню](#ru-chats) | [Статистика и оценка](#ru-chat-metrics) |
 [Сообщения и черновики](#ru-drafts) | [Лимиты](#ru-limits) | [Данные](#ru-data)
 
 <a name="ru-access"></a>
@@ -407,9 +747,124 @@ Tokenlogue. Введите PIN, чтобы продолжить работу с 
 по себе не блокируют приложение. Кнопка блокировки в шапке остаётся доступной
 на всех платформах.
 
+В Linux Mint 22.3 Cinnamon/X11 включение экранной блокировки, смена сессии
+или переход в сон закрывают переписку и отменяют незавершённое восстановление.
+Последний черновик сохраняется. Уже отправленный запрос сохраняет резерв
+и может завершить запись ответа и учёт расходов. Разблокировка рабочего стола
+и возврат из сна не открывают чаты. Введите PIN приложения или начните новую
+проверку восстановления. Сворачивание окна, смена фокуса и открытие запроса
+polkit сами по себе не блокируют Tokenlogue.
+
+<a name="ru-protection-check"></a>
+
+#### Проверки локальной защиты
+
+В Linux после сохранения проверенного ключа и выбранного PIN нового
+защищённого профиля автоматически открывается `Проверка локальной защиты`
+до перехода к чатам. Сохранённый PIN уже действует. Экран объясняет дальнейшие
+действия и ждёт явного нажатия `Начать проверку`. Сохранение ключа или PIN
+не блокирует ОС неожиданно. Выбранный чат и прежняя ручная блокировка
+экрана для теста не нужны.
+
+`Начать проверку` сначала подготавливает поддерживаемую экранную службу
+рабочего стола. Ещё не запущенная служба не делает кнопку недоступной
+навсегда. Подготовка ограничена по времени и показывает результат.
+Если она не завершилась, прочитайте объяснение и повторите попытку.
+Не меняйте настройки блокировки рабочего стола и не устанавливайте
+системную policy только ради запуска проверки.
+
+Затем ОС блокируется обычным экранным механизмом. Разблокируйте её обычным
+способом и введите сохранённый PIN Tokenlogue. Повторно вводить API-ключ
+или создавать профиль не нужно. Подтверждённый результат относится к тому
+же тесту и остаётся видимым после входа. Нажмите `Перейти к чатам`, чтобы
+завершить шаг. После него предлагается создание резервного кода,
+которое можно отложить. Замена существующего ключа не повторяет этот шаг.
+
+Если приложение перезапущено до завершения шага, войдите с сохранённым PIN
+и продолжите его. Можно выбрать `Продолжить с ручной блокировкой`.
+Результат остаётся явно неподтверждённым, а профиль доступен для обычной
+работы. Пока экранная проверка не подтверждена, блокируйте Tokenlogue
+вручную. Отметка завершения шага хранится отдельно от истории проверок.
+
+Щит крайним справа в шапке экрана PIN открывает ту же панель
+`Локальная защита`, что и щит в чате. Выбор языка остаётся в шапке.
+Постоянной строки защиты под инструкцией PIN больше нет. Открытие панели
+сохраняет уже введённые цифры, не открывает переписку и не запрашивает
+действие ОС.
+
+Выберите `Тест блокировки` или `Тест перехода в сон` на закрытом экране,
+чтобы продолжить обычный вход по PIN. Неверный PIN и действующий отсчёт
+по-прежнему учитываются. Выбор можно отменить в форме PIN либо вновь
+открыть и закрыть панель. После успешного входа у выбранной проверки
+появляется явная кнопка `Начать тест`. Один ввод PIN не блокирует
+и не усыпляет ОС. Выбор истекает и отменяется при восстановлении, удалении,
+новой системной блокировке или перезапуске. При необходимости выберите
+тест заново.
+
+В открытом профиле щит рядом с крайним правым `⋮` сразу открывает
+`Локальная защита`. Меню также открывает эту же панель. `Тест блокировки` доступен при пустом
+списке чатов и в новой сессии рабочего стола до первой блокировки экрана. Он использует ту же проверку,
+что и шаг настройки, сохраняет текущий черновик и ждёт явного действия.
+Короткая конфликтующая операция или другая выполняющаяся проверка временно
+занимает управление. Завершите эту операцию и повторите попытку.
+
+Экранная блокировка и сон имеют отдельную историю со временем последних
+завершённых проверок. Зелёный результат означает подтверждение настоящего
+цикла ОС и штатной защиты Tokenlogue. Экранная проверка не подтверждает сон.
+Проверка одного механизма сохраняет результат другого.
+
+`Тест перехода в сон` доступен рядом с `Тест блокировки` после входа,
+в том числе при пустом списке чатов. Перед нажатием прочитайте объяснение.
+Компьютер перейдёт в сон. Сначала сохранится черновик. Пробудите компьютер,
+разблокируйте ОС обычным способом и введите PIN приложения. Разблокировка
+ОС не открывает Tokenlogue автоматически и не отправляет черновик.
+Предварительная экранная проверка не нужна. Оба теста не выполняются
+одновременно. Открытие меню и сохранение регистрации не запускают сон.
+Обычный сон из меню ОС по-прежнему защищает приложение и не стирает
+результат экранной проверки.
+
+Результаты сохраняются при перезапуске Tokenlogue, перезагрузке этого
+устройства, обычном сне, входе по PIN, смене языка и перестроении меню.
+Временное переподключение показывает прежнюю проверку отдельно от
+предупреждения о текущем наблюдении. После восстановления доверенного
+совместимого наблюдения сохранённое подтверждение снова становится
+актуальным без нового ручного теста. Изменение контракта защиты или
+неподдерживаемая экранная служба могут потребовать новой проверки.
+Другой компьютер или учётная запись ОС имеют свою историю. Копирование
+профиля чатов или предпочтений не переносит подтверждение устройства.
+История защиты не входит в экспорт чатов. Удаление профиля чатов оставляет
+историю устройства на месте.
+
+Отказ запроса, отмена или попытка без доказанного сна не создают новый
+успех и не стирают прежнюю проверку. Настоящий отказ отмечается красным
+только у соответствующего механизма. Время его прежнего успеха остаётся
+в подробностях. Аварийное закрытие защищает данные, но не делает тест
+успешным. Ошибка записи означает, что текущий результат может быть верным,
+но не запомнен для следующего запуска. Прежняя зелёная история не доказывает
+работу недоступного наблюдения сейчас. Пока предупреждение остаётся,
+блокируйте приложение вручную.
+
+Используйте один активный локальный Cinnamon/X11 desktop и один экран.
+Дополнительные экраны, неоднозначная сессия, другие рабочие столы и Wayland
+могут ограничивать наблюдение. Для кнопки сна ОС должна разрешать обычный
+suspend. Не меняйте системные политики безопасности ради теста.
+Сборки Windows сейчас не предоставляются. Android сохраняет прежнюю
+блокировку при переходе в фон. Его панель объясняет доступную защиту
+устройства и не содержит desktop-тестов.
+
+<a name="ru-key-replacement"></a>
+
+#### Вход и замена ключа
+
 Обновление установленного приложения сохраняет прежний PIN, в том числе
 созданный старой версией. Для использования обновления не нужен сброс доступа.
-После пяти неверных попыток вход по-прежнему блокируется на 30 секунд.
+Три неверные проверки PIN приложения блокируют ввод на пять минут, или
+300 секунд. Первые две ошибки показывают остаток попыток. Вход и подтверждение
+PIN перед созданием резервного кода используют общее ограничение. Правильный
+PIN не обходит действующую блокировку. Отсчёт в минутах и секундах продолжается
+после перезапуска, сна, перехода в фон и смены языка. Восстановление и удаление
+профиля остаются доступными. После окончания срока доступен новый цикл попыток.
+Обновление сохраняет записанные ошибки и действующую блокировку.
 
 Чтобы заменить любой сохранённый API-ключ OpenRouter, сначала войдите
 с действующим PIN приложения. Откройте `⋮` и выберите `Заменить ключ OpenRouter`.
@@ -427,6 +882,104 @@ PIN не нужно. `Обновить статус ключа` остаётся
 меню открытым. Замена API-ключа не восстанавливает забытый PIN и не отзывает
 прежний ключ в OpenRouter.
 
+<a name="ru-paid-confirmation"></a>
+
+#### Платные запросы без подтверждения
+
+В платном чате используйте `Без подтверждений` в полосе над перепиской.
+Настройка доступна до первого сообщения и изначально выключена в новых чатах.
+Прежний чат сохраняет свой выбор после обновления. Само включение ничего
+не отправляет. Оно разрешает отправлять запросы сразу
+и расходовать средства в пределах текущих лимитов этого чата.
+
+При включении первый запрос, следующие запросы и повторы проходят без
+предупреждения, уведомления или диалога подтверждения платного запроса.
+Изменение цены также не требует отдельного подтверждения платного запроса.
+До отправки пересчитываются текущие цены и необходимый резерв. Запрос,
+не прошедший проверку ключа, бюджета или другие проверки, не отправляется.
+Увеличение денежного лимита по-прежнему требует отдельного подтверждения.
+Настройка не повышает лимиты и не скрывает действительные ошибки.
+
+Снимите флажок, чтобы вернуть подтверждение для следующего и каждого
+последующего запроса. Выбор сохраняется только для этого чата и профиля.
+Он переживает смену языка, блокировку, переход в другой чат и перезапуск.
+При ошибке записи флажок возвращается к сохранённому выбору и показывается
+ошибка. Смена выбора, переход или блокировка не отправляют ожидавший запрос.
+После разблокировки снова выберите отправку, когда будете готовы. Подсказка
+доступна при наведении или долгом нажатии на флажок. Соседняя кнопка справки
+открывает пояснение с клавиатуры без изменения настройки.
+
+<a name="ru-chat-metrics"></a>
+
+#### Статистика чата и оценка во время ввода
+
+Над платной перепиской `В чате доступно` показывает остаток денежного бюджета
+после фактических расходов и активных резервов. `Последний запрос` показывает
+подтверждённую стоимость последней отправленной попытки, включая повтор
+старого сообщения. `Осталось по ключу` видно прямо в полосе платного чата,
+когда известен положительный остаток расходного лимита текущего API-ключа.
+Это отдельное значение от бюджета чата и баланса OpenRouter.
+
+`Лимит ключа исчерпан` показывает нулевой или отрицательный остаток
+как исчерпанный. Отрицательный остаток не добавляет средства чату.
+Малые положительные суммы отличаются от нуля. `Лимит ключа не установлен`
+означает отсутствие отдельного расходного лимита этого ключа. Это не ошибка
+ключа и не бесконечный баланс аккаунта. `Данные ключа недоступны` означает,
+что надёжный остаток неизвестен, а не подтверждённый ноль.
+
+Наведите указатель на метрику ключа или нажмите её длительно, чтобы увидеть
+пояснение и время фактического получения, когда оно известно. Для обновления
+используйте прежнее действие `Обновить статус ключа`. После ошибки фонового
+обновления может остаться более старый снимок с прежней датой. Перерисовка
+полосы не делает эти данные свежими. Ввод текста использует локальную оценку
+и не обновляет метаданные ключа.
+
+Обычный ключ запросов не даёт доступа к документированному источнику итоговых
+средств аккаунта с управленческим ключом. Tokenlogue не просит такой ключ
+и не вычисляет баланс аккаунта из расходов или бюджета чата. Если отдельный
+лимит ключа не задан, остаток этого лимита не определён. Подсказка объясняет
+это различие без постоянного предупреждения о балансе аккаунта в полосе.
+
+В бесплатном чате `Осталось токенов` относится к бюджету чата с активными
+резервами. `Последний запрос` показывает итог токенов входа и ответа.
+Это не общая серверная квота бесплатных запросов. В новых чатах указано
+`Нет запросов`. Отправленная попытка с неуточнённым учётом показывает
+`Уточняется` или `Неизвестно`, а не ноль или стоимость прежней попытки.
+Локальная отмена до отправки сохраняет прежний фактический результат.
+В старой истории с невосстановимым порядком отправок возможно `Неизвестно`
+до новой отправки. Прежние сообщения и учёт остаются на месте.
+
+Под редактором оценка меняется при вводе, удалении, вставке или замене текста.
+Она учитывает ту же подходящую историю и эффективный максимум ответа,
+что и отправка. Токены оцениваются консервативно по UTF-8, без точной
+токенизации модели. Максимум ответа и возможная стоимость являются верхней
+оценкой известной конфигурации, а не предсказанием расхода или списанием.
+Бесплатная конфигурация может показывать $0. При неполных или устаревших
+данных платной модели указано `Стоимость неизвестна`. Очень маленькие
+положительные суммы отличаются от нуля.
+
+Оценка не делает запросов, не создаёт резервов и не принимает платных решений.
+Она не меняет бюджеты или настройку подтверждений. Настоящие проверки
+выполняются при отправке. Пустой или слишком длинный черновик не показан
+как готовый запрос. Переход в другой чат, блокировка или удаление профиля
+отбрасывают прежний расчёт.
+
+Когда клавиатура или низкое окно оставляют мало места, кнопки переименования
+и удаления и нижняя памятка временно скрываются. Закройте клавиатуру или
+увеличьте высоту окна, чтобы вернуть их. Редактор остаётся на месте,
+а переписка и оценка используют доступное пространство.
+
+<a name="ru-pin-recovery"></a>
+
+#### Восстановление PIN
+
+Нажатие `Забыли PIN?` не меняет PIN. Блокировка ОС или сон отменяют
+незавершённое восстановление и очищают введённые значения. До сохранения
+нового PIN прежний продолжает работать. Успешная системная проверка разрешает
+выбрать новый PIN, но сама его не сохраняет. Если новый уже сохранился
+до блокировки, после возврата действует он. При необходимости начните
+новую попытку восстановления.
+
 В Android 11 или новее кнопка `Забыли PIN?` запускает отдельную системную проверку PIN,
 графического ключа или пароля устройства. Поддерживаемая биометрия может
 предлагаться как другой способ. Отпечаток пальца не обязателен. На устройстве
@@ -438,18 +991,154 @@ PIN не нужно. `Обновить статус ключа` остаётся
 сохраняет прежний PIN и переписку. Если системная проверка не прошла или
 отменена, войдите с прежним PIN либо начните новую проверку.
 
-В Android 7–10 и Linux системное восстановление недоступно. Обычный вход
-по PIN приложения продолжает работать. Сохраните PIN приложения
-в надёжном месте. Ввод действительного ключа OpenRouter и выбор другого PIN
-не открывают существующую защищённую базу переписки. Для восстановления
-в Android также нужен сохранившийся защищённый ключ шифрования.
+В Linux сохраните резервный код до потери PIN. Текущие сборки предлагают его
+после завершения шага локальной защиты. В существующем открытом профиле откройте `⋮`
+и выберите `Резервный код`. Повторно введите действующий PIN приложения
+для выдачи или перевыпуска. Для создания кода нужно войти в приложение.
+
+Код состоит из 32 символов Base32, показанных группами по четыре. Обладающий
+им сможет заменить PIN приложения. Сохраните код отдельно в менеджере
+паролей или на бумаге, затем подтвердите сохранение повторным вводом. Он
+показывается только на этом экране. Приложение не копирует его автоматически.
+Если вы решите скопировать код, менеджер буфера обмена может сохранить свою
+копию. Закрытие экрана скрывает полный код. Показать тот же код заново нельзя.
+После входа и нового подтверждения PIN приложения можно выпустить другой.
+
+Прежний действующий код сохраняется до подтверждения замены. Отмена выдачи
+или ошибка сохранения оставляют действующий код и PIN приложения.
+Успешно заменённый код перестаёт работать.
+
+Кнопка `Забыли PIN?` открывает ввод кода как основной способ в Linux. Права
+администратора, системная policy и пароль Linux не нужны. Введите код,
+сохранённый для этого профиля. Допустимы заглавные и строчные ASCII-буквы,
+ASCII-пробелы и дефисы. Код должен содержать все 32 символа Base32.
+Табуляция, переносы строк, похожие Unicode-символы и неполные коды не
+принимаются. Пять неверных проверок кода включают отдельную блокировку
+на 30 секунд, в том числе после перезапуска приложения. Это не меняет
+ограничение PIN приложения.
+
+После проверки кода выберите и повторите новый четырёхзначный PIN, затем
+нажмите `Сохранить новый PIN`. Переписка закрыта до завершения сохранения.
+Отмена до принятия изменения сохраняет действующий PIN и код. Сохранение
+нового PIN погашает использованный код. Восстановить профиль им ещё раз нельзя.
+Сохраните и подтвердите новый код, предложенный затем. Если закрыть приложение
+раньше, новый PIN продолжит работать. Войдите с ним и выпустите другой код
+через `Резервный код` в `⋮`.
+
+Если код для этого профиля никогда не выдавался, Tokenlogue объяснит, что
+создать его при закрытом профиле нельзя. Нужен прежний PIN приложения,
+заранее выданный код или работающий доверенный системный способ восстановления.
+Установка обновления не восстанавливает уже забытый PIN задним числом.
+Данные сохраняются. Новый ключ OpenRouter, разблокированная связка ключей
+и профиль Android с другого устройства не разрешают открыть переписку Linux.
+
+Действие `Системное восстановление Linux` остаётся отдельным
+явно выбранным способом. В Linux Mint 22.3 Cinnamon/X11 оно запрашивает новое
+подтверждение собственной учётной записи Linux через polkit. Вводите пароль
+Linux только в системном окне, а не в Tokenlogue. Другая учётная запись
+администратора не заменяет подтверждение вашей записи. Нужны отдельно
+установленная policy Tokenlogue и работающий агент рабочего стола. Недоступная
+или отклонённая проверка оставляет чаты закрытыми с объяснением. Для кода
+эта настройка не нужна. Дополнительный способ описан в
+[руководстве Linux](linux-appimage.md#ru-current-protection).
+Обычный вход по PIN остаётся доступным. В Android 7–10 системного восстановления нет.
+
+Сохраните PIN приложения в надёжном месте. Ввод действительного ключа
+OpenRouter и выбор другого PIN не открывают существующую защищённую базу
+переписки. На обеих платформах для восстановления нужен прежний защищённый
+ключ шифрования. Создать заново потерянный ключ уже зашифрованных данных нельзя. Резервный код
+даёт дополнительный способ входа, а не копию ключа шифрования или базы.
 
 В текущих сборках кнопки `Переименовать` и `Удалить чат` находятся прямо
 под названием выбранного чата и видны при закрытом меню. Сохранённое здесь
 название не меняется после новых сообщений и перезапуска. Переименование
 сохраняет переписку и черновик. Удаление требует подтверждения и убирает
 только локальную историю и черновик этого чата. Состояние ключа, сведения
-о модели и лимиты остаются в `⋮`.
+о модели и лимиты остаются в `⋮`. Отдельное действие
+`Удалить локальный профиль` внизу меню после подтверждения удаляет весь профиль.
+
+<a name="ru-delete"></a>
+
+### Удаление локального профиля и начало заново
+
+Это действие есть в текущих сборках Linux и Android. Оно отделено от
+восстановления PIN и от `Заменить ключ OpenRouter` после входа.
+Восстановление сохраняет переписку при действующем подтверждении и доступном
+прежнем ключе шифрования. Удаление означает отказ от выбранного локального
+профиля. Оно не читает, не расшифровывает и не восстанавливает прежние чаты.
+
+После входа откройте `⋮` и выберите `Удалить локальный профиль` внизу меню.
+Действие доступно с выбранным чатом и при пустой переписке. Если выполняется
+отправка или открыт другой диалог, сначала завершите или отмените его. Отмена
+удаления возвращает тот же чат с сохранённым черновиком. Обновление статуса
+ключа не заменяет подтверждение.
+
+На экране PIN выберите `Удалить локальный профиль`. Действие остаётся
+доступным при временной блокировке ввода PIN и недоступности резервного кода
+или системного восстановления. Забытый PIN, резервный код, пароль Linux,
+права администратора и сеть не нужны. Действия расположены в таком порядке:
+
+1. `Войти`.
+2. `Удалить локальный профиль`.
+3. `Забыли PIN?`.
+
+Замена ключа доступна только после входа через `⋮`. Ввод API-ключа остаётся
+частью первоначальной настройки нового профиля.
+
+Подтвердите удаление отдельно:
+
+1. Прочитайте предупреждение о потере локальной переписки, настроек доступа,
+   лимитов и учёта расходов.
+2. Чтобы сохранить профиль, нажмите `Сохранить профиль`. Для продолжения
+   введите показанную фразу `УДАЛИТЬ ПРОФИЛЬ` точно, включая пробел.
+3. Нажмите `Удалить профиль` только при намерении отказаться
+   от этой локальной истории. Неверная фраза не включает эту кнопку.
+
+Для поддерживаемого существующего каталога данных Linux диалог также
+объясняет, что Tokenlogue ограничит доступ к своему каталогу перед повторной
+проверкой профиля. Используется то же подтверждение без прав администратора.
+Открытие и отмена диалога не меняют ни права, ни данные профиля. Общие каталоги,
+сетевые хранилища и каталоги без безопасно подтверждённого владения отклоняются.
+Не меняйте права и не удаляйте файлы вручную.
+
+Если подготовка или проверка отказала до удаления данных, сообщение говорит,
+что удаление не началось, и подсказывает повторную попытку или обращение
+за помощью. Если доступ к каталогу уже ограничен, он останется таким,
+а профиль сохранится. Вернитесь к экрану PIN и откройте новое подтверждение.
+Это отличается от принятого удаления, для которого нужно действие
+`Завершить удаление`.
+
+Подтвердить удаление может любой с доступом к этому экрану. Фраза защищает
+от случайного нажатия и подтверждает намерение. Она не устанавливает личность
+и не защищает от человека, намеренно удаляющего локальный профиль.
+
+До принятия удаления смена языка, закрытие диалога или системная блокировка
+отменяют подтверждение. Старый диалог и повторное нажатие не запускают вторую
+операцию. После начала удаления данных его нужно завершить. Закрытие приложения
+в этот момент не превращает частично удалённый профиль в новый рабочий.
+После перезапуска Tokenlogue продолжает принятое удаление. Если хранилище
+не позволяет его завершить или проверить, чаты остаются закрытыми, а новая
+настройка недоступна. Нажмите `Завершить удаление`, чтобы повторить
+без забытого PIN.
+
+После успеха снова введите API-ключ и выберите новый PIN. Можно заново
+сохранить прежний действующий ключ OpenRouter. В Linux затем предлагается
+сохранить и подтвердить новый резервный код. У нового профиля новые
+регистрация и ключи шифрования, пустой список чатов и нет прежнего выбранного
+чата или черновика. Старые PIN, резервные коды и незавершённые попытки
+восстановления его не открывают и не меняют. Язык и расположение панели
+чатов сохраняются.
+
+Удаляются только активные локальные данные этого профиля и связанные с ним
+ключи. Другие приложения, внешние экспорты и резервные копии остаются
+на месте. Физическое стирание блоков SSD, swap, снимков системы и внешних
+копий не обещается. Действие не отзывает ключ в OpenRouter, не удаляет аккаунт
+и не отменяет уже отправленные запросы или их стоимость. Удалённый запрос
+отзыва ключа не выполняется.
+
+`Заменить ключ OpenRouter` по-прежнему требует входа и сохраняет PIN,
+ключ шифрования и переписку. Если хотите сохранить историю, используйте
+восстановление. Одного нового API-ключа недостаточно для её открытия.
 
 <a name="ru-workspace"></a>
 
@@ -469,6 +1158,11 @@ PIN и на экране недоступного хранилища. После
 сохраняются как записаны, если их происхождение неизвестно. Название,
 полученное из первого сообщения, также остаётся на исходном языке.
 
+При выдаче резервного кода или восстановлении PIN в Linux смена языка
+отменяет незавершённую попытку. На обеих платформах смена языка также отменяет
+неподтверждённый диалог удаления профиля. Начните заново на выбранном языке.
+Уже сохранённый новый PIN остаётся действительным.
+
 Кнопка слева в шапке доступна постоянно. В широком окне она скрывает
 и показывает список чатов. Когда список скрыт, переписка и редактор
 занимают освободившееся место. Приложение запоминает выбор для широкого
@@ -484,7 +1178,8 @@ PIN и на экране недоступного хранилища. После
 
 `Переименовать` и `Удалить чат` остаются под выбранным названием.
 Кнопки `+` и блокировки находятся справа, а `⋮` занимает крайнее правое
-место. Если сведения меню не помещаются на экран, прокрутите его.
+место. В Linux рядом с `⋮` расположен компактный щит, открывающий подробности
+защиты. Если сведения меню не помещаются на экран, прокрутите его.
 
 <a name="ru-chats"></a>
 
@@ -583,9 +1278,11 @@ Tokenlogue проверяет цены, полученные от OpenRouter. О
 доступный бюджет в приложении и сам по себе не списывает деньги с учётной записи
 OpenRouter. Фактические списания проверяйте в этой учётной записи.
 
-Перед каждым платным запросом показывается подтверждение с моделью и
-предварительным резервом. При изменении цен требуется ещё одно подтверждение.
-Увеличение денежного лимита чата также требует подтверждения. Если отменить диалог, запрос не будет отправлен или прежний лимит останется
+В опубликованной сборке перед каждым платным запросом показывается
+подтверждение с моделью и предварительным резервом. При изменении цен нужно
+ещё одно подтверждение. Текущие сборки сохраняют это поведение по умолчанию и предлагают
+[настройку конкретного чата](#ru-paid-confirmation) для отправки без таких
+подтверждений. Увеличение денежного лимита по-прежнему требует подтверждения. Если отменить диалог, запрос не будет отправлен или прежний лимит останется
 без изменений.
 
 #### Если результат запроса неизвестен

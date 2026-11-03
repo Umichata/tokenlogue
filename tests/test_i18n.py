@@ -33,6 +33,7 @@ from i18n import (  # noqa: E402
 )
 from preferences import PreferencesStore  # noqa: E402
 from tests import test_chat_menu as menu_fixture  # noqa: E402
+from tests.test_chat_menu import walk  # noqa: E402
 from tests.test_chat_view import _chat  # noqa: E402
 from ui.auth_view import (  # noqa: E402
     KeyEntryView,
@@ -161,17 +162,14 @@ class LocalizationTests(unittest.TestCase):
         views = [
             setup,
             KeyEntryView(callback),
-            PinLoginView(callback, callback),
+            PinLoginView(callback),
             StorageErrorView(tr("auth.storage_unavailable"), callback),
         ]
         set_language("en")
         for view in views:
             localize_tree(view.control)
             self.assertTrue(
-                any(
-                    isinstance(c, LanguageSelector)
-                    for c in view.control.content.controls
-                )
+                any(isinstance(c, LanguageSelector) for c in walk(view.control))
             )
         self.assertEqual(setup.pin_field.value, "0123")
         self.assertEqual(setup.repeat_field.value, "0123")
@@ -222,8 +220,6 @@ class WorkspaceLanguageTests(unittest.IsolatedAsyncioTestCase):
 
     def setUp(self):
         menu_fixture.ChatMenuTests.setUp(cast(menu_fixture.ChatMenuTests, self))
-        configure_localization(PreferencesStore())
-        self.addCleanup(configure_localization, PreferencesStore())
 
     async def test_language_keeps_open_menu_drawer_and_sending(self):
         view = self.view()
@@ -233,7 +229,6 @@ class WorkspaceLanguageTests(unittest.IsolatedAsyncioTestCase):
         await view.open_menu()
         drawer = self.page.drawer
         assert drawer is not None
-        setattr(drawer, "_test_drawer_open", True)
         dialog, menu, history, composer = (
             view._menu_dialog,
             view._menu_list,
@@ -247,7 +242,7 @@ class WorkspaceLanguageTests(unittest.IsolatedAsyncioTestCase):
         self.assertIs(view._menu_list, menu)
         self.assertIs(view.message_history, history)
         self.assertIs(view.composer, composer)
-        self.assertTrue(getattr(drawer, "_test_drawer_open"))
+        self.assertIs(self.page.drawer, drawer)
         self.assertTrue(composer.busy)
         self.assertEqual(view.editor_value, "Новый чат\nNew chat")
         assert view.rename_button is not None and view.delete_button is not None

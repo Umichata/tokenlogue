@@ -1,0 +1,15 @@
+{
+  "protection_panel.subtitle": "Сохранённые проверки устройства и готовность наблюдения сейчас.",
+  "protection_panel.sign_in_explanation": "Для проверки защиты сначала войдите с обычным PIN. Сам вход не блокирует экран и не переводит устройство в сон.",
+  "protection_panel.start_test": "Начать тест",
+  "protection_panel.start_explanation": "Вы вошли в приложение. Начните, когда будете готовы заблокировать экран или перевести устройство в сон.",
+  "protection_panel.selected_screen": "Выбран тест экранной блокировки",
+  "protection_panel.selected_sleep": "Выбран тест перехода в сон",
+  "protection_panel.close": "Закрыть защиту устройства",
+  "protection_panel.open": "Защита устройства",
+  "protection_panel.copy_message": "Копировать сообщение",
+  "protection_panel.copy_code": "Копировать код",
+  "protection_panel.message_copied": "Сообщение скопировано",
+  "protection_panel.you": "Вы",
+  "protection_panel.android_policy": "Tokenlogue блокируется при уходе в фон. Для возврата используйте PIN приложения. Системное восстановление зависит от доступной защиты устройства. Проверки экранной блокировки и сна компьютера на Android недоступны."
+}

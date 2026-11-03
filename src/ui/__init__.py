@@ -26,6 +26,11 @@ from .model_selection_view import (
     ModelSelectionView,
     ModeSelectionView,
 )
+from .recovery_code_view import (
+    RecoveryCodeDisplayView,
+    RecoveryCodeEntryView,
+    RecoveryCodePinView,
+)
 from .styles import configure_page
 
 __all__ = [
@@ -40,6 +45,9 @@ __all__ = [
     "PinSetupView",
     "PinLoginView",
     "RenameChatDialog",
+    "RecoveryCodeDisplayView",
+    "RecoveryCodeEntryView",
+    "RecoveryCodePinView",
     "StorageErrorView",
     "build_delete_chat_dialog",
     "build_cost_increase_dialog",

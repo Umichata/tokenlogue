@@ -64,16 +64,6 @@ class AccountingTests(unittest.IsolatedAsyncioTestCase):
         self.assertIsNone(budget.cost_limit_usd)
         self.assertEqual(budget.state, BudgetState.UNCONFIGURED)
 
-    def test_limit_input_uses_decimal_and_free_has_no_money_field(self) -> None:
-        free = parse_chat_limit_input(ChatMode.FREE, "8192", "1024", None)
-        paid = parse_chat_limit_input(ChatMode.PAID, "8192", "1024", "0.1000")
-
-        self.assertEqual(free.cost_limit_usd, Decimal("0"))
-        self.assertEqual(paid.cost_limit_usd, Decimal("0.1000"))
-        self.assertIsInstance(paid.cost_limit_usd, Decimal)
-        self.assertEqual(format_decimal_usd(Decimal("10")), "10")
-        self.assertEqual(format_decimal_usd(Decimal("0.1000")), "0.1")
-
     async def test_configures_free_with_immutable_zero_cost(self) -> None:
         chat_before = self.chat_repository.get_chat("free")
         budget = await self.service.configure_chat_limits(
@@ -285,80 +275,6 @@ class AccountingTests(unittest.IsolatedAsyncioTestCase):
         assert turn is not None
         self.assertEqual(turn.accounting_status, AccountingStatus.RELEASED)
 
-    def test_maximum_cost_includes_every_component_and_override(self) -> None:
-        base = PriceComponents(
-            prompt=Decimal("0.01"),
-            completion=Decimal("0.02"),
-            request=Decimal("0.5"),
-            internal_reasoning=Decimal("0.03"),
-            input_cache_read=Decimal("0.04"),
-            input_cache_write=Decimal("0.05"),
-        )
-        override = PriceComponents(request=Decimal("20"))
-
-        result = estimate_max_cost((base, override), 10, 4)
-
-        self.assertEqual(result, Decimal("20"))
-
-    def test_internal_reserve_uses_per_token_prices_without_million_factor(
-        self,
-    ) -> None:
-        pricing = PriceComponents(
-            prompt=Decimal("0.000003"),
-            completion=Decimal("0.000015"),
-            request=Decimal("0.001"),
-        )
-
-        result = estimate_max_cost((pricing,), 100, 10)
-
-        self.assertEqual(result, Decimal("0.00145"))
-
-    def test_provider_limit_remains_per_token_inside_domain(self) -> None:
-        chat = replace(
-            _chat("paid-wire", ChatMode.PAID),
-            prompt_price_per_token=Decimal("0.000003"),
-            completion_price_per_token=Decimal("0.000015"),
-            request_price=Decimal("0.001"),
-        )
-
-        limit = confirmed_provider_price_limit(chat)
-
-        self.assertEqual(limit.prompt_per_token, Decimal("0.000003"))
-        self.assertEqual(limit.completion_per_token, Decimal("0.000015"))
-        self.assertEqual(limit.request, Decimal("0.001"))
-
-    def test_new_paid_component_requires_price_reconfirmation(self) -> None:
-        chat = _chat("paid-snapshot", ChatMode.PAID)
-        current = CatalogModel(
-            id=chat.requested_model_id,
-            name="Model",
-            prompt_price_per_token=chat.prompt_price_per_token,
-            completion_price_per_token=chat.completion_price_per_token,
-            request_price=Decimal("0.01"),
-        )
-
-        self.assertTrue(model_price_increased(chat, current))
-
-    def test_cache_override_increase_requires_price_reconfirmation(self) -> None:
-        confirmed_override = PriceComponents(input_cache_write=Decimal("0.000001"))
-        chat = replace(
-            _chat("paid-cache-snapshot", ChatMode.PAID),
-            pricing_overrides=(confirmed_override,),
-        )
-        current = CatalogModel(
-            id=chat.requested_model_id,
-            name="Model",
-            prompt_price_per_token=Decimal("0"),
-            completion_price_per_token=Decimal("0"),
-            pricing_overrides=(PriceComponents(input_cache_write=Decimal("0.000002")),),
-        )
-
-        self.assertEqual(
-            estimate_max_cost(current.all_pricing, 5, 0),
-            Decimal("0.000010"),
-        )
-        self.assertTrue(model_price_increased(chat, current))
-
     async def test_reservation_transaction_rolls_back_on_message_failure(self) -> None:
         await self.service.configure_chat_limits(
             "free",
@@ -430,6 +346,96 @@ class AccountingTests(unittest.IsolatedAsyncioTestCase):
         self.assertIsNone(self.message_repository.get_chat_budget("free"))
         self.assertIsNone(self.message_repository.get_turn("turn-to-delete"))
         self.assertEqual(self.chat_repository.list_messages("free"), [])
+
+
+class PricingTests(unittest.TestCase):
+    """Чистый расчёт цен и разбор лимитов не требуют базы и event loop."""
+
+    def test_limit_input_uses_decimal_and_free_has_no_money_field(self) -> None:
+        free = parse_chat_limit_input(ChatMode.FREE, "8192", "1024", None)
+        paid = parse_chat_limit_input(ChatMode.PAID, "8192", "1024", "0.1000")
+
+        self.assertEqual(free.cost_limit_usd, Decimal("0"))
+        self.assertEqual(paid.cost_limit_usd, Decimal("0.1000"))
+        self.assertIsInstance(paid.cost_limit_usd, Decimal)
+        self.assertEqual(format_decimal_usd(Decimal("10")), "10")
+        self.assertEqual(format_decimal_usd(Decimal("0.1000")), "0.1")
+
+    def test_maximum_cost_includes_every_component_and_override(self) -> None:
+        base = PriceComponents(
+            prompt=Decimal("0.01"),
+            completion=Decimal("0.02"),
+            request=Decimal("0.5"),
+            internal_reasoning=Decimal("0.03"),
+            input_cache_read=Decimal("0.04"),
+            input_cache_write=Decimal("0.05"),
+        )
+        for override_request, expected in (("1", "1.7"), ("20", "20")):
+            with self.subTest(override_request=override_request):
+                override = PriceComponents(request=Decimal(override_request))
+
+                result = estimate_max_cost((base, override), 10, 4)
+
+                self.assertEqual(result, Decimal(expected))
+
+    def test_internal_reserve_uses_per_token_prices_without_million_factor(
+        self,
+    ) -> None:
+        pricing = PriceComponents(
+            prompt=Decimal("0.000003"),
+            completion=Decimal("0.000015"),
+            request=Decimal("0.001"),
+        )
+
+        result = estimate_max_cost((pricing,), 100, 10)
+
+        self.assertEqual(result, Decimal("0.00145"))
+
+    def test_provider_limit_remains_per_token_inside_domain(self) -> None:
+        chat = replace(
+            _chat("paid-wire", ChatMode.PAID),
+            prompt_price_per_token=Decimal("0.000003"),
+            completion_price_per_token=Decimal("0.000015"),
+            request_price=Decimal("0.001"),
+        )
+
+        limit = confirmed_provider_price_limit(chat)
+
+        self.assertEqual(limit.prompt_per_token, Decimal("0.000003"))
+        self.assertEqual(limit.completion_per_token, Decimal("0.000015"))
+        self.assertEqual(limit.request, Decimal("0.001"))
+
+    def test_new_paid_component_requires_price_reconfirmation(self) -> None:
+        chat = _chat("paid-snapshot", ChatMode.PAID)
+        current = CatalogModel(
+            id=chat.requested_model_id,
+            name="Model",
+            prompt_price_per_token=chat.prompt_price_per_token,
+            completion_price_per_token=chat.completion_price_per_token,
+            request_price=Decimal("0.01"),
+        )
+
+        self.assertTrue(model_price_increased(chat, current))
+
+    def test_cache_override_increase_requires_price_reconfirmation(self) -> None:
+        confirmed_override = PriceComponents(input_cache_write=Decimal("0.000001"))
+        chat = replace(
+            _chat("paid-cache-snapshot", ChatMode.PAID),
+            pricing_overrides=(confirmed_override,),
+        )
+        current = CatalogModel(
+            id=chat.requested_model_id,
+            name="Model",
+            prompt_price_per_token=Decimal("0"),
+            completion_price_per_token=Decimal("0"),
+            pricing_overrides=(PriceComponents(input_cache_write=Decimal("0.000002")),),
+        )
+
+        self.assertEqual(
+            estimate_max_cost(current.all_pricing, 5, 0),
+            Decimal("0.000010"),
+        )
+        self.assertTrue(model_price_increased(chat, current))
 
 
 def _chat(chat_id: str, mode: ChatMode) -> Chat:

@@ -161,6 +161,8 @@ class Chat:
     pricing_overrides: tuple[PriceComponents, ...] = ()
     pricing_snapshot_complete: bool = True
     title_origin: str = "legacy"
+    paid_without_confirmation: bool = False
+    paid_policy_revision: str = ""
 
     @property
     def price_snapshot(self) -> PriceComponents:

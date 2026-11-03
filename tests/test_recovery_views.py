@@ -25,7 +25,7 @@ class RecoveryViewTests(unittest.IsolatedAsyncioTestCase):
         self.addCleanup(configure_localization, PreferencesStore())
 
     async def test_login_recovery_is_optional_and_has_singleflight(self):
-        ordinary = auth_view.PinLoginView(AsyncMock(), AsyncMock())
+        ordinary = auth_view.PinLoginView(AsyncMock())
         self.assertIsNone(ordinary.forgot_pin_button)
         entered, release = asyncio.Event(), asyncio.Event()
         calls = []
@@ -35,7 +35,7 @@ class RecoveryViewTests(unittest.IsolatedAsyncioTestCase):
             entered.set()
             await release.wait()
 
-        view = auth_view.PinLoginView(AsyncMock(), AsyncMock(), on_forgot_pin=recover)
+        view = auth_view.PinLoginView(AsyncMock(), on_forgot_pin=recover)
         view.set_locked(30)
         button = view.forgot_pin_button
         assert button is not None
@@ -70,12 +70,8 @@ class RecoveryViewTests(unittest.IsolatedAsyncioTestCase):
         localize_tree(dialog)
         assert isinstance(dialog.title, ft.Text)
         assert isinstance(dialog.content, ft.Text)
-        self.assertEqual(dialog.title.value, "Replace OpenRouter key?")
-        self.assertIn(
-            "Your app PIN, conversation encryption key, history and drafts are kept.",
-            dialog.content.value,
-        )
-        self.assertNotIn("will be removed", dialog.content.value)
+        self.assertEqual(dialog.title.value, tr("recovery.replace_key_title"))
+        self.assertEqual(dialog.content.value, tr("recovery.replace_key_notice"))
         confirm.assert_not_called()
 
     async def test_waiting_recovery_keeps_prompt_and_allows_cancel(self):

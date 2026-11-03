@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from decimal import Decimal
 from enum import Enum
-from typing import Protocol
+from typing import TYPE_CHECKING, Protocol
 
 from chat.errors import ChatErrorType
 from chat.models import (
@@ -21,6 +21,9 @@ from chat.models import (
 )
 from i18n import tr
 from storage.access_context import repository_session
+
+if TYPE_CHECKING:
+    from chat.metrics import LastRequestMetrics
 
 ZERO = Decimal("0")
 DEFAULT_CHAT_TOKEN_LIMIT = 8192
@@ -324,6 +327,8 @@ class BudgetRepository(Protocol):
 
     def list_turns(self, chat_id: str) -> list[TurnRecord]: ...
 
+    def get_last_request(self, chat_id: str) -> LastRequestMetrics: ...
+
 
 class ChatBudgetService:
     def __init__(
@@ -425,6 +430,11 @@ class ChatBudgetService:
     async def list_chat_turns(self, chat_id: str) -> list[TurnRecord]:
         _require_identifier(chat_id, tr("service.label.chat"))
         return await asyncio.to_thread(self._repository.list_turns, chat_id)
+
+    @repository_session("_repository")
+    async def get_last_request(self, chat_id: str) -> LastRequestMetrics:
+        _require_identifier(chat_id, tr("service.label.chat"))
+        return await asyncio.to_thread(self._repository.get_last_request, chat_id)
 
     @repository_session("_repository")
     async def release_unknown_reservation(

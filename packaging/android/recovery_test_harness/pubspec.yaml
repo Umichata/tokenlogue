@@ -1,0 +1,20 @@
+name: tokenlogue_recovery_tests
+description: Изолированные проверки собственной Dart-логики восстановления Tokenlogue.
+publish_to: none
+environment:
+  sdk: ">=3.12.2 <4.0.0"
+dependencies:
+  flutter:
+    sdk: flutter
+  flet: 0.86.5
+  local_auth: 3.0.2
+  local_auth_android: 2.2.0
+  local_auth_platform_interface: 1.1.0
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+dependency_overrides:
+  jni: 1.0.0
+  jni_flutter: 1.0.3
+  screen_retriever: 0.2.2
+  shared_preferences_android: 2.4.28

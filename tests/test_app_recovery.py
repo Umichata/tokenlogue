@@ -15,7 +15,7 @@ import flet as ft
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from auth.models import AuthResult, AuthStatus, InitialRoute  # noqa: E402
-from i18n import configure_localization, localize_tree, set_language  # noqa: E402
+from i18n import configure_localization, localize_tree, set_language, tr  # noqa: E402
 from preferences import PreferencesStore  # noqa: E402
 from tests import test_app as fixtures  # noqa: E402
 
@@ -108,13 +108,14 @@ class AppRecoveryTests(unittest.IsolatedAsyncioTestCase):
             activate.assert_awaited_once()
         self.assertEqual(self.auth.completed, [("0123", "synthetic-proof")])
 
-    async def test_linux_does_not_offer_device_recovery(self):
+    async def test_linux_primary_code_entry_does_not_start_system_challenge(self):
         setattr(self.page, "platform", ft.PagePlatform.LINUX)
         self.controller._show_pin_login()
         view = self.controller._pin_login_view
         assert view is not None
-        self.assertIsNone(view.forgot_pin_button)
+        self.assertIsNotNone(view.forgot_pin_button)
         await self.controller.request_recovery()
+        self.assertIsNotNone(self.controller._code_entry_view)
         self.assertEqual(self.auth.recovery_calls, 0)
 
     async def test_unsupported_android_shows_specific_recovery_limit(self):
@@ -123,12 +124,14 @@ class AppRecoveryTests(unittest.IsolatedAsyncioTestCase):
         view = self.controller._pin_login_view
         assert view is not None
         self.assertIsNone(view.forgot_pin_button)
-        self.assertIn("Android 11", self.controller._protection_notice())
-        self.assertNotIn("Linux", self.controller._protection_notice())
-        set_language("en")
-        self.assertIn(
-            "Recovery is currently unavailable here",
+        self.assertEqual(
             self.controller._protection_notice(),
+            tr("recovery.protection_notice_android_unavailable"),
+        )
+        set_language("en")
+        self.assertEqual(
+            self.controller._protection_notice(),
+            tr("recovery.protection_notice_android_unavailable"),
         )
         await self.controller.request_recovery()
         self.assertEqual(self.auth.recovery_calls, 0)

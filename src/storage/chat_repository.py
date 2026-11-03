@@ -19,6 +19,12 @@ from chat.models import (
     PriceComponents,
 )
 from i18n import tr
+from storage.chat_preferences import (
+    PaidPolicy,
+    encode_stored,
+    policy_from_read,
+    split_document,
+)
 from storage.database_connections import (
     ContentAccess,
     encrypt_value,
@@ -26,6 +32,7 @@ from storage.database_connections import (
 from storage.database_connections import (
     connection as protected_connection,
 )
+from storage.field_cipher import FieldCipher
 
 
 class SqliteChatRepository:
@@ -154,6 +161,35 @@ class SqliteChatRepository:
             cursor = connection.execute("DELETE FROM chats WHERE id = ?", (chat_id,))
         return cursor.rowcount == 1
 
+    def set_paid_without_confirmation(
+        self, chat_id: str, enabled: bool, revision: str, updated_at: datetime
+    ) -> bool:
+        _require_identifier(chat_id, tr("service.label.chat"))
+        if type(enabled) is not bool:
+            raise ValueError(tr("service.paid_confirmation_invalid"))
+        with self._connection("write", chat_id=chat_id) as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            row = connection.execute(
+                "SELECT id,mode,pricing_overrides_json FROM chats WHERE id=?",
+                (chat_id,),
+            ).fetchone()
+            if row is None:
+                return False
+            if row["mode"] != ChatMode.PAID.value:
+                raise ValueError(tr("service.paid_model_required"))
+            cipher = getattr(connection, "cipher", None)
+            if not isinstance(cipher, FieldCipher):
+                raise ValueError(tr("protection.access_closed"))
+            prices, _old = split_document(str(row["pricing_overrides_json"]))
+            encoded = encode_stored(
+                prices, PaidPolicy(enabled, revision), cipher, chat_id
+            )
+            connection.execute(
+                "UPDATE chats SET pricing_overrides_json=?,updated_at=? WHERE id=?",
+                (encoded, _serialize_datetime(updated_at), chat_id),
+            )
+        return True
+
     def create_message(self, message: Message) -> None:
         """Подготавливает локальную запись сообщения для следующего этапа."""
         if not isinstance(message, Message):
@@ -263,6 +299,13 @@ def _chat_from_row(row: sqlite3.Row) -> Chat:
             str(row["input_cache_write_price_per_token"])
         ),
         pricing_overrides=_parse_overrides(str(row["pricing_overrides_json"])),
+        paid_without_confirmation=(
+            str(row["mode"]) == ChatMode.PAID.value
+            and policy_from_read(str(row["pricing_overrides_json"])).enabled
+        ),
+        paid_policy_revision=policy_from_read(
+            str(row["pricing_overrides_json"])
+        ).revision,
         pricing_snapshot_complete=bool(row["pricing_snapshot_complete"]),
         title_origin=str(row["title_origin"])
         if "title_origin" in row.keys()
@@ -414,7 +457,7 @@ def _serialize_overrides(overrides: tuple[PriceComponents, ...]) -> str:
 
 def _parse_overrides(value: str) -> tuple[PriceComponents, ...]:
     try:
-        payload = json.loads(value)
+        payload, _policy = split_document(value)
     except json.JSONDecodeError as error:
         raise ValueError(tr("service.storage_title_snapshot")) from error
     if not isinstance(payload, list):

@@ -18,13 +18,17 @@ from chat.models import (
 from i18n import display_model_name, fresh_text, money, number, tr
 from ui.branding import BrandHeader, BrandLoader
 from ui.styles import (
+    BORDER_COLOR,
     ERROR_COLOR,
     MUTED_COLOR,
     PANEL_BACKGROUND,
     SUCCESS_COLOR,
-    build_screen,
+    WARNING_COLOR,
+    build_auth_screen,
     detail_row,
+    input_style,
     primary_button_style,
+    secondary_button_style,
 )
 
 ModeCallback = Callable[[ChatMode], Awaitable[None]]
@@ -38,9 +42,8 @@ class CatalogLoadingView:
             await on_cancel()
 
         self.progress = BrandLoader()
-        self.control = build_screen(
+        self.control = build_auth_screen(
             [
-                BrandHeader(),
                 ft.Text(
                     tr("catalog.loading"),
                     theme_style=ft.TextThemeStyle.HEADLINE_MEDIUM,
@@ -51,7 +54,9 @@ class CatalogLoadingView:
                     color=MUTED_COLOR,
                 ),
                 ft.TextButton(tr("common.cancel"), on_click=handle_cancel),
-            ]
+            ],
+            header=BrandHeader(),
+            width=560,
         )
 
 
@@ -97,7 +102,6 @@ class ModeSelectionView:
             on_click=select_paid,
         )
         controls: list[ft.Control] = [
-            BrandHeader(),
             ft.Text(tr("chat.untitled"), theme_style=ft.TextThemeStyle.HEADLINE_MEDIUM),
             ft.Text(tr("mode.choose_first")),
             ft.Container(
@@ -135,7 +139,7 @@ class ModeSelectionView:
         if catalog.warning:
             controls.append(ft.Text(fresh_text(catalog.warning), color=ERROR_COLOR))
         controls.append(ft.TextButton(tr("mode.back_chats"), on_click=cancel))
-        self.control = build_screen(controls)
+        self.control = build_auth_screen(controls, header=BrandHeader(), width=560)
 
 
 class ModelSelectionView:
@@ -154,6 +158,7 @@ class ModelSelectionView:
             await on_cancel()
 
         self.search = ft.TextField(
+            **input_style(),
             label=tr("catalog.search"),
             hint_text=tr("catalog.search_hint"),
             prefix_icon=ft.Icons.SEARCH,
@@ -182,7 +187,12 @@ class ModelSelectionView:
                                     theme_style=ft.TextThemeStyle.HEADLINE_SMALL,
                                 ),
                                 self.search,
-                                ft.TextButton(tr("common.back"), on_click=cancel),
+                                ft.TextButton(
+                                    tr("common.back"),
+                                    height=48,
+                                    style=secondary_button_style(),
+                                    on_click=cancel,
+                                ),
                             ]
                         ),
                     ),
@@ -233,8 +243,9 @@ class ModelSelectionView:
             details.insert(0, ft.Text(tr("catalog.recommended"), color=SUCCESS_COLOR))
         return ft.Container(
             bgcolor=PANEL_BACKGROUND,
-            border_radius=12,
-            padding=14,
+            border_radius=16,
+            border=ft.Border.all(1, BORDER_COLOR),
+            padding=16,
             content=ft.Column(
                 spacing=6,
                 controls=[
@@ -246,6 +257,7 @@ class ModelSelectionView:
                     ft.Button(
                         tr("catalog.select"),
                         style=primary_button_style(),
+                        height=48,
                         on_click=select_model,
                     ),
                 ],
@@ -310,12 +322,12 @@ def key_access_mode_notice(
     if key_validity is KeyValidityState.RESTRICTED:
         return (
             tr("key.restricted_notice"),
-            ft.Colors.AMBER_300,
+            WARNING_COLOR,
         )
     if key_validity is KeyValidityState.UNKNOWN:
         return (
             tr("key.checking_notice"),
-            ft.Colors.AMBER_300,
+            WARNING_COLOR,
         )
     return key_limit_mode_notice(key_limit)
 

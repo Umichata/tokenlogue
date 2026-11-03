@@ -8,15 +8,16 @@ import flet as ft
 
 from auth.pin import is_valid_pin
 from i18n import LocalizedText, fresh_text, tr
-from ui.branding import BrandHeader, BrandLoader
-from ui.language_selector import LanguageSelector
+from ui.branding import AuthHeader, BrandLoader
 from ui.styles import (
     ERROR_COLOR,
     MUTED_COLOR,
-    PANEL_BACKGROUND,
     SUCCESS_COLOR,
-    build_screen,
+    build_auth_screen,
+    danger_button_style,
+    input_style,
     primary_button_style,
+    secondary_button_style,
 )
 
 AsyncTextCallback = Callable[[str], Awaitable[None]]
@@ -39,6 +40,7 @@ class KeyEntryView:
         self._on_submit = on_submit
         self._busy = False
         self.key_field = _SecretTextField(
+            **input_style(),
             label=tr("auth.api_key"),
             hint_text=tr("auth.key_hint"),
             password=True,
@@ -62,33 +64,25 @@ class KeyEntryView:
             disabled=True,
             on_click=self._handle_click,
         )
-        self.control = build_screen(
+        self.header = AuthHeader()
+        self.control = build_auth_screen(
             [
-                BrandHeader(),
-                LanguageSelector(),
+                ft.Text(
+                    tr("polish.key_title"),
+                    theme_style=ft.TextThemeStyle.HEADLINE_MEDIUM,
+                ),
                 ft.Text(
                     tr("auth.replacement_instructions")
                     if replacement
                     else tr("auth.key_instructions"),
                     color=MUTED_COLOR,
                 ),
-                ft.Container(
-                    bgcolor=PANEL_BACKGROUND,
-                    border_radius=16,
-                    padding=20,
-                    content=ft.Column(
-                        spacing=16,
-                        controls=[
-                            self.key_field,
-                            self.message,
-                            ft.Row(
-                                alignment=ft.MainAxisAlignment.CENTER,
-                                controls=[self.progress, self.submit_button],
-                            ),
-                        ],
-                    ),
-                ),
-            ]
+                self.key_field,
+                self.message,
+                ft.Row(alignment=ft.MainAxisAlignment.CENTER, controls=[self.progress]),
+                self.submit_button,
+            ],
+            header=self.header,
         )
 
     async def _handle_click(self, _event: ft.Event[ft.Button]) -> None:
@@ -172,10 +166,11 @@ class PinSetupView:
             on_click=self._confirm,
         )
         self.cancel_button = ft.TextButton(tr("common.back"), on_click=self._cancel)
-        self.control = build_screen(
+        self.suggest_button.style = secondary_button_style()
+        self.cancel_button.style = secondary_button_style()
+        self.header = AuthHeader()
+        self.control = build_auth_screen(
             [
-                BrandHeader(),
-                LanguageSelector(),
                 ft.Text(
                     fresh_text(title) if title is not None else tr("auth.choose_pin"),
                     theme_style=ft.TextThemeStyle.HEADLINE_MEDIUM,
@@ -186,33 +181,22 @@ class PinSetupView:
                     else tr("auth.pin_instructions"),
                     color=MUTED_COLOR,
                 ),
-                ft.Container(
-                    bgcolor=PANEL_BACKGROUND,
-                    border_radius=16,
-                    padding=20,
-                    content=ft.Column(
-                        spacing=16,
-                        controls=[
-                            ft.Text(
-                                fresh_text(notice),
-                                color=SUCCESS_COLOR,
-                                visible=bool(notice),
-                            ),
-                            self.pin_field,
-                            self.suggest_button,
-                            self.repeat_field,
-                            self.message,
-                            ft.Row(controls=[self.progress, self.confirm_button]),
-                            self.cancel_button,
-                        ],
-                    ),
-                ),
-            ]
+                ft.Text(fresh_text(notice), color=SUCCESS_COLOR, visible=bool(notice)),
+                self.pin_field,
+                self.suggest_button,
+                self.repeat_field,
+                self.message,
+                ft.Row(alignment=ft.MainAxisAlignment.CENTER, controls=[self.progress]),
+                self.confirm_button,
+                self.cancel_button,
+            ],
+            header=self.header,
         )
 
     @staticmethod
     def _pin_field(label: str, on_change: Callable) -> _SecretTextField:
         return _SecretTextField(
+            **input_style(),
             label=label,
             password=True,
             can_reveal_password=True,
@@ -320,23 +304,25 @@ class PinSetupView:
 
 
 class PinLoginView:
-    """Форма четырёхзначного PIN и подтверждаемого сброса ключа."""
+    """Вход по PIN с отдельными удалением и восстановлением профиля."""
 
     def __init__(
         self,
         on_submit: AsyncTextCallback,
-        on_reset_requested: AsyncCallback,
         *,
         on_forgot_pin: AsyncCallback | None = None,
+        on_delete_profile: AsyncCallback | None = None,
         notice: str = "",
+        protection_shield: ft.Control | None = None,
     ) -> None:
         self._on_submit = on_submit
         self._on_forgot_pin = on_forgot_pin
+        self._on_delete_profile = on_delete_profile
         self._disposed = False
-        self._on_reset_requested = on_reset_requested
         self._busy = False
         self._locked = False
         self.pin_field = _SecretTextField(
+            **input_style(),
             label="PIN",
             password=True,
             keyboard_type=ft.KeyboardType.NUMBER,
@@ -358,45 +344,88 @@ class PinLoginView:
             disabled=True,
             on_click=self._handle_click,
         )
-        self.reset_button = ft.TextButton(
-            tr("auth.reset_key"),
-            icon=ft.Icons.RESTART_ALT,
-            on_click=self._request_reset,
-        )
         self.forgot_pin_button = (
             ft.TextButton(tr("recovery.forgot_pin"), on_click=self._request_recovery)
             if on_forgot_pin is not None
             else None
         )
-        self.progress = BrandLoader(size=26, active=False)
-        self.control = build_screen(
-            [
-                BrandHeader(),
-                LanguageSelector(),
-                ft.Text(tr("auth.enter_pin"), color=MUTED_COLOR),
-                *([ft.Text(fresh_text(notice), color=MUTED_COLOR)] if notice else []),
-                ft.Container(
-                    bgcolor=PANEL_BACKGROUND,
-                    border_radius=16,
-                    padding=20,
-                    content=ft.Column(
-                        spacing=16,
-                        controls=[
-                            self.pin_field,
-                            self.message,
-                            self.progress,
-                            self.submit_button,
-                            self.reset_button,
-                            *(
-                                [self.forgot_pin_button]
-                                if self.forgot_pin_button is not None
-                                else []
-                            ),
-                        ],
-                    ),
-                ),
-            ]
+        self.delete_profile_button = (
+            ft.TextButton(
+                tr("profile_deletion.entry"),
+                icon=ft.Icons.DELETE_FOREVER_OUTLINED,
+                on_click=self._request_profile_deletion,
+            )
+            if on_delete_profile is not None
+            else None
         )
+        self.notice = ft.Text(fresh_text(notice), color=MUTED_COLOR, visible=False)
+        self.progress = BrandLoader(size=26, active=False)
+        # The compatibility field retains the model notice, never an inline status.
+        self.protection_shield = protection_shield
+        self.header = AuthHeader(protection_shield=protection_shield)
+        self.protection_prompt = ft.Text(visible=False, color=MUTED_COLOR)
+        self._on_cancel_protection: AsyncCallback | None = None
+        self.cancel_protection_button = ft.TextButton(
+            tr("common.cancel"),
+            visible=False,
+            on_click=self._cancel_protection,
+            style=secondary_button_style(),
+        )
+        if self.delete_profile_button is not None:
+            self.delete_profile_button.style = danger_button_style()
+        if self.forgot_pin_button is not None:
+            self.forgot_pin_button.style = secondary_button_style()
+        self.control = build_auth_screen(
+            [
+                ft.Text(
+                    tr("polish.pin_title"),
+                    theme_style=ft.TextThemeStyle.HEADLINE_MEDIUM,
+                ),
+                ft.Text(tr("auth.enter_pin"), color=MUTED_COLOR),
+                self.pin_field,
+                self.message,
+                self.protection_prompt,
+                self.cancel_protection_button,
+                ft.Row(alignment=ft.MainAxisAlignment.CENTER, controls=[self.progress]),
+                self.submit_button,
+                *(
+                    [ft.Divider(height=16), self.delete_profile_button]
+                    if self.delete_profile_button is not None
+                    else []
+                ),
+                *(
+                    [self.forgot_pin_button]
+                    if self.forgot_pin_button is not None
+                    else []
+                ),
+            ],
+            header=self.header,
+        )
+
+    async def focus_pin(self) -> None:
+        """Вернуть обычный фокус, сохранив введённые цифры и lockout."""
+        if not self._disposed:
+            try:
+                await self.pin_field.focus()
+            except (RuntimeError, AssertionError):
+                pass
+
+    def set_protection_prompt(
+        self,
+        text: str,
+        on_cancel: AsyncCallback | None = None,
+    ) -> None:
+        self.protection_prompt.value = fresh_text(text)
+        self.protection_prompt.visible = bool(text)
+        self._on_cancel_protection = on_cancel
+        self.cancel_protection_button.visible = bool(text) and on_cancel is not None
+
+    async def _cancel_protection(self, _event: ft.Event) -> None:
+        callback = self._on_cancel_protection
+        if self._disposed or callback is None:
+            return
+        self.set_protection_prompt("")
+        await callback()
 
     async def _handle_click(self, _event: ft.Event[ft.Button]) -> None:
         await self._submit_value()
@@ -405,7 +434,7 @@ class PinLoginView:
         await self._submit_value()
 
     async def _submit_value(self) -> None:
-        if self._busy or self._locked or self.submit_button.disabled:
+        if self._disposed or self._busy or self._locked or self.submit_button.disabled:
             return
         value = self.pin_field.value
         if not isinstance(value, str):
@@ -434,32 +463,49 @@ class PinLoginView:
             if not self._disposed:
                 self.set_busy(False)
 
-    async def _request_reset(self, _event: ft.Event[ft.TextButton]) -> None:
-        await self._on_reset_requested()
+    async def _request_profile_deletion(self, _event: ft.Event) -> None:
+        if self._disposed or self._busy or self._on_delete_profile is None:
+            return
+        self.set_busy(True)
+        try:
+            await self._on_delete_profile()
+        finally:
+            if not self._disposed:
+                self.set_busy(False)
 
     def set_busy(self, busy: bool) -> None:
         self._busy = busy
         self.progress.set_active(busy)
-        self.reset_button.disabled = busy
         if self.forgot_pin_button is not None:
             self.forgot_pin_button.disabled = busy
+        if self.delete_profile_button is not None:
+            self.delete_profile_button.disabled = busy
         self._apply_pin_state()
 
     def set_locked(self, seconds: int) -> None:
         self._locked = seconds > 0
         self._apply_pin_state()
         if self._locked:
-            self.show_message(tr("auth.lock_seconds", seconds=seconds))
+            self.show_message(
+                tr(
+                    "auth.lock_countdown",
+                    time=f"{seconds // 60:02d}:{seconds % 60:02d}",
+                )
+            )
         elif (
             isinstance(self.message.value, LocalizedText)
-            and self.message.value.key == "auth.lock_seconds"
+            and self.message.value.key == "auth.lock_countdown"
         ):
             self.show_message(tr("auth.lock_expired"), success=True)
 
     def show_message(self, text: str, *, success: bool = False) -> None:
         self.message.value = fresh_text(text)
         self.message.color = SUCCESS_COLOR if success else ERROR_COLOR
-        self.message.visible = bool(text)
+        neutral = isinstance(text, LocalizedText) and text.key in {
+            "service.app_locked",
+            "protection.access_closed",
+        }
+        self.message.visible = bool(text) and not neutral
 
     def clear_pin(self) -> None:
         self.pin_field.value = ""
@@ -469,6 +515,7 @@ class PinLoginView:
         self._disposed = True
         self.clear_pin()
         self._busy = True
+        self.set_protection_prompt("")
         self.progress.dispose()
 
 
@@ -482,6 +529,7 @@ class DeviceRecoveryView:
         *,
         message: str = "",
         busy: bool = False,
+        linux: bool = False,
     ) -> None:
         self._on_retry = on_retry
         self._on_cancel = on_cancel
@@ -492,30 +540,33 @@ class DeviceRecoveryView:
             fresh_text(message), visible=bool(message), color=ERROR_COLOR
         )
         self.progress = BrandLoader(size=26, active=busy)
-        self.waiting = ft.Text(tr("recovery.waiting"), visible=busy, color=MUTED_COLOR)
+        prefix = "recovery.linux_" if linux else "recovery."
+        self.waiting = ft.Text(tr(prefix + "waiting"), visible=busy, color=MUTED_COLOR)
         self.retry_button = ft.Button(
-            tr("recovery.confirm_device"),
+            tr(prefix + "confirm_device"),
             icon=ft.Icons.VERIFIED_USER,
             disabled=busy,
             on_click=self._retry,
             style=primary_button_style(),
         )
         self.cancel_button = ft.TextButton(tr("recovery.cancel"), on_click=self._cancel)
-        self.control = build_screen(
+        self.cancel_button.style = secondary_button_style()
+        self.header = AuthHeader()
+        self.control = build_auth_screen(
             [
-                BrandHeader(),
-                LanguageSelector(),
                 ft.Text(
                     tr("recovery.title"), theme_style=ft.TextThemeStyle.HEADLINE_MEDIUM
                 ),
-                ft.Text(tr("recovery.explanation"), color=MUTED_COLOR),
+                ft.Text(tr(prefix + "explanation"), color=MUTED_COLOR),
+                ft.Text(tr("recovery.lock_cancels_change"), color=MUTED_COLOR),
                 self.message,
-                ft.Row(controls=[self.progress]),
+                ft.Row(alignment=ft.MainAxisAlignment.CENTER, controls=[self.progress]),
                 self.waiting,
                 self.retry_button,
                 self.cancel_button,
-                ft.Text(tr("recovery.cancel_notice"), color=MUTED_COLOR),
-            ]
+                ft.Text(tr("recovery.cancel_notice"), color=MUTED_COLOR, size=12),
+            ],
+            header=self.header,
         )
 
     async def _retry(self, _event: ft.Event) -> None:
@@ -563,17 +614,18 @@ class StorageErrorView:
     def __init__(self, message: str, on_retry: AsyncCallback) -> None:
         self._on_retry = on_retry
         self.retry_button = ft.Button(tr("common.retry"), on_click=self._retry)
-        self.control = build_screen(
+        self.retry_button.style = primary_button_style()
+        self.header = AuthHeader()
+        self.control = build_auth_screen(
             [
-                BrandHeader(),
-                LanguageSelector(),
                 ft.Text(
                     tr("auth.storage_unavailable"),
                     theme_style=ft.TextThemeStyle.HEADLINE_MEDIUM,
                 ),
                 ft.Text(fresh_text(message), color=ERROR_COLOR),
                 self.retry_button,
-            ]
+            ],
+            header=self.header,
         )
 
     async def _retry(self, _event: ft.Event[ft.Button]) -> None:
@@ -606,7 +658,7 @@ def build_reset_dialog(
             fresh_text(confirm_label)
             if confirm_label is not None
             else tr("auth.reset"),
-            bgcolor=ERROR_COLOR,
+            style=danger_button_style(),
             on_click=handle_confirm,
         ),
     ]

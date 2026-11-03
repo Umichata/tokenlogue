@@ -10,6 +10,8 @@ from dataclasses import dataclass
 import flet as ft
 
 from i18n import tr
+from ui.language_selector import LanguageSelector
+from ui.styles import BORDER_COLOR, TEXT_COLOR
 
 _HEADER_SIZE = 32
 _HEADER_ASSET = "branding/tokenlogue-logo-transparent.png"
@@ -35,12 +37,42 @@ class BrandHeader(ft.Row):
                 ),
                 ft.Text(
                     "Tokenlogue",
+                    color=TEXT_COLOR,
                     theme_style=ft.TextThemeStyle.TITLE_LARGE,
                     max_lines=1,
                     overflow=ft.TextOverflow.ELLIPSIS,
                     expand=True,
                 ),
             ],
+        )
+
+
+class AuthHeader(ft.Container):
+    """Одна шапка до входа, язык и щит располагаются справа."""
+
+    def __init__(
+        self,
+        *,
+        protection_shield: ft.Control | None = None,
+        language_selector: LanguageSelector | None = None,
+    ) -> None:
+        brand = BrandHeader()
+        brand.expand = True
+        self.language_selector = language_selector or LanguageSelector(compact=True)
+        self.protection_shield = protection_shield
+        self.row = ft.Row(
+            spacing=8,
+            vertical_alignment=ft.CrossAxisAlignment.CENTER,
+            controls=[
+                brand,
+                self.language_selector,
+                *([protection_shield] if protection_shield is not None else []),
+            ],
+        )
+        super().__init__(
+            padding=ft.Padding.symmetric(horizontal=16, vertical=12),
+            border=ft.Border(bottom=ft.BorderSide(1, BORDER_COLOR)),
+            content=self.row,
         )
 
 

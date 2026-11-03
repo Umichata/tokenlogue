@@ -51,7 +51,6 @@ class FakeCompletionClient:
         provider_price_limit,
     ) -> ChatCompletionResult:
         self.calls.append((requested_model_id, messages))
-        _ = (api_key, max_completion_tokens, provider_price_limit)
         return self.results.pop(0)
 
 
@@ -72,13 +71,11 @@ class FakeCatalogClient:
         self.models = models
 
     async def fetch_models(self, api_key: str) -> tuple[CatalogModel, ...]:
-        _ = api_key
         return self.models
 
 
 class FakeKeyValidator:
     async def validate_key(self, api_key: str) -> KeyValidationResult:
-        _ = api_key
         return KeyValidationResult(KeyValidationStatus.ACCEPTED_WITHOUT_LIMIT)
 
 

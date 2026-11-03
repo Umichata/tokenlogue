@@ -46,9 +46,12 @@ class SecureCredentialsTests(unittest.IsolatedAsyncioTestCase):
             SECURE_STORAGE_NAMESPACE,
             "io.github.umichata.tokenlogue",
         )
-        self.assertTrue(API_KEY_STORAGE_NAME.startswith(SECURE_STORAGE_NAMESPACE))
-        self.assertTrue(
-            REGISTRATION_ID_STORAGE_NAME.startswith(SECURE_STORAGE_NAMESPACE)
+        self.assertEqual(
+            API_KEY_STORAGE_NAME, "io.github.umichata.tokenlogue.openrouter_api_key.v1"
+        )
+        self.assertEqual(
+            REGISTRATION_ID_STORAGE_NAME,
+            "io.github.umichata.tokenlogue.registration_id.v1",
         )
 
     async def test_inspection_does_not_read_api_key(self) -> None:

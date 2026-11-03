@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import asyncio
+import time
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from enum import Enum
 
 import flet as ft
@@ -16,16 +18,19 @@ from auth.key_validation import interpret_key_validation
 from auth.models import KeyLimitInfo, KeyValidityState
 from chat.accounting import ChatBudgetService, parse_chat_limit_input
 from chat.drafts import DRAFT_STORAGE_MESSAGE, ChatDraftService, DraftStorageError
-from chat.models import CatalogModel, Chat, ChatMode, ModelCatalog
+from chat.metrics import LastRequestState
+from chat.models import FREE_ROUTER_MODEL, CatalogModel, Chat, ChatMode, ModelCatalog
 from chat.sending import MessageSendingService
 from chat.service import ChatPolicyError, ChatService
 from chat_interaction_controller import (
     ActiveChatState,
     ChatInteractionController,
     ChatSessionContext,
+    InteractionOperationLock,
 )
 from chat_workspace_controller import ChatWorkspaceController
 from i18n import tr
+from platform_security.local_protection import ProtectionSnapshot
 from service_errors import localized_error_text
 from storage.data_access import DataAccess
 from ui import (
@@ -48,6 +53,7 @@ class _ChatScreen(str, Enum):
     MODE_SELECTION = "mode_selection"
     MODEL_SELECTION = "model_selection"
     LIMITS_SELECTION = "limits_selection"
+    SECURITY = "security"
 
 
 @dataclass(frozen=True)
@@ -56,6 +62,14 @@ class _ChatActionContext:
     request: int
     view: ChatWorkspaceView
     chat_id: str
+
+
+@dataclass(frozen=True, eq=False)
+class WorkspaceDeletionOrigin:
+    """Одноразовая привязка глобального действия к живому workspace."""
+
+    generation: int
+    workspace: ChatWorkspaceView
 
 
 class ChatSessionController:
@@ -74,6 +88,11 @@ class ChatSessionController:
         on_lock: AsyncCallback,
         on_replace_key: AsyncCallback,
         on_storage_error: StorageErrorCallback,
+        on_security: AsyncCallback | None = None,
+        on_test_screen_lock: AsyncCallback | None = None,
+        on_test_sleep: AsyncCallback | None = None,
+        on_delete_profile: Callable[[WorkspaceDeletionOrigin], Awaitable[None]]
+        | None = None,
         data_access: DataAccess | None = None,
     ) -> None:
         self._page = page
@@ -84,14 +103,35 @@ class ChatSessionController:
         self._drafts = drafts
         self._on_lock = on_lock
         self._on_replace_key = on_replace_key
+        self._on_security = on_security
+        self._on_test_screen_lock = on_test_screen_lock
+        self._on_test_sleep = on_test_sleep
+        self._protection_status: ProtectionSnapshot | None = None
+        self._on_delete_profile = on_delete_profile
+        self._profile_deletion_origin: WorkspaceDeletionOrigin | None = None
+        self._security_generation: int | None = None
         self._on_storage_error = on_storage_error
         self._workspace_view: ChatWorkspaceView | None = None
+        self._deferred_workspace = False
+        self._session_watch_status: tuple[bool, bool] | None = None
         self._workspace_state: ActiveChatState | None = None
         self._rename_dialog: RenameChatDialog | None = None
         self._new_limits_view: NewChatLimitsView | None = None
         self._catalog_task: asyncio.Task[object] | None = None
+        self._estimate_metadata_task: asyncio.Task[None] | None = None
+        self._estimate_metadata_expiry: asyncio.TimerHandle | None = None
+        self._estimate_metadata_request = 0
+        self._estimate_metadata_after = 0.0
+        self._estimate_refresh_key = False
+        self._observed_attempt: (
+            tuple[str, int | None, str | None, datetime | None, LastRequestState] | None
+        ) = None
+        self._completed_attempt: (
+            tuple[str, int | None, str | None, datetime | None] | None
+        ) = None
         self._key_validation_task: asyncio.Task[None] | None = None
-        self._operation_lock = asyncio.Lock()
+        self._operation_lock = InteractionOperationLock()
+        self._deletion_tasks: set[asyncio.Task[object]] = set()
         self._pending_model: CatalogModel | None = None
         self._delete_chat_id: str | None = None
         self._delete_dialog: ft.AlertDialog | None = None
@@ -108,6 +148,7 @@ class ChatSessionController:
         self._selected_chat_id: str | None = None
         self._key_validity = KeyValidityState.UNKNOWN
         self._key_limit = KeyLimitInfo.unknown()
+        self._key_metadata_updated_at: datetime | None = None
         self._key_validation_in_progress = False
         self._key_replacement_generation: int | None = None
         self._draft_save_failed = False
@@ -160,6 +201,8 @@ class ChatSessionController:
         api_key: str,
         key_validity: KeyValidityState,
         key_limit: KeyLimitInfo,
+        *,
+        present_workspace: bool = True,
     ) -> None:
         """Принимает ключ только после успешной PIN-аутентификации."""
         if self._disposed:
@@ -170,13 +213,22 @@ class ChatSessionController:
         self._key_limit = key_limit
         self._interaction.activate()
         self._workspace_controller.activate()
+        self._deferred_workspace = not present_workspace
         self._key_validation_in_progress = key_validity is KeyValidityState.UNKNOWN
+        if present_workspace:
+            await self.present_workspace()
+
+    async def present_workspace(self) -> None:
+        """Shows chats only after the separate protected first-run step is handled."""
+        if self._disposed or not self.session_active:
+            return
+        self._deferred_workspace = False
         generation = self._session_generation
         await self._show_workspace(expected_generation=generation)
         if (
             not self._disposed
             and generation == self._session_generation
-            and key_validity is KeyValidityState.UNKNOWN
+            and self._key_validity is KeyValidityState.UNKNOWN
         ):
             self._start_key_validation()
 
@@ -185,6 +237,13 @@ class ChatSessionController:
         self._session_generation += 1
         self._workspace_request_id += 1
         self._session_api_key = None
+        self._deferred_workspace = False
+        self._cancel_estimate_metadata()
+        self._key_metadata_updated_at = None
+        self._estimate_metadata_after = 0.0
+        self._estimate_refresh_key = False
+        self._observed_attempt = None
+        self._completed_attempt = None
         self._workspace_controller.deactivate()
         self._interaction.deactivate()
         self._catalog = None
@@ -196,6 +255,9 @@ class ChatSessionController:
         self._key_limit = KeyLimitInfo.unknown()
         self._key_validation_in_progress = False
         self._key_replacement_generation = None
+        self._security_generation = None
+        self._profile_deletion_origin = None
+        self._screen = _ChatScreen.WORKSPACE
         self._cancel_key_validation()
         self._dialog_request_pending = False
         self._dialog_request_id += 1
@@ -210,9 +272,126 @@ class ChatSessionController:
         self.deactivate()
         self._disposed = True
 
+    def set_session_watch_status(
+        self, *, system_events: bool, screen_events: bool
+    ) -> None:
+        self._session_watch_status = (system_events, screen_events)
+        if self._workspace_view is not None and not self._disposed:
+            self._workspace_view.set_session_watch_status(self._session_watch_status)
+
+    def set_protection_status(self, snapshot: ProtectionSnapshot) -> None:
+        self._protection_status = snapshot
+        if self._workspace_view is not None and not self._disposed:
+            self._workspace_view.set_protection_status(snapshot)
+
+    @property
+    def protection_anchor(self) -> ft.IconButton | None:
+        """The current visible shield, for restoring focus after a PIN handoff."""
+        return (
+            self._workspace_view.protection_button
+            if self._workspace_view is not None
+            else None
+        )
+
+    async def prepare_screen_lock_test(self) -> bool:
+        view = self._workspace_view
+        generation = self._session_generation
+        selected = self._selected_chat_id
+        if (
+            self._disposed
+            or not self.session_active
+            or (view is None and not self._deferred_workspace)
+            or (
+                self._deferred_workspace
+                and (self._data_access is None or not self._data_access.unlocked)
+            )
+            or self._screen is not _ChatScreen.WORKSPACE
+            or (view is not None and view.security_busy)
+            or self._workspace_controller.busy
+            or self._workspace_controller.has_dialog()
+            or self._dialog_request_pending
+            or self._chat_dialog_context is not None
+            or self._operation_lock.locked()
+            or self._profile_deletion_origin is not None
+            or self._security_generation is not None
+            or self._key_replacement_generation is not None
+        ):
+            return False
+        if not await self._workspace_controller.flush_editor():
+            return False
+        return (
+            not self._disposed
+            and self.session_active
+            and self._workspace_view is view
+            and self._session_generation == generation
+            and self._screen is _ChatScreen.WORKSPACE
+            and self._selected_chat_id == selected
+            and not self._workspace_controller.busy
+            and not self._workspace_controller.has_dialog()
+            and not self._dialog_request_pending
+            and self._chat_dialog_context is None
+            and not self._operation_lock.locked()
+            and self._profile_deletion_origin is None
+            and self._security_generation is None
+            and self._key_replacement_generation is None
+        )
+
+    async def request_screen_lock_test(self) -> None:
+        if (
+            not self._disposed
+            and self.session_active
+            and self._screen is _ChatScreen.WORKSPACE
+            and self._workspace_view is not None
+            and self._on_test_screen_lock is not None
+        ):
+            await self._on_test_screen_lock()
+
+    async def request_sleep_test(self) -> None:
+        if (
+            not self._disposed
+            and self.session_active
+            and self._screen is _ChatScreen.WORKSPACE
+            and self._workspace_view is not None
+            and self._on_test_sleep is not None
+        ):
+            await self._on_test_sleep()
+
+    def report_screen_lock_test_busy(self) -> None:
+        if self._workspace_view is not None and not self._disposed:
+            self._workspace_view.show_message(tr("service.operation_pending"))
+            self._page.update()
+
+    def begin_profile_deletion(self) -> None:
+        """Отзывает UI и отменяет только собственные фоновые операции."""
+        tasks = (
+            self._key_validation_task,
+            self._catalog_task,
+            self._estimate_metadata_task,
+            self._operation_lock.owner,
+            self._interaction.operation_task,
+        )
+        self.deactivate()
+        self._disposed = True
+        self._selected_chat_id = None
+        current = asyncio.current_task()
+        for task in tasks:
+            if task is not None and task is not current and not task.done():
+                self._deletion_tasks.add(task)
+                task.cancel()
+
+    async def wait_profile_deletion(self) -> None:
+        if self._deletion_tasks:
+            await asyncio.gather(*self._deletion_tasks, return_exceptions=True)
+            self._deletion_tasks.clear()
+        async with self._operation_lock:
+            pass
+        await self._interaction.wait_idle()
+        await self._drafts.discard_for_deletion()
+
     async def request_new_chat(self) -> None:
         if (
             self._disposed
+            or self._screen is _ChatScreen.SECURITY
             or self._session_api_key is None
             or self._catalog_task is not None
             or not free_mode_allowed(self._key_validity)
@@ -409,6 +588,7 @@ class ChatSessionController:
     async def select_chat(self, chat_id: str) -> None:
         if (
             self._disposed
+            or self._screen is _ChatScreen.SECURITY
             or self._session_api_key is None
             or not _is_identifier(chat_id)
         ):
@@ -674,6 +854,7 @@ class ChatSessionController:
         """Запускает одну повторную проверку и сразу возвращает управление UI."""
         if (
             self._disposed
+            or self._screen is _ChatScreen.SECURITY
             or self._session_api_key is None
             or self._key_validation_task is not None
         ):
@@ -688,6 +869,7 @@ class ChatSessionController:
         view = self._workspace_view
         if (
             self._disposed
+            or self._screen is _ChatScreen.SECURITY
             or self._session_api_key is None
             or view is None
             or view.key_replacement_busy
@@ -699,15 +881,180 @@ class ChatSessionController:
             or self._chat_dialog_context is not None
             or self._operation_lock.locked()
             or self._key_replacement_generation is not None
+            or self._security_generation is not None
         ):
             return
         generation = self._session_generation
         self._key_replacement_generation = generation
+        self._cancel_estimate_metadata()
+        self._catalog_service.clear_cache()
+        self._key_metadata_updated_at = None
+        self._workspace_controller.set_estimate_metadata(None, self._key_limit, None)
         try:
             await self._on_replace_key()
         finally:
             if self._key_replacement_generation == generation:
                 self._key_replacement_generation = None
+
+    async def set_paid_without_confirmation(self, chat_id: str, enabled: bool) -> None:
+        if (
+            self._disposed
+            or not self.session_active
+            or self._screen is not _ChatScreen.WORKSPACE
+            or self._workspace_view is None
+            or self._selected_chat_id != chat_id
+            or self._security_generation is not None
+            or self._profile_deletion_origin is not None
+            or self._key_replacement_generation is not None
+            or self._chat_dialog_context is not None
+            or self._dialog_request_pending
+        ):
+            return
+        await self._workspace_controller.set_paid_without_confirmation(chat_id, enabled)
+
+    async def request_security_settings(self) -> None:
+        """Передаёт выдачу кода только из свободной защищённой сессии."""
+        view = self._workspace_view
+        if (
+            self._disposed
+            or self._screen is not _ChatScreen.WORKSPACE
+            or self._session_api_key is None
+            or self._on_security is None
+            or view is None
+            or view.security_busy
+            or self._workspace_controller.busy
+            or self._workspace_controller.has_dialog()
+            or self._dialog_request_pending
+            or self._chat_dialog_context is not None
+            or self._operation_lock.locked()
+            or self._key_replacement_generation is not None
+            or self._security_generation is not None
+        ):
+            return
+        generation = self._session_generation
+        self._security_generation = generation
+        try:
+            await self._on_security()
+        finally:
+            if self._security_generation == generation:
+                self._security_generation = None
+
+    async def suspend_for_security(self) -> bool:
+        """Сохраняет редактор и отзывает callbacks чата, оставляя вход действующим."""
+        view = self._workspace_view
+        if (
+            self._disposed
+            or not self.session_active
+            or self._screen is not _ChatScreen.WORKSPACE
+            or view is None
+            or view.security_busy
+            or self._workspace_controller.busy
+            or self._workspace_controller.has_dialog()
+            or self._dialog_request_pending
+            or self._chat_dialog_context is not None
+            or self._operation_lock.locked()
+            or self._key_replacement_generation is not None
+        ):
+            return False
+        generation = self._session_generation
+        self._screen = _ChatScreen.SECURITY
+        self._workspace_request_id += 1
+        self._dialog_request_id += 1
+        self._workspace_controller.capture_editor()
+        if not await self.flush_drafts():
+            if generation == self._session_generation and self.session_active:
+                self._screen = _ChatScreen.WORKSPACE
+            return False
+        if (
+            self._disposed
+            or generation != self._session_generation
+            or not self.session_active
+        ):
+            return False
+        self._workspace_controller.deactivate()
+        self._cancel_estimate_metadata()
+        self._clear_workspace()
+        return True
+
+    async def request_profile_deletion(
+        self, workspace: ChatWorkspaceView, generation: int
+    ) -> None:
+        """Принимает действие только от конкретного текущего представления."""
+        if (
+            self._on_delete_profile is None
+            or self._disposed
+            or self._screen is not _ChatScreen.WORKSPACE
+            or workspace is not self._workspace_view
+            or generation != self._session_generation
+            or self._profile_deletion_origin is not None
+            or self._security_generation is not None
+            or not self.session_active
+            or workspace.security_busy
+            or self._workspace_controller.busy
+            or self._workspace_controller.has_dialog()
+            or self._dialog_request_pending
+            or self._chat_dialog_context is not None
+            or self._operation_lock.locked()
+            or self._key_replacement_generation is not None
+        ):
+            return
+        origin = WorkspaceDeletionOrigin(generation, workspace)
+        self._profile_deletion_origin = origin
+        try:
+            await self._on_delete_profile(origin)
+        finally:
+            if self._screen is not _ChatScreen.SECURITY:
+                if self._profile_deletion_origin is origin:
+                    self._profile_deletion_origin = None
+
+    async def suspend_for_profile_deletion(
+        self, origin: WorkspaceDeletionOrigin
+    ) -> bool:
+        if (
+            self._profile_deletion_origin is not origin
+            or origin.workspace is not self._workspace_view
+            or origin.generation != self._session_generation
+        ):
+            return False
+        return await self.suspend_for_security()
+
+    def profile_deletion_origin_current(self, origin: WorkspaceDeletionOrigin) -> bool:
+        return (
+            not self._disposed
+            and self.session_active
+            and self._profile_deletion_origin is origin
+            and origin.generation == self._session_generation
+            and self._screen is _ChatScreen.SECURITY
+        )
+
+    async def resume_profile_deletion(self, origin: WorkspaceDeletionOrigin) -> None:
+        if self.profile_deletion_origin_current(origin):
+            self._profile_deletion_origin = None
+            await self.resume_after_security()
+
+    def show_profile_deletion_error(self, message: str) -> None:
+        if not self._disposed and self._workspace_view is not None:
+            if self._workspace_view.composer is not None:
+                self._workspace_view.show_message(message)
+            else:
+                self._page.show_dialog(ft.SnackBar(content=ft.Text(message)))
+            self._page.update()
+
+    def handle_language_change(self) -> None:
+        if not self._disposed and self._workspace_view is not None:
+            self._workspace_view.refresh_menu_language()
+
+    async def resume_after_security(self) -> None:
+        """Возвращает выбранный чат после закрытия настроек, пока сессия открыта."""
+        if (
+            self._disposed
+            or not self.session_active
+            or self._screen is not _ChatScreen.SECURITY
+        ):
+            return
+        self._screen = _ChatScreen.WORKSPACE
+        self._workspace_controller.activate()
+        await self._show_workspace(expected_generation=self._session_generation)
 
     @property
     def draft_save_failed(self) -> bool:
@@ -753,22 +1100,24 @@ class ChatSessionController:
         self._draft_save_failed = False
         return True
 
-    def _start_key_validation(self) -> bool:
+    def _start_key_validation(self, *, metadata_only: bool = False) -> bool:
         if (
             self._disposed
             or self._session_api_key is None
             or self._key_validation_task is not None
         ):
             return False
-        self._key_validation_in_progress = True
+        self._key_validation_in_progress = not metadata_only
         generation = self._session_generation
         api_key = self._session_api_key
         self._key_validation_task = asyncio.create_task(
-            self._run_key_validation(api_key, generation)
+            self._run_key_validation(api_key, generation, metadata_only=metadata_only)
         )
         return True
 
-    async def _run_key_validation(self, api_key: str, generation: int) -> None:
+    async def _run_key_validation(
+        self, api_key: str, generation: int, *, metadata_only: bool = False
+    ) -> None:
         current_task = asyncio.current_task()
         try:
             try:
@@ -794,13 +1143,30 @@ class ChatSessionController:
                 return
             self._key_validation_task = None
             self._key_validation_in_progress = False
+            if metadata_only and key_validity in {
+                KeyValidityState.UNKNOWN,
+                KeyValidityState.RESTRICTED,
+            }:
+                # A background metadata failure is not an inference-key
+                # rejection. Retain the last known snapshot and its old time.
+                self._push_estimate_metadata()
+                return
             self._key_validity = key_validity
             self._key_limit = key_limit
+            self._key_metadata_updated_at = (
+                datetime.now(UTC) if key_validity is KeyValidityState.VALID else None
+            )
             if key_validity is KeyValidityState.INVALID:
                 self._catalog = None
                 self._pending_mode = None
                 self._catalog_service.clear_cache()
+                self._cancel_estimate_metadata()
                 self._invalidate_catalog_request()
+            if metadata_only and key_validity is KeyValidityState.VALID:
+                # Update only the compact metrics and estimate. Reloading
+                # SQLite/history here could overtake the send's own UI refresh.
+                self._push_estimate_metadata()
+                return
             try:
                 await self._refresh_after_key_validation(generation)
             except asyncio.CancelledError:
@@ -818,6 +1184,8 @@ class ChatSessionController:
             or self._session_api_key is None
             or generation != self._session_generation
         ):
+            return
+        if self._screen is _ChatScreen.SECURITY:
             return
 
         can_use_free = free_mode_allowed(self._key_validity)
@@ -858,6 +1226,8 @@ class ChatSessionController:
     ) -> None:
         if (
             self._disposed
+            or self._deferred_workspace
+            or self._screen is _ChatScreen.SECURITY
             or self._session_api_key is None
             or expected_generation != self._session_generation
         ):
@@ -929,10 +1299,39 @@ class ChatSessionController:
                 key_validation_in_progress=self._key_validation_in_progress,
             )
             self._workspace_controller.bind(self._workspace_view, interaction_state)
+            self._push_estimate_metadata()
             self._page.update()
         else:
             self._clear_workspace()
-            self._workspace_view = ChatWorkspaceView(
+            generation = self._session_generation
+
+            async def delete_profile() -> None:
+                await self.request_profile_deletion(workspace, generation)
+
+            async def paid_confirmation_changed(chat_id: str, enabled: bool) -> None:
+                if (
+                    self._workspace_view is workspace
+                    and generation == self._session_generation
+                ):
+                    await self.set_paid_without_confirmation(chat_id, enabled)
+
+            async def test_screen_lock() -> None:
+                if (
+                    self._workspace_view is workspace
+                    and generation == self._session_generation
+                    and self._on_test_screen_lock is not None
+                ):
+                    await self.request_screen_lock_test()
+
+            async def test_sleep() -> None:
+                if (
+                    self._workspace_view is workspace
+                    and generation == self._session_generation
+                    and self._on_test_sleep is not None
+                ):
+                    await self.request_sleep_test()
+
+            workspace = ChatWorkspaceView(
                 self._page,
                 chats,
                 selected,
@@ -953,10 +1352,28 @@ class ChatSessionController:
                 key_validation_in_progress=self._key_validation_in_progress,
                 on_retry_key=self.request_key_revalidation,
                 on_replace_key=self.request_key_replacement,
+                on_paid_confirmation_changed=paid_confirmation_changed,
+                protection_status=self._protection_status,
+                on_test_screen_lock=(
+                    test_screen_lock if self._on_test_screen_lock is not None else None
+                ),
+                on_test_sleep=(test_sleep if self._on_test_sleep is not None else None),
+                on_delete_profile=(
+                    delete_profile if self._on_delete_profile is not None else None
+                ),
+                on_security=(
+                    self.request_security_settings
+                    if self._on_security is not None
+                    else None
+                ),
+                session_watch_status=self._session_watch_status,
             )
+            self._workspace_view = workspace
             self._workspace_controller.bind(self._workspace_view, interaction_state)
+            self._push_estimate_metadata()
             self._replace_page(self._workspace_view.control)
         self._screen = _ChatScreen.WORKSPACE
+        self._start_estimate_metadata_refresh()
         if scroll_to_end and self._workspace_view is not None:
             await self._workspace_view.scroll_messages_to_end()
 
@@ -974,6 +1391,8 @@ class ChatSessionController:
     def _workspace_request_matches(self, generation: int, request_id: int) -> bool:
         return (
             not self._disposed
+            and not self._deferred_workspace
+            and self._screen is not _ChatScreen.SECURITY
             and self.session_active
             and generation == self._session_generation
             and request_id == self._workspace_request_id
@@ -981,6 +1400,45 @@ class ChatSessionController:
 
     def _set_workspace_state(self, state: ActiveChatState | None) -> None:
         self._workspace_state = state
+        if state is None:
+            self._observed_attempt = None
+            self._completed_attempt = None
+            return
+        last = state.last_request
+        marker = (
+            state.chat.id,
+            last.attempt_sequence,
+            last.turn_id,
+            last.sent_at,
+            last.state,
+        )
+        previous = self._observed_attempt
+        self._observed_attempt = marker
+        completed = last.state in {LastRequestState.FINAL, LastRequestState.UNKNOWN}
+        completed_marker = (
+            state.chat.id,
+            last.attempt_sequence,
+            last.turn_id,
+            last.sent_at,
+        )
+        if previous is None or previous[0] != state.chat.id:
+            self._completed_attempt = completed_marker if completed else None
+            return
+        if (
+            completed
+            and completed_marker != self._completed_attempt
+            and last.chronology_known
+            and last.sent_at is not None
+        ):
+            self._completed_attempt = completed_marker
+            # Fresh inference may have adopted a new price. Discard the old
+            # model before publishing any estimate, then refresh at most once
+            # per short interval. A pending reservation never enters here.
+            self._cancel_estimate_metadata()
+            self._catalog_service.clear_cache()
+            self._estimate_refresh_key = True
+            self._push_estimate_metadata()
+            self._start_estimate_metadata_refresh()
 
     def _session_context(self) -> ChatSessionContext | None:
         if self._disposed or self._session_api_key is None:
@@ -998,6 +1456,11 @@ class ChatSessionController:
     ) -> None:
         if self._disposed or self._session_api_key is None:
             return
+        if validity is not self._key_validity or limit != self._key_limit:
+            # Interaction results can echo cached free-mode metadata, and a
+            # long generation finishes after its paid preflight key check.
+            # Neither is an exact metadata receipt time for this controller.
+            self._key_metadata_updated_at = None
         self._key_validity = validity
         self._key_limit = limit
         if validity is KeyValidityState.INVALID:
@@ -1005,7 +1468,164 @@ class ChatSessionController:
             self._pending_mode = None
             self._pending_model = None
             self._catalog_service.clear_cache()
+            self._cancel_estimate_metadata()
             self._invalidate_catalog_request()
+        self._push_estimate_metadata()
+        self._start_estimate_metadata_refresh()
+
+    def _push_estimate_metadata(self) -> None:
+        """Publish only cached metadata without reading a key or editor text."""
+        state = self._workspace_state
+        model: CatalogModel | None = None
+        if self.session_active and self._key_validity is not KeyValidityState.INVALID:
+            if state is not None:
+                if state.chat.requested_model_id == FREE_ROUTER_MODEL.id:
+                    model = FREE_ROUTER_MODEL
+                else:
+                    catalog = self._catalog_service.peek_catalog()
+                    if catalog is not None:
+                        model = next(
+                            (
+                                item
+                                for item in (*catalog.free_models, *catalog.paid_models)
+                                if item.id == state.chat.requested_model_id
+                            ),
+                            None,
+                        )
+        self._workspace_controller.set_estimate_metadata(
+            model, self._key_limit, self._key_metadata_updated_at
+        )
+        self._schedule_estimate_metadata_expiry()
+
+    def _schedule_estimate_metadata_expiry(self) -> None:
+        handle = self._estimate_metadata_expiry
+        self._estimate_metadata_expiry = None
+        if handle is not None:
+            handle.cancel()
+        state = self._workspace_state
+        if (
+            not self.session_active
+            or self._disposed
+            or state is None
+            or self._workspace_view is None
+            or state.chat.requested_model_id == FREE_ROUTER_MODEL.id
+        ):
+            return
+        remaining = self._catalog_service.cache_remaining_seconds()
+        if remaining is None or remaining <= 0:
+            return
+        self._estimate_metadata_expiry = asyncio.get_running_loop().call_later(
+            remaining,
+            self._expire_estimate_metadata,
+            self._session_generation,
+            self._estimate_metadata_request,
+        )
+
+    def _expire_estimate_metadata(self, generation: int, request: int) -> None:
+        self._estimate_metadata_expiry = None
+        if (
+            self._disposed
+            or not self.session_active
+            or self._screen is not _ChatScreen.WORKSPACE
+            or generation != self._session_generation
+            or request != self._estimate_metadata_request
+        ):
+            return
+        self._push_estimate_metadata()
+
+    def _start_estimate_metadata_refresh(self) -> bool:
+        """Start at most one catalog refresh, independently of typing and UI."""
+        if (
+            self._disposed
+            or not self.session_active
+            or self._workspace_view is None
+            or self._workspace_state is None
+            or self._screen is not _ChatScreen.WORKSPACE
+            or self._key_replacement_generation is not None
+            or self._key_validity is KeyValidityState.INVALID
+            or (
+                self._workspace_state.chat.requested_model_id == FREE_ROUTER_MODEL.id
+                and not self._estimate_refresh_key
+            )
+            or self._estimate_metadata_task is not None
+            or (
+                self._catalog_service.peek_catalog() is not None
+                and not self._estimate_refresh_key
+            )
+        ):
+            return False
+        generation = self._session_generation
+        request = self._estimate_metadata_request
+        api_key = self._session_api_key
+        assert api_key is not None
+        self._estimate_metadata_task = asyncio.create_task(
+            self._run_estimate_metadata_refresh(api_key, generation, request)
+        )
+        return True
+
+    async def _run_estimate_metadata_refresh(
+        self, api_key: str, generation: int, request: int
+    ) -> None:
+        current = asyncio.current_task()
+        try:
+            delay = max(0.0, self._estimate_metadata_after - time.monotonic())
+            if delay:
+                await asyncio.sleep(delay)
+            if not self._estimate_metadata_matches(generation, request, current):
+                return
+            self._estimate_metadata_after = time.monotonic() + 30.0
+            try:
+                state = self._workspace_state
+                if (
+                    state is not None
+                    and state.chat.requested_model_id != FREE_ROUTER_MODEL.id
+                ):
+                    await self._catalog_service.get_catalog(api_key)
+            except asyncio.CancelledError:
+                return
+            except Exception:
+                return
+            if not self._estimate_metadata_matches(generation, request, current):
+                return
+            self._push_estimate_metadata()
+            if self._estimate_refresh_key:
+                self._estimate_refresh_key = False
+                self._start_key_validation(metadata_only=True)
+        except asyncio.CancelledError:
+            return
+        finally:
+            if self._estimate_metadata_task is current:
+                self._estimate_metadata_task = None
+
+    def _estimate_metadata_matches(
+        self, generation: int, request: int, task: asyncio.Task[object] | None
+    ) -> bool:
+        return (
+            not self._disposed
+            and self.session_active
+            and self._screen is _ChatScreen.WORKSPACE
+            and generation == self._session_generation
+            and request == self._estimate_metadata_request
+            and self._estimate_metadata_task is task
+            and self._key_replacement_generation is None
+        )
+
+    def _cancel_estimate_metadata(self) -> None:
+        self._estimate_metadata_request += 1
+        handle = self._estimate_metadata_expiry
+        self._estimate_metadata_expiry = None
+        if handle is not None:
+            handle.cancel()
+        task = self._estimate_metadata_task
+        self._estimate_metadata_task = None
+        if task is None or task.done():
+            return
+        try:
+            current = asyncio.current_task()
+        except RuntimeError:
+            current = None
+        if task is not current:
+            task.cancel()
 
     def _show_catalog_loading(self) -> None:
         self._clear_workspace()

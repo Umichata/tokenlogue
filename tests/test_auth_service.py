@@ -39,7 +39,6 @@ class StubValidator:
         self.calls = 0
 
     async def validate_key(self, api_key: str) -> KeyValidationResult:
-        _ = api_key
         self.calls += 1
         return self.result
 
@@ -51,7 +50,6 @@ class BlockingValidator(StubValidator):
         self.release = asyncio.Event()
 
     async def validate_key(self, api_key: str) -> KeyValidationResult:
-        _ = api_key
         self.calls += 1
         self.started.set()
         await self.release.wait()
@@ -129,6 +127,7 @@ class AuthServiceTests(unittest.IsolatedAsyncioTestCase):
         self.database = AuthDatabase(self.temp_dir.name)
         self.credentials = MemoryCredentials()
         self.clock = MutableClock(1_000.0)
+        self.pin_elapsed = 1000.0
         self.validator = StubValidator(_accepted_key())
         self.hasher = PinHasher(
             iterations=1_000,
@@ -144,6 +143,8 @@ class AuthServiceTests(unittest.IsolatedAsyncioTestCase):
             self.database,
             pin_hasher=self.hasher,
             clock=self.clock,
+            pin_elapsed_clock=lambda: self.pin_elapsed,
+            pin_boot_token=lambda: "controlled-boot",
         )
 
     async def _complete_setup(self) -> str:
@@ -225,41 +226,44 @@ class AuthServiceTests(unittest.IsolatedAsyncioTestCase):
             ["chat-preserved-on-reset"],
         )
 
-    async def test_fifth_failure_locks_for_thirty_seconds_across_restart(self) -> None:
+    async def test_third_failure_locks_for_300_seconds_across_restart(self) -> None:
         pin = await self._complete_setup()
 
         result = None
-        for _ in range(5):
+        for _ in range(3):
             result = await self.service.login("9999")
 
         self.assertIsNotNone(result)
         assert result is not None
         self.assertEqual(result.status, AuthStatus.LOCKED)
-        self.assertEqual(result.lock_seconds_remaining, 30)
+        self.assertEqual(result.lock_seconds_remaining, 300)
 
         self.database = AuthDatabase(self.temp_dir.name)
         restarted_service = self._new_service()
         initial = await restarted_service.initialize()
-        self.assertEqual(initial.lock_seconds_remaining, 30)
+        self.assertEqual(initial.lock_seconds_remaining, 300)
         blocked = await restarted_service.login(pin)
         self.assertEqual(blocked.status, AuthStatus.LOCKED)
         self.assertEqual(self.credentials.get_calls, 0)
 
-        self.clock.value += 31
+        self.clock.value += 300
+        self.pin_elapsed += 300
         allowed = await restarted_service.login(pin)
         self.assertEqual(allowed.status, AuthStatus.AUTHENTICATED)
         self.assertEqual(self.credentials.get_calls, 1)
 
-    async def test_backward_clock_jump_cannot_extend_lock(self) -> None:
+    async def test_backward_clock_jump_cannot_unlock_or_extend_lock(self) -> None:
         pin = await self._complete_setup()
-        for _ in range(5):
+        for _ in range(3):
             await self.service.login("9999")
 
         self.clock.value -= 3_600
         restarted_service = self._new_service()
 
         initial = await restarted_service.initialize()
-        self.assertEqual(initial.lock_seconds_remaining, 0)
+        self.assertEqual(initial.lock_seconds_remaining, 300)
+        self.assertEqual((await restarted_service.login(pin)).status, AuthStatus.LOCKED)
+        self.pin_elapsed += 300
         allowed = await restarted_service.login(pin)
         self.assertEqual(allowed.status, AuthStatus.AUTHENTICATED)
 
@@ -546,18 +550,6 @@ class AuthServiceTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(blocking_validator.calls, 0)
         self.assertFalse(blocking_validator.started.is_set())
 
-    async def test_401_after_pin_does_not_delete_local_data(self) -> None:
-        await self._assert_stored_network_status_preserves_auth(
-            KeyValidationStatus.INVALID,
-            "chat-preserved-after-401",
-        )
-
-    async def test_403_after_pin_does_not_delete_local_data(self) -> None:
-        await self._assert_stored_network_status_preserves_auth(
-            KeyValidationStatus.RESTRICTED,
-            "chat-preserved-after-403",
-        )
-
     async def test_primary_401_and_403_do_not_create_registration(self) -> None:
         for status in (KeyValidationStatus.INVALID, KeyValidationStatus.RESTRICTED):
             with self.subTest(status=status):
@@ -570,11 +562,8 @@ class AuthServiceTests(unittest.IsolatedAsyncioTestCase):
                 self.assertFalse((await self.credentials.inspect_state()).has_artifacts)
                 self.assertIsNone(self.database.get_auth_state())
 
-    async def _assert_stored_network_status_preserves_auth(
-        self,
-        status: KeyValidationStatus,
-        chat_id: str,
-    ) -> None:
+    async def test_login_keeps_stored_chat_without_key_validation(self) -> None:
+        chat_id = "chat-preserved-without-key-validation"
         pin = await self._complete_setup()
         repository = SqliteChatRepository(self.database.path)
         timestamp = datetime(2026, 1, 1, tzinfo=UTC)
@@ -592,7 +581,6 @@ class AuthServiceTests(unittest.IsolatedAsyncioTestCase):
             )
         )
         validation_calls = self.validator.calls
-        self.validator.result = KeyValidationResult(status)
 
         result = await self._new_service().login(pin)
 
@@ -605,18 +593,6 @@ class AuthServiceTests(unittest.IsolatedAsyncioTestCase):
             [chat.id for chat in repository.list_chats()],
             [chat_id],
         )
-
-    async def test_setup_waits_for_user_pin_without_generating_one(self) -> None:
-        with patch.object(
-            self.hasher, "generate_pin", wraps=self.hasher.generate_pin
-        ) as generate:
-            setup = await self.service.start_setup(TEST_CREDENTIAL)
-        self.assertIsNone(setup.pin)
-        self.assertEqual(setup.status, AuthStatus.PIN_CHOICE_REQUIRED)
-        self.assertTrue(setup.pending_setup_token)
-        generate.assert_not_called()
-        self.assertIsNone(self.database.get_auth_state())
-        self.assertFalse((await self.credentials.inspect_state()).has_artifacts)
 
     async def test_chosen_pin_is_exactly_persisted_and_survives_restart(self) -> None:
         setup = await self.service.start_setup(TEST_CREDENTIAL)
@@ -676,7 +652,6 @@ class AuthServiceTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_suggested_pin_can_be_edited_before_confirmation(self) -> None:
         setup = await self.service.start_setup(TEST_CREDENTIAL)
-        self.assertEqual(self.service.suggest_pin(), "0007")
         self.assertEqual(self.service.suggest_pin(), "0007")
         self.assertIsNone(self.database.get_auth_state())
         result = await self.service.complete_setup(

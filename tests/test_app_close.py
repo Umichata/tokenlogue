@@ -13,7 +13,7 @@ from decimal import Decimal
 from pathlib import Path
 from types import SimpleNamespace
 from typing import cast
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 import flet as ft
 
@@ -23,6 +23,9 @@ import main as application  # noqa: E402
 from app import AppController  # noqa: E402
 from auth.models import InitialRoute, KeyLimitInfo, KeyValidityState  # noqa: E402
 from chat.models import Chat, ChatMode  # noqa: E402
+from platform_security.device_protection_store import (  # noqa: E402
+    DeviceProtectionStore,
+)
 from storage.chat_repository import SqliteChatRepository  # noqa: E402
 from storage.data_access import DataAccess, DataAccessError  # noqa: E402
 from storage.database import AuthDatabase  # noqa: E402
@@ -74,13 +77,31 @@ class AppCloseTests(unittest.IsolatedAsyncioTestCase):
                 return controller
 
             with (
-                patch.dict(os.environ, {"FLET_APP_STORAGE_DATA": directory}),
+                patch.dict(
+                    os.environ,
+                    {
+                        "FLET_APP_STORAGE_DATA": directory,
+                        "XDG_STATE_HOME": str(Path(directory) / "device-state"),
+                    },
+                ),
+                patch.object(
+                    DeviceProtectionStore,
+                    "for_current_linux_account",
+                    return_value=DeviceProtectionStore(
+                        Path(directory) / "device-state/history",
+                        machine_identity=b"a" * 32,
+                        user_id=1001,
+                    ),
+                ),
                 patch.object(
                     application,
                     "FletSecureCredentials",
                     return_value=SimpleNamespace(storage_backend=FakeSecureStorage()),
                 ),
                 patch.object(application, "DataAccess", return_value=access),
+                patch.object(
+                    application, "start_linux_session_watch", new_callable=AsyncMock
+                ),
                 patch.object(application, "AuthService", return_value=auth),
                 patch.object(
                     application, "OpenRouterClient", return_value=FakeKeyValidator()

@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 from dataclasses import dataclass, field
 from enum import StrEnum
+from typing import Protocol
 
 from flet.controls.base_control import control
 from flet.controls.services.service import Service
@@ -34,6 +35,21 @@ class RecoveryRequest:
 class RecoveryResult:
     request: RecoveryRequest
     status: RecoveryStatus
+
+
+class RecoveryProvider(Protocol):
+    """Общий контракт одноразовой системной проверки без доступа к ключам."""
+
+    @property
+    def challenge_in_progress(self) -> bool: ...
+
+    async def supports_recovery(self) -> bool: ...
+
+    async def authenticate(
+        self, request: RecoveryRequest, *, timeout: float = 120
+    ) -> RecoveryResult: ...
+
+    async def cancel(self, attempt_id: str) -> None: ...
 
 
 @control("TokenlogueDeviceRecovery")

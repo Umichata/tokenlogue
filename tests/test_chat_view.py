@@ -29,6 +29,7 @@ from chat.models import (  # noqa: E402
     ModelCatalog,
 )
 from chat_interaction_controller import ActiveChatState  # noqa: E402
+from i18n import tr  # noqa: E402
 from ui.chat_view import ChatWorkspaceView, _key_status_presentation  # noqa: E402
 from ui.model_selection_view import (  # noqa: E402
     ModelSelectionView,
@@ -274,16 +275,8 @@ class ChatViewTests(unittest.IsolatedAsyncioTestCase):
             KeyValidityState.RESTRICTED,
             KeyLimitInfo.unknown(),
         )
-        self.assertEqual(
-            invalid_message,
-            "Сохранённый ключ OpenRouter недействителен или отозван. "
-            "Замените ключ, чтобы продолжить работу с моделями",
-        )
-        self.assertEqual(
-            restricted_message,
-            "OpenRouter отклонил проверку разрешений ключа. "
-            "Бесплатный запрос также может завершиться ошибкой",
-        )
+        self.assertEqual(invalid_message, tr("key.invalid_short"))
+        self.assertEqual(restricted_message, tr("key.restricted_short"))
 
     async def test_rename_and_delete_buttons_await_callbacks_with_chat_id(
         self,

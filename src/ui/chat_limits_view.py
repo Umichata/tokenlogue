@@ -25,7 +25,17 @@ from chat.models import (
 from chat.sending import MessageSendPreview
 from i18n import display_model_name, fresh_text, money, number, tr
 from ui.branding import BrandHeader, BrandLoader
-from ui.styles import ERROR_COLOR, MUTED_COLOR, detail_row, primary_button_style
+from ui.styles import (
+    ERROR_COLOR,
+    MUTED_COLOR,
+    PANEL_BACKGROUND,
+    WARNING_COLOR,
+    build_auth_screen,
+    detail_row,
+    input_style,
+    primary_button_style,
+    secondary_button_style,
+)
 
 LimitSubmitCallback = Callable[[str, str, str | None], Awaitable[None]]
 AsyncCallback = Callable[[], Awaitable[None]]
@@ -52,11 +62,13 @@ class ChatLimitsForm:
             label=tr("limits.total"),
             value=str(initial_token_limit or DEFAULT_CHAT_TOKEN_LIMIT),
             keyboard_type=ft.KeyboardType.NUMBER,
+            **input_style(),
         )
         self.max_completion_tokens = ft.TextField(
             label=tr("limits.completion"),
             value=str(initial_completion_limit or DEFAULT_MAX_COMPLETION_TOKENS),
             keyboard_type=ft.KeyboardType.NUMBER,
+            **input_style(),
         )
         self.cost_limit: ft.TextField | None = None
         fields: list[ft.Control] = [
@@ -84,6 +96,7 @@ class ChatLimitsForm:
                 label=tr("limits.money"),
                 value=format_decimal_usd(suggested),
                 keyboard_type=ft.KeyboardType.NUMBER,
+                **input_style(),
             )
             fields.extend(
                 [
@@ -99,6 +112,7 @@ class ChatLimitsForm:
         self.submit_button = ft.Button(
             submit_label if submit_label is not None else tr("limits.save"),
             style=primary_button_style(),
+            height=48,
             on_click=self._handle_click,
         )
         self.progress = BrandLoader(size=26, active=False)
@@ -167,7 +181,6 @@ class NewChatLimitsView:
         )
         self.form = ChatLimitsForm(mode, on_submit, submit_label=submit_label)
         controls: list[ft.Control] = [
-            BrandHeader(),
             ft.Text(
                 tr("limits.configure"), theme_style=ft.TextThemeStyle.HEADLINE_MEDIUM
             ),
@@ -179,12 +192,12 @@ class NewChatLimitsView:
         if mode is ChatMode.PAID:
             controls.append(
                 ft.Container(
-                    bgcolor=ft.Colors.with_opacity(0.15, ft.Colors.AMBER_300),
+                    bgcolor=ft.Colors.with_opacity(0.15, WARNING_COLOR),
                     border_radius=12,
                     padding=12,
                     content=ft.Text(
                         tr("limits.paid_warning"),
-                        color=ft.Colors.AMBER_300,
+                        color=WARNING_COLOR,
                     ),
                 )
             )
@@ -194,11 +207,7 @@ class NewChatLimitsView:
                 ft.TextButton(tr("common.back"), on_click=handle_cancel),
             ]
         )
-        self.control = ft.SafeArea(
-            expand=True,
-            maintain_bottom_view_padding=True,
-            content=ft.ListView(expand=True, spacing=16, padding=20, controls=controls),
-        )
+        self.control = build_auth_screen(controls, header=BrandHeader(), width=560)
 
 
 class ChatLimitsDialog:
@@ -219,10 +228,20 @@ class ChatLimitsDialog:
         )
         self.control = ft.AlertDialog(
             modal=True,
+            bgcolor=PANEL_BACKGROUND,
+            shape=ft.RoundedRectangleBorder(radius=16),
             scrollable=True,
             title=ft.Text(tr("limits.dialog")),
             content=self.form.control,
-            actions=[ft.TextButton(tr("common.cancel"), on_click=handle_cancel)],
+            actions=[
+                ft.TextButton(
+                    tr("common.cancel"),
+                    height=48,
+                    style=secondary_button_style(),
+                    autofocus=True,
+                    on_click=handle_cancel,
+                )
+            ],
             actions_alignment=ft.MainAxisAlignment.END,
         )
 
@@ -240,6 +259,8 @@ def build_paid_request_dialog(
 
     return ft.AlertDialog(
         modal=True,
+        bgcolor=PANEL_BACKGROUND,
+        shape=ft.RoundedRectangleBorder(radius=16),
         title=ft.Text(tr("paid.confirm_title")),
         scrollable=True,
         content=ft.Column(
@@ -273,7 +294,13 @@ def build_paid_request_dialog(
             ],
         ),
         actions=[
-            ft.TextButton(tr("common.cancel"), on_click=handle_cancel),
+            ft.TextButton(
+                tr("common.cancel"),
+                height=48,
+                style=secondary_button_style(),
+                autofocus=True,
+                on_click=handle_cancel,
+            ),
             ft.Button(
                 tr("paid.send"),
                 icon=ft.Icons.PAYMENTS,
@@ -298,6 +325,8 @@ def build_price_reconfirmation_dialog(
 
     return ft.AlertDialog(
         modal=True,
+        bgcolor=PANEL_BACKGROUND,
+        shape=ft.RoundedRectangleBorder(radius=16),
         title=ft.Text(tr("paid.price_changed")),
         scrollable=True,
         content=ft.Column(
@@ -309,12 +338,18 @@ def build_price_reconfirmation_dialog(
                 *_price_component_rows(change.current),
                 ft.Text(
                     tr("paid.confirm_required"),
-                    color=ft.Colors.AMBER_300,
+                    color=WARNING_COLOR,
                 ),
             ],
         ),
         actions=[
-            ft.TextButton(tr("common.cancel"), on_click=handle_cancel),
+            ft.TextButton(
+                tr("common.cancel"),
+                height=48,
+                style=secondary_button_style(),
+                autofocus=True,
+                on_click=handle_cancel,
+            ),
             ft.Button(
                 tr("paid.confirm_prices"),
                 style=primary_button_style(),
@@ -339,6 +374,8 @@ def build_cost_increase_dialog(
 
     return ft.AlertDialog(
         modal=True,
+        bgcolor=PANEL_BACKGROUND,
+        shape=ft.RoundedRectangleBorder(radius=16),
         title=ft.Text(tr("paid.increase_title")),
         scrollable=True,
         content=ft.Column(
@@ -349,8 +386,19 @@ def build_cost_increase_dialog(
             ],
         ),
         actions=[
-            ft.TextButton(tr("common.cancel"), on_click=handle_cancel),
-            ft.Button(tr("paid.confirm_increase"), on_click=handle_confirm),
+            ft.TextButton(
+                tr("common.cancel"),
+                height=48,
+                style=secondary_button_style(),
+                autofocus=True,
+                on_click=handle_cancel,
+            ),
+            ft.Button(
+                tr("paid.confirm_increase"),
+                height=48,
+                style=primary_button_style(),
+                on_click=handle_confirm,
+            ),
         ],
         actions_alignment=ft.MainAxisAlignment.END,
     )
@@ -369,6 +417,8 @@ def build_release_unknown_dialog(
 
     return ft.AlertDialog(
         modal=True,
+        bgcolor=PANEL_BACKGROUND,
+        shape=ft.RoundedRectangleBorder(radius=16),
         title=ft.Text(tr("reserve.release_title")),
         content=ft.Text(
             tr(
@@ -378,8 +428,19 @@ def build_release_unknown_dialog(
             )
         ),
         actions=[
-            ft.TextButton(tr("common.cancel"), on_click=handle_cancel),
-            ft.Button(tr("reserve.release"), on_click=handle_confirm),
+            ft.TextButton(
+                tr("common.cancel"),
+                height=48,
+                style=secondary_button_style(),
+                autofocus=True,
+                on_click=handle_cancel,
+            ),
+            ft.Button(
+                tr("reserve.release"),
+                height=48,
+                style=primary_button_style(),
+                on_click=handle_confirm,
+            ),
         ],
         actions_alignment=ft.MainAxisAlignment.END,
     )

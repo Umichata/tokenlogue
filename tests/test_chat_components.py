@@ -36,6 +36,8 @@ from chat.models import (  # noqa: E402
 from chat.sending import SendMessageResult  # noqa: E402
 from chat_interaction_controller import ActiveChatState  # noqa: E402
 from chat_workspace_controller import _result_message  # noqa: E402
+from i18n import tr  # noqa: E402
+from tests.test_chat_menu import walk  # noqa: E402
 from ui.chat_limits_view import ChatLimitsForm  # noqa: E402
 from ui.chat_view import ChatWorkspaceView  # noqa: E402
 from ui.message_composer import MessageComposer  # noqa: E402
@@ -91,12 +93,9 @@ class ChatComponentTests(unittest.IsolatedAsyncioTestCase):
         await submit_handler(ft.Event(name="submit", control=composer.message_field))
         self.assertEqual(submitted, ["hello\nworld"])
 
-        submitted.clear()
-        self.assertTrue(composer.message_field.shift_enter)
-        self.assertEqual(submitted, [])
-
         composer.message_field.value = "  \n  "
         composer._apply_state()
+        submitted.clear()
         await click_handler(ft.Event(name="click", control=composer.send_button))
         self.assertEqual(submitted, [])
 
@@ -153,24 +152,35 @@ class ChatComponentTests(unittest.IsolatedAsyncioTestCase):
         history = MessageHistoryView(messages, (turn,), on_retry=retry)
 
         self.assertEqual(len(history.control.controls), 2)
-        first_row = cast(ft.Row, history.control.controls[0])
-        first_bubble = next(
-            c
-            for c in first_row.controls
-            if isinstance(c, ft.Container) and isinstance(c.content, ft.Column)
-        )
-        first_column = cast(ft.Column, first_bubble.content)
+        rows = [list(walk(row)) for row in history.control.controls]
         displayed = [
-            control.value
-            for control in first_column.controls
-            if isinstance(control, ft.Text)
+            [
+                control.value
+                or "".join(span.text or "" for span in control.spans or [])
+                for control in row
+                if isinstance(control, ft.Text)
+            ]
+            for row in rows
         ]
-        self.assertIn("question", displayed)
-        retry_button = next(
+        self.assertIn("question", displayed[0])
+        self.assertNotIn("partial", displayed[0])
+        self.assertIn("partial", displayed[1])
+        self.assertNotIn("question", displayed[1])
+        retry_buttons = [
             control
-            for control in first_column.controls
+            for control in rows[0]
             if isinstance(control, ft.TextButton)
+            and control.content == tr("common.retry")
+        ]
+        self.assertEqual(len(retry_buttons), 1)
+        self.assertFalse(
+            any(
+                isinstance(control, ft.TextButton)
+                and control.content == tr("common.retry")
+                for control in rows[1]
+            )
         )
+        retry_button = retry_buttons[0]
         handler = cast(
             Callable[[ft.Event[ft.TextButton]], Awaitable[None]],
             retry_button.on_click,

@@ -17,15 +17,25 @@ from chat.accounting import (
     TurnRecord,
     TurnStatus,
 )
+from chat.drafts import ChatDraft
 from chat.errors import ChatErrorType
+from chat.metrics import LastRequestMetrics, LastRequestState
 from chat.models import ChatMode, Message, MessageRole, MessageStatus
+from chat.paid_consent import PaidConsentRevoked
 from i18n import tr
+from storage.chat_preferences import policy_from_read, with_new_prices
 from storage.database_connections import (
     ContentAccess,
     encrypt_value,
 )
 from storage.database_connections import (
     connection as protected_connection,
+)
+from storage.request_attempts import (
+    ensure_request_attempts,
+    has_request_attempts,
+    record_request_attempt,
+    synchronize_request_attempt,
 )
 
 
@@ -146,7 +156,8 @@ class SqliteMessageRepository:
         requested_model_id: str,
         retry: bool,
         draft_revision: int | None = None,
-    ) -> None:
+        paid_policy_revision: str | None = None,
+    ) -> ChatDraft | None:
         if not isinstance(reservation, BudgetReservation):
             raise ValueError(tr("service.reserve_object_invalid"))
         _require_identifier(reservation.turn_id, tr("service.label.turn"))
@@ -169,7 +180,7 @@ class SqliteMessageRepository:
             connection.execute("BEGIN IMMEDIATE")
             row = connection.execute(
                 """
-                SELECT b.*, c.mode
+                SELECT b.*, c.mode, c.id, c.pricing_overrides_json
                 FROM chat_budgets AS b
                 JOIN chats AS c ON c.id = b.chat_id
                 WHERE b.chat_id = ?
@@ -180,6 +191,14 @@ class SqliteMessageRepository:
                 raise KeyError(tr("service.chat_missing"))
             budget = _budget_from_row(row)
             mode = ChatMode(str(row["mode"]))
+            if paid_policy_revision is not None:
+                policy = policy_from_read(str(row["pricing_overrides_json"]))
+                if (
+                    mode is not ChatMode.PAID
+                    or not policy.enabled
+                    or policy.revision != paid_policy_revision
+                ):
+                    raise PaidConsentRevoked()
             if not budget.limits_configured:
                 raise BudgetConflictError(tr("service.limits_unconfigured"))
             if budget.state is BudgetState.ACCOUNTING_UNKNOWN:
@@ -260,7 +279,16 @@ class SqliteMessageRepository:
                     ),
                 )
 
+            consumed_draft = None
             if not retry and draft_revision is not None:
+                draft = connection.execute(
+                    "SELECT chat_id,revision,content FROM chat_drafts WHERE chat_id=? AND revision=?",
+                    (reservation.chat_id, draft_revision),
+                ).fetchone()
+                if draft is not None:
+                    consumed_draft = ChatDraft(
+                        reservation.chat_id, draft_revision, str(draft["content"])
+                    )
                 # Keep a revision tombstone: an in-flight stale save of the
                 # consumed revision must never recreate its draft text.
                 connection.execute(
@@ -297,20 +325,76 @@ class SqliteMessageRepository:
                     reservation.chat_id,
                 ),
             )
+        return consumed_draft
+
+    def restore_unsent_draft(self, turn_id: str, draft: ChatDraft) -> None:
+        """Finishes only this unsent turn, never overwriting a newer draft."""
+        _require_identifier(turn_id, tr("service.label.turn"))
+        if not isinstance(draft, ChatDraft) or not draft.text:
+            return
+        with self._connection(
+            "finish", chat_id=draft.chat_id, record_id=turn_id
+        ) as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            turn = connection.execute(
+                "SELECT chat_id,accounting_status,status FROM turns WHERE id=?",
+                (turn_id,),
+            ).fetchone()
+            if (
+                turn is None
+                or turn["chat_id"] != draft.chat_id
+                or turn["accounting_status"] != AccountingStatus.RELEASED.value
+                or turn["status"] != TurnStatus.FAILED.value
+            ):
+                return
+            current = connection.execute(
+                "SELECT chat_id,revision,content FROM chat_drafts WHERE chat_id=?",
+                (draft.chat_id,),
+            ).fetchone()
+            if (
+                current is None
+                or current["revision"] != draft.revision
+                or current["content"] != ""
+            ):
+                return
+            # This is rollback of an unsent reservation, not a new editor edit.
+            # Reusing N lets a real dirty edit N+1 win even if not flushed yet.
+            # Strict save_draft(>revision) and the empty-N CAS still reject stale N.
+            revision = draft.revision
+            connection.execute(
+                "UPDATE chat_drafts SET revision=?,content=? WHERE chat_id=? AND revision=?",
+                (
+                    revision,
+                    encrypt_value(
+                        connection,
+                        draft.text,
+                        table="chat_drafts",
+                        field="content",
+                        record_id=draft.chat_id,
+                        chat_id=draft.chat_id,
+                        revision=revision,
+                    ),
+                    draft.chat_id,
+                    draft.revision,
+                ),
+            )
 
     def mark_request_sent(self, turn_id: str, updated_at: datetime) -> None:
         _require_identifier(turn_id, tr("service.label.turn"))
         with self._connection("reserve", record_id=turn_id) as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            ensure_request_attempts(connection)
             cursor = connection.execute(
                 """
                 UPDATE turns
                 SET request_sent = 1, updated_at = ?
-                WHERE id = ? AND status = 'pending'
+                WHERE id = ? AND status = 'pending' AND request_sent = 0
                 """,
                 (_datetime_text(updated_at), turn_id),
             )
             if cursor.rowcount != 1:
                 raise BudgetConflictError(tr("service.turn_inactive"))
+            record_request_attempt(connection, turn_id, _datetime_text(updated_at))
 
     def finalize_known_turn(
         self,
@@ -441,6 +525,7 @@ class SqliteMessageRepository:
                     turn_id,
                 ),
             )
+            synchronize_request_attempt(connection, turn_id)
             if content is not None:
                 self._upsert_assistant_message(
                     connection,
@@ -514,6 +599,45 @@ class SqliteMessageRepository:
         with self._connection("finish", record_id=turn_id) as connection:
             connection.execute("BEGIN IMMEDIATE")
             turn, budget, mode = self._load_active_turn(connection, turn_id)
+            self._release_reservation(
+                connection,
+                turn,
+                budget,
+                mode,
+                error_type,
+                AccountingStatus.RELEASED,
+                updated_at,
+            )
+
+    def release_unsent_dispatch(
+        self,
+        turn_id: str,
+        error_type: ChatErrorType,
+        updated_at: datetime,
+    ) -> None:
+        """Void only a provisional dispatch that never reached the client.
+
+        The sender marks immediately before its reservation callback and final
+        guards. Cancellation or a rejected guard in that window is not an
+        actual HTTP attempt and must leave the preceding actual usage intact.
+        """
+        _require_identifier(turn_id, tr("service.label.turn"))
+        with self._connection("finish", record_id=turn_id) as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            turn, budget, mode = self._load_active_turn(connection, turn_id)
+            if not turn.request_sent:
+                raise BudgetConflictError(tr("service.turn_inactive"))
+            cursor = connection.execute(
+                """
+                DELETE FROM chat_request_attempts
+                WHERE sequence=(SELECT MAX(sequence) FROM chat_request_attempts WHERE turn_id=?)
+                  AND status='pending' AND chronology_known=1
+                """,
+                (turn_id,),
+            )
+            if cursor.rowcount != 1:
+                raise BudgetConflictError(tr("service.turn_inactive"))
+            connection.execute("UPDATE turns SET request_sent=0 WHERE id=?", (turn_id,))
             self._release_reservation(
                 connection,
                 turn,
@@ -612,6 +736,7 @@ class SqliteMessageRepository:
                 "UPDATE chats SET updated_at = ? WHERE id = ?",
                 (_datetime_text(updated_at), turn.chat_id),
             )
+            synchronize_request_attempt(connection, turn_id)
 
     def release_unknown_reservation(
         self,
@@ -674,6 +799,27 @@ class SqliteMessageRepository:
             ).fetchall()
         return [_turn_from_row(row) for row in rows]
 
+    def get_last_request(self, chat_id: str) -> LastRequestMetrics:
+        """Read the latest dispatch, without deriving chronology from turns."""
+        _require_identifier(chat_id, tr("service.label.chat"))
+        with self._connection() as connection:
+            if has_request_attempts(connection):
+                row = connection.execute(
+                    "SELECT * FROM chat_request_attempts WHERE chat_id=? "
+                    "ORDER BY sequence DESC LIMIT 1",
+                    (chat_id,),
+                ).fetchone()
+                if row is not None:
+                    return _last_request_from_row(row)
+            legacy = connection.execute(
+                "SELECT 1 FROM turns WHERE chat_id=? AND request_sent=1 LIMIT 1",
+                (chat_id,),
+            ).fetchone()
+        return LastRequestMetrics(
+            LastRequestState.UNKNOWN if legacy else LastRequestState.NONE,
+            chronology_known=legacy is None,
+        )
+
     def get_user_message_for_turn(self, turn_id: str) -> Message | None:
         _require_identifier(turn_id, tr("service.label.turn"))
         with self._connection() as connection:
@@ -711,6 +857,8 @@ class SqliteMessageRepository:
             _require_decimal(value, label)
         _require_text(overrides_json, tr("service.label.overrides"))
         with self._connection("write", chat_id=chat_id) as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            overrides_json = with_new_prices(connection, chat_id, overrides_json)
             cursor = connection.execute(
                 """
                 UPDATE chats
@@ -895,6 +1043,7 @@ class SqliteMessageRepository:
             """,
             (_datetime_text(updated_at), turn.chat_id, turn.id),
         )
+        synchronize_request_attempt(connection, turn.id)
 
     def _upsert_assistant_message(
         self,
@@ -1034,6 +1183,31 @@ def _turn_from_row(row: sqlite3.Row) -> TurnRecord:
         request_sent=bool(row["request_sent"]),
         created_at=_parse_datetime(str(row["created_at"])),
         updated_at=_parse_datetime(str(row["updated_at"])),
+    )
+
+
+def _last_request_from_row(row: sqlite3.Row) -> LastRequestMetrics:
+    known = bool(row["chronology_known"])
+    sent_at = _parse_datetime(str(row["sent_at"])) if row["sent_at"] else None
+    if not known:
+        return LastRequestMetrics(LastRequestState.UNKNOWN, chronology_known=False)
+    state = (
+        LastRequestState.PENDING
+        if row["status"] == TurnStatus.PENDING.value
+        else LastRequestState.FINAL
+        if row["accounting_status"] == AccountingStatus.FINAL.value
+        else LastRequestState.UNKNOWN
+    )
+    final = state is LastRequestState.FINAL
+    return LastRequestMetrics(
+        state=state,
+        turn_id=str(row["turn_id"]),
+        prompt_tokens=_optional_int(row["prompt_tokens"]) if final else None,
+        completion_tokens=_optional_int(row["completion_tokens"]) if final else None,
+        total_tokens=_optional_int(row["total_tokens"]) if final else None,
+        cost_usd=_optional_decimal(row["cost_usd"]) if final else None,
+        sent_at=sent_at,
+        attempt_sequence=int(row["sequence"]),
     )
 
 

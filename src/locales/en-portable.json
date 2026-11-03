@@ -1,0 +1,7 @@
+{
+  "portable.pin_required": "Sign in and confirm your current app PIN to create a recovery code.",
+  "portable.invalid": "The code is incorrect or no longer works. Your PIN and conversations are kept.",
+  "portable.rate_limited": "Too many incorrect codes. Try again in 30 seconds. Your app PIN still works.",
+  "portable.not_enrolled": "This profile has no active recovery code. Use your previous PIN or a system recovery method you set up earlier. Your conversations are kept.",
+  "portable.issue_expired": "This attempt expired or was cancelled. Confirm your PIN again."
+}

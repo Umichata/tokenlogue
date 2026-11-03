@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
+<policyconfig>
+  <vendor>Tokenlogue</vendor>
+  <vendor_url>https://github.com/Umichata/tokenlogue</vendor_url>
+  <action id="io.github.umichata.tokenlogue.recover-pin">
+    <description>Recover the Tokenlogue PIN</description>
+    <description xml:lang="ru">Восстановить PIN Tokenlogue</description>
+    <message>Authenticate as the current Linux user to choose a new Tokenlogue PIN</message>
+    <message xml:lang="ru">Подтвердите личность текущего пользователя Linux, чтобы выбрать новый PIN Tokenlogue</message>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_self</allow_active>
+    </defaults>
+  </action>
+</policyconfig>

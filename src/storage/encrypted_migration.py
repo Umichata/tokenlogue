@@ -12,6 +12,14 @@ from pathlib import Path
 
 from storage.database_connections import database_lock
 from storage.field_cipher import FORMAT_VERSION, CiphertextError, FieldCipher
+from storage.request_attempts import (
+    TABLE as REQUEST_ATTEMPTS_TABLE,
+)
+from storage.request_attempts import (
+    create_request_attempts_schema,
+    has_request_attempts,
+    validate_request_attempts_schema,
+)
 
 TABLES = ("auth_state", "chats", "chat_budgets", "turns", "messages", "chat_drafts")
 MARKER = "tokenlogue-protected-content"
@@ -84,6 +92,8 @@ def _verify_protected_database(
         ):
             raise CiphertextError()
         _integrity(connection)
+        if has_request_attempts(connection):
+            validate_request_attempts_schema(connection)
         for table in TABLES:
             fields = _protected_fields(table)
             if fields:
@@ -183,7 +193,9 @@ def _protected_fields(table: str) -> tuple[str, ...]:
     }.get(table, ())
 
 
-def _schema(connection: sqlite3.Connection) -> None:
+def _schema(
+    connection: sqlite3.Connection, *, include_request_attempts: bool = False
+) -> None:
     from storage import database
 
     for migration in (
@@ -203,6 +215,8 @@ def _schema(connection: sqlite3.Connection) -> None:
         "CREATE TABLE content_protection (singleton_id INTEGER PRIMARY KEY CHECK(singleton_id=1),"
         "database_id TEXT NOT NULL,key_id TEXT NOT NULL,format_version INTEGER NOT NULL,marker TEXT NOT NULL)"
     )
+    if include_request_attempts:
+        create_request_attempts_schema(connection)
 
 
 def _cleanup_previous(journal: Path, database: Path, cipher: FieldCipher) -> None:
@@ -290,8 +304,12 @@ def migrate_database(
                     "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
                 )
             }
+            copy_tables = TABLES
+            if REQUEST_ATTEMPTS_TABLE in actual_tables:
+                validate_request_attempts_schema(source)
+                copy_tables = (*TABLES, REQUEST_ATTEMPTS_TABLE)
             if (
-                actual_tables != set(TABLES)
+                actual_tables != set(copy_tables)
                 or source.execute(
                     "SELECT 1 FROM sqlite_master WHERE type IN ('trigger','view')"
                 ).fetchone()
@@ -313,9 +331,12 @@ def migrate_database(
             destination = _existing(temporary)
             destination.execute("PRAGMA synchronous=FULL")
             destination.execute("BEGIN IMMEDIATE")
-            _schema(destination)
+            _schema(
+                destination,
+                include_request_attempts=REQUEST_ATTEMPTS_TABLE in copy_tables,
+            )
             copied = 0
-            for table in TABLES:
+            for table in copy_tables:
                 for row in source.execute(
                     f'SELECT rowid AS _migration_rowid,* FROM "{table}" ORDER BY rowid'
                 ):
@@ -330,12 +351,18 @@ def migrate_database(
                         values["title_origin"] = (
                             "manual" if row["title_is_manual"] else "legacy"
                         )
-                    columns = ["rowid", *values]
+                    # INTEGER PRIMARY KEY aliases rowid. Avoid including that
+                    # same column twice when preserving dispatch sequences.
+                    columns = list(values)
+                    copied_values = list(values.values())
+                    if table != REQUEST_ATTEMPTS_TABLE:
+                        columns.insert(0, "rowid")
+                        copied_values.insert(0, rowid)
                     quoted = ",".join('"' + column + '"' for column in columns)
                     placeholders = ",".join("?" for _ in columns)
                     destination.execute(
                         f'INSERT INTO "{table}" ({quoted}) VALUES ({placeholders})',
-                        (rowid, *values.values()),
+                        copied_values,
                     )
                     copied += 1
                     if copied == 1:
@@ -356,7 +383,7 @@ def migrate_database(
             )
             destination.execute("PRAGMA user_version=7")
             _integrity(destination)
-            for table in TABLES:
+            for table in copy_tables:
                 original = source.execute(
                     f'SELECT rowid AS _migration_rowid,* FROM "{table}" ORDER BY rowid'
                 )

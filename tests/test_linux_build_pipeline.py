@@ -15,6 +15,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+import yaml
+
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 APPIMAGE_DIR = PROJECT_ROOT / "packaging" / "linux" / "appimage"
 WORKFLOW = PROJECT_ROOT / ".github" / "workflows" / "build-linux.yml"
@@ -338,6 +340,136 @@ class LinuxBuildPipelineTests(unittest.TestCase):
             "source-materials.md#lang-ru",
         ):
             self.assertIn(phrase, documentation)
+
+
+class ShellSyntaxCoverageTests(unittest.TestCase):
+    def test_source_qa_checks_every_script_and_propagates_failures(self) -> None:
+        workflow = yaml.safe_load(WORKFLOW.read_text(encoding="utf-8"))
+        program = next(
+            step["run"]
+            for step in workflow["jobs"]["build-linux"]["steps"]
+            if step["name"] == "Run source QA"
+        )
+        scripts = [
+            "packaging/linux/appimage/AppRun",
+            *[
+                path.relative_to(PROJECT_ROOT).as_posix()
+                for folder in (APPIMAGE_DIR, APPIMAGE_DIR / "runtime")
+                for path in sorted(folder.glob("*.sh"))
+            ],
+        ]
+        stubs = r"""
+calls=$1
+shellcheck_status=$2
+uv() { :; }
+find() { :; }
+git() { :; }
+bash() {
+    printf 'bash:%s\n' "$2" >> "$calls"
+    command bash "$@"
+}
+shellcheck() {
+    printf 'shellcheck:%s\n' "$@" >> "$calls"
+    return "$shellcheck_status"
+}
+"""
+        for outcome in ("valid", "late_syntax", "missing", "shellcheck_failure"):
+            with (
+                self.subTest(outcome=outcome),
+                tempfile.TemporaryDirectory(prefix="shell QA fixture ") as temp,
+            ):
+                root = Path(temp)
+                for name in scripts:
+                    path = root / name
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    path.write_text("#!/usr/bin/env bash\ntrue\n", encoding="utf-8")
+                if outcome == "late_syntax":
+                    (root / "packaging/linux/appimage/smoke_appimage.sh").write_text(
+                        "if true; then\n", encoding="utf-8"
+                    )
+                elif outcome == "missing":
+                    (root / scripts[0]).unlink()
+                calls = root / "calls.txt"
+                result = subprocess.run(
+                    [
+                        "bash",
+                        "-c",
+                        stubs + program,
+                        "shell-qa-fixture",
+                        str(calls),
+                        "37" if outcome == "shellcheck_failure" else "0",
+                    ],
+                    cwd=root,
+                    env={"PATH": os.environ["PATH"]},
+                    capture_output=True,
+                    text=True,
+                    timeout=10,
+                )
+                records = calls.read_text(encoding="utf-8").splitlines()
+                checked = [
+                    row.removeprefix("bash:")
+                    for row in records
+                    if row.startswith("bash:")
+                ]
+                linted = [
+                    row.removeprefix("shellcheck:")
+                    for row in records
+                    if row.startswith("shellcheck:")
+                ]
+                if outcome in {"valid", "shellcheck_failure"}:
+                    self.assertEqual(
+                        result.returncode,
+                        37 if outcome == "shellcheck_failure" else 0,
+                        result.stderr,
+                    )
+                    self.assertCountEqual(checked, scripts)
+                    self.assertCountEqual(linted, scripts)
+                else:
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertEqual(linted, [])
+                    self.assertIn(
+                        "smoke_appimage.sh" if outcome == "late_syntax" else "AppRun",
+                        result.stderr,
+                    )
+
+    def test_staged_launcher_checks_reject_second_file_errors(self) -> None:
+        source = (APPIMAGE_DIR / "build_appimage.sh").read_text(encoding="utf-8")
+        fragment = source.split('desktop-file-validate "$desktop_staged"\n', 1)[
+            1
+        ].split("\n# Read-only final scan", 1)[0]
+        for outcome in ("valid", "late_syntax", "missing"):
+            with (
+                self.subTest(outcome=outcome),
+                tempfile.TemporaryDirectory(prefix="staged launcher fixture ") as temp,
+            ):
+                appdir = Path(temp)
+                (appdir / "AppRun").write_text("#!/usr/bin/env bash\ntrue\n")
+                launcher = appdir / "usr/bin/tokenlogue"
+                launcher.parent.mkdir(parents=True)
+                if outcome != "missing":
+                    launcher.write_text(
+                        "if true; then\n" if outcome == "late_syntax" else "true\n"
+                    )
+                result = subprocess.run(
+                    [
+                        "bash",
+                        "-c",
+                        "set -Eeuo pipefail\nappdir=$1\nappstreamcli() { :; }\n"
+                        + fragment,
+                        "launcher-fixture",
+                        str(appdir),
+                    ],
+                    cwd=appdir,
+                    env={"PATH": os.environ["PATH"]},
+                    capture_output=True,
+                    text=True,
+                    timeout=10,
+                )
+                if outcome == "valid":
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                else:
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertIn(str(launcher), result.stderr)
 
 
 class PackagedMetadataValidationTests(unittest.TestCase):

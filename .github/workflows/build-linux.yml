@@ -119,8 +119,15 @@ jobs:
           UV_MANAGED_PYTHON=1 uv run --locked python -m compileall -q src
           find src -type f -name '*.pyc' -delete
           find src -depth -type d -name '__pycache__' -empty -delete
-          bash -n packaging/linux/appimage/*.sh
-          shellcheck packaging/linux/appimage/*.sh
+          shell_scripts=(
+            packaging/linux/appimage/AppRun
+            packaging/linux/appimage/*.sh
+            packaging/linux/appimage/runtime/*.sh
+          )
+          for shell_script in "${shell_scripts[@]}"; do
+            bash -n "$shell_script"
+          done
+          shellcheck "${shell_scripts[@]}"
           UV_MANAGED_PYTHON=1 uv run --locked python -c \
             'import tomllib; tomllib.load(open("pyproject.toml", "rb"))'
           git diff --exit-code -- pyproject.toml uv.lock src

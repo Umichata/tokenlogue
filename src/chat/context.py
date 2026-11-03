@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from bisect import bisect_left
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 
 from chat.models import Message, MessageRole, MessageStatus
@@ -28,6 +30,44 @@ class ContextWindow:
     history_truncated: bool = False
 
 
+@dataclass(frozen=True)
+class PreparedHistory:
+    """Immutable successful pairs and their cached cumulative token estimates."""
+
+    pairs: tuple[tuple[ContextMessage, ContextMessage], ...] = field(repr=False)
+    cumulative_tokens: tuple[int, ...] = field(repr=False)
+
+    @property
+    def estimated_tokens(self) -> int:
+        return self.cumulative_tokens[-1]
+
+
+@dataclass(frozen=True)
+class ContextSelection:
+    """A cheap selection which materializes message tuples only for sending."""
+
+    history: PreparedHistory = field(repr=False)
+    current_user_text: str = field(repr=False)
+    pair_start: int
+    estimated_prompt_tokens: int
+
+    @property
+    def history_truncated(self) -> bool:
+        return self.pair_start > 0
+
+    def materialize(self) -> ContextWindow:
+        messages = tuple(
+            message
+            for pair in self.history.pairs[self.pair_start :]
+            for message in pair
+        )
+        return ContextWindow(
+            (*messages, ContextMessage(MessageRole.USER, self.current_user_text)),
+            self.estimated_prompt_tokens,
+            self.history_truncated,
+        )
+
+
 def estimate_message_tokens(content: str) -> int:
     """
     Возвращает не точный подсчёт, а защитную оценку.
@@ -46,6 +86,36 @@ def build_conversation_context(
     completion_reserve: int,
     require_full_history: bool = False,
 ) -> ContextWindow:
+    return select_conversation_context(
+        prepare_history(history),
+        current_user_text,
+        context_length=context_length,
+        completion_reserve=completion_reserve,
+        require_full_history=require_full_history,
+    ).materialize()
+
+
+def prepare_history(history: Sequence[Message]) -> PreparedHistory:
+    """Read an authorized history once, without holding repository handles."""
+    pairs = tuple(_completed_pairs(history))
+    cumulative = [0]
+    for user, assistant in pairs:
+        cumulative.append(
+            cumulative[-1]
+            + estimate_message_tokens(user.content)
+            + estimate_message_tokens(assistant.content)
+        )
+    return PreparedHistory(pairs, tuple(cumulative))
+
+
+def select_conversation_context(
+    history: PreparedHistory,
+    current_user_text: str,
+    *,
+    context_length: int,
+    completion_reserve: int,
+    require_full_history: bool = False,
+) -> ContextSelection:
     if context_length <= 0 or completion_reserve < 16:
         raise ValueError("Некорректные ограничения контекста")
     available_prompt_tokens = context_length - completion_reserve
@@ -54,29 +124,18 @@ def build_conversation_context(
     if estimated > available_prompt_tokens:
         raise ContextWindowExceeded("Текущее сообщение не помещается в контекст")
 
-    selected_pairs: list[tuple[ContextMessage, ContextMessage]] = []
-    history_truncated = False
-    for user, assistant in reversed(_completed_pairs(history)):
-        pair_cost = estimate_message_tokens(user.content) + estimate_message_tokens(
-            assistant.content
-        )
-        if estimated + pair_cost > available_prompt_tokens:
-            history_truncated = True
-            break
-        selected_pairs.append((user, assistant))
-        estimated += pair_cost
-
-    messages: list[ContextMessage] = []
-    for user, assistant in reversed(selected_pairs):
-        messages.extend((user, assistant))
-    messages.append(ContextMessage(MessageRole.USER, current_user_text))
-    if require_full_history and history_truncated:
+    # Prefix costs are positive. The first affordable suffix is exactly the
+    # recent-pair selection used by the ordinary sending path.
+    threshold = history.estimated_tokens - (available_prompt_tokens - estimated)
+    pair_start = bisect_left(history.cumulative_tokens, max(0, threshold))
+    if require_full_history and pair_start > 0:
         raise ContextWindowExceeded("Полная история не помещается в контекст")
-    return ContextWindow(tuple(messages), estimated, history_truncated)
+    estimated += history.estimated_tokens - history.cumulative_tokens[pair_start]
+    return ContextSelection(history, current_user_text, pair_start, estimated)
 
 
 def _completed_pairs(
-    history: list[Message],
+    history: Sequence[Message],
 ) -> list[tuple[ContextMessage, ContextMessage]]:
     turns: dict[str, dict[MessageRole, Message]] = {}
     order: list[str] = []

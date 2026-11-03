@@ -6,9 +6,18 @@ from collections.abc import Awaitable, Callable
 
 import flet as ft
 
+from chat.estimates import DraftEstimate, EstimateState
 from i18n import fresh_text, tr
 from ui.branding import BrandLoader
-from ui.styles import ERROR_COLOR, MUTED_COLOR, PANEL_BACKGROUND, primary_button_style
+from ui.chat_metrics import DraftEstimateLine
+from ui.styles import (
+    BORDER_COLOR,
+    ERROR_COLOR,
+    MUTED_COLOR,
+    PANEL_BACKGROUND,
+    input_style,
+    primary_button_style,
+)
 
 MessageSubmitCallback = Callable[[str], Awaitable[None]]
 
@@ -36,22 +45,26 @@ class MessageComposer:
             expand=True,
             on_change=self._handle_change,
             on_submit=self._handle_submit,
+            **input_style(),
         )
         self.send_button = ft.Button(
             tr("composer.send"),
             icon=ft.Icons.SEND,
             style=primary_button_style(),
+            height=52,
             disabled=True,
             on_click=self._handle_click,
         )
         self.progress = BrandLoader(size=26, active=False)
         self.status = ft.Text("", color=MUTED_COLOR, visible=False, selectable=True)
+        self.estimate = DraftEstimateLine()
         self.progress_row = ft.Row(
             visible=False,
             controls=[self.progress, ft.Text(tr("composer.waiting"), expand=True)],
         )
         self.control = ft.Container(
             bgcolor=PANEL_BACKGROUND,
+            border=ft.Border(top=ft.BorderSide(1, BORDER_COLOR)),
             padding=12,
             content=ft.Column(
                 tight=True,
@@ -62,6 +75,7 @@ class MessageComposer:
                         vertical_alignment=ft.CrossAxisAlignment.END,
                         controls=[self.message_field, self.send_button],
                     ),
+                    self.estimate.control,
                     self.progress_row,
                 ],
             ),
@@ -98,6 +112,11 @@ class MessageComposer:
         if self._disposed:
             return
         value = self.message_field.value
+        self.set_estimate(
+            DraftEstimate(EstimateState.EMPTY)
+            if not isinstance(value, str) or not value.strip()
+            else None
+        )
         self._apply_state()
         self.send_button.update()
         if self._on_change is not None and isinstance(value, str):
@@ -106,11 +125,28 @@ class MessageComposer:
     def set_value(self, text: str) -> None:
         if self.message_field.value != text:
             self.message_field.value = text
+            self.estimate.set_estimate(
+                DraftEstimate(EstimateState.EMPTY) if not text.strip() else None
+            )
         self._apply_state()
+
+    def set_estimate(self, estimate: DraftEstimate | None) -> None:
+        if self._disposed:
+            return
+        self.estimate.set_estimate(estimate)
+        try:
+            self.estimate.control.update()
+        except (RuntimeError, AssertionError):
+            pass
+
+    def refresh_language(self) -> None:
+        self.estimate.sync_language()
 
     def dispose(self) -> None:
         self._disposed = True
         self.progress.dispose()
+        self.message_field.value = ""
+        self.estimate.clear()
 
     def set_busy(self, busy: bool) -> None:
         self._busy = busy
@@ -123,6 +159,7 @@ class MessageComposer:
     def clear_if_matches(self, expected: str) -> None:
         if self.message_field.value == expected:
             self.message_field.value = ""
+            self.estimate.set_estimate(DraftEstimate(EstimateState.EMPTY))
             self._apply_state()
 
     def show_message(self, message: str, *, error: bool = True) -> None:

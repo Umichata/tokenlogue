@@ -1,0 +1,10 @@
+{
+  "protection_intro.title": "Check local protection",
+  "protection_intro.instructions": "Your profile and PIN are saved. Start the check to lock the operating system screen. Unlock it normally, then enter your saved Tokenlogue PIN. The check does not send messages.",
+  "protection_intro.start": "Start check",
+  "protection_intro.repeat": "Check again",
+  "protection_intro.continue": "Open chats",
+  "protection_intro.continue_manual": "Continue with manual locking",
+  "protection_intro.manual_notice": "Automatic screen locking is not confirmed yet. If you continue, lock Tokenlogue manually. You can repeat the check from the menu.",
+  "protection_intro.preferences_failed": "The setup step could not be saved. Try again. Your profile and PIN have not been reset."
+}

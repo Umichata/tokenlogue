@@ -183,6 +183,14 @@ class ChatDraftService:
                     "draft", chat_id, str(entry.draft.revision)
                 )
 
+    async def discard_for_deletion(self) -> None:
+        """Ждёт уже начатые workers и удаляет старую память без новой записи."""
+        for chat_id in tuple(self._locks):
+            async with self._lock(chat_id):
+                self.forget(chat_id)
+        for chat_id in tuple(self._cache):
+            self.forget(chat_id)
+
     def _lock(self, chat_id: str) -> asyncio.Lock:
         return self._locks.setdefault(chat_id, asyncio.Lock())
 

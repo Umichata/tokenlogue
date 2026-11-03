@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
+from types import TracebackType
 
 from auth.models import KeyLimitInfo, KeyValidityState
 from chat.accounting import (
@@ -16,10 +17,13 @@ from chat.accounting import (
     calculate_remaining_budget,
 )
 from chat.errors import ChatErrorType, safe_error_message
+from chat.metrics import LastRequestMetrics, LastRequestState
 from chat.models import Chat, Message
+from chat.paid_consent import PaidConsent
 from chat.sending import MessageSendingService, MessageSendPreview, SendMessageResult
 from chat.service import ChatService
 from i18n import tr
+from storage.data_access import DataAccessError
 
 
 @dataclass(frozen=True)
@@ -37,6 +41,9 @@ class ActiveChatState:
     budget: ChatBudget
     remaining: RemainingBudget
     sending: bool = False
+    last_request: LastRequestMetrics = field(
+        default_factory=lambda: LastRequestMetrics(LastRequestState.NONE)
+    )
 
 
 @dataclass(frozen=True)
@@ -49,6 +56,27 @@ class InteractionOutcome:
 SessionProvider = Callable[[], ChatSessionContext | None]
 KeyStateCallback = Callable[[KeyValidityState, KeyLimitInfo], None]
 ReservationCallback = Callable[[str], Awaitable[None]]
+
+
+class InteractionOperationLock(asyncio.Lock):
+    """Позволяет завершить именно собственную операцию при удалении профиля."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.owner: asyncio.Task[object] | None = None
+
+    async def __aenter__(self) -> None:
+        await super().__aenter__()
+        self.owner = asyncio.current_task()
+
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> None:
+        self.owner = None
+        await super().__aexit__(exc_type, exc, traceback)
 
 
 class ChatInteractionController:
@@ -68,7 +96,7 @@ class ChatInteractionController:
         self._sending_service = sending_service
         self._session_provider = session_provider
         self._on_key_state_changed = on_key_state_changed
-        self._operation_lock = asyncio.Lock()
+        self._operation_lock = InteractionOperationLock()
         self._active_chat_id: str | None = None
         self._generation = 0
         self._session_generation = 0
@@ -94,6 +122,14 @@ class ChatInteractionController:
         self._active = False
         self._active_chat_id = None
 
+    @property
+    def operation_task(self) -> asyncio.Task[object] | None:
+        return self._operation_lock.owner
+
+    async def wait_idle(self) -> None:
+        async with self._operation_lock:
+            pass
+
     async def select_chat(self, chat_id: str) -> ActiveChatState:
         _require_identifier(chat_id, tr("service.label.chat"))
         if not self._active:
@@ -104,11 +140,12 @@ class ChatInteractionController:
 
     async def load_state(self, chat_id: str) -> ActiveChatState:
         _require_identifier(chat_id, tr("service.label.chat"))
-        chat, messages, budget, turns = await asyncio.gather(
+        chat, messages, budget, turns, last_request = await asyncio.gather(
             self._chat_service.get_chat(chat_id),
             self._chat_service.list_messages(chat_id),
             self._budget_service.get_chat_budget(chat_id),
             self._budget_service.list_chat_turns(chat_id),
+            self._budget_service.get_last_request(chat_id),
         )
         if chat is None:
             raise KeyError(tr("service.chat_missing"))
@@ -119,9 +156,12 @@ class ChatInteractionController:
             budget=budget,
             remaining=calculate_remaining_budget(budget),
             sending=self.busy,
+            last_request=last_request,
         )
 
-    async def preview_message(self, chat_id: str, text: str) -> MessageSendPreview:
+    async def preview_message(
+        self, chat_id: str, text: str, paid_consent: PaidConsent | None = None
+    ) -> MessageSendPreview:
         if not _is_identifier(chat_id) or not isinstance(text, str):
             return _invalid_preview(chat_id if isinstance(chat_id, str) else "")
         if self._operation_lock.locked():
@@ -137,13 +177,16 @@ class ChatInteractionController:
                 api_key=session.api_key,
                 key_validity=session.key_validity,
                 key_limit=session.key_limit,
+                paid_consent=paid_consent,
             )
         if not self._matches(chat_id, generation):
             return _stale_preview(chat_id)
         self._apply_key_state(preview.key_validity_update, preview.key_limit_update)
         return preview
 
-    async def preview_retry(self, turn_id: str) -> MessageSendPreview:
+    async def preview_retry(
+        self, turn_id: str, paid_consent: PaidConsent | None = None
+    ) -> MessageSendPreview:
         if not _is_identifier(turn_id):
             return _invalid_preview("", turn_id=None)
         if self._operation_lock.locked():
@@ -159,11 +202,35 @@ class ChatInteractionController:
                 api_key=session.api_key,
                 key_validity=session.key_validity,
                 key_limit=session.key_limit,
+                paid_consent=paid_consent,
             )
         if chat_id is None or not self._matches(chat_id, generation):
             return _stale_preview(preview.chat_id, turn_id=turn_id)
         self._apply_key_state(preview.key_validity_update, preview.key_limit_update)
         return preview
+
+    def paid_consent(self, chat: Chat) -> PaidConsent | None:
+        if chat.paid_without_confirmation is not True:
+            return None
+        return self._chat_service.paid_consent(chat)
+
+    async def save_paid_without_confirmation(
+        self, chat_id: str, enabled: bool
+    ) -> ActiveChatState:
+        _require_identifier(chat_id, tr("service.label.chat"))
+        if (
+            type(enabled) is not bool
+            or not self._active
+            or self._active_chat_id != chat_id
+        ):
+            raise RuntimeError(tr("service.session_inactive"))
+        # Changing permission cancels any earlier pending financial decision.
+        self._generation += 1
+        generation = self._generation
+        await self._chat_service.set_paid_without_confirmation(chat_id, enabled)
+        if not self._matches(chat_id, generation):
+            raise RuntimeError(tr("service.session_inactive"))
+        return await self.load_state(chat_id)
 
     async def send_message(
         self,
@@ -171,6 +238,7 @@ class ChatInteractionController:
         text: str,
         *,
         paid_confirmed: bool,
+        paid_consent: PaidConsent | None = None,
         on_reserved: ReservationCallback | None = None,
         draft_revision: int | None = None,
     ) -> InteractionOutcome:
@@ -188,6 +256,13 @@ class ChatInteractionController:
         generation = self._generation
         session_generation = self._session_generation
 
+        def current_dispatch() -> bool:
+            return (
+                self._matches(chat_id, generation)
+                and self._session_generation == session_generation
+                and self._session_provider() is not None
+            )
+
         async def reserved(turn_id: str) -> None:
             # Reservation state belongs to the originating chat, even after
             # navigation; only an ended authentication session invalidates it.
@@ -200,16 +275,23 @@ class ChatInteractionController:
                 await on_reserved(turn_id)
 
         async with self._operation_lock:
-            result = await self._sending_service.send_message(
-                chat_id,
-                text,
-                api_key=session.api_key,
-                key_validity=session.key_validity,
-                key_limit=session.key_limit,
-                paid_confirmed=paid_confirmed,
-                on_reserved=reserved,
-                draft_revision=draft_revision,
-            )
+            try:
+                result = await self._sending_service.send_message(
+                    chat_id,
+                    text,
+                    api_key=session.api_key,
+                    key_validity=session.key_validity,
+                    key_limit=session.key_limit,
+                    paid_confirmed=paid_confirmed,
+                    paid_consent=paid_consent,
+                    dispatch_guard=current_dispatch,
+                    on_reserved=reserved,
+                    draft_revision=draft_revision,
+                )
+            except DataAccessError:
+                if not current_dispatch():
+                    return InteractionOutcome(False, _missing_session_result(), None)
+                raise
         if not self._matches(chat_id, generation):
             return InteractionOutcome(False, result, None)
         self._apply_key_state(result.key_validity_update, result.key_limit_update)
@@ -221,6 +303,7 @@ class ChatInteractionController:
         turn_id: str,
         *,
         paid_confirmed: bool,
+        paid_consent: PaidConsent | None = None,
         on_reserved: ReservationCallback | None = None,
     ) -> InteractionOutcome:
         if (
@@ -240,15 +323,30 @@ class ChatInteractionController:
             if on_reserved is not None and self._matches(chat_id, generation):
                 await on_reserved(reserved_turn_id)
 
-        async with self._operation_lock:
-            result = await self._sending_service.retry_failed_turn(
-                turn_id,
-                api_key=session.api_key,
-                key_validity=session.key_validity,
-                key_limit=session.key_limit,
-                paid_confirmed=paid_confirmed,
-                on_reserved=reserved,
+        def current_dispatch() -> bool:
+            return (
+                self._matches(chat_id, generation)
+                and self._session_provider() is not None
             )
+
+        async with self._operation_lock:
+            try:
+                result = await self._sending_service.retry_failed_turn(
+                    turn_id,
+                    api_key=session.api_key,
+                    key_validity=session.key_validity,
+                    key_limit=session.key_limit,
+                    paid_confirmed=paid_confirmed,
+                    paid_consent=paid_consent,
+                    dispatch_guard=current_dispatch,
+                    on_reserved=reserved,
+                )
+            except DataAccessError:
+                if not current_dispatch():
+                    return InteractionOutcome(
+                        False, _missing_session_result(turn_id), None
+                    )
+                raise
         if not self._matches(chat_id, generation):
             return InteractionOutcome(False, result, None)
         self._apply_key_state(result.key_validity_update, result.key_limit_update)

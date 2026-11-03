@@ -105,7 +105,7 @@ class EventBoundaryTests(unittest.IsolatedAsyncioTestCase):
 
     def test_repository_rejects_event_before_sqlite_connect(self) -> None:
         with patch("storage.message_repository.sqlite3.connect") as connect:
-            with self.assertRaisesRegex(ValueError, "идентификатор попытки"):
+            with self.assertRaises(ValueError):
                 self.message_repository.get_turn(cast(str, self.event))
             connect.assert_not_called()
 

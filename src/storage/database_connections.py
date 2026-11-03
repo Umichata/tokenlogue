@@ -22,6 +22,7 @@ except ImportError:  # pragma: no cover - Linux и Android используют 
 _LOCKS: dict[str, threading.RLock] = {}
 _LOCKS_GUARD = threading.Lock()
 _OWNERS: dict[str, tuple[int, int, int]] = {}
+_INCARNATIONS: dict[str, int] = {}
 
 
 class DatabaseOwnershipError(RuntimeError):
@@ -31,13 +32,25 @@ class DatabaseOwnershipError(RuntimeError):
         super().__init__(tr("service.database_in_use"))
 
 
+class DatabaseDeletionPendingError(RuntimeError):
+    """Обычные соединения запрещены до завершения отдельного удаления."""
+
+
+def deletion_pending(path: str | Path) -> bool:
+    database = Path(path)
+    intent = database.with_name(database.name + ".profile-deletion.json")
+    writing = intent.with_name(intent.name + ".write")
+    return any(item.exists() or item.is_symlink() for item in (intent, writing))
+
+
 def _after_fork() -> None:
-    global _LOCKS, _LOCKS_GUARD, _OWNERS
+    global _LOCKS, _LOCKS_GUARD, _OWNERS, _INCARNATIONS
     # Унаследованный FD не означает, что дочерний клиент получил владение.
     # Не вызываем LOCK_UN, который снял бы блокировку родительского процесса.
     for descriptor, _device, _inode in _OWNERS.values():
         os.close(descriptor)
     _OWNERS = {}
+    _INCARNATIONS = {}
     _LOCKS = {}
     _LOCKS_GUARD = threading.Lock()
 
@@ -109,6 +122,42 @@ def database_lock(path: str | Path) -> threading.RLock:
         return _LOCKS.setdefault(name, threading.RLock())
 
 
+def database_incarnation(path: str | Path) -> int:
+    """Привязывает объект auth metadata к одной композиции профиля."""
+    with database_lock(path):
+        return _INCARNATIONS.setdefault(str(Path(path).resolve()), 0)
+
+
+def retire_database(path: str | Path) -> None:
+    """Старый отложенный worker не может записать в новый файл того же пути."""
+    with database_lock(path):
+        name = str(Path(path).resolve())
+        _INCARNATIONS[name] = _INCARNATIONS.get(name, 0) + 1
+
+
+def owned_database_identity(path: str | Path) -> tuple[int, int]:
+    """Проверяет уже удерживаемый lock, ничего не создаёт и не захватывает."""
+    database = Path(path)
+    with _LOCKS_GUARD:
+        owned = _OWNERS.get(str(database.resolve()))
+        if owned is None:
+            raise DatabaseOwnershipError()
+        descriptor, device, inode = owned
+        opened = os.fstat(descriptor)
+        current = database.with_name("." + database.name + ".owner.lock").stat(
+            follow_symlinks=False
+        )
+        if (
+            not stat.S_ISREG(current.st_mode)
+            or current.st_uid != os.getuid()
+            or current.st_nlink != 1
+            or (current.st_dev, current.st_ino) != (device, inode)
+            or (opened.st_dev, opened.st_ino) != (device, inode)
+        ):
+            raise DatabaseOwnershipError()
+        return device, inode
+
+
 def encrypt_value(
     connection: sqlite3.Connection,
     value: str | None,
@@ -137,10 +186,16 @@ def encrypt_value(
 def _row_factory(cipher: FieldCipher | None):
     def decode(cursor: sqlite3.Cursor, values: tuple[object, ...]) -> sqlite3.Row:
         row = sqlite3.Row(cursor, values)
-        if cipher is None:
-            return row
         names = row.keys()
         clear = list(values)
+        if "pricing_overrides_json" in names and "id" in names:
+            from storage.chat_preferences import decode_stored
+
+            clear[names.index("pricing_overrides_json")] = decode_stored(
+                str(row["pricing_overrides_json"]), cipher, str(row["id"])
+            )
+        if cipher is None:
+            return sqlite3.Row(cursor, tuple(clear))
         fields: list[tuple[str, str, dict[str, Any]]] = []
         if "title" in names and "id" in names:
             fields.append(("chats", "title", {"record_id": str(row["id"])}))
@@ -205,8 +260,13 @@ def connection(
     record_id: str = "",
     auth_only: bool = False,
     allow_create: bool = False,
+    incarnation: int | None = None,
 ) -> Iterator[ProtectedConnection]:
     with database_lock(path):
+        if deletion_pending(path) or (
+            incarnation is not None and incarnation != database_incarnation(path)
+        ):
+            raise DatabaseDeletionPendingError("profile_deletion.unavailable")
         authorization = (
             access.authorize(operation, chat_id=chat_id, record_id=record_id)
             if access is not None and not auth_only

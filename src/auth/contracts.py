@@ -6,6 +6,7 @@ from typing import Protocol
 
 from api.openrouter import KeyValidationResult
 from auth.models import CredentialState, LoginAttemptState, PinRecord, StoredAuthState
+from auth.pin_policy import PinClockSample
 
 
 class KeyValidator(Protocol):
@@ -23,6 +24,9 @@ class CredentialStore(Protocol):
 
 
 class AuthRepository(Protocol):
+    def pin_attempt_state(self, sample: PinClockSample) -> LoginAttemptState: ...
+
+    def register_pin_failure(self, sample: PinClockSample) -> LoginAttemptState: ...
     def get_auth_state(self) -> StoredAuthState | None: ...
 
     def save_auth_state(self, registration_id: str, record: PinRecord) -> None: ...

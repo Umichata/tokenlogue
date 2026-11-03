@@ -10,6 +10,8 @@ import flet as ft
 from auth.access import free_mode_allowed, paid_mode_allowed
 from auth.models import KeyLimitInfo, KeyLimitState, KeyValidityState
 from chat.accounting import AccountingStatus, BudgetState
+from chat.estimates import DraftEstimate
+from chat.metrics import ChatMetricsSnapshot
 from chat.models import Chat, ChatMode
 from chat_interaction_controller import ActiveChatState
 from i18n import (
@@ -17,25 +19,45 @@ from i18n import (
     display_model_name,
     fresh_text,
     get_preferences,
+    localize_tree,
     money,
     number,
     tr,
 )
+from platform_security.local_protection import ProtectionSnapshot
 from preferences import PreferencesStore
 from ui.branding import BrandHeader, BrandLoader
+from ui.chat_metrics import (
+    ChatMetricsStrip,
+    PaidConfirmationHelp,
+    explanatory_tooltip,
+)
 from ui.language_selector import LanguageSelector
 from ui.message_composer import MessageComposer
 from ui.message_history import MessageHistoryView
+from ui.protection_panel import (
+    Mechanism,
+    ProtectionPanel,
+    protection_shield,
+    update_protection_shield,
+)
+from ui.security_status import untested_protection
 from ui.styles import (
+    ELEVATED_BACKGROUND,
     ERROR_COLOR,
     MUTED_COLOR,
     PANEL_BACKGROUND,
+    PRIMARY_COLOR,
     SUCCESS_COLOR,
+    danger_button_style,
     detail_row,
+    input_style,
     primary_button_style,
+    secondary_button_style,
 )
 
 WIDE_LAYOUT_BREAKPOINT = 760
+SHORT_LAYOUT_BREAKPOINT = 480
 
 AsyncCallback = Callable[[], Awaitable[None]]
 ChatCallback = Callable[[str], Awaitable[None]]
@@ -69,8 +91,17 @@ class ChatWorkspaceView:
         key_validation_in_progress: bool,
         on_retry_key: AsyncCallback,
         on_replace_key: AsyncCallback,
+        on_security: AsyncCallback | None = None,
+        on_delete_profile: AsyncCallback | None = None,
         on_draft_change: RenameCallback | None = None,
         preferences: PreferencesStore | None = None,
+        session_watch_status: tuple[bool, bool] | None = None,
+        protection_status: ProtectionSnapshot | None = None,
+        protection_policy_notice: str | None = None,
+        on_test_screen_lock: AsyncCallback | None = None,
+        on_test_sleep: AsyncCallback | None = None,
+        on_paid_confirmation_changed: Callable[[str, bool], Awaitable[None]]
+        | None = None,
     ) -> None:
         self._page = page
         self._preferences = preferences or get_preferences()
@@ -93,9 +124,37 @@ class ChatWorkspaceView:
         self._key_validation_in_progress = key_validation_in_progress
         self._on_retry_key = on_retry_key
         self._on_replace_key = on_replace_key
+        self._on_security = on_security
+        self._on_test_screen_lock = on_test_screen_lock
+        self._on_test_sleep = on_test_sleep
+        self._on_paid_confirmation_changed = on_paid_confirmation_changed
+        self._protection_status = protection_status or (
+            untested_protection(*session_watch_status)
+            if session_watch_status is not None
+            else None
+        )
+        self._android = getattr(page, "platform", None) is ft.PagePlatform.ANDROID
+        if self._android and self._protection_status is None:
+            self._protection_status = untested_protection(False, False)
+        self._on_delete_profile = on_delete_profile
+        self.session_watch_status = session_watch_status
+        self.protection_button: ft.IconButton | None = None
+        self._protection_panel = ProtectionPanel(
+            page,
+            on_test=self._test_protection,
+            desktop_tests=not self._android,
+            platform_notice=protection_policy_notice,
+        )
+        if self._protection_status is not None:
+            self.protection_button = protection_shield(
+                self._protection_status, self._open_protection_event
+            )
+            if self._android:
+                self.protection_button.tooltip = tr("protection_panel.open")
         self._new_chat_allowed = free_mode_allowed(key_validity)
         self._disposed = False
         self._sending = False
+        self._paid_setting_pending = False
         self._chat_generation = 0
         self._menu_revision = 0
         self._menu_dialog: ft.AlertDialog | None = None
@@ -123,10 +182,26 @@ class ChatWorkspaceView:
             label=tr("chat.open_list"), button=True, content=self.sidebar_button
         )
         self._sidebar_panel: ft.Container | None = None
-        self._sidebar_divider: ft.VerticalDivider | None = None
+        self._sidebar_divider: ft.Container | None = None
+        self._chat_actions = ft.Row(wrap=True, spacing=8, run_spacing=0)
+        self._chat_actions_row = ft.Container(
+            padding=ft.Padding.symmetric(horizontal=12),
+            content=self._chat_actions,
+        )
+        self._privacy_warning = _history_warning()
+        self._privacy_footer = ft.Container(
+            padding=ft.Padding.symmetric(horizontal=12, vertical=4),
+            content=self._privacy_warning,
+        )
         self.send_notice: ft.Control | None = None
         self.retry_key_button: ft.TextButton | None = None
         self.replace_key_button: ft.TextButton | None = None
+        self.security_button: ft.TextButton | None = None
+        self.screen_test_button: ft.TextButton | None = None
+        self.paid_confirmation_checkbox: ft.Checkbox | None = None
+        self.metrics_strip: ChatMetricsStrip | None = None
+        self.paid_confirmation_help: PaidConfirmationHelp | None = None
+        self.delete_profile_button: ft.TextButton | None = None
         self.rename_button: ft.TextButton | None = None
         self.delete_button: ft.TextButton | None = None
         self._actions_chat_id: str | None = None
@@ -160,13 +235,79 @@ class ChatWorkspaceView:
             or self._key_refresh_in_progress
         )
 
+    @property
+    def security_busy(self) -> bool:
+        return self._sending
+
     def dispose(self) -> None:
         self._disposed = True
         self._chat_generation += 1
         self.close_menu()
+        self._protection_panel.close()
         self._page.drawer = None
         if self.composer is not None:
             self.composer.dispose()
+        if self.metrics_strip is not None:
+            self.metrics_strip.clear()
+        if self.paid_confirmation_help is not None:
+            self.paid_confirmation_help.dispose()
+
+    def set_session_watch_status(self, status: tuple[bool, bool]) -> None:
+        self.session_watch_status = status
+        self.set_protection_status(untested_protection(*status))
+
+    def set_protection_status(self, status: ProtectionSnapshot) -> None:
+        self._protection_status = status
+        created = self.protection_button is None
+        if created:
+            self.protection_button = protection_shield(
+                status, self._open_protection_event
+            )
+        assert self.protection_button is not None
+        update_protection_shield(self.protection_button, status)
+        if self._android:
+            self.protection_button.tooltip = tr("protection_panel.open")
+        self._protection_panel.refresh(status, busy=self.security_busy)
+        # Status changes do not reparent the editor or replace an open menu.
+        if created:
+            self._render_layout()
+
+    @property
+    def protection_panel(self) -> ProtectionPanel:
+        return self._protection_panel
+
+    @property
+    def protection_open(self) -> bool:
+        return self._protection_panel.is_open
+
+    async def _open_protection_event(self, _event: ft.Event) -> None:
+        await self.open_protection()
+
+    async def open_protection(self) -> None:
+        if self._disposed or self._protection_status is None:
+            return
+        self.close_menu()
+        self._protection_panel.open(
+            self._protection_status,
+            shield=self.protection_button,
+            busy=self.security_busy,
+        )
+        self.screen_test_button = self._protection_panel.screen_test_button
+        self.sleep_test_button = self._protection_panel.sleep_test_button
+
+    async def _test_protection(self, mechanism: Mechanism) -> None:
+        if (
+            self._disposed
+            or self.security_busy
+            or (self._protection_status and self._protection_status.test_running)
+        ):
+            return
+        callback = (
+            self._on_test_screen_lock if mechanism == "screen" else self._on_test_sleep
+        )
+        if callback is not None:
+            self._protection_panel.close()
+            await callback()
 
     def update_workspace(
         self,
@@ -200,11 +341,26 @@ class ChatWorkspaceView:
 
     def set_sending(self, sending: bool) -> None:
         self._sending = sending
+        if self._protection_status is not None:
+            self._protection_panel.refresh(
+                self._protection_status, busy=self.security_busy
+            )
         if self.composer is not None:
             self.composer.set_busy(sending)
-        for button in (self.rename_button, self.delete_button, self.limits_button):
+        if self.paid_confirmation_checkbox is not None:
+            self.paid_confirmation_checkbox.disabled = (
+                sending or self._paid_setting_pending
+            )
+        for button in (
+            self.rename_button,
+            self.delete_button,
+            self.limits_button,
+            self.security_button,
+        ):
             if button is not None:
                 button.disabled = sending
+        if self.security_button is not None:
+            self.security_button.disabled = self.security_busy
         if self._menu_dialog is not None:
             self._build_key_status_panel()
         self._update_menu_control()
@@ -221,6 +377,26 @@ class ChatWorkspaceView:
         if self.composer is not None:
             self.composer.show_message(message, error=error)
 
+    def set_metrics(self, snapshot: ChatMetricsSnapshot) -> None:
+        """Publish only metrics belonging to this live active chat."""
+        if (
+            self._disposed
+            or self.metrics_strip is None
+            or self._selected_chat is None
+            or snapshot.chat_id != self._selected_chat.id
+        ):
+            return
+        self.metrics_strip.set_metrics(snapshot)
+        try:
+            self.metrics_strip.control.update()
+        except (RuntimeError, AssertionError):
+            pass
+
+    def set_estimate(self, estimate: DraftEstimate | None) -> None:
+        """The controller owns revision/session fences before this presentation."""
+        if not self._disposed and self.composer is not None:
+            self.composer.set_estimate(estimate)
+
     async def scroll_messages_to_end(self) -> None:
         if self.message_history is not None:
             await self.message_history.scroll_to_end()
@@ -230,12 +406,24 @@ class ChatWorkspaceView:
         if self._selected_chat is None or state is None:
             if self.composer is not None:
                 self.composer.dispose()
+            if self.metrics_strip is not None:
+                self.metrics_strip.clear()
             self.message_history = None
             self.composer = None
+            self.metrics_strip = None
+            self.paid_confirmation_checkbox = None
+            if self.paid_confirmation_help is not None:
+                self.paid_confirmation_help.dispose()
+                self.paid_confirmation_help = None
             return
         if force or self.message_history is None or self.composer is None:
             if self.composer is not None:
                 self.composer.dispose()
+            if self.metrics_strip is not None:
+                self.metrics_strip.clear()
+            if self.paid_confirmation_help is not None:
+                self.paid_confirmation_help.dispose()
+                self.paid_confirmation_help = None
             chat_id = self._selected_chat.id
 
             async def draft_changed(text: str) -> None:
@@ -252,12 +440,47 @@ class ChatWorkspaceView:
                 enabled=self._sending_allowed(state),
                 on_change=draft_changed,
             )
+            self.paid_confirmation_checkbox = None
+            if (
+                self._selected_chat.mode is ChatMode.PAID
+                and self._on_paid_confirmation_changed is not None
+            ):
+                self.paid_confirmation_checkbox = ft.Checkbox(
+                    label=ft.Text(
+                        tr("metrics.without_confirmation"), width=185, no_wrap=False
+                    ),
+                    semantics_label=tr("metrics.without_confirmation"),
+                    tooltip=explanatory_tooltip(
+                        tr("metrics.without_confirmation_help")
+                    ),
+                    active_color=PRIMARY_COLOR,
+                    focus_color=ELEVATED_BACKGROUND,
+                    value=self._selected_chat.paid_without_confirmation,
+                    disabled=self._sending or self._paid_setting_pending,
+                    on_change=self._paid_confirmation_action(chat_id),
+                )
+                self.paid_confirmation_help = PaidConfirmationHelp(self._page)
+            self.metrics_strip = ChatMetricsStrip(
+                self.paid_confirmation_checkbox,
+                self.paid_confirmation_help.button
+                if self.paid_confirmation_help is not None
+                else None,
+            )
         else:
             self.message_history.set_messages(state.messages, state.turns)
             self.composer.set_enabled(self._sending_allowed(state))
+            if (
+                self.paid_confirmation_checkbox is not None
+                and not self._paid_setting_pending
+            ):
+                self.paid_confirmation_checkbox.value = (
+                    self._selected_chat.paid_without_confirmation
+                )
         self.set_sending(state.sending)
 
     def _sending_allowed(self, state: ActiveChatState) -> bool:
+        if self._paid_setting_pending:
+            return False
         if not state.budget.limits_configured:
             return False
         if state.budget.state in {
@@ -273,26 +496,52 @@ class ChatWorkspaceView:
         self,
         event: ft.LayoutSizeChangeEvent[ft.LayoutControl],
     ) -> None:
+        if self._disposed:
+            return
         self._available_width = event.width
         self._available_height = getattr(event, "height", self._available_height)
         self._resize_menu()
+        self._protection_panel.resize(event.width, self._available_height)
         wide = event.width >= WIDE_LAYOUT_BREAKPOINT
-        if wide == self._wide:
-            return
+        wide_changed = wide != self._wide
         self._wide = wide
-        self._resize_menu()
-        self._render_layout()
-        self._layout.update()
+        if (
+            isinstance(self._layout.content, ft.Row)
+            and self._sidebar_panel is not None
+            and self._sidebar_divider is not None
+        ):
+            # Visible outer slots also keep the unkeyed Flutter child indices stable.
+            self._apply_sidebar_visibility()
+            responsive_changed = self._apply_available_height()
+            if wide_changed:
+                self._page.drawer = None if wide else self._build_drawer()
+                # drawer belongs to Page's root View, outside this layout container.
+                update_page = getattr(self._page, "update", None)
+                if callable(update_page):
+                    update_page()
+                else:
+                    self._layout.update()
+            elif responsive_changed:
+                self._layout.update()
+        else:
+            self._render_layout()
+            self._layout.update()
 
     @property
     def sidebar_visible(self) -> bool:
         return self._wide and self._preferences.wide_sidebar_visible
 
     def _apply_sidebar_visibility(self) -> None:
+        visible = self.sidebar_visible
         if self._sidebar_panel is not None:
-            self._sidebar_panel.visible = self.sidebar_visible
+            self._sidebar_panel.width = 320 if visible else 0
+            self._sidebar_panel.padding = 12 if visible else 0
+            if self._sidebar_panel.content is not None:
+                self._sidebar_panel.content.visible = visible
         if self._sidebar_divider is not None:
-            self._sidebar_divider.visible = self.sidebar_visible
+            self._sidebar_divider.width = 1 if visible else 0
+            if self._sidebar_divider.content is not None:
+                self._sidebar_divider.content.visible = visible
         self.sidebar_button.tooltip = tr(
             "chat.open_list"
             if not self._wide
@@ -302,6 +551,37 @@ class ChatWorkspaceView:
         )
         self.sidebar_semantics.label = self.sidebar_button.tooltip
         self._resize_menu()
+        self._resize_metrics()
+
+    def _resize_metrics(self) -> None:
+        if self.metrics_strip is not None:
+            self.metrics_strip.resize(
+                self._available_width - (321 if self.sidebar_visible else 0)
+            )
+
+    def _apply_available_height(self) -> bool:
+        """Release optional chrome when an IME leaves a short active viewport."""
+        short = self._available_height < SHORT_LAYOUT_BREAKPOINT
+        actions_visible = not short and self.rename_button is not None
+        changed = (
+            self._chat_actions.visible != actions_visible
+            or self._privacy_warning.visible == short
+        )
+        # Flet filters invisible siblings before building unkeyed ControlWidgets.
+        # Keep these outer slots present so the editor is not disposed on resize.
+        self._chat_actions_row.height = None if actions_visible else 0
+        self._chat_actions.visible = actions_visible
+        self._privacy_footer.height = 0 if short else None
+        self._privacy_footer.padding = ft.Padding.symmetric(
+            horizontal=12, vertical=0 if short else 4
+        )
+        self._privacy_warning.visible = not short
+        if self.composer is not None:
+            wanted_lines = 1 if short else 5 if self._wide else 2
+            if self.composer.message_field.max_lines != wanted_lines:
+                self.composer.message_field.max_lines = wanted_lines
+                changed = True
+        return changed
 
     async def _toggle_sidebar(self, _event: ft.Event) -> None:
         if self._disposed:
@@ -314,11 +594,13 @@ class ChatWorkspaceView:
         self._layout.update()
 
     def _render_layout(self) -> None:
-        if self.composer is not None:
-            self.composer.message_field.max_lines = 5 if self._wide else 2
+        self._resize_metrics()
         self._sync_chat_actions()
+        self._apply_available_height()
         self._sidebar_panel = self._build_chat_panel(width=320)
-        self._sidebar_divider = ft.VerticalDivider(width=1)
+        self._sidebar_divider = ft.Container(
+            width=1, content=ft.VerticalDivider(width=1)
+        )
         self._layout.content = ft.Row(
             expand=True,
             spacing=0,
@@ -339,6 +621,7 @@ class ChatWorkspaceView:
             return
         self._actions_chat_id = chat_id
         self.rename_button = self.delete_button = None
+        self._chat_actions.controls = []
         if chat is None:
             return
         self.rename_button = ft.TextButton(
@@ -353,14 +636,15 @@ class ChatWorkspaceView:
             icon=ft.Icons.DELETE_OUTLINE,
             height=48,
             disabled=self._sending,
-            style=ft.ButtonStyle(color=ERROR_COLOR),
+            style=danger_button_style(),
             on_click=self._chat_action(self._on_delete_chat, chat.id, menu=False),
         )
+        self._chat_actions.controls = [self.rename_button, self.delete_button]
 
     def _build_chat_panel(self, *, width: int | None = None) -> ft.Container:
         chat_list = ft.ListView(
             expand=True,
-            spacing=6,
+            spacing=4,
             controls=[self._build_chat_tile(chat) for chat in self._chats],
         )
         if not self._chats:
@@ -374,8 +658,9 @@ class ChatWorkspaceView:
         return ft.Container(
             width=width,
             bgcolor=PANEL_BACKGROUND,
-            padding=16,
+            padding=12,
             content=ft.Column(
+                spacing=12,
                 expand=True,
                 controls=[
                     BrandHeader(),
@@ -414,7 +699,12 @@ class ChatWorkspaceView:
         mode = tr("chat.free") if chat.mode is ChatMode.FREE else tr("chat.paid")
         return ft.ListTile(
             title=ft.Text(
-                display_chat_title(chat), max_lines=1, overflow=ft.TextOverflow.ELLIPSIS
+                display_chat_title(chat),
+                tooltip=display_chat_title(chat),
+                size=14,
+                weight=ft.FontWeight.W_500,
+                max_lines=1,
+                overflow=ft.TextOverflow.ELLIPSIS,
             ),
             subtitle=ft.Text(
                 tr(
@@ -431,7 +721,14 @@ class ChatWorkspaceView:
             selected=(
                 self._selected_chat is not None and self._selected_chat.id == chat.id
             ),
-            selected_tile_color=ft.Colors.BLUE_GREY_700,
+            selected_tile_color=ELEVATED_BACKGROUND,
+            selected_color=PRIMARY_COLOR,
+            hover_color=ELEVATED_BACKGROUND,
+            shape=ft.RoundedRectangleBorder(radius=10),
+            content_padding=ft.Padding.symmetric(horizontal=12, vertical=4),
+            min_height=64,
+            min_leading_width=20,
+            horizontal_spacing=12,
             on_click=select_chat,
         )
 
@@ -459,13 +756,22 @@ class ChatWorkspaceView:
                 ft.IconButton(
                     icon=ft.Icons.ADD,
                     tooltip=tr("chat.untitled"),
+                    width=44,
+                    height=48,
                     disabled=not self._new_chat_allowed,
                     on_click=self._handle_new_chat_icon,
                 ),
                 ft.IconButton(
                     icon=ft.Icons.LOCK_OUTLINE,
                     tooltip=tr("chat.lock"),
+                    width=44,
+                    height=48,
                     on_click=self._handle_lock_icon,
+                ),
+                *(
+                    [self.protection_button]
+                    if self.protection_button is not None
+                    else []
                 ),
                 self.menu_button,
             ]
@@ -478,21 +784,7 @@ class ChatWorkspaceView:
                     padding=ft.Padding.symmetric(horizontal=8, vertical=4),
                     content=ft.Row(spacing=0, controls=header_controls),
                 ),
-                *(
-                    [
-                        ft.Container(
-                            padding=ft.Padding.symmetric(horizontal=12),
-                            content=ft.Row(
-                                wrap=True,
-                                spacing=8,
-                                run_spacing=0,
-                                controls=[self.rename_button, self.delete_button],
-                            ),
-                        )
-                    ]
-                    if self.rename_button is not None and self.delete_button is not None
-                    else []
-                ),
+                self._chat_actions_row,
                 ft.Divider(height=1),
                 body,
             ],
@@ -557,7 +849,10 @@ class ChatWorkspaceView:
                 ),
             )
         assert self.message_history is not None and self.composer is not None
-        controls: list[ft.Control] = [self.message_history.control]
+        controls: list[ft.Control] = [
+            *([self.metrics_strip.control] if self.metrics_strip is not None else []),
+            self.message_history.control,
+        ]
         self.send_notice = self._build_send_notice(state)
         if self.send_notice is not None:
             controls.append(self.send_notice)
@@ -567,10 +862,7 @@ class ChatWorkspaceView:
         controls.extend(
             [
                 self.composer.control,
-                ft.Container(
-                    padding=ft.Padding.symmetric(horizontal=12, vertical=4),
-                    content=_history_warning(),
-                ),
+                self._privacy_footer,
             ]
         )
         return ft.Column(expand=True, spacing=4, controls=controls)
@@ -634,7 +926,7 @@ class ChatWorkspaceView:
 
         return invoke
 
-    def _menu_action(self, callback: AsyncCallback):
+    def _menu_action(self, callback: AsyncCallback, *, security: bool = False):
         revision = self._menu_revision
 
         async def invoke(_event: ft.Event) -> None:
@@ -642,7 +934,7 @@ class ChatWorkspaceView:
                 self._disposed
                 or self._menu_dialog is None
                 or revision != self._menu_revision
-                or self.key_replacement_busy
+                or (self.security_busy if security else self.key_replacement_busy)
             ):
                 return
             self.close_menu()
@@ -683,10 +975,44 @@ class ChatWorkspaceView:
             ft.Divider(),
             LanguageSelector(),
         ]
+        self.screen_test_button = None
+        self.sleep_test_button = None
+        if self._protection_status is not None:
+            controls.extend(
+                [
+                    ft.Divider(),
+                    ft.TextButton(
+                        tr("protection_panel.open"),
+                        icon=ft.Icons.GPP_MAYBE_OUTLINED,
+                        height=48,
+                        style=secondary_button_style(),
+                        on_click=self._open_protection_event,
+                    ),
+                ]
+            )
+        self.security_button = None
+        if self._on_security is not None:
+            self.security_button = ft.TextButton(
+                tr("recovery_code.settings"),
+                icon=ft.Icons.SECURITY,
+                disabled=self.security_busy,
+                on_click=self._menu_action(self._on_security, security=True),
+            )
+            controls.extend([ft.Divider(), self.security_button])
         chat, state = self._selected_chat, self._interaction_state
+        self.delete_profile_button = None
+        profile_controls: list[ft.Control] = []
+        if self._on_delete_profile is not None:
+            self.delete_profile_button = ft.TextButton(
+                tr("profile_deletion.entry"),
+                icon=ft.Icons.DELETE_FOREVER_OUTLINED,
+                disabled=self.security_busy,
+                on_click=self._menu_action(self._on_delete_profile, security=True),
+            )
+            profile_controls = [ft.Divider(), self.delete_profile_button]
         self.limits_button = None
         if chat is None:
-            return controls
+            return [*controls, *profile_controls]
         controls.extend(
             [
                 ft.Divider(),
@@ -718,7 +1044,7 @@ class ChatWorkspaceView:
                 ]
             )
         if state is None or state.chat.id != chat.id:
-            return controls
+            return [*controls, *profile_controls]
         budget = state.budget
         remaining = state.remaining
         controls.extend(
@@ -783,7 +1109,7 @@ class ChatWorkspaceView:
             ),
         )
         controls.append(self.limits_button)
-        return controls
+        return [*controls, *profile_controls]
 
     @property
     def menu_open(self) -> bool:
@@ -796,11 +1122,13 @@ class ChatWorkspaceView:
         if self._disposed or self._menu_dialog is not None:
             return
         self._menu_revision += 1
-        self._menu_list = ft.ListView(spacing=8, padding=0, auto_scroll=False)
+        self._menu_list = ft.ListView(spacing=12, padding=0, auto_scroll=False)
         self._menu_container = ft.Container(content=self._menu_list)
         dialog = ft.AlertDialog(
             modal=False,
             alignment=ft.Alignment.TOP_RIGHT,
+            bgcolor=PANEL_BACKGROUND,
+            shape=ft.RoundedRectangleBorder(radius=16),
             inset_padding=ft.Padding(12, 60, 12, 12),
             title_padding=ft.Padding(16, 4, 4, 0),
             content_padding=ft.Padding(16, 0, 16, 12),
@@ -850,6 +1178,95 @@ class ChatWorkspaceView:
         self._menu_list.controls = self._build_menu_controls()
         self._update_menu_control()
 
+    def refresh_menu_language(self) -> None:
+        """Перепривязывает действия после смены языка, отзывая старые события."""
+        self._refresh_menu()
+        checkbox = self.paid_confirmation_checkbox
+        if checkbox is not None:
+            if isinstance(checkbox.label, ft.Text):
+                checkbox.label.value = tr("metrics.without_confirmation")
+            checkbox.semantics_label = tr("metrics.without_confirmation")
+            checkbox.tooltip = explanatory_tooltip(
+                tr("metrics.without_confirmation_help")
+            )
+        if self.metrics_strip is not None:
+            self.metrics_strip.sync_language()
+        if self.paid_confirmation_help is not None:
+            self.paid_confirmation_help.refresh_language()
+        if self.composer is not None:
+            self.composer.refresh_language()
+        # Localized controls keep their identity and focus while this is open.
+        localize_tree(self._protection_panel.content)
+        if self._protection_status is not None:
+            self._protection_panel.refresh(
+                self._protection_status, busy=self.security_busy
+            )
+
+    def _paid_confirmation_action(self, chat_id: str):
+        generation = self._chat_generation
+
+        async def change(event: ft.Event[ft.Checkbox]) -> None:
+            checkbox = event.control
+            chat = self._selected_chat
+            if (
+                self._disposed
+                or chat is None
+                or chat.id != chat_id
+                or generation != self._chat_generation
+                or checkbox is not self.paid_confirmation_checkbox
+            ):
+                return
+            value = checkbox.value
+            if self._sending or self._paid_setting_pending or type(value) is not bool:
+                checkbox.value = chat.paid_without_confirmation
+                self._update_menu_control()
+                return
+            checkbox.disabled = True
+            self._paid_setting_pending = True
+            if self.composer is not None:
+                self.composer.set_enabled(False)
+                try:
+                    self._layout.update()
+                except (RuntimeError, AssertionError):
+                    pass
+            self._update_menu_control()
+            try:
+                if self._on_paid_confirmation_changed is not None:
+                    await self._on_paid_confirmation_changed(chat_id, value)
+            except Exception:
+                message = tr("service.paid_setting_save_failed")
+                if self.composer is not None:
+                    self.show_message(message)
+                else:
+                    self._page.show_dialog(ft.SnackBar(content=ft.Text(message)))
+            finally:
+                self._paid_setting_pending = False
+                current = self._selected_chat
+                if not self._disposed and current is not None:
+                    current_checkbox = self.paid_confirmation_checkbox
+                    if current_checkbox is not None:
+                        if (
+                            current.id == chat_id
+                            and generation == self._chat_generation
+                            and current_checkbox is checkbox
+                        ):
+                            current_checkbox.value = current.paid_without_confirmation
+                        current_checkbox.disabled = self._sending
+                    if (
+                        self.composer is not None
+                        and self._interaction_state is not None
+                    ):
+                        self.composer.set_enabled(
+                            self._sending_allowed(self._interaction_state)
+                        )
+                        try:
+                            self._layout.update()
+                        except (RuntimeError, AssertionError):
+                            pass
+                    self._update_menu_control()
+
+        return change
+
     def close_menu(self) -> None:
         dialog = self._menu_dialog
         self._menu_dialog = None
@@ -860,6 +1277,9 @@ class ChatWorkspaceView:
         self._key_panel = None
         self._menu_revision += 1
         self.retry_key_button = self.replace_key_button = None
+        self.security_button = None
+        self.screen_test_button = None
+        self.delete_profile_button = None
         self.limits_button = None
         if dialog is not None:
             # Закрываем именно своё окно, не снимая чужой диалог с вершины стека.
@@ -1074,6 +1494,7 @@ class RenameChatDialog:
 
         placeholder = getattr(chat, "title_origin", "legacy") == "placeholder"
         self.title_field = ft.TextField(
+            **input_style(),
             value="" if placeholder else chat.title,
             hint_text=display_chat_title(chat) if placeholder else None,
             label=tr("chat.title_label"),
@@ -1081,13 +1502,26 @@ class RenameChatDialog:
             autofocus=True,
             on_submit=self._handle_submit,
         )
-        self.confirm_button = ft.Button(tr("chat.save"), on_click=self._handle_click)
+        self.confirm_button = ft.Button(
+            tr("chat.save"),
+            height=48,
+            style=primary_button_style(),
+            on_click=self._handle_click,
+        )
         self.control = ft.AlertDialog(
             modal=True,
+            scrollable=True,
+            bgcolor=PANEL_BACKGROUND,
+            shape=ft.RoundedRectangleBorder(radius=16),
             title=ft.Text(tr("chat.rename_title")),
             content=self.title_field,
             actions=[
-                ft.TextButton(tr("common.cancel"), on_click=handle_cancel),
+                ft.TextButton(
+                    tr("common.cancel"),
+                    height=48,
+                    style=secondary_button_style(),
+                    on_click=handle_cancel,
+                ),
                 self.confirm_button,
             ],
             actions_alignment=ft.MainAxisAlignment.END,
@@ -1133,15 +1567,24 @@ def build_delete_chat_dialog(
 
     return ft.AlertDialog(
         modal=True,
+        scrollable=True,
+        bgcolor=PANEL_BACKGROUND,
+        shape=ft.RoundedRectangleBorder(radius=16),
         title=ft.Text(tr("chat.delete_title")),
         content=ft.Text(tr("chat.delete_body", title=display_chat_title(chat))),
         actions=[
-            ft.TextButton(tr("common.cancel"), on_click=cancel),
+            ft.TextButton(
+                tr("common.cancel"),
+                height=48,
+                style=secondary_button_style(),
+                autofocus=True,
+                on_click=cancel,
+            ),
             ft.Button(
                 tr("chat.delete"),
                 icon=ft.Icons.DELETE_OUTLINE,
-                color=ft.Colors.WHITE,
-                bgcolor=ft.Colors.RED_600,
+                height=48,
+                style=danger_button_style(),
                 on_click=confirm,
             ),
         ],

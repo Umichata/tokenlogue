@@ -28,7 +28,6 @@ from i18n import (  # noqa: E402
 )
 from preferences import PreferencesStore  # noqa: E402
 from service_errors import localized_error_text  # noqa: E402
-from tests import test_chat_view as fixtures  # noqa: E402
 
 
 class ServiceLocalizationTests(unittest.TestCase):
@@ -78,7 +77,6 @@ class ServiceLocalizationTests(unittest.TestCase):
             localized_error_text(original),
             "“Total token limit” must be a positive integer",
         )
-        self.assertEqual(fixtures._chat().requested_model_id, "openrouter/free")
 
 
 if __name__ == "__main__":

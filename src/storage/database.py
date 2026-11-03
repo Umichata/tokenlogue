@@ -9,7 +9,20 @@ from contextlib import contextmanager
 from pathlib import Path
 
 from auth.models import LoginAttemptState, PinRecord, StoredAuthState
+from auth.pin_policy import (
+    APP_PIN_LOCK_SECONDS,
+    APP_PIN_MAX_FAILED_ATTEMPTS,
+    PinClockSample,
+    arm_lock,
+    decode_lock,
+    normalize_attempts,
+)
 from i18n import tr
+from storage.database_connections import (
+    DatabaseDeletionPendingError,
+    database_incarnation,
+    deletion_pending,
+)
 from storage.database_connections import connection as protected_connection
 
 DATABASE_FILENAME = "tokenlogue.sqlite3"
@@ -26,7 +39,10 @@ class AuthDatabase:
 
     def __init__(self, data_dir: str | Path | None = None) -> None:
         self.path = _database_path(data_dir)
+        if deletion_pending(self.path):
+            raise DatabaseDeletionPendingError("profile_deletion.unavailable")
         self.path.parent.mkdir(parents=True, exist_ok=True)
+        self._incarnation = database_incarnation(self.path)
         self._initialize_schema()
 
     def get_auth_state(self) -> StoredAuthState | None:
@@ -61,11 +77,8 @@ class AuthDatabase:
             ),
             attempts=LoginAttemptState(
                 failed_attempts=int(row["failed_attempts"]),
-                locked_until=(
-                    float(row["locked_until"])
-                    if row["locked_until"] is not None
-                    else None
-                ),
+                locked_until=decode_lock(row["locked_until"])[0],
+                lock_state=decode_lock(row["locked_until"])[1],
             ),
         )
 
@@ -143,9 +156,9 @@ class AuthDatabase:
             if row is None:
                 raise RuntimeError(tr("service.pin_missing"))
 
-            locked_until = (
-                float(row["locked_until"]) if row["locked_until"] is not None else None
-            )
+            locked_until, versioned = decode_lock(row["locked_until"])
+            if versioned is not None:
+                raise ValueError("versioned_pin_policy_requires_pin_api")
             if locked_until is not None and locked_until > now:
                 return LoginAttemptState(
                     failed_attempts=int(row["failed_attempts"]),
@@ -171,6 +184,39 @@ class AuthDatabase:
                 (failed_attempts, locked_until),
             )
             return LoginAttemptState(failed_attempts, locked_until)
+
+    def pin_attempt_state(self, sample: PinClockSample) -> LoginAttemptState:
+        return self._pin_attempts(sample, failure=False)
+
+    def register_pin_failure(self, sample: PinClockSample) -> LoginAttemptState:
+        return self._pin_attempts(sample, failure=True)
+
+    def _pin_attempts(
+        self, sample: PinClockSample, *, failure: bool
+    ) -> LoginAttemptState:
+        with self._connection() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            row = connection.execute(
+                "SELECT failed_attempts,locked_until FROM auth_state WHERE singleton_id=1"
+            ).fetchone()
+            if row is None:
+                raise RuntimeError(tr("service.pin_missing"))
+            failed, raw, remaining = normalize_attempts(
+                int(row["failed_attempts"]), row["locked_until"], sample
+            )
+            if failure and remaining == 0:
+                failed += 1
+                if failed >= APP_PIN_MAX_FAILED_ATTEMPTS:
+                    failed = APP_PIN_MAX_FAILED_ATTEMPTS
+                    raw = arm_lock(sample).encode()
+                    remaining = APP_PIN_LOCK_SECONDS
+            if failed != row["failed_attempts"] or raw != row["locked_until"]:
+                connection.execute(
+                    "UPDATE auth_state SET failed_attempts=?,locked_until=? WHERE singleton_id=1",
+                    (failed, raw),
+                )
+            deadline, lock = decode_lock(raw)
+            return LoginAttemptState(failed, deadline, lock, remaining)
 
     def _initialize_schema(self) -> None:
         migrations: dict[int, Callable[[sqlite3.Connection], None]] = {
@@ -212,7 +258,10 @@ class AuthDatabase:
         self, *, allow_create: bool = False
     ) -> Iterator[sqlite3.Connection]:
         with protected_connection(
-            self.path, auth_only=True, allow_create=allow_create
+            self.path,
+            auth_only=True,
+            allow_create=allow_create,
+            incarnation=self._incarnation,
         ) as connection:
             yield connection
 
@@ -536,6 +585,8 @@ def _migrate_5_to_6(connection: sqlite3.Connection) -> None:
 
 
 def _recover_interrupted_turns(connection: sqlite3.Connection) -> None:
+    from storage.request_attempts import recover_request_attempts
+
     timestamp = "strftime('%Y-%m-%dT%H:%M:%f+00:00', 'now')"
     connection.execute(
         f"""
@@ -568,6 +619,7 @@ def _recover_interrupted_turns(connection: sqlite3.Connection) -> None:
         )
         """
     )
+    recover_request_attempts(connection)
 
 
 def _database_path(data_dir: str | Path | None) -> Path:

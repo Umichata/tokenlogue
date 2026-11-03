@@ -146,7 +146,7 @@ class ChatMenuTests(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(text.tooltip, title)
                 self.assertEqual(text.max_lines, 1)
                 self.assertEqual(text.overflow, ft.TextOverflow.ELLIPSIS)
-                self.assertEqual(view.menu_button.tooltip, "Параметры чата")
+                self.assertEqual(view.menu_button.tooltip, tr("chat.options"))
                 self.assertEqual(view.menu_button.width, 48)
                 self.assertFalse(view.menu_open)
                 self.assertIsNone(view.send_notice)
@@ -348,7 +348,6 @@ class ChatMenuTests(unittest.IsolatedAsyncioTestCase):
                 await view.open_menu()
                 dialog, menu_list = view._menu_dialog, view._menu_list
                 assert menu_list is not None and view.retry_key_button is not None
-                button, panel = view.retry_key_button, menu_list.controls[1]
                 started, release = asyncio.Event(), asyncio.Event()
                 calls = 0
 

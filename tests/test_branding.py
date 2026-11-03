@@ -16,8 +16,7 @@ from unittest.mock import patch
 import flet as ft
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
-from test_brand_assets import _read_rgba8_png  # noqa: E402
-
+from tests.test_brand_assets import _read_rgba8_png  # noqa: E402
 from ui import branding  # noqa: E402
 
 

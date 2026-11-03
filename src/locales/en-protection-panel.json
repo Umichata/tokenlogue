@@ -1,0 +1,15 @@
+{
+  "protection_panel.subtitle": "Saved device checks and observation available now.",
+  "protection_panel.sign_in_explanation": "To test protection, sign in with your usual PIN first. Signing in alone never locks the screen or sends the device to sleep.",
+  "protection_panel.start_test": "Start test",
+  "protection_panel.start_explanation": "You are signed in. Start when you are ready to lock the screen or send this device to sleep.",
+  "protection_panel.selected_screen": "Screen lock test selected",
+  "protection_panel.selected_sleep": "Sleep test selected",
+  "protection_panel.close": "Close device protection",
+  "protection_panel.open": "Device protection",
+  "protection_panel.copy_message": "Copy message",
+  "protection_panel.copy_code": "Copy code",
+  "protection_panel.message_copied": "Message copied",
+  "protection_panel.you": "You",
+  "protection_panel.android_policy": "Tokenlogue locks when it leaves the foreground. Use your app PIN to return. Device recovery depends on the security available on this device. The desktop screen lock and sleep tests are unavailable on Android."
+}

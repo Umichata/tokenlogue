@@ -1,0 +1,21 @@
+{
+  "recovery_code.settings": "Резервный код",
+  "recovery_code.enter_title": "Восстановление по коду",
+  "recovery_code.enter_instructions": "Введите сохранённый резервный код, чтобы выбрать новый PIN и сохранить переписку.",
+  "recovery_code.not_enrolled": "У этого профиля нет действующего резервного кода. Используйте прежний PIN или ранее настроенное системное восстановление. Переписка сохранена.",
+  "recovery_code.code_label": "Сохранённый резервный код",
+  "recovery_code.verify": "Проверить код",
+  "recovery_code.system_optional": "Системное восстановление Linux",
+  "recovery_code.confirm_pin_instructions": "Подтвердите PIN приложения для создания резервного кода. Прежний код действует до подтверждения замены.",
+  "recovery_code.generate": "Создать резервный код",
+  "recovery_code.save_title": "Сохраните резервный код",
+  "recovery_code.save_instructions": "Показывается один раз. Обладающий кодом сможет заменить PIN. Сохраните код отдельно, затем повторите его ниже. Код действует один раз и не восстанавливает потерянный ключ переписки. Прежний код действует до подтверждения нового.",
+  "recovery_code.repeat_label": "Повторите сохранённый резервный код",
+  "recovery_code.confirm_saved": "Подтвердить сохранение кода",
+  "recovery_code.copy": "Копировать код",
+  "recovery_code.clipboard_notice": "История буфера обмена может сохранить копию.",
+  "recovery_code.protection_notice": "{watcher}",
+  "recovery_code.verified_notice": "Код проверен. Выберите новый PIN. Переписка сохранена.",
+  "recovery_code.saved_notice": "Резервный код готов. Храните его отдельно от Tokenlogue.",
+  "recovery_code.cancelled_notice": "Восстановление отменено. PIN и переписка сохранены."
+}

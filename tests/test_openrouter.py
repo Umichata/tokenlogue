@@ -49,6 +49,37 @@ class OpenRouterClientTests(unittest.IsolatedAsyncioTestCase):
         self.assertIsNone(result.limit_remaining)
         self.assertTrue(result.accepted)
 
+    async def test_preserves_tiny_and_high_precision_limits_without_float_rounding(
+        self,
+    ) -> None:
+        for raw, expected, status in (
+            (
+                b"0.000000000000000000000000123456789",
+                Decimal("0.000000000000000000000000123456789"),
+                KeyValidationStatus.ACCEPTED,
+            ),
+            (
+                b'"123456789.123456789123456789"',
+                Decimal("123456789.123456789123456789"),
+                KeyValidationStatus.ACCEPTED,
+            ),
+            (
+                b"-0.000000000000000000000000123456789",
+                Decimal("-0.000000000000000000000000123456789"),
+                KeyValidationStatus.ACCEPTED_LIMIT_EXHAUSTED,
+            ),
+        ):
+            with self.subTest(status=status, negative=expected < 0):
+                result = await self._validate(
+                    lambda _, value=raw: httpx.Response(
+                        200, content=b'{"data":{"limit_remaining":' + value + b"}}"
+                    )
+                )
+                self.assertEqual(result.status, status)
+                self.assertEqual(result.limit_remaining, expected)
+                self.assertNotEqual(result.limit_remaining, Decimal("0"))
+                self.assertTrue(result.accepted)
+
     async def test_accepts_valid_key_with_zero_limit(self) -> None:
         result = await self._validate(
             lambda _: httpx.Response(200, json={"data": {"limit_remaining": 0}})
@@ -163,6 +194,26 @@ class OpenRouterClientTests(unittest.IsolatedAsyncioTestCase):
         )
 
         self.assertEqual(result.status, KeyValidationStatus.INVALID_RESPONSE)
+
+    async def test_invalid_limit_shapes_never_become_a_numeric_balance(self) -> None:
+        for content in (
+            b'{"data":{"limit_remaining":true}}',
+            b'{"data":{"limit_remaining":false}}',
+            b'{"data":{"limit_remaining":""}}',
+            b'{"data":{"limit_remaining":"Infinity"}}',
+            b'{"data":{"limit_remaining":"-Infinity"}}',
+            b'{"data":{"limit_remaining":[]}}',
+            b'{"data":{"limit_remaining":{}}}',
+            b'{"data":[]}',
+            b"[]",
+        ):
+            with self.subTest(content=content):
+                result = await self._validate(
+                    lambda _, body=content: httpx.Response(200, content=body)
+                )
+                self.assertEqual(result.status, KeyValidationStatus.INVALID_RESPONSE)
+                self.assertIsNone(result.limit_remaining)
+                self.assertFalse(result.accepted)
 
     async def test_error_body_is_not_returned(self) -> None:
         marker = "private-error-body-marker"

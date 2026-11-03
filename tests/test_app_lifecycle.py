@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import asyncio
+import os
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
@@ -28,6 +30,7 @@ from tests.test_app import (  # noqa: E402
     FakePage,
     _make_controller,
 )
+from tests.test_secure_credentials import FakeSecureStorage  # noqa: E402
 
 
 class AndroidPage(FakePage):
@@ -225,18 +228,30 @@ class AppLifecycleTests(unittest.IsolatedAsyncioTestCase):
         controller.start = AsyncMock()
         controller.flush_drafts = AsyncMock(return_value=True)
         controller.cancel_system_recovery = AsyncMock()
+        controller.close_protection_checks = AsyncMock()
+        controller.wait_system_lock = AsyncMock()
         controller.handle_lifecycle_change = AsyncMock()
         order = []
         controller.prepare_close.side_effect = lambda: order.append("prepare")
+        controller.close_protection_checks.side_effect = lambda: order.append("checks")
         controller.cancel_system_recovery.side_effect = lambda: order.append("cancel")
         controller.flush_drafts.side_effect = lambda: order.append("flush")
         controller.dispose.side_effect = lambda: order.append("dispose")
         with (
+            tempfile.TemporaryDirectory() as directory,
+            patch.dict(os.environ, {"FLET_APP_STORAGE_DATA": directory}),
             patch.object(composition, "configure_page"),
             patch.object(
                 composition,
+                "FletSecureCredentials",
+                return_value=SimpleNamespace(storage_backend=FakeSecureStorage()),
+            ),
+            patch.object(
+                composition,
                 "AuthDatabase",
-                return_value=SimpleNamespace(path="synthetic-unused.sqlite3"),
+                return_value=SimpleNamespace(
+                    path=Path(directory) / "tokenlogue.sqlite3"
+                ),
             ),
             patch.object(composition, "AppController", return_value=controller),
         ):
@@ -248,8 +263,9 @@ class AppLifecycleTests(unittest.IsolatedAsyncioTestCase):
         controller.start.assert_awaited_once()
         await getattr(self.page, "on_close")()
         controller.flush_drafts.assert_awaited_once()
+        controller.close_protection_checks.assert_awaited_once()
         controller.dispose.assert_called_once()
-        self.assertEqual(order, ["prepare", "cancel", "flush", "dispose"])
+        self.assertEqual(order, ["prepare", "checks", "cancel", "flush", "dispose"])
         self.assertIs(
             getattr(self.page, "on_close"), getattr(self.page, "on_disconnect")
         )

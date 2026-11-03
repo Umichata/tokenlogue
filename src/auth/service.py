@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-import math
 import secrets
 import time
 from collections.abc import Awaitable, Callable
@@ -23,14 +22,26 @@ from auth.models import (
     StoredAuthState,
 )
 from auth.pin import PinHasher, is_valid_pin
+from auth.pin_policy import (
+    APP_PIN_LOCK_SECONDS,
+    APP_PIN_MAX_FAILED_ATTEMPTS,
+    format_lock_time,
+    pin_check_gate,
+    sample_clock,
+)
 from i18n import number, tr
 
 if TYPE_CHECKING:
-    from platform_security.device_recovery import DeviceRecovery
+    from platform_security.device_recovery import RecoveryProvider
     from storage.data_protection import DataProtection
+    from storage.profile_deletion import (
+        DeletionDiagnostic,
+        DeletionScope,
+        ProfileDeletion,
+    )
 
-MAX_FAILED_ATTEMPTS = 5
-LOCK_SECONDS = 30
+MAX_FAILED_ATTEMPTS = APP_PIN_MAX_FAILED_ATTEMPTS
+LOCK_SECONDS = APP_PIN_LOCK_SECONDS
 REGISTRATION_ID_BYTES = 24
 
 
@@ -46,15 +57,23 @@ class AuthService:
         pin_hasher: PinHasher | None = None,
         clock: Callable[[], float] = time.time,
         protection: DataProtection | None = None,
-        recovery_provider: DeviceRecovery | None = None,
+        recovery_provider: RecoveryProvider | None = None,
+        profile_deletion: ProfileDeletion | None = None,
+        pin_elapsed_clock: Callable[[], float] | None = None,
+        pin_boot_token: Callable[[], str | None] | None = None,
     ) -> None:
         self._key_validator = key_validator
         self._credentials = credentials
         self._repository = repository
+        self._pin_gate = pin_check_gate(repository)
         self._pin_hasher = pin_hasher or PinHasher()
         self._clock = clock
+        self._pin_elapsed_clock = pin_elapsed_clock
+        self._pin_boot_token = pin_boot_token
         self._protection = protection
         self._recovery_provider = recovery_provider
+        self._profile_deletion = profile_deletion
+        self._deleting = False
         self._operation_lock = asyncio.Lock()
         self._setup_generation = 0
         self._pending_key: str | None = None
@@ -83,9 +102,100 @@ class AuthService:
         """Проверяет PIN и получает ключ только после успешной проверки."""
         return await self._run_exclusive(lambda: self._login(pin))
 
+    async def pin_lock_seconds_remaining(self) -> int:
+        """Backend countdown не проверяет PIN и не извлекает ключи."""
+        if self._deleting:
+            return 0
+        async with self._operation_lock:
+            if self._deleting:
+                return 0
+            state = await asyncio.to_thread(
+                self._repository.pin_attempt_state,
+                sample_clock(
+                    self._clock, self._pin_elapsed_clock, self._pin_boot_token
+                ),
+            )
+            return state.lock_seconds_remaining
+
     async def reset_authentication(self) -> AuthResult:
         """Сохраняет PIN при защищённой замене ключа и поддерживает прежний сброс."""
         return await self._run_exclusive(self._reset_authentication)
+
+    @property
+    def profile_deletion_available(self) -> bool:
+        return self._profile_deletion is not None
+
+    @property
+    def profile_deletion_pending(self) -> bool:
+        """Разделяет повтор принятого intent и безопасную новую композицию PIN."""
+        return self._profile_deletion is not None and self._profile_deletion.pending()
+
+    @property
+    def profile_deletion_diagnostic(self) -> DeletionDiagnostic | None:
+        return (
+            self._profile_deletion.diagnostic
+            if self._profile_deletion is not None
+            else None
+        )
+
+    async def capture_profile_deletion(self) -> DeletionScope:
+        """Получает только metadata выбранного закрытого профиля."""
+        from storage.profile_deletion import ProfileDeletionError
+
+        if (
+            self._profile_deletion is None
+            or self._deleting
+            or self._operation_lock.locked()
+        ):
+            raise ProfileDeletionError()
+        async with self._operation_lock:
+            return await self._profile_deletion.capture()
+
+    def cancel_profile_deletion(self) -> None:
+        if self._profile_deletion is not None:
+            self._profile_deletion.cancel()
+
+    def prepare_profile_deletion(self) -> None:
+        """Терминальный отзыв старой композиции до первого await удаления."""
+        self._deleting = True
+        self.lock_access()
+        if self._protection is not None:
+            self._protection.access.revoke_for_deletion()
+
+    async def confirm_profile_deletion(self, scope: DeletionScope) -> AuthResult:
+        """Отдельный контракт уничтожения, не reset и не замена API-ключа."""
+        self.prepare_profile_deletion()
+        if self._profile_deletion is None:
+            return _storage_error(deletion_error_message(None))
+        async with self._operation_lock:
+            try:
+                await self._profile_deletion.accept(scope)
+                await self._profile_deletion.finish()
+                return AuthResult(
+                    AuthStatus.PROFILE_DELETED, initial_route=InitialRoute.SETUP
+                )
+            except Exception:
+                return _storage_error(
+                    deletion_error_message(self.profile_deletion_diagnostic),
+                    initial_route=InitialRoute.ERROR,
+                )
+
+    async def finish_profile_deletion(self) -> AuthResult:
+        """Повтор завершает принятое намерение без PIN и обычного reconcile."""
+        self.prepare_profile_deletion()
+        if self._profile_deletion is None:
+            return _storage_error(deletion_error_message(None))
+        async with self._operation_lock:
+            try:
+                await self._profile_deletion.finish()
+                return AuthResult(
+                    AuthStatus.PROFILE_DELETED, initial_route=InitialRoute.SETUP
+                )
+            except Exception:
+                return _storage_error(
+                    deletion_error_message(self.profile_deletion_diagnostic),
+                    initial_route=InitialRoute.ERROR,
+                )
 
     @property
     def recovery_available(self) -> bool:
@@ -109,6 +219,82 @@ class AuthService:
         if self._protection is not None:
             await self._protection.cancel_recovery()
 
+    async def recovery_code_enrolled(self) -> bool:
+        """Отсутствие кода отличается от ошибки доверенного хранилища."""
+        from storage.data_protection import DataProtectionError
+
+        if self._deleting or (
+            self._profile_deletion is not None and self._profile_deletion.pending()
+        ):
+            raise DataProtectionError("protection.access_closed")
+        if self._protection is None:
+            return False
+        if self._operation_lock.locked():
+            raise DataProtectionError("protection.access_closed")
+        async with self._operation_lock:
+            try:
+                return await self._protection.recovery_code_enrolled()
+            except DataProtectionError:
+                raise
+            except Exception:
+                raise DataProtectionError() from None
+
+    async def begin_recovery_code(self, pin: str) -> AuthResult:
+        """Повторный PIN разрешает показать новый случайный секрет один раз."""
+
+        async def begin(protection: DataProtection) -> AuthResult:
+            issue = await protection.begin_recovery_code(pin)
+            return AuthResult(
+                AuthStatus.RECOVERY_CODE_ISSUED,
+                recovery_code_issue=issue,
+            )
+
+        return await self._portable_operation(begin)
+
+    async def confirm_recovery_code(self, attempt_id: str, value: str) -> AuthResult:
+        """Сохранение подтверждается полным повторным вводом того же секрета."""
+
+        async def confirm(protection: DataProtection) -> AuthResult:
+            await protection.confirm_recovery_code(attempt_id, value)
+            return AuthResult(AuthStatus.RECOVERY_CODE_SAVED)
+
+        return await self._portable_operation(confirm)
+
+    def cancel_recovery_code_issue(self) -> None:
+        """Закрытие экрана отзывает выдачу без записи нового verifier."""
+        if self._protection is not None:
+            self._protection.cancel_recovery_code_issue()
+
+    async def recover_with_code(self, value: str) -> AuthResult:
+        """Резервный verifier даёт существующий grant без вызова native provider."""
+
+        async def recover(protection: DataProtection) -> AuthResult:
+            token = await protection.recover_with_code(value)
+            return AuthResult(AuthStatus.PIN_CHOICE_REQUIRED, pending_setup_token=token)
+
+        return await self._portable_operation(recover)
+
+    async def _portable_operation(
+        self, operation: Callable[[DataProtection], Awaitable[AuthResult]]
+    ) -> AuthResult:
+        async def run() -> AuthResult:
+            from storage.data_protection import DataProtectionError
+
+            if self._protection is None:
+                return _storage_error(tr("protection.recovery_unavailable"))
+            try:
+                return await operation(self._protection)
+            except DataProtectionError as error:
+                if error.lock_seconds_remaining:
+                    return _locked_result(error.lock_seconds_remaining)
+                if error.pin_attempts_remaining is not None:
+                    return AuthResult(AuthStatus.INVALID_PIN, str(error))
+                return _storage_error(str(error))
+            except Exception:
+                return _storage_error(tr("protection.unavailable"))
+
+        return await self._run_exclusive(run)
+
     async def recover_pin(self) -> AuthResult:
         async def recover() -> AuthResult:
             if self._protection is None or self._recovery_provider is None:
@@ -126,6 +312,16 @@ class AuthService:
                     if isinstance(error, DataProtectionError)
                     else tr("protection.unavailable")
                 )
+                reason = getattr(self._recovery_provider, "unavailable_reason", "")
+                if reason in {
+                    "policy_missing",
+                    "policy_unsafe",
+                    "session_unavailable",
+                    "authorization_unsafe",
+                    "agent_unavailable",
+                    "transport_unavailable",
+                }:
+                    message = tr("recovery.linux_" + reason)
                 return _storage_error(message)
 
         return await self._run_exclusive(recover)
@@ -134,9 +330,24 @@ class AuthService:
         async def complete() -> AuthResult:
             if self._protection is None or not is_valid_pin(pin):
                 return AuthResult(AuthStatus.INVALID_PIN, tr("service.pin_ascii"))
+            generation = self._setup_generation
             try:
                 await self._protection.replace_pin(token, pin)
+                if (
+                    generation != self._setup_generation
+                    or not self._protection.access.unlocked
+                ):
+                    self._protection.lock()
+                    return _storage_error(tr("protection.access_closed"))
+                access_epoch = self._protection.access.epoch
                 api_key = await self._credentials.get_api_key()
+                if (
+                    generation != self._setup_generation
+                    or access_epoch != self._protection.access.epoch
+                    or not self._protection.access.unlocked
+                ):
+                    self._protection.lock()
+                    return _storage_error(tr("protection.access_closed"))
                 if not api_key:
                     self._protection.lock()
                     return _storage_error(tr("service.secure_read_failed"))
@@ -177,15 +388,13 @@ class AuthService:
             )
 
         if stored is not None and _states_match(stored, credentials):
-            remaining = self._remaining_lock_seconds(stored.attempts.locked_until)
-            if stored.attempts.locked_until is not None and remaining == 0:
-                try:
-                    await asyncio.to_thread(self._repository.reset_login_attempts)
-                except Exception:
-                    return _storage_error(
-                        tr("service.lock_save_failed"),
-                        initial_route=InitialRoute.ERROR,
-                    )
+            state = await asyncio.to_thread(
+                self._repository.pin_attempt_state,
+                sample_clock(
+                    self._clock, self._pin_elapsed_clock, self._pin_boot_token
+                ),
+            )
+            remaining = state.lock_seconds_remaining
             return AuthResult(
                 AuthStatus.PIN_REQUIRED,
                 initial_route=InitialRoute.PIN,
@@ -338,6 +547,12 @@ class AuthService:
             self.cancel_pending_setup()
 
     async def _login(self, pin: str) -> AuthResult:
+        if self._pin_gate.busy:
+            return AuthResult(AuthStatus.BUSY, tr("service.operation_pending"))
+        async with self._pin_gate:
+            return await self._login_checked(pin)
+
+    async def _login_checked(self, pin: str) -> AuthResult:
         if not is_valid_pin(pin):
             return AuthResult(
                 AuthStatus.INVALID_PIN,
@@ -349,11 +564,15 @@ class AuthService:
             if stored is None:
                 return await self._reset_inconsistent_state()
 
-            remaining = self._remaining_lock_seconds(stored.attempts.locked_until)
+            attempts = await asyncio.to_thread(
+                self._repository.pin_attempt_state,
+                sample_clock(
+                    self._clock, self._pin_elapsed_clock, self._pin_boot_token
+                ),
+            )
+            remaining = attempts.lock_seconds_remaining
             if remaining > 0:
                 return _locked_result(remaining)
-            if stored.attempts.locked_until is not None:
-                await asyncio.to_thread(self._repository.reset_login_attempts)
 
             is_correct = await asyncio.to_thread(
                 self._pin_hasher.verify,
@@ -392,18 +611,16 @@ class AuthService:
 
     async def _register_failed_attempt(self) -> AuthResult:
         attempt_state = await asyncio.to_thread(
-            self._repository.register_failed_attempt,
-            self._clock(),
-            MAX_FAILED_ATTEMPTS,
-            LOCK_SECONDS,
+            self._repository.register_pin_failure,
+            sample_clock(self._clock, self._pin_elapsed_clock, self._pin_boot_token),
         )
-        remaining = self._remaining_lock_seconds(attempt_state.locked_until)
+        remaining = attempt_state.lock_seconds_remaining
         if remaining > 0:
             return _locked_result(remaining)
         attempts_left = max(0, MAX_FAILED_ATTEMPTS - attempt_state.failed_attempts)
         return AuthResult(
             AuthStatus.INVALID_PIN,
-            tr("service.wrong_pin", remaining=attempts_left),
+            tr("auth.pin_attempts_remaining", remaining=attempts_left),
         )
 
     async def _reset_authentication(self) -> AuthResult:
@@ -477,6 +694,12 @@ class AuthService:
         self,
         operation: Callable[[], Awaitable[AuthResult]],
     ) -> AuthResult:
+        if self._deleting or (
+            self._profile_deletion is not None and self._profile_deletion.pending()
+        ):
+            return _storage_error(
+                tr("profile_deletion.unavailable"), initial_route=InitialRoute.ERROR
+            )
         if self._operation_lock.locked():
             return AuthResult(
                 AuthStatus.BUSY,
@@ -491,14 +714,6 @@ class AuthService:
                 return _storage_error(
                     tr("service.auth_read_failed"), initial_route=InitialRoute.ERROR
                 )
-
-    def _remaining_lock_seconds(self, locked_until: float | None) -> int:
-        if locked_until is None or not math.isfinite(locked_until):
-            return 0
-        difference = locked_until - self._clock()
-        if difference <= 0 or difference > LOCK_SECONDS:
-            return 0
-        return math.ceil(difference)
 
 
 def _states_match(
@@ -515,7 +730,7 @@ def _states_match(
 def _locked_result(seconds: int) -> AuthResult:
     return AuthResult(
         AuthStatus.LOCKED,
-        tr("auth.lock_seconds", seconds=seconds),
+        tr("auth.lock_countdown", time=format_lock_time(seconds)),
         lock_seconds_remaining=seconds,
     )
 
@@ -598,3 +813,30 @@ def _expired_setup() -> AuthResult:
         AuthStatus.INVALID_STATE,
         tr("service.setup_expired"),
     )
+
+
+def deletion_error_message(diagnostic: DeletionDiagnostic | None) -> str:
+    """Описывает факт начала удаления, без раскрытия технической диагностики."""
+    if diagnostic is None:
+        return tr("profile_deletion.not_started")
+    if diagnostic.intent_pending or diagnostic.stage == "finish":
+        return tr("profile_deletion.unavailable")
+    if diagnostic.prepared:
+        return tr("profile_deletion.prepared_before")
+    if diagnostic.code == "ownership_busy":
+        return tr("profile_deletion.ownership_before")
+    if diagnostic.code == "backend_unavailable":
+        return tr("profile_deletion.backend_before")
+    if diagnostic.code in {"identity_mismatch", "stale_confirmation"}:
+        return tr("profile_deletion.changed_before")
+    if diagnostic.code in {
+        "path_unsafe",
+        "directory_not_dedicated",
+        "directory_shared",
+        "acl_unsupported",
+        "filesystem_unsupported",
+        "filesystem_readonly",
+        "preparation_failed",
+    }:
+        return tr("profile_deletion.directory_unsafe")
+    return tr("profile_deletion.not_started")

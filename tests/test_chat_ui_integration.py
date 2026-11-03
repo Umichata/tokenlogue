@@ -37,10 +37,12 @@ from chat.models import (  # noqa: E402
 from chat.sending import MessageSendingService  # noqa: E402
 from chat.service import ChatService  # noqa: E402
 from chat_controller import ChatSessionController  # noqa: E402
+from i18n import tr  # noqa: E402
 from storage.chat_repository import SqliteChatRepository  # noqa: E402
 from storage.database import AuthDatabase  # noqa: E402
 from storage.draft_repository import SqliteDraftRepository  # noqa: E402
 from storage.message_repository import SqliteMessageRepository  # noqa: E402
+from tests.test_chat_menu import walk  # noqa: E402
 from ui.chat_view import ChatWorkspaceView  # noqa: E402
 
 NOW = datetime(2026, 8, 1, tzinfo=UTC)
@@ -85,13 +87,20 @@ class FakePage:
 class FakeCatalogService:
     def __init__(self, catalog: ModelCatalog) -> None:
         self.catalog = catalog
+        self._cached: ModelCatalog | None = None
+
+    def peek_catalog(self) -> ModelCatalog | None:
+        return self._cached
+
+    def cache_remaining_seconds(self) -> float | None:
+        return None
 
     async def get_catalog(self, api_key: str) -> ModelCatalog:
-        _ = api_key
+        self._cached = self.catalog
         return self.catalog
 
     def clear_cache(self) -> None:
-        return None
+        self._cached = None
 
 
 class FakeCatalogClient:
@@ -99,13 +108,11 @@ class FakeCatalogClient:
         self.models = models
 
     async def fetch_models(self, api_key: str) -> tuple[CatalogModel, ...]:
-        _ = api_key
         return self.models
 
 
 class FakeKeyValidator:
     async def validate_key(self, api_key: str) -> KeyValidationResult:
-        _ = api_key
         return KeyValidationResult(KeyValidationStatus.ACCEPTED_WITHOUT_LIMIT)
 
 
@@ -115,7 +122,6 @@ class FakeCompletionClient:
         self.calls = 0
 
     async def complete(self, *args, **kwargs) -> ChatCompletionResult:
-        _ = (args, kwargs)
         self.calls += 1
         return self.results.pop(0)
 
@@ -130,7 +136,6 @@ class BlockingCompletionClient(FakeCompletionClient):
         self.calls += 1
         self.started.set()
         await self.release.wait()
-        _ = (args, kwargs)
         return self.results.pop(0)
 
 
@@ -619,40 +624,6 @@ class ChatUiIntegrationTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_old_send_error_after_relogin_does_not_reach_same_chat(self) -> None:
         await self._finish_send_after_transition(relogin=True, same_chat=True)
-
-    async def test_old_limits_read_after_relogin_does_not_open_dialog(self) -> None:
-        chat_id = await self._create_chat(ChatMode.FREE)
-        controller, _ = self._controller([])
-        await self._activate(controller)
-        await controller.select_chat(chat_id)
-        entered = asyncio.Event()
-        release = asyncio.Event()
-        original = controller._interaction.load_state
-        calls = 0
-
-        async def delayed_load(target: str):
-            nonlocal calls
-            calls += 1
-            state = await original(target)
-            if calls == 1:
-                entered.set()
-                await asyncio.wait_for(release.wait(), timeout=3)
-            return state
-
-        with patch.object(controller._interaction, "load_state", delayed_load):
-            operation = asyncio.create_task(controller.request_edit_limits(chat_id))
-            try:
-                await asyncio.wait_for(entered.wait(), timeout=3)
-                await controller.lock_application()
-                await self._activate(controller)
-                await controller.select_chat(chat_id)
-                self.assertEqual(self.page.dialogs, [])
-                release.set()
-                await asyncio.wait_for(operation, timeout=3)
-                self.assertEqual(self.page.dialogs, [])
-            finally:
-                release.set()
-                await asyncio.wait_for(operation, timeout=3)
 
     async def _finish_send_after_transition(
         self,
@@ -1157,6 +1128,7 @@ class ChatUiIntegrationTests(unittest.IsolatedAsyncioTestCase):
 
         view = controller._workspace_view
         assert view is not None
+        original_turn_id = self.message_repository.list_turns(chat_id)[0].id
         retry_button = _find_retry_button(view)
         handler = cast(
             Callable[[ft.Event[ft.TextButton]], Awaitable[None]],
@@ -1166,6 +1138,9 @@ class ChatUiIntegrationTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(client.calls, 2)
         self.assertEqual(len(self.message_repository.list_turns(chat_id)), 1)
+        self.assertEqual(
+            self.message_repository.list_turns(chat_id)[0].id, original_turn_id
+        )
         self.assertEqual(
             [
                 message.content
@@ -1572,18 +1547,9 @@ def _known_error(
 
 def _find_retry_button(view: ChatWorkspaceView) -> ft.TextButton:
     assert view.message_history is not None
-    for row in view.message_history.control.controls:
-        if not isinstance(row, ft.Row):
-            continue
-        for bubble in row.controls:
-            if not isinstance(bubble, ft.Container) or not isinstance(
-                bubble.content,
-                ft.Column,
-            ):
-                continue
-            for control in bubble.content.controls:
-                if isinstance(control, ft.TextButton):
-                    return control
+    for control in walk(view.message_history.control):
+        if isinstance(control, ft.TextButton) and control.content == tr("common.retry"):
+            return control
     raise AssertionError("Кнопка повтора не найдена")
 
 

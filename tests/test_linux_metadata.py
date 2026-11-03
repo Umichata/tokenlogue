@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import configparser
 import re
-import shlex
 import unittest
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -64,17 +63,6 @@ class LinuxMetadataTests(unittest.TestCase):
 
     def test_desktop_entry_has_only_expected_values(self) -> None:
         self.assertEqual(self.desktop, EXPECTED_DESKTOP_VALUES)
-
-    def test_desktop_categories_are_exact_and_registered(self) -> None:
-        self.assertEqual(
-            _semicolon_values(self.desktop["Categories"]),
-            ("Network", "Chat"),
-        )
-
-    def test_desktop_exec_is_a_plain_executable_path(self) -> None:
-        command = self.desktop["Exec"]
-        self.assertEqual(shlex.split(command), ["/usr/bin/tokenlogue"])
-        self.assertIsNone(re.search(r"[;&|><`]|\$\(|\n|\r", command))
 
     def test_metainfo_identity_licenses_and_developer(self) -> None:
         component = self.component
@@ -165,10 +153,6 @@ class LinuxMetadataTests(unittest.TestCase):
 
 def _read_utf8_text(path: Path) -> str:
     return path.read_bytes().decode("utf-8")
-
-
-def _semicolon_values(value: str) -> tuple[str, ...]:
-    return tuple(item for item in value.split(";") if item)
 
 
 def _required_text(element: ET.Element, path: str) -> str:

@@ -27,6 +27,7 @@ from auth.models import (  # noqa: E402
 from auth.service import AuthService  # noqa: E402
 from chat.accounting import ChatBudgetService  # noqa: E402
 from chat.drafts import ChatDraftService  # noqa: E402
+from chat.models import FREE_ROUTER_MODEL, ModelCatalog  # noqa: E402
 from chat.sending import MessageSendingService  # noqa: E402
 from chat.service import ChatService  # noqa: E402
 from tests.draft_fakes import MemoryDraftRepository  # noqa: E402
@@ -99,6 +100,9 @@ class FakeAuthService:
     async def login(self, _pin: str) -> AuthResult:
         return self.login_result
 
+    async def pin_lock_seconds_remaining(self) -> int:
+        return self.login_result.lock_seconds_remaining
+
     def suggest_pin(self) -> str:
         return "0007"
 
@@ -135,9 +139,21 @@ class FakeChatService:
 class FakeCatalogService:
     def __init__(self) -> None:
         self.clear_calls = 0
+        self._cached: ModelCatalog | None = None
+
+    def peek_catalog(self) -> ModelCatalog | None:
+        return self._cached
+
+    def cache_remaining_seconds(self) -> float | None:
+        return None
+
+    async def get_catalog(self, _api_key: str) -> ModelCatalog:
+        self._cached = ModelCatalog((FREE_ROUTER_MODEL,), (), False)
+        return self._cached
 
     def clear_cache(self) -> None:
         self.clear_calls += 1
+        self._cached = None
 
 
 class FakeKeyValidator:
@@ -202,6 +218,9 @@ class AppControllerTests(unittest.IsolatedAsyncioTestCase):
         controller = _make_controller(page, service)
         await controller.start()
 
+        await controller._activate_session(
+            "synthetic-session", KeyValidityState.VALID, KeyLimitInfo.unknown()
+        )
         await controller.request_reset()
         controller.cancel_reset()
 
@@ -215,6 +234,9 @@ class AppControllerTests(unittest.IsolatedAsyncioTestCase):
         controller = _make_controller(page, service, chat_service=chat_service)
         await controller.start()
 
+        await controller._activate_session(
+            "synthetic-session", KeyValidityState.VALID, KeyLimitInfo.unknown()
+        )
         await controller.request_reset()
         await controller.confirm_reset()
 
@@ -237,22 +259,15 @@ class AppControllerTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(view.key_field.value, "")
         self.assertGreater(service.cancel_calls, 0)
 
-    async def test_secret_controls_redact_repr(self) -> None:
+    async def test_key_control_redacts_repr(self) -> None:
         async def text_callback(_value: str) -> None:
-            return None
-
-        async def callback() -> None:
             return None
 
         marker = "sensitive-test-marker"
         key_view = KeyEntryView(text_callback)
         key_view.key_field.value = marker
-        pin_view = PinSetupView("", text_callback, lambda: "0007", callback)
-        pin_view.pin_field.value = marker
-        pin_view.repeat_field.value = marker
 
         self.assertNotIn(marker, repr(key_view.key_field))
-        self.assertNotIn(marker, repr(pin_view.pin_field))
 
     async def test_pin_confirmation_button_has_visible_control_states(self) -> None:
         async def callback() -> None:
@@ -279,11 +294,10 @@ class AppControllerTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(view.confirm_button.disabled)
 
     async def test_key_button_follows_text_and_submits_current_value(self) -> None:
-        submitted = 0
+        submitted = []
 
-        async def text_callback(_value: str) -> None:
-            nonlocal submitted
-            submitted += 1
+        async def text_callback(value: str) -> None:
+            submitted.append(value)
 
         view = KeyEntryView(text_callback)
         self.assertTrue(view.submit_button.disabled)
@@ -297,7 +311,7 @@ class AppControllerTests(unittest.IsolatedAsyncioTestCase):
         view.set_busy(False)
         self.assertFalse(view.submit_button.disabled)
         await view._submit_value()
-        self.assertEqual(submitted, 1)
+        self.assertEqual(submitted, ["test-value"])
 
         view.clear_key()
         self.assertTrue(view.submit_button.disabled)
@@ -306,10 +320,7 @@ class AppControllerTests(unittest.IsolatedAsyncioTestCase):
         async def text_callback(_value: str) -> None:
             return None
 
-        async def callback() -> None:
-            return None
-
-        view = PinLoginView(text_callback, callback)
+        view = PinLoginView(text_callback)
         self.assertTrue(view.submit_button.disabled)
         self.assertIsNotNone(view.pin_field.on_change)
 

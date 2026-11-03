@@ -390,7 +390,9 @@ validate_symlinks "$appdir"
 desktop-file-validate "$desktop_staged"
 appstreamcli validate --no-net \
     "$appdir/usr/share/metainfo/io.github.umichata.tokenlogue.metainfo.xml"
-bash -n "$appdir/AppRun" "$appdir/usr/bin/tokenlogue"
+for staged_launcher in "$appdir/AppRun" "$appdir/usr/bin/tokenlogue"; do
+    bash -n "$staged_launcher"
+done
 
 # Read-only final scan includes newly collected notices. A missing tool or
 # unreadable file must fail packaging; do not edit files after manifest hashing.

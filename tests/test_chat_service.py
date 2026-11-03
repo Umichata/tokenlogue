@@ -58,6 +58,20 @@ class MemoryChatRepository:
     def get_chat(self, chat_id: str) -> Chat | None:
         return self.chats.get(chat_id)
 
+    def set_paid_without_confirmation(
+        self, chat_id: str, enabled: bool, revision: str, updated_at: datetime
+    ) -> bool:
+        chat = self.chats.get(chat_id)
+        if chat is None:
+            return False
+        self.chats[chat_id] = replace(
+            chat,
+            paid_without_confirmation=enabled,
+            paid_policy_revision=revision,
+            updated_at=updated_at,
+        )
+        return True
+
     def rename_chat(self, chat_id: str, title: str, updated_at: datetime) -> bool:
         chat = self.chats.get(chat_id)
         if chat is None:
@@ -85,7 +99,6 @@ class MemoryChatRepository:
         return self.chats.pop(chat_id, None) is not None
 
     def list_messages(self, chat_id: str) -> list[Message]:
-        _ = chat_id
         return []
 
 

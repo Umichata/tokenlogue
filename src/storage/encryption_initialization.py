@@ -11,6 +11,13 @@ from pathlib import Path
 
 from storage.database_connections import database_lock
 from storage.field_cipher import CiphertextError
+from storage.request_attempts import (
+    TABLE as REQUEST_ATTEMPTS_TABLE,
+)
+from storage.request_attempts import (
+    create_request_attempts_schema,
+    validate_request_attempts_schema,
+)
 
 
 def _cell(value: object) -> object:
@@ -61,8 +68,13 @@ def plaintext_evidence(path: Path) -> str:
                     "AND name NOT LIKE 'sqlite_%'"
                 )
             }
+            evidence_tables = TABLES
+            if REQUEST_ATTEMPTS_TABLE in tables:
+                validate_request_attempts_schema(connection)
+                create_request_attempts_schema(expected)
+                evidence_tables = (*TABLES, REQUEST_ATTEMPTS_TABLE)
             if (
-                tables != set(TABLES)
+                tables != set(evidence_tables)
                 or connection.execute(
                     "SELECT 1 FROM sqlite_master WHERE type IN ('view','trigger')"
                 ).fetchone()
@@ -92,7 +104,7 @@ def plaintext_evidence(path: Path) -> str:
                     )
                 ]
             )
-            for table in TABLES:
+            for table in evidence_tables:
                 columns = [
                     tuple(row)
                     for row in connection.execute(f'PRAGMA table_info("{table}")')

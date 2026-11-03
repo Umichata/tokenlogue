@@ -23,12 +23,7 @@ class WorkspacePreferencesTests(unittest.IsolatedAsyncioTestCase):
     click = menu_fixture.ChatMenuTests.click
 
     def setUp(self):
-        from i18n import configure_localization
-        from preferences import PreferencesStore
-
         menu_fixture.ChatMenuTests.setUp(cast(menu_fixture.ChatMenuTests, self))
-        configure_localization(PreferencesStore())
-        self.addCleanup(configure_localization, PreferencesStore())
 
     async def test_wide_toggle_preserves_editor_and_history_and_reclaims_width(self):
         self.page.width = 760
@@ -73,7 +68,7 @@ class WorkspacePreferencesTests(unittest.IsolatedAsyncioTestCase):
             view._handle_size_change(
                 cast(ft.LayoutSizeChangeEvent, SimpleNamespace(width=420, height=300))
             )
-            self.assertEqual(composer.message_field.max_lines, 2)
+            self.assertEqual(composer.message_field.max_lines, 1)
             self.assertIs(view.composer, composer)
             self.assertIs(view.message_history, history)
             self.assertEqual(view.editor_value, draft)

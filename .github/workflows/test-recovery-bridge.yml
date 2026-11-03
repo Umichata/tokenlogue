@@ -1,0 +1,68 @@
+name: Test recovery bridge Dart logic
+
+on:
+  push:
+    paths:
+      - ".github/workflows/test-recovery-bridge.yml"
+      - ".python-version"
+      - "packaging/android/**"
+      - "pyproject.toml"
+      - "uv.lock"
+      - "src/main.py"
+      - "src/app.py"
+      - "src/auth/service.py"
+      - "src/platform_security/device_recovery.py"
+      - "src/platform_security/linux_recovery.py"
+      - "src/storage/data_protection.py"
+  pull_request:
+    paths:
+      - ".github/workflows/test-recovery-bridge.yml"
+      - ".python-version"
+      - "packaging/android/**"
+      - "pyproject.toml"
+      - "uv.lock"
+      - "src/main.py"
+      - "src/app.py"
+      - "src/auth/service.py"
+      - "src/platform_security/device_recovery.py"
+      - "src/platform_security/linux_recovery.py"
+      - "src/storage/data_protection.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: recovery-bridge-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  recovery-bridge:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Check out Tokenlogue
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Check out the pinned official Flutter SDK
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: flutter/flutter
+          ref: 058e0af2c2b57e369d905a03ac9748b0ebf543c6 # 3.44.8
+          path: .ci-flutter-sdk
+          persist-credentials: false
+
+      - name: Prepare Flutter VM test inputs
+        env:
+          FLUTTER_SUPPRESS_ANALYTICS: "true"
+          PUB_ENVIRONMENT: flutter_bot
+        run: |
+          set -Eeuo pipefail
+          git -C .ci-flutter-sdk fetch --no-tags --depth=1 origin refs/tags/3.44.8:refs/tags/3.44.8
+          test "$(git -C .ci-flutter-sdk rev-parse '3.44.8^{commit}')" = 058e0af2c2b57e369d905a03ac9748b0ebf543c6
+          .ci-flutter-sdk/bin/flutter --no-version-check --suppress-analytics precache --universal
+
+      - name: Run locked recovery bridge tests
+        run: python3 packaging/android/run_recovery_tests.py --flutter-sdk .ci-flutter-sdk

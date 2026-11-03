@@ -1,0 +1,10 @@
+{
+  "protection_intro.title": "Проверка локальной защиты",
+  "protection_intro.instructions": "Профиль и PIN сохранены. Начните проверку, чтобы заблокировать экран ОС. Разблокируйте его обычным способом, затем введите сохранённый PIN Tokenlogue. Проверка не отправляет сообщения.",
+  "protection_intro.start": "Начать проверку",
+  "protection_intro.repeat": "Проверить снова",
+  "protection_intro.continue": "Перейти к чатам",
+  "protection_intro.continue_manual": "Продолжить с ручной блокировкой",
+  "protection_intro.manual_notice": "Автоблокировка вместе с экраном ещё не подтверждена. Если продолжите, блокируйте Tokenlogue вручную. Проверку можно повторить из меню.",
+  "protection_intro.preferences_failed": "Не удалось сохранить шаг настройки. Повторите попытку. Профиль и PIN не сброшены."
+}
