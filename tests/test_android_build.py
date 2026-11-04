@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import importlib
 import io
 import json
@@ -30,7 +31,13 @@ class AndroidBuildTests(unittest.TestCase):
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name)
 
-    def archive(self, *, settings: str | None = None, extra: str | None = None) -> Path:
+    def archive(
+        self,
+        *,
+        settings: str | None = None,
+        extra: str | None = None,
+        root_gradle: str | None = None,
+    ) -> Path:
         path = self.root / "template.zip"
         with ZipFile(path, "w") as zipped:
             zipped.writestr("build/cookiecutter.json", '{"out_dir": "flutter"}')
@@ -47,6 +54,13 @@ class AndroidBuildTests(unittest.TestCase):
             zipped.writestr(
                 helper.APP_GRADLE, 'signingConfig = signingConfigs.getByName("debug")'
             )
+            original_root_gradle = (
+                'subprojects { project.evaluationDependsOn(":app") }\n'
+            )
+            zipped.writestr(
+                helper.ROOT_GRADLE,
+                original_root_gradle if root_gradle is None else root_gradle,
+            )
             wrapper = ZipInfo("build/{{cookiecutter.out_dir}}/android/gradlew")
             wrapper.external_attr = (stat.S_IFREG | 0o755) << 16
             zipped.writestr(wrapper, "#!/bin/sh\n")
@@ -55,7 +69,21 @@ class AndroidBuildTests(unittest.TestCase):
         self.addCleanup(patch.stopall)
         patch.object(helper, "TEMPLATE_SIZE", path.stat().st_size).start()
         patch.object(helper, "TEMPLATE_SHA256", helper.sha256(path)).start()
+        patch.object(
+            helper,
+            "ROOT_GRADLE_SHA256",
+            hashlib.sha256(original_root_gradle.encode()).hexdigest(),
+        ).start()
         return path
+
+    def copy_package_inputs(self, repo: Path, *, with_module: bool = False) -> None:
+        names = [helper.PACKAGE_STAGE_GRADLE, helper.PACKAGE_POLICY]
+        if with_module:
+            names.append("packaging/android/package_stage.py")
+        for name in names:
+            destination = repo / name
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_bytes((PROJECT / name).read_bytes())
 
     def test_wrong_checksum_is_rejected_before_extraction(self) -> None:
         archive = self.archive()
@@ -103,6 +131,144 @@ class AndroidBuildTests(unittest.TestCase):
             archive = self.archive(settings=settings)
             with self.assertRaisesRegex(ValueError, "AGP declaration"):
                 helper.prepare_template(archive, self.root / "derived")
+
+    def test_changed_root_gradle_is_rejected_before_derivation(self) -> None:
+        archive = self.archive(root_gradle="unexpected root Gradle content\n")
+        with self.assertRaisesRegex(ValueError, "root Android Gradle"):
+            helper.prepare_template(archive, self.root / "derived")
+        self.assertFalse((self.root / "derived").exists())
+
+    def test_package_stage_hook_is_mandatory_and_part_of_template_identity(
+        self,
+    ) -> None:
+        archive = self.archive()
+        identities = []
+        for arch in ("x86_64", "arm64-v8a"):
+            with self.subTest(arch=arch):
+                template, identity = helper.prepare_template(
+                    archive, self.root / arch, android_abi=arch
+                )
+                identities.append(identity)
+                root_gradle = (
+                    template / "{{cookiecutter.out_dir}}/android/build.gradle.kts"
+                ).read_text()
+                hook = (
+                    (PROJECT / helper.PACKAGE_STAGE_GRADLE)
+                    .read_text()
+                    .replace("__TOKENLOGUE_ANDROID_ABI__", arch)
+                )
+                self.assertTrue(root_gradle.endswith(hook))
+                self.assertIn("tasks.register<Exec>", hook)
+                self.assertIn("outputs.upToDateWhen { false }", hook)
+                self.assertIn('path == ":serious_python_android"', hook)
+                self.assertIn('name.startsWith("splitSitePackages_")', hook)
+                self.assertIn('name.startsWith("splitStdlib_")', hook)
+                self.assertIn('name == "packageApp"', hook)
+                self.assertIn("dependsOn(tokenloguePreparePackageStage)", hook)
+                self.assertIn("gradle.projectsEvaluated", hook)
+                self.assertIn("throw GradleException", hook)
+                self.assertIn('System.getenv("TOKENLOGUE_PACKAGING_PYTHON")', hook)
+                self.assertIn(
+                    'source.resolve("packaging/android/package_stage.py")', hook
+                )
+                self.assertNotIn("isIgnoreExitValue", hook)
+        self.assertNotEqual(*identities)
+
+    def test_helper_hook_failure_blocks_python_zip_and_signing(self) -> None:
+        """Обычный helper передаёт hook те же snapshot, ABI и run-dir."""
+        archive = self.archive()
+        repo = self.root / "hook-repo"
+        for name in ("src/main.py", *helper.OWN_FILES):
+            path = repo / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text("fixture source\n", "utf-8")
+        self.copy_package_inputs(repo, with_module=True)
+        (repo / "pyproject.toml").write_bytes((PROJECT / "pyproject.toml").read_bytes())
+        python = repo / ".venv/bin/python"
+        python.parent.mkdir(parents=True)
+        python.symlink_to(sys.executable)
+        run = self.root / "hook-run"
+        events = []
+        outcomes = []
+
+        def run_flet(command, source, environment, actual_run):
+            events.append("flet")
+            self.assertEqual(
+                command[:3], [str(repo / ".venv/bin/flet"), "build", "apk"]
+            )
+            template = Path(command[command.index("--template") + 1])
+            hook = (
+                template / "{{cookiecutter.out_dir}}/android/build.gradle.kts"
+            ).read_text()
+            self.assertIn('val tokenloguePackagingAbi = "arm64-v8a"', hook)
+            self.assertIn('source = rootProject.projectDir.resolve("../../..")', hook)
+            self.assertIn(
+                'source.resolve("packaging/android/package_stage.py").path', hook
+            )
+            self.assertIn('"--run-dir",\n            source.parentFile.path', hook)
+            self.assertIn('"--abi",\n            tokenloguePackagingAbi', hook)
+            events.append("prepare")
+            result = subprocess.run(
+                [
+                    environment["TOKENLOGUE_PACKAGING_PYTHON"],
+                    "-I",
+                    "-B",
+                    str(source / "packaging/android/package_stage.py"),
+                    "--run-dir",
+                    str(source.parent),
+                    "--abi",
+                    "arm64-v8a",
+                ],
+                cwd=source,
+                env=environment,
+                capture_output=True,
+                text=True,
+                timeout=30,
+            )
+            outcomes.append(result)
+            if result.returncode == 0:
+                events.extend(("python-zip", "sign"))
+            self.assertEqual(actual_run, run)
+            return result.returncode
+
+        argv = [
+            "build_apk.py",
+            "--no-device-recovery",
+            "--run-dir",
+            str(run),
+            "--jdk-home",
+            str(self.root / "jdk"),
+            "--sdk-root",
+            str(self.root / "sdk"),
+            "--template-zip",
+            str(archive),
+            "--arch",
+            "arm64-v8a",
+        ]
+        with (
+            patch.object(sys, "argv", argv),
+            patch.object(helper, "PROJECT_ROOT", repo),
+            patch.object(helper.Path, "home", return_value=self.root),
+            patch.dict(os.environ, {}, clear=True),
+            patch.object(
+                helper.subprocess,
+                "check_output",
+                side_effect=[b"src/main.py\0pyproject.toml\0", "test-head\n"],
+            ),
+            patch.object(helper, "check_tools"),
+            patch.object(helper, "run_logged", side_effect=run_flet),
+            redirect_stdout(io.StringIO()),
+            redirect_stderr(io.StringIO()),
+        ):
+            self.assertNotEqual(helper.main(), 0)
+        self.assertEqual(events, ["flet", "prepare"])
+        self.assertEqual(len(outcomes), 1)
+        self.assertNotIn("Traceback", outcomes[0].stderr)
+        metadata = json.loads((run / "preparation.json").read_text())
+        self.assertEqual(
+            metadata["package_policy"]["sha256"],
+            helper.sha256(run / "source" / helper.PACKAGE_POLICY),
+        )
 
     def test_path_traversal_is_rejected(self) -> None:
         for member in ("build/../outside", "/outside", "build/..\\outside"):
@@ -289,6 +455,7 @@ assert Path(initialization.__file__).resolve() == Path(sys.argv[1]) / 'storage/e
             path = repo / name
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text("current source bytes", "utf-8")
+        self.copy_package_inputs(repo)
         (repo / "pyproject.toml").write_bytes((PROJECT / "pyproject.toml").read_bytes())
         for index, (options, arch, prepare_only) in enumerate(
             (
@@ -466,6 +633,7 @@ assert Path(initialization.__file__).resolve() == Path(sys.argv[1]) / 'storage/e
             path = repo / name
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text("current source", "utf-8")
+        self.copy_package_inputs(repo)
         (repo / "pyproject.toml").write_bytes((PROJECT / "pyproject.toml").read_bytes())
         run = self.root / "build-number"
         argv = [
@@ -542,6 +710,7 @@ assert Path(initialization.__file__).resolve() == Path(sys.argv[1]) / 'storage/e
                         "ANDROID_USER_HOME",
                         "XDG_CONFIG_HOME",
                         "GRADLE_USER_HOME",
+                        "TOKENLOGUE_PACKAGING_PYTHON",
                         "PATH",
                     )
                 },
@@ -552,6 +721,7 @@ assert Path(initialization.__file__).resolve() == Path(sys.argv[1]) / 'storage/e
                 return_value=(self.root / "template", "identity"),
             ) as prepare,
             patch.object(helper, "snapshot", return_value=[]),
+            patch.object(helper, "sha256", return_value="policy-sha256"),
             patch.object(helper.subprocess, "check_output", return_value="test-head\n"),
             patch.dict(os.environ, {}, clear=True),
             redirect_stdout(io.StringIO()),

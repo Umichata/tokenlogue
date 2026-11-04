@@ -19,7 +19,7 @@ from pathlib import Path, PurePosixPath
 from urllib.parse import urlsplit
 from zipfile import ZipFile
 
-RECIPE_VERSION = "4"
+RECIPE_VERSION = "5"
 TEMPLATE_SIZE = 489103
 TEMPLATE_SHA256 = "8f95dc20ef6d901d9b5ee59f00e33d19f1d2bc6be8d6d3b800c4aab3d7315b73"
 TEMPLATE_URL = (
@@ -28,6 +28,9 @@ TEMPLATE_URL = (
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 OWN_FILES = (
     "packaging/android/build_apk.py",
+    "packaging/android/package_stage.py",
+    "packaging/android/package_stage.gradle.kts",
+    "packaging/android/crypto-selftest-policy.json",
     "src/auth/pin_policy.py",
     "src/chat/paid_consent.py",
     "src/chat/estimates.py",
@@ -98,6 +101,7 @@ OWN_FILES = (
     "src/ui/profile_deletion_view.py",
     "src/ui/security_status.py",
     "tests/test_android_build.py",
+    "tests/test_android_package_policy.py",
 )
 OLD_AGP = 'id("com.android.application") version "8.11.1" apply false'
 NEW_AGP = 'id("com.android.application") version "8.13.2" apply false'
@@ -106,6 +110,10 @@ WRAPPER = (
     "build/{{cookiecutter.out_dir}}/android/gradle/wrapper/gradle-wrapper.properties"
 )
 APP_GRADLE = "build/{{cookiecutter.out_dir}}/android/app/build.gradle.kts"
+ROOT_GRADLE = "build/{{cookiecutter.out_dir}}/android/build.gradle.kts"
+ROOT_GRADLE_SHA256 = "6a26dba2cb8dfba1e74f540b0d17a89d96c1301d3c3bfda14348bed257fddcba"
+PACKAGE_STAGE_GRADLE = "packaging/android/package_stage.gradle.kts"
+PACKAGE_POLICY = "packaging/android/crypto-selftest-policy.json"
 
 
 def sha256(path: Path) -> str:
@@ -125,6 +133,8 @@ def prepare_template(
     android_abi: str = "x86_64",
 ) -> tuple[Path, str]:
     """Validate before extraction and include all derived bytes in the path identity."""
+    if android_abi not in {"x86_64", "arm64-v8a"}:
+        raise ValueError("Unsupported Android ABI")
     if archive.stat().st_size != TEMPLATE_SIZE or sha256(archive) != TEMPLATE_SHA256:
         raise ValueError("Official Flet 0.86.5 template size or SHA-256 differs")
     files: dict[str, tuple[bytes, int]] = {}
@@ -159,6 +169,21 @@ def prepare_template(
         raise ValueError("Unexpected Gradle wrapper version")
     if b'signingConfig = signingConfigs.getByName("debug")' not in files[APP_GRADLE][0]:
         raise ValueError("Missing default test signing in official template")
+    root_gradle, root_mode = files[ROOT_GRADLE]
+    if hashlib.sha256(root_gradle).hexdigest() != ROOT_GRADLE_SHA256:
+        raise ValueError("Unexpected original root Android Gradle script")
+    stage_hook = PROJECT_ROOT / PACKAGE_STAGE_GRADLE
+    if stage_hook.is_symlink() or not stage_hook.is_file():
+        raise ValueError("Missing owned Android package stage hook")
+    hook_bytes = stage_hook.read_bytes()
+    if hook_bytes.count(b"__TOKENLOGUE_ANDROID_ABI__") != 1:
+        raise ValueError("Unexpected Android package stage ABI placeholder")
+    files[ROOT_GRADLE] = (
+        root_gradle
+        + b"\n"
+        + hook_bytes.replace(b"__TOKENLOGUE_ANDROID_ABI__", android_abi.encode()),
+        root_mode,
+    )
     files[SETTINGS] = (settings.replace(OLD_AGP.encode(), NEW_AGP.encode()), mode)
     if with_device_recovery:
         recipe = runpy.run_path(
@@ -312,6 +337,7 @@ def build_environment(jdk: Path, sdk: Path, run: Path) -> dict[str, str]:
         XDG_CONFIG_HOME=str(run / "flutter-config"),
         GRADLE_USER_HOME=str(run / "gradle-user-home"),
         PYTHONDONTWRITEBYTECODE="1",
+        TOKENLOGUE_PACKAGING_PYTHON=str(PROJECT_ROOT / ".venv/bin/python"),
     )
     environment["PATH"] = os.pathsep.join(
         (
@@ -453,6 +479,13 @@ def main() -> int:
                 "recipe_version": RECIPE_VERSION,
                 "device_recovery": args.device_recovery,
                 "native_paths_abi": args.arch if args.device_recovery else None,
+                "package_policy": {
+                    "schema": 1,
+                    "id": "pycryptodomex-selftest",
+                    "version": 1,
+                    "sha256": sha256(source / PACKAGE_POLICY),
+                    "stage": "compiled-site-packages-before-native-packaging",
+                },
                 "arch": args.arch,
                 "build_number_override": args.build_number,
                 "template_url": TEMPLATE_URL,
@@ -477,6 +510,7 @@ def main() -> int:
                         "ANDROID_USER_HOME",
                         "XDG_CONFIG_HOME",
                         "GRADLE_USER_HOME",
+                        "TOKENLOGUE_PACKAGING_PYTHON",
                         "PATH",
                     )
                 },

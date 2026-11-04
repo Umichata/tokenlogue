@@ -1,0 +1,1217 @@
+{
+  "schema": 1,
+  "id": "pycryptodomex-selftest",
+  "version": 1,
+  "stage": "compiled-site-packages-before-native-packaging",
+  "distribution": {
+    "name": "pycryptodomex",
+    "version": "3.23.0",
+    "metadata_path": "pycryptodomex-3.23.0.dist-info/METADATA",
+    "metadata_sha256": "5824ab95cf34d5489b6c5f650bf50b3dc3cb4b2c56c78cc35cde49b2c1197ab2"
+  },
+  "bytecode": {
+    "python": [
+      3,
+      12
+    ],
+    "magic": "cb0d0d0a",
+    "flags": 0,
+    "optimize": 0,
+    "fingerprint": "code-fields-v1",
+    "timestamp": "staging-generated",
+    "filename": "absolute-stage-source-path"
+  },
+  "sources": {
+    "arm64-v8a": {
+      "wheel_filename": "pycryptodomex-3.23.0-2-cp312-cp312-android_24_arm64_v8a.whl",
+      "wheel_sha256": "6178a0e5a17285a088f4ce7a5db9dd6f073b4e2f5da2aa48d87c78117b229b86",
+      "wheel_metadata_path": "pycryptodomex-3.23.0.dist-info/WHEEL",
+      "wheel_metadata_sha256": "8a009eb4c1528c4af7cd0c4d97bf11009eef11f302e2f708e852d625aaf46bde",
+      "wheel_record_sha256": "d29616200c499c8e36ad7cce42644d23ec99730ccc9e398b09b1c72c087dd489",
+      "wheel_url": "https://pypi.flet.dev/-/ver_OhOs6/pycryptodomex-3.23.0-2-cp312-cp312-android_24_arm64_v8a.whl"
+    },
+    "x86_64": {
+      "wheel_filename": "pycryptodomex-3.23.0-2-cp312-cp312-android_24_x86_64.whl",
+      "wheel_sha256": "fc6c2b58d8d71f8c4c350f0bab86440599efde27dd17d56bd03f4ab9ca6c5f0e",
+      "wheel_metadata_path": "pycryptodomex-3.23.0.dist-info/WHEEL",
+      "wheel_metadata_sha256": "2be06236085c768447aba46150ef88df7f5f3c1b13d19e2822ed5ddab40b8210",
+      "wheel_record_sha256": "5f66c3783d2e227a416abe704c65ac6ec7f3f067f9ee56cf43715f83b16e44da",
+      "wheel_url": "https://pypi.flet.dev/-/ver_83z15/pycryptodomex-3.23.0-2-cp312-cp312-android_24_x86_64.whl"
+    }
+  },
+  "files": [
+    {
+      "path": "Cryptodome/SelfTest/Cipher/__init__.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Cipher/__init__.py",
+      "source_size": 3802,
+      "source_sha256": "0e556f6e9e705e27c5e2af14b840081be4ba81a9cc07a38271b92c705fbcd021",
+      "code_sha256": "9ed198fe764d3d3f225a8c88d55450f43811fdf692a4f5ed1e6ed559f3f5cbf4",
+      "reference_pyc": {
+        "size": 3379,
+        "sha256": "b606f806954964871418242d0feb11d512c097ffcd046cf3d4447cf03af2d771"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Cipher/common.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Cipher/common.py",
+      "source_size": 17336,
+      "source_sha256": "0844a4e5ea07c762406bbe58c9a01e04c1c7bd03c450afefd2e0283db74d5db8",
+      "code_sha256": "afdb5950f6b697454ac2265f5192303f9f1a18d3c53894849243d47eaa5f61cd",
+      "reference_pyc": {
+        "size": 22025,
+        "sha256": "0d3eb8dda34abbd7d5cda5d3610c690b93fb2704f4dd399b12fd8281f86e6edb"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Cipher/test_AES.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Cipher/test_AES.py",
+      "source_size": 71751,
+      "source_sha256": "bc035e1453dcd9fb945b223b4e3d64e9706fbb4493896d42bf57fbf1f822d81c",
+      "code_sha256": "c15e9ae75be439734e2b52d67f318d5e1ba3455676c518df4bf0b85d9a281d28",
+      "reference_pyc": {
+        "size": 53136,
+        "sha256": "a4132f202a0345ac9d9146ba19b20f8a0d2e9d884c34d39adca0a1043fcfb667"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Cipher/test_ARC2.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Cipher/test_ARC2.py",
+      "source_size": 6474,
+      "source_sha256": "807da283eb4d8986cde7f8ecbfa1ec7905b045d90ae99d51ad03d127d6a7e3af",
+      "code_sha256": "d686c11fcaa0baeef645bbcf25d08fc3ac00292aaeb28ffe9b591b2d5df55146",
+      "reference_pyc": {
+        "size": 6406,
+        "sha256": "229a4e32885ee9360bd7d0f5e90016eafd1e69fcad254488280a6f454ae39c1f"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Cipher/test_ARC4.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Cipher/test_ARC4.py",
+      "source_size": 24995,
+      "source_sha256": "40a5128049f575393c61cceff7254a00899b2075d619fddd425e003466dfa4e6",
+      "code_sha256": "cee90a93b58c1c19dc1a540cb6dfc0088843d4d29a3ac9c325c095f09404977d",
+      "reference_pyc": {
+        "size": 26213,
+        "sha256": "534f92abff556f61e711d4eb5d4c49a9770f5b469edfd688a19e35c217e5abe6"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Cipher/test_Blowfish.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Cipher/test_Blowfish.py",
+      "source_size": 7242,
+      "source_sha256": "1f72fd97f21f36fc73bedc62c6ae1fac7e53a0b380d471a7428174f031c1e4b3",
+      "code_sha256": "42c51a399ed477cdb8a835d9e5282bf3f502bdf7d3b00dc66a4a87dee2317d75",
+      "reference_pyc": {
+        "size": 6390,
+        "sha256": "b8eaa9e2f020a7c211220489271dc3a31458c3362873247ad462c3b8213ed649"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Cipher/test_CAST.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Cipher/test_CAST.py",
+      "source_size": 3291,
+      "source_sha256": "37e25233e5f19ec6da0a4da535c0d520046e335a0aa912a1d9c117cc605268b2",
+      "code_sha256": "ce30228e30ce09a92e0c8c245e7b3c94f099561e9bdccffa8db61fa31c336b1d",
+      "reference_pyc": {
+        "size": 3797,
+        "sha256": "1153fc3459ce4cfc583dac436742ecab1e4bb8ab451380baa092cf50eb070871"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Cipher/test_CBC.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Cipher/test_CBC.py",
+      "source_size": 20222,
+      "source_sha256": "b853cc4c2d8b6fbfeadfa4cd2ffc077d1243953d634a9289ac09090d355eda85",
+      "code_sha256": "55aec38c0585fdb88e5c758a419ec8758af9c47e345e85f14d51346093b7f452",
+      "reference_pyc": {
+        "size": 29095,
+        "sha256": "baf450833dc3b177b1afefcde3c8dd3cca6ea202cdb867987d7bba2226c0c8e0"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Cipher/test_CCM.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Cipher/test_CCM.py",
+      "source_size": 38513,
+      "source_sha256": "7cb7002aa796c65fac605ca5eb2eaae5ec8bdb0f567e6eb4cb4090c24e62238e",
+      "code_sha256": "b43502cde6c3983ee5091acea2d2b6342326e56bcff5866957f53a31a2a27726",
+      "reference_pyc": {
+        "size": 51666,
+        "sha256": "b94ab856f4485635dbaae26d0754e50f5e21fef384756be4374ac8424aef8b49"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Cipher/test_CFB.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Cipher/test_CFB.py",
+      "source_size": 16085,
+      "source_sha256": "2117519db8783c7295558f1f225b2b9f152e491b8118e16e720d0db9ec9eb1b4",
+      "code_sha256": "0b9bcf8a73ecece5751fd57cbcaeadaf4cc60f3d45b2f13ef2f52fb1239c6e28",
+      "reference_pyc": {
+        "size": 18364,
+        "sha256": "68ab6f7dbe9cdb72cdc21b38324be92f9e9bdbeb2cb6324ce6a252d2befc31c9"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Cipher/test_CTR.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Cipher/test_CTR.py",
+      "source_size": 21334,
+      "source_sha256": "acfdb5a40599ea7049d89b84718a6d59d1158b8ef1952d7a3da190b8209d80c9",
+      "code_sha256": "7e96cd78f67139ee7d13b6ad1b579d01ca7ef60b851dfdc90115d3db371ff7a6",
+      "reference_pyc": {
+        "size": 29629,
+        "sha256": "84ac8ba83dfb7296162a5cc9905b3b3ae7e3cbb5ea69d84e984e3ac536daf474"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Cipher/test_ChaCha20.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Cipher/test_ChaCha20.py",
+      "source_size": 20340,
+      "source_sha256": "c822d9eb51f5a2f6abbc4856faaa1e2080c1b84422c7ef80a856364148c066ba",
+      "code_sha256": "4a54e3b84fe781c191fd62aa7948c21c9c6c3eba23fc4144ddb24b5d5dc9cc37",
+      "reference_pyc": {
+        "size": 24012,
+        "sha256": "41f4b61f83052ee10b9842b45a39706355cc707599407c77d33f00994b82d92b"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Cipher/test_ChaCha20_Poly1305.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Cipher/test_ChaCha20_Poly1305.py",
+      "source_size": 30742,
+      "source_sha256": "759428c6fab16f731938f98e3d7d0911427e9b593aa402621ceee3de7e486819",
+      "code_sha256": "ad5c10ea721a3fd8348fc2f0cd5b108a3609812e2aad8af103ded6f77c062253",
+      "reference_pyc": {
+        "size": 40669,
+        "sha256": "fd28e3b94aef481e16fa339339b636ac9ece495dcb8f58d6e73be857553dd28f"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Cipher/test_DES.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Cipher/test_DES.py",
+      "source_size": 15951,
+      "source_sha256": "12c81047d82fbc911daebe7c1420f5694ce6ca36cb4fe14c6b0a0563f80caa8e",
+      "code_sha256": "f33e704ef281ec3fafef0341c3adf5a99b6f252ec8e0a0ac111c97257cc40fb2",
+      "reference_pyc": {
+        "size": 16539,
+        "sha256": "3fc73d4cfc960cfc65baf71b23a7481acdbc42f12303df3cbe9521da76e195dd"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Cipher/test_DES3.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Cipher/test_DES3.py",
+      "source_size": 6585,
+      "source_sha256": "db911f20e784806b2daf058ae22e480420de72e6836e139d438ff877f9f9da5b",
+      "code_sha256": "1ad9d60a5e974980363be5ba329becbd3f21366d24e92740c9f7202fd866a384",
+      "reference_pyc": {
+        "size": 7396,
+        "sha256": "e1587f1ff612eb4b00bd2ae83e9a735183c9979e60132b9aa620f1ce353c96e4"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Cipher/test_EAX.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Cipher/test_EAX.py",
+      "source_size": 28853,
+      "source_sha256": "cbde21049d533c3699f362aa77eb6808a5165f5de8020abd31a30eae457b2803",
+      "code_sha256": "782559f8faf2b52d852db2fde672bda469941296a8e78b9bf107a00e68c64fee",
+      "reference_pyc": {
+        "size": 43759,
+        "sha256": "4cd7361a9d1bcad8e9cdc361fba850feba89d9dae8cdee31d4c7d4b59e80c494"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Cipher/test_GCM.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Cipher/test_GCM.py",
+      "source_size": 37308,
+      "source_sha256": "503485a1c836ccf26e7dc5cbbfc1a3c2fb31e38b62cdb589dd3c20d9415193bf",
+      "code_sha256": "8e0f13feab88f5326595186a40a226587269facb4182f97afffcea3cd60c8f5a",
+      "reference_pyc": {
+        "size": 49020,
+        "sha256": "a994146908a0012c782fa09d92416fdc188036ec296e29e7e1911827d9dce5ef"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Cipher/test_KW.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Cipher/test_KW.py",
+      "source_size": 5622,
+      "source_sha256": "5d3de5bb7b3961b8413eeda26349b72e9c8e26eebf04731b86bce9a05abb8665",
+      "code_sha256": "eccd0c2ef4cbe33e57ddece77035b815e37dd858c07128907e82579462d374d8",
+      "reference_pyc": {
+        "size": 8963,
+        "sha256": "715731353f18651e129a4740f82cca1ca50503d3a27942ef57e3c88b65f0be2e"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Cipher/test_OCB.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Cipher/test_OCB.py",
+      "source_size": 32667,
+      "source_sha256": "c2edd37f0ab0f951f43cb5010f8555b6612f35eb89b437f92780054b1df0808f",
+      "code_sha256": "51ffec1048e55e6b74296a18409fd713d3f194f61e6b99c1765d43c5ba751369",
+      "reference_pyc": {
+        "size": 43177,
+        "sha256": "686a46018cbcfe3a4007a614d0d60c06c8eec19f01f38e1d2eadafc415bbcf38"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Cipher/test_OFB.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Cipher/test_OFB.py",
+      "source_size": 9395,
+      "source_sha256": "cc7ce89c67054d089bb6c113525209b409ae8ba720c73ba0e18a50b46861143d",
+      "code_sha256": "c317f70ea51a573ee42426df760f4f26a27ce5bfa549831fbebe0892b0c7af11",
+      "reference_pyc": {
+        "size": 10913,
+        "sha256": "0dc96f4ba00946f2f398ecceb4f24fd06f33df4a79df94d7c2fa18e18b313cb9"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Cipher/test_OpenPGP.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Cipher/test_OpenPGP.py",
+      "source_size": 8497,
+      "source_sha256": "438ace094d1ac61ff3ed4e0c49419d6b7f67ba392d3e50546aa5557c4e64321b",
+      "code_sha256": "ddab130cb7c5954b4f02c1a57c4ff627ca97ad69b6bb10b8602add811927b672",
+      "reference_pyc": {
+        "size": 10153,
+        "sha256": "95afb4518f7dbcb703fe0f91c26cf149de04761fc512e8870ed4e6a191a0606f"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Cipher/test_SIV.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Cipher/test_SIV.py",
+      "source_size": 19967,
+      "source_sha256": "7c313d92675898a9f43386eea782f31c2cb32068049bc60a31fd8cda9312c0d0",
+      "code_sha256": "e8596274cab0dc8a25069fb5017cd7fca99166eacb7c9f9254ded5093b6ac76b",
+      "reference_pyc": {
+        "size": 32241,
+        "sha256": "84fa07d8467ee60f0fa772e335e9bd34b7743009b7530f05ea8f12c168c577fd"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Cipher/test_Salsa20.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Cipher/test_Salsa20.py",
+      "source_size": 16607,
+      "source_sha256": "87cb9bb4724275f1836f194a3ccfe96d33c9ddea2b89b226dfa57e89ec8be33d",
+      "code_sha256": "167d8ef9bb6fb0b06d718ccebe944d2b260129a417ad020d626fd699d45c0dff",
+      "reference_pyc": {
+        "size": 21018,
+        "sha256": "851da6e0054c2f00eacea49e3d0d463180ba4f8cafcef6ba910e5196ca098ddd"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Cipher/test_pkcs1_15.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Cipher/test_pkcs1_15.py",
+      "source_size": 10972,
+      "source_sha256": "dc699df4f6e1829bd2bbc73a618cc9f6e911c0b687895aff017fb0b10ab78638",
+      "code_sha256": "a728d0aaf56d83ef6721cc1e37e23276c24988dd59e279ebac10d524f093a939",
+      "reference_pyc": {
+        "size": 14881,
+        "sha256": "d262e1dc8367d0435dd6075af025d57a02a2a0e451fce18ecb38555e67ba3c81"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Cipher/test_pkcs1_oaep.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Cipher/test_pkcs1_oaep.py",
+      "source_size": 22322,
+      "source_sha256": "dc11d4b11fdd0093e0e48d559d1d4c6f5809d8c28af8b9cadcc4819d3851359d",
+      "code_sha256": "9370ca1d0d24edc7ea34458d03baff950964b17e7c740a1a75990abc7d9e559b",
+      "reference_pyc": {
+        "size": 26372,
+        "sha256": "45c3c7057678dd38fcbf3199b3a3289c30178e8e7106537c43d15fa28c0c9663"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Hash/__init__.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Hash/__init__.py",
+      "source_size": 3913,
+      "source_sha256": "d8ad7ad855517e29f17e7fba335abec5fc6c87f12d966bcd24b932fec165c53c",
+      "code_sha256": "c5674f62e88e24f75194e66887f7aa25a2b53858c32e415ab8f98e8ee29a148d",
+      "reference_pyc": {
+        "size": 3440,
+        "sha256": "1d990f11d7ee248e6245f4624ccef64d12ea36a6b25060acbed31b47a8af65a7"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Hash/common.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Hash/common.py",
+      "source_size": 9906,
+      "source_sha256": "fe94f51bce4bf60d3891c15f6d732a84e9334070c43db69a3a8bba6f804553a9",
+      "code_sha256": "afad4b8e4ff1d1f47fa3ea4800d34bf42972c7f813903ab07dc58b7312ffd95d",
+      "reference_pyc": {
+        "size": 14627,
+        "sha256": "513c0f6b487001ebe8d4139df7fe4427e134c12d701fcb630b93710c8cfc61d6"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Hash/test_BLAKE2.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Hash/test_BLAKE2.py",
+      "source_size": 16330,
+      "source_sha256": "7b3b07f4cc4aa6d78ccc0248e75bc2a916ae29d40faa5121a68d22e72d58bb94",
+      "code_sha256": "413bb5f847057c1bd6f1e9422b2d118f320e709260cc5115237eb04a68acc63f",
+      "reference_pyc": {
+        "size": 23014,
+        "sha256": "cb7e769c0c8282151fafd8c0b198a80d9c194b9333193bf1770cee5adbaf1146"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Hash/test_CMAC.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Hash/test_CMAC.py",
+      "source_size": 13392,
+      "source_sha256": "8663a7e172d026345b4e185e8e1c935b812a390cbcf6af77954157dcffc80015",
+      "code_sha256": "c374e7f3688dcb5c2e93cee010cd81b7995e887a089e0e87e86cc33cef0b0bc5",
+      "reference_pyc": {
+        "size": 13725,
+        "sha256": "df48e94338fbeb63d99ce3e4b9a6ed7175edb0ae59fafaefcb061bb643b4ad7c"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Hash/test_HMAC.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Hash/test_HMAC.py",
+      "source_size": 19953,
+      "source_sha256": "c6aae8f5300169704109f77c9182bfa002926274e5065474cec8598f2fd0b0a5",
+      "code_sha256": "3426a767d28117e446c641f0f1c94411b617dd873ab5779b32a6171981bb9107",
+      "reference_pyc": {
+        "size": 18652,
+        "sha256": "1e50d55edbfd142f973f330d75ed2c91a75d2963411c8293f073fb19b2a66aa3"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Hash/test_KMAC.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Hash/test_KMAC.py",
+      "source_size": 11720,
+      "source_sha256": "f46244130df4dbbe689d6edf0d26adf40e88100f371a589574acf25dd62336d3",
+      "code_sha256": "9258c883f7815dc7bf8fbba088b960450f00f4d22069e3c9f5092a44eed26593",
+      "reference_pyc": {
+        "size": 14387,
+        "sha256": "b224deb00e3d8eb306a80f75e46d1933438ae60d78e4fbf66fd750d338cb1f4c"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Hash/test_KangarooTwelve.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Hash/test_KangarooTwelve.py",
+      "source_size": 11734,
+      "source_sha256": "ed140613e783aba1d812b5f76fa403624ee25363230745bea46b45ae6e2d446d",
+      "code_sha256": "c674a792ab9752b2ababca052697eb3353f9840bda86ad3271fc9dce8f68c978",
+      "reference_pyc": {
+        "size": 18724,
+        "sha256": "8294a17fad41f959b90326a2ede9e92d04b01719931f58ad0783652aa6956d19"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Hash/test_MD2.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Hash/test_MD2.py",
+      "source_size": 2336,
+      "source_sha256": "1252b3374b4bdd4fb44de2d53f47bb23cb71b241d7480f18b3adda6232d6fc13",
+      "code_sha256": "4bf76ebac6923207a11f22bbfadac5469b6f339d4583ebef98660e4f8ad65d59",
+      "reference_pyc": {
+        "size": 1587,
+        "sha256": "b7e68a9bf09c96bfa17a0792f97a1eb580227dc77904ce1b8486c4453e5b809e"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Hash/test_MD4.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Hash/test_MD4.py",
+      "source_size": 2359,
+      "source_sha256": "f5214765c6c1dccd8086362d2be63dc34b5613f71d99ea3642b1ef9777fd4b85",
+      "code_sha256": "a357dc76150bdca4429c9272c3e40327d92ee42f098e30c0021ebfb1508fd34b",
+      "reference_pyc": {
+        "size": 1616,
+        "sha256": "6ef59e95f02a484d52f4c512e6009085873d01b0cb17af4558b995b7ea3f05d0"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Hash/test_MD5.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Hash/test_MD5.py",
+      "source_size": 3300,
+      "source_sha256": "063e82e78f2ef1dcf477ea46c60ec96657b33d6b977c3fd30678fb40e246b71c",
+      "code_sha256": "5032af5a9996540e1f9ad37ed0e4ea8c281d15a129c1eba9ed215ffe1a5c1c80",
+      "reference_pyc": {
+        "size": 3089,
+        "sha256": "6802d8142e67f27b4f64a4092b2b664a2bca1d4aa7824c6a39c7273238956315"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Hash/test_Poly1305.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Hash/test_Poly1305.py",
+      "source_size": 18329,
+      "source_sha256": "f7d818467b6882ba84fdd85ae948ae140efe2108ae3f945c2de87b6a7d7c3768",
+      "code_sha256": "d215335a531cec571d88a66e6d5f05efdcb5bf092e4b9fdaea284bf0c9647cd0",
+      "reference_pyc": {
+        "size": 21478,
+        "sha256": "57ca09211ddf7da881eaaca1b8fad9d60136e71fe401d4d93cf50965964ccef7"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Hash/test_RIPEMD160.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Hash/test_RIPEMD160.py",
+      "source_size": 2675,
+      "source_sha256": "575abb606174c4a7b40de5d98409ad7388486db0ca844a6390d7cfb0d901faa1",
+      "code_sha256": "a950ec14f7b2cb38835ef17420572023f672aabcb930be3adb2cf1fc62286996",
+      "reference_pyc": {
+        "size": 1855,
+        "sha256": "dd09d385f5112ae4b26e85837fc08ea0311250abcbad1125ddaf387bc0bbf7c1"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Hash/test_SHA1.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Hash/test_SHA1.py",
+      "source_size": 2938,
+      "source_sha256": "e533b4581989a0651e401a32f6a845dce73852a510025e08b6ec93db39136e27",
+      "code_sha256": "05c9084f2e1ead8edf54d526121a36ac8c532bb080a5e9d1efbf986aa96dca65",
+      "reference_pyc": {
+        "size": 2803,
+        "sha256": "420964969edcdc7ac96731e4430b5bc8a1783e2fe91a5fb8162681346622a2a4"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Hash/test_SHA224.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Hash/test_SHA224.py",
+      "source_size": 2541,
+      "source_sha256": "0f3eec44bba1f802595daac867b2f36b8654cbdb4d353e69512b009b943a031d",
+      "code_sha256": "9be6c020f8f637266c912f0e1a163664714d9c294979ab9d884a7bf480a7b4f7",
+      "reference_pyc": {
+        "size": 1677,
+        "sha256": "0e7c76337f904aa4351a52ce2d5c887ccbcea48cd47109e36e044faecd4a0558"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Hash/test_SHA256.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Hash/test_SHA256.py",
+      "source_size": 3637,
+      "source_sha256": "a66578af95a88c5666b55580205025d6e3b9e463bbc0c59709d13f2367bcec9d",
+      "code_sha256": "27248420df62c82332175c03fef9c48f8b04bb5a59b43c134df531e46a02c240",
+      "reference_pyc": {
+        "size": 2993,
+        "sha256": "eb6749ab7dac55fb6769adfce820619bda2dd769105e564e6e72783cbbacac71"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Hash/test_SHA384.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Hash/test_SHA384.py",
+      "source_size": 2722,
+      "source_sha256": "ebf84beeea197506001280b4813da662e650b8210b1def5e6f170585065de013",
+      "code_sha256": "d43f79b73e95a08b831fa3222e2e993cefc0e9b05a6ce90369b731c6aa0a55b7",
+      "reference_pyc": {
+        "size": 1815,
+        "sha256": "1015f37fdbe700236967345b99f578c749e5ff7f4e7977966ed1b93f4d8f1bba"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Hash/test_SHA3_224.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Hash/test_SHA3_224.py",
+      "source_size": 2850,
+      "source_sha256": "7b87df0dc21b54eaec271df08120ba18fc5c1f88ea239aa75803ab525e050b56",
+      "code_sha256": "9d0e104fad805032978c7ff0c5a760b4af6e32161b9147d0b9b944f80615a72e",
+      "reference_pyc": {
+        "size": 3175,
+        "sha256": "c81f4301caf929c50505118f79ad693bebb59c0840e515717e03c1a1fb9b8b1d"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Hash/test_SHA3_256.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Hash/test_SHA3_256.py",
+      "source_size": 2851,
+      "source_sha256": "19e932c27e788b3744ca6d60f344bd1b6e1c53cffd052e5f4d6959194f905ee4",
+      "code_sha256": "229cda659225f3f3c14a5cb71ccddd5ab70671b3f9c8cafce69371e7592f0609",
+      "reference_pyc": {
+        "size": 3175,
+        "sha256": "87a4738e4f008a4c06318523494a7994e81e8b7eeaf2c09833f296b65d278e61"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Hash/test_SHA3_384.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Hash/test_SHA3_384.py",
+      "source_size": 2850,
+      "source_sha256": "69dd13db305f34b08b6242c375e7ef8059ab02ebfede9366932f25534c71e348",
+      "code_sha256": "17d4feabe7b3030b051cfab835920191daef90deda6087854734e0186ef8def8",
+      "reference_pyc": {
+        "size": 3175,
+        "sha256": "ea970b5820c736660a4377e88300a39fd4235e7d2e398070eb9426f48f90d353"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Hash/test_SHA3_512.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Hash/test_SHA3_512.py",
+      "source_size": 2851,
+      "source_sha256": "f8e1e396d7ff512ccec0464cc89ee62069cb420ebb414624731e0ec5686428dd",
+      "code_sha256": "ae586bec3b6eabbe109bba933d97bc1995730446abc2c721fbd601b9b0ee797e",
+      "reference_pyc": {
+        "size": 3176,
+        "sha256": "a07e29a4ec4c16ea3d272c8d985a84184f1589dcbc940e0caeaab4056c74aa5f"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Hash/test_SHA512.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Hash/test_SHA512.py",
+      "source_size": 5210,
+      "source_sha256": "15fa4ef246029f1fdfc3bb3cf857622bef76e39c3e5fcb78f426b63c6da07d4b",
+      "code_sha256": "eb51bc30d86099984233980ff97383ccffa45f6aaf727bdbb24582ebb3c067c8",
+      "reference_pyc": {
+        "size": 4901,
+        "sha256": "e8107eafe7ec33c808c1228802b95e7c1245dece8cecbbe84774fa9567725572"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Hash/test_SHAKE.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Hash/test_SHAKE.py",
+      "source_size": 4934,
+      "source_sha256": "0adba41632ff7ece390089267aca8099ac9be778f95efb4ec4db2fb5ccb793e7",
+      "code_sha256": "f962e35fda805d7e5156a48d1fb4386df14e71cfff4ef2f786afe46cf7ca7170",
+      "reference_pyc": {
+        "size": 7259,
+        "sha256": "c8e3ee61180e0f51c7f1da2167a3a3f51665c3eb6a2df5eef5c29c99b47444a5"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Hash/test_TupleHash.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Hash/test_TupleHash.py",
+      "source_size": 8710,
+      "source_sha256": "3dba5764f69ef6e79edf9600956243c47aac2ee7042444464081ff6db51f14cd",
+      "code_sha256": "4c604d85fef96bc6c70bdac7b904be5857ba44cd26f9334a8fad929d458bcc4c",
+      "reference_pyc": {
+        "size": 12255,
+        "sha256": "165af40ae027b1ab65d7f24fc134219f17f10dab435221b02e68cf1526107794"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Hash/test_TurboSHAKE.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Hash/test_TurboSHAKE.py",
+      "source_size": 15025,
+      "source_sha256": "0722f585d54bae8e80f2790db56b9699885d1921bbda673e40d189201495bc20",
+      "code_sha256": "7986c3101495030ac3e01ed80a5db12eb743ae79a1d94fbbe5425315fda236d0",
+      "reference_pyc": {
+        "size": 24822,
+        "sha256": "e8c605cca6be4f814d32fdbb96ff0a7012e897b2666cc7a2d402a5129fdfe846"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Hash/test_cSHAKE.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Hash/test_cSHAKE.py",
+      "source_size": 6820,
+      "source_sha256": "5f440e9ff0ca194dc04bf0c1b1717c20418f4852d633e629f886bfa0875944b6",
+      "code_sha256": "7cb891b176e186e13e8621c3e009b57db45dc9463cc319ab545d5910f1f8d124",
+      "reference_pyc": {
+        "size": 10316,
+        "sha256": "e0a1d61a785a42111e5b4c774ec82b059b9f8b6e5bd86db345344031be3b952a"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Hash/test_keccak.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Hash/test_keccak.py",
+      "source_size": 8909,
+      "source_sha256": "f838e7aaf086c03090f955957e954fdc3c327e6d8bc24ecfd44eff688c9d8a84",
+      "code_sha256": "5c0cae1d8e215efbc36dea29dcc85ebf41544d1c6616ff2c28847353464c36fb",
+      "reference_pyc": {
+        "size": 11349,
+        "sha256": "9eb8d133fd135ff7b6e1cbbe04b4e0e5c43e15d161c0e21749ca81ba418ae3f0"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/IO/__init__.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/IO/__init__.py",
+      "source_size": 2002,
+      "source_sha256": "eb697e364424f563eb458a0301bb5628c39cf4b4f9c8013a10dc2ceedefebb35",
+      "code_sha256": "38024b953bcadfad0dafd4324130e3c5109b3745167d8485b7f50f482ccdeeba",
+      "reference_pyc": {
+        "size": 1031,
+        "sha256": "e86fa23d92239640ab78a41766543eff2a7bea8e9c74299ba04ae50591b8a0c8"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/IO/test_PBES.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/IO/test_PBES.py",
+      "source_size": 4361,
+      "source_sha256": "740ced7154ae26d18c570f19911889184fcbe7dc8b529c56ce1f7eeb58a7633c",
+      "code_sha256": "0db6b9f2ba2025befa7073a8790ad4bbf2f9f8a77c8664fd9e4043baef10ed3f",
+      "reference_pyc": {
+        "size": 5221,
+        "sha256": "e2068756e853a80c1156baa38c9157e065e1d53c246016be052305300d29f8a6"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/IO/test_PKCS8.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/IO/test_PKCS8.py",
+      "source_size": 19126,
+      "source_sha256": "ae1077831278eda2bd23338ee7954888318c986ef3a357b658faec07d74f7893",
+      "code_sha256": "e4f0797cfdda3991b392d709ca3a5289bae155d72956c63a7a233c48ed45ce55",
+      "reference_pyc": {
+        "size": 18087,
+        "sha256": "e6cb22b2742d5884f0324715a65c9940720c62096b327c1248fb3250af66ce33"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Math/__init__.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Math/__init__.py",
+      "source_size": 2218,
+      "source_sha256": "e884c1e285d7071028c1a4535b20ddef1d2462b81f8026d34a5513e337b5b155",
+      "code_sha256": "e5e09dbc46eec985007c44d6fd77e6e2edbecb1ae896a0ef595a74f84b433576",
+      "reference_pyc": {
+        "size": 1258,
+        "sha256": "b61fe3bf1e96d48e39da1801f20e1e34965563ababa7e41d3eeeca84b648a8a4"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Math/test_Numbers.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Math/test_Numbers.py",
+      "source_size": 32404,
+      "source_sha256": "03a3d6bd4fdeaab33438a66952a6be86ac8cc764e8ae1da1f245a52a40df8ad8",
+      "code_sha256": "9f914aed9c9c2bced402e37be5a84e99662e69214519dd0571abe40576a1913e",
+      "reference_pyc": {
+        "size": 54348,
+        "sha256": "5583c83d1a86257456276d56955403c61c41add8d56f34b3deae0630715d1ae2"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Math/test_Primality.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Math/test_Primality.py",
+      "source_size": 4901,
+      "source_sha256": "d15fe0cdc056ca4d5215810172c12061568f7f0dfe519b5c5a5d1eb55fdb82f0",
+      "code_sha256": "badd7ada5b6a47f084fa7eca17d40f8f9ecc6e3bce08e781154066e1e9effbd3",
+      "reference_pyc": {
+        "size": 5196,
+        "sha256": "7fc9ba4b6b74759dc46000ca66793535663d163f5b31c074db0ea0324acb7f4d"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Math/test_modexp.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Math/test_modexp.py",
+      "source_size": 8135,
+      "source_sha256": "aeca0af3a1bc8c350d3e2560e6ebb77374ba5d5378c33f5d97fb72d286a37302",
+      "code_sha256": "748da8b692c81cca9965228fd84a7485c868cc8496b0bee03ce31fe280f2df15",
+      "reference_pyc": {
+        "size": 9190,
+        "sha256": "2b0c37a6a14a1e6b696deec760722a0d786c469f46e6b24c74453bee427254fa"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Math/test_modmult.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Math/test_modmult.py",
+      "source_size": 4876,
+      "source_sha256": "4f6bb9ee96589a9adfdd954e53788767c7a478a8eace64a2dc8a464b7c9f0ab7",
+      "code_sha256": "53fb06890ad9a5a0bbe120136f65c98831818e890cea18fcee301190d8685ce8",
+      "reference_pyc": {
+        "size": 4479,
+        "sha256": "b47d7a8a740af8adee100b73d4e24b5d799db693e72066880e682603188f0d48"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Protocol/__init__.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Protocol/__init__.py",
+      "source_size": 1930,
+      "source_sha256": "219f69e2e808600c0d6f2f9bb3d683bd40c144f32bf0a03978c2a0d0a99c9478",
+      "code_sha256": "617aeba629798f00a7fa5f7221ccc8304950364f6dae6320ac768af222f711e4",
+      "reference_pyc": {
+        "size": 1437,
+        "sha256": "59aad91c2c0b616a334dc098c2efc92d2ebedc55fe6915b3519367b6d3652c54"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Protocol/test_HPKE.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Protocol/test_HPKE.py",
+      "source_size": 17666,
+      "source_sha256": "41326f0cc25bb33ef0970e19200678eabaeb58682410a063c42d968a55f49fb6",
+      "code_sha256": "4f0ac5afb7aa39c20500a3097744c985213abfa499fd41b928a48f8adc8a8510",
+      "reference_pyc": {
+        "size": 23682,
+        "sha256": "b0026db3bc143f68ff25b59ed1ba86f2efdf4cbac983ea554d20a4888dbd13d9"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Protocol/test_KDF.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Protocol/test_KDF.py",
+      "source_size": 36872,
+      "source_sha256": "369e4042e4158b06bca28e0378a2ac2f63eb859f0ac1002117e82b3b34cd0e5d",
+      "code_sha256": "a15531cee844ed49a7d70b04d0a49541e008706a35b84cd5ee55d230606ea65b",
+      "reference_pyc": {
+        "size": 39193,
+        "sha256": "385acb63235df24eb3828beaf24f7a020f2af9f6015d929b1cc06d36f307e82b"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Protocol/test_SecretSharing.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Protocol/test_SecretSharing.py",
+      "source_size": 10198,
+      "source_sha256": "39a38938069b4d31cabd715e794361c261d89c9c33120cae33cb33f3667cd1a7",
+      "code_sha256": "09e4dff3a9195aa6f49a393dc79e79a6bcbec513d3cb18ba1b5ec5e13a1ac622",
+      "reference_pyc": {
+        "size": 11648,
+        "sha256": "904197f5c290db02602a5a2a4754fb4752003aeb0f48ab838a8946406736a15f"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Protocol/test_ecdh.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Protocol/test_ecdh.py",
+      "source_size": 30572,
+      "source_sha256": "97fcae522e3651b0d25db4ba41e20eab3c015af622116125d68b8cfb987ed4e2",
+      "code_sha256": "857e1be02c89967e0ab764d84ca3282c25ebee514f4e96b0a33f2e4ccd198926",
+      "reference_pyc": {
+        "size": 38985,
+        "sha256": "b48a40413ccd5b6448be4323ed072b6c96d65574d3eb1a57638501a0fedd8eba"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Protocol/test_rfc1751.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Protocol/test_rfc1751.py",
+      "source_size": 2220,
+      "source_sha256": "e90bb151413e34ff3fd6d40d8fd31a723b5ce78d339388fce59ec6d4dcb2d9c2",
+      "code_sha256": "19fe8ea1e83c7d76914e16089c24f3bbd56568d860cefe55bbb04d6dfe203f87",
+      "reference_pyc": {
+        "size": 2238,
+        "sha256": "aa9232c11cbfb1be23e704b03e7d1598858366608b2ceda60b17170d9d0f1a4a"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/PublicKey/__init__.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/PublicKey/__init__.py",
+      "source_size": 2684,
+      "source_sha256": "cd24a1f8b06bfe4c09ccea59dc5990cdd8897a22483b10f26f2b1cabfbef3797",
+      "code_sha256": "0080cefd2f4a66eccebb04b1c3abf2a2ce7ed9f58251a03d9711ce1f0c8fb05d",
+      "reference_pyc": {
+        "size": 2203,
+        "sha256": "fa9b4478502bfad8d96bc768dfef661f7b4993dde5f18e46f04eb8600c58c4d1"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/PublicKey/test_DSA.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/PublicKey/test_DSA.py",
+      "source_size": 9636,
+      "source_sha256": "4cc130814918178ebb4bd1073286a935c977418e9201665bde4896108eb9a249",
+      "code_sha256": "b48eadc1daa0fe2bab2b2b2664d8b0f97a41ec4149f5e45a814d935b8204d9ca",
+      "reference_pyc": {
+        "size": 15192,
+        "sha256": "7991fb0ba7cb2818e9be6b1a0cb4034f0b2fa6a93eeb078249ec423063702114"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/PublicKey/test_ECC_Curve25519.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/PublicKey/test_ECC_Curve25519.py",
+      "source_size": 12007,
+      "source_sha256": "36fa03f36654c08469117339ed66ddafb9bd2ac85b8f28f7a753ccefbccf5d03",
+      "code_sha256": "81446083db5c61ccca91fe8865ced62ec7262c98a1a708add541e2cadb4e6ae7",
+      "reference_pyc": {
+        "size": 15173,
+        "sha256": "56170d326bb6e672b1aadc5d396252dd8e00aab9034cfbc5e6db1eecd54959d0"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/PublicKey/test_ECC_Curve448.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/PublicKey/test_ECC_Curve448.py",
+      "source_size": 10217,
+      "source_sha256": "5e19034a42b517160128fe6be2750c1ba8314e824f5c40528733f3bb17b636e2",
+      "code_sha256": "1a0a9964c2ddd3be58603bf9882b25da605cac10cac1e0e36ade5a67f65152a2",
+      "reference_pyc": {
+        "size": 14990,
+        "sha256": "a1a9ad62928a6863adbb12d394421f591abd3f814e3129ea5fde64c51a5cb7d4"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/PublicKey/test_ECC_Ed25519.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/PublicKey/test_ECC_Ed25519.py",
+      "source_size": 13948,
+      "source_sha256": "d2fbc26ec6ddfdf7ad704cea71bf104e33843739eedb5fe4c12bb7e8ae0eb288",
+      "code_sha256": "af25ddbd0fc346a453af176c17d1f2a9bf0d4fd0ac2f5469366c1147116fdb6f",
+      "reference_pyc": {
+        "size": 20162,
+        "sha256": "824a606f1369d67ea394c42c3145eddf1b9781ebb2a6ea984dbd5d5ede7c7593"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/PublicKey/test_ECC_Ed448.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/PublicKey/test_ECC_Ed448.py",
+      "source_size": 15016,
+      "source_sha256": "0bdacf9e2904be45cbcb195724ea874c407cc47ca701741e884f491d7777fcdf",
+      "code_sha256": "ce540461116a2ebe6619e22db92c898f6e93beba2aa95b2948ce5c9a193fc5e6",
+      "reference_pyc": {
+        "size": 20792,
+        "sha256": "02a9a12ae2907b079ac6927a0b08ef7d2e5faaef93d070288b030aa4ac435436"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/PublicKey/test_ECC_NIST.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/PublicKey/test_ECC_NIST.py",
+      "source_size": 51842,
+      "source_sha256": "537f1bd6be3a758c4ed914b2d9edc5741747f4ff0d2c4ae0022621b1ae2bd47a",
+      "code_sha256": "1a6cd56fd47058629a8d8ce6f28de791b998e9f9ceae2f135d0b6f71652a524b",
+      "reference_pyc": {
+        "size": 74919,
+        "sha256": "7b14bd9888f342b8d0da73ad52c3c6ca5e83e69dc8a347a23c68e8cb8ee5f5c9"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/PublicKey/test_ElGamal.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/PublicKey/test_ElGamal.py",
+      "source_size": 8672,
+      "source_sha256": "35a19eb8970a7dc9b9f84fb1f967dbcc0f28c9f3c38d1ffde21364bd5d1c28e1",
+      "code_sha256": "df98b73d53291f784edada31ea9c08d3866eb76b2b57e555a4fe9cc131586c01",
+      "reference_pyc": {
+        "size": 11134,
+        "sha256": "ad4ec4d2b23b1c0e8ebd95524edb73ca411e85523578c87f881dd68f6227b5cf"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/PublicKey/test_RSA.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/PublicKey/test_RSA.py",
+      "source_size": 12660,
+      "source_sha256": "bbd5775e6d8d7368ee87be3c30fbebfa134362230704865dfff77b65d692d470",
+      "code_sha256": "f55af38d35934190eea0edb3cddf06b1489c7a480722a8de93880003b7d0be1e",
+      "reference_pyc": {
+        "size": 19345,
+        "sha256": "1e3a557670a23e224d8ce7a31a054cfad56e67a07df60767c5c86a09ff8a5e09"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/PublicKey/test_import_Curve25519.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/PublicKey/test_import_Curve25519.py",
+      "source_size": 14384,
+      "source_sha256": "2b49f517c1be592346a22642071d2b6c73ef17ce0ecc30d9cda64b846f326832",
+      "code_sha256": "3e658efc2b6a54e560984d6bfeafaae3637e937a96558d56d579e3bb688f13d3",
+      "reference_pyc": {
+        "size": 18786,
+        "sha256": "c6a177bdadfda1cb3e9d3dc0cb5162098f0951750aeccf1437b94e5250f01179"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/PublicKey/test_import_Curve448.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/PublicKey/test_import_Curve448.py",
+      "source_size": 12512,
+      "source_sha256": "3ff80a10bb734dbd4c6cd538cb7654a8869334abce40a36a076fd34df6546c08",
+      "code_sha256": "27f6e5971207f4445017911d330b10374180371add0bb084ae188552a41c2c68",
+      "reference_pyc": {
+        "size": 18594,
+        "sha256": "41e7e9f4f71aeff5dad7858ef7861fdc9e0229dedc07445ef58b3bfce45e7964"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/PublicKey/test_import_DSA.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/PublicKey/test_import_DSA.py",
+      "source_size": 25521,
+      "source_sha256": "e9f2e62884d2a0fd7976568a66ad5db77f201e952c8e663a678811d07e417247",
+      "code_sha256": "b221c474f2411bfe7674cd8284107f03121fb0b52800ff1ffe935c5289f08b5b",
+      "reference_pyc": {
+        "size": 33923,
+        "sha256": "5609f11df238d989bf8108700a75ffbb3171d1793f444c2b2875d46b4fe527ee"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/PublicKey/test_import_ECC.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/PublicKey/test_import_ECC.py",
+      "source_size": 109175,
+      "source_sha256": "76a427ac86e5f5eb35255b0fa4d8a32a2f74297ade810ec9c16d148cdcb8edbb",
+      "code_sha256": "ce405d1e143812e672e03937cac08f3cbb498bdc9c747e59d26110d449e15b05",
+      "reference_pyc": {
+        "size": 119461,
+        "sha256": "dee67bf644bc4b9902693d09f6039056c757efca15d7674e3856a6ed86d197b6"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/PublicKey/test_import_RSA.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/PublicKey/test_import_RSA.py",
+      "source_size": 27047,
+      "source_sha256": "56c6fb97682d1ff6a5a7800f437b5d07c8f1e07a173bdb8425abbaeb92ca6d14",
+      "code_sha256": "91c719fae4618548c8dba66e0052544d7960c5bc0d7e5d0f705513e8ad404c24",
+      "reference_pyc": {
+        "size": 41905,
+        "sha256": "d5959941925fc9ae368576961581f05d7175eab6b904a481eae5ca609d0c64ac"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Random/__init__.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Random/__init__.py",
+      "source_size": 1546,
+      "source_sha256": "bd698a03ef885f3388b337f5e74c1b1aad7e393015053237b2a2278eeb480569",
+      "code_sha256": "fc56647b578d00c4e32463d3189563bb410e8d4c854b94ec0a39270921045fc9",
+      "reference_pyc": {
+        "size": 984,
+        "sha256": "1d18744cae1062d87110bc381eeb2656d86369bbdf17a85c3da43a20a0fb9cfd"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Random/test_random.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Random/test_random.py",
+      "source_size": 7014,
+      "source_sha256": "56d6ed11774fffa11ac59fe144bdeb3fe1eb055044a9bfc034dee5f077e84453",
+      "code_sha256": "2236f842d86f3f4c46a46b82f5f8ed6c6a3d08168dddae07143d40752d8e2433",
+      "reference_pyc": {
+        "size": 8488,
+        "sha256": "4b37c8931a8d3e42961d67667f46014f5b6baa83eb3778b5c5b90557b9dee71e"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Signature/__init__.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Signature/__init__.py",
+      "source_size": 1558,
+      "source_sha256": "e01c48381f4831ecb57755e2c7297b991609627bb33695e4f372a5cc60621043",
+      "code_sha256": "7cc9fa62c9b104b6e7a495c6cc132a85c4ce44440eebbeb46f607a63888c8567",
+      "reference_pyc": {
+        "size": 1222,
+        "sha256": "abf0fb54aa6845ffe778d7ed81bc2aa8f1013e4d9efdadc49a09b3f107546be2"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Signature/test_dss.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Signature/test_dss.py",
+      "source_size": 57130,
+      "source_sha256": "7cb7b4296f2915d647eca06665a5e010b63550b2deb96a6e680e006a77560fdd",
+      "code_sha256": "31b6b20df6240a2b6f4d09c7c28bea517a8ef3d23764062531f1ed35c8ea0afb",
+      "reference_pyc": {
+        "size": 61063,
+        "sha256": "6a6cac8119c298e70301dab38153e530b477cdd133249148b11acad21b650a0c"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Signature/test_eddsa.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Signature/test_eddsa.py",
+      "source_size": 25066,
+      "source_sha256": "488e0aff1008014de3d9154948afab32032595a4f331a8a77d2c6c928f792285",
+      "code_sha256": "99e04006661d760109a5a6cd934d70ec54079731e146d8197c4858df58e6bab8",
+      "reference_pyc": {
+        "size": 24603,
+        "sha256": "e1fd5ee2a793ac346a7820f7f001d3b00e142114bc6f7bb6e931ca32a7ca8630"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Signature/test_pkcs1_15.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Signature/test_pkcs1_15.py",
+      "source_size": 13601,
+      "source_sha256": "ea9750ffba082a50de6833b1d26e57492a5123adc8b9a4fb962ddff27b70c528",
+      "code_sha256": "674598e3d0618f15a8486d8a29761085bf370b7afec197ccf4e9dc1027be3253",
+      "reference_pyc": {
+        "size": 18173,
+        "sha256": "ebc858e6f2c87deea11ebe5bc4270fb36b403d3071e9a1d09fc7852cef1e611a"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Signature/test_pss.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Signature/test_pss.py",
+      "source_size": 15867,
+      "source_sha256": "536e4123b0b734ece634b4ec241e444a1eda5a13b4ec5e3d5750957daa23951a",
+      "code_sha256": "1ee7f33ee02278a316e1618371826c6f7cb3ffd24f9194393c004217c03dedc2",
+      "reference_pyc": {
+        "size": 21955,
+        "sha256": "01835f6af2477237fabcdbd6b8606ad6f1445395547939c7b1b7901245bc562e"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Util/__init__.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Util/__init__.py",
+      "source_size": 2021,
+      "source_sha256": "d0ebf4807aa8f75351d1feb7f48cd0314f945f5a713a6f743c8fae51a38996ba",
+      "code_sha256": "3e3694be616ce5bd6dfae1a4cd7f23138758db213938a320e9759f953ee5dea0",
+      "reference_pyc": {
+        "size": 1522,
+        "sha256": "60a09119a0a82ce21a1e52faf3dae8b832e332fa92cb892d5d1a488de4fe8a67"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Util/test_Counter.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Util/test_Counter.py",
+      "source_size": 2292,
+      "source_sha256": "8171fd0de8facdf8a1f1c03c0c524afd021b2c835845e9d7983c38daf56506d4",
+      "code_sha256": "b0c208809eea221020ed06e86a8e0d1964d3b1c67b25aba12655acf8c4d47524",
+      "reference_pyc": {
+        "size": 2923,
+        "sha256": "87078c3fd630e0ee617c584b7fe6802992371e3a00b393940521a00e057ff83d"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Util/test_Padding.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Util/test_Padding.py",
+      "source_size": 5789,
+      "source_sha256": "557a6fc260e6381b0ab28209826448eccf3d6f6e26754350c7863c8e709b8d0b",
+      "code_sha256": "69807e1b40ea46a2e38dcfabbe94d5559de63d53e4ae21bea226460e563c3cc5",
+      "reference_pyc": {
+        "size": 9401,
+        "sha256": "6cfb0145fa41cf004736f149bd093beab85ffd2b6175fa7c72a4f0b19fd1376a"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Util/test_asn1.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Util/test_asn1.py",
+      "source_size": 31276,
+      "source_sha256": "9a8d217ce9e9a6812ec2d8092232509d69771fb820a3f0f9ce4c6e6cbdbaae69",
+      "code_sha256": "33352dc9e4a46fcff24803170d8a2cad86e8e5ffb022cfd5b085ce82bff885df",
+      "reference_pyc": {
+        "size": 46190,
+        "sha256": "02c6611263fb77f8f273b4d0a1b9fa4fcab08059c22bccc94d570c8b950957c9"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Util/test_number.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Util/test_number.py",
+      "source_size": 8546,
+      "source_sha256": "f0dc8567aef407f400d38a8186eb1f617fb168326cfe7eaa3ba678af8c3a2aee",
+      "code_sha256": "0427cb49778e30d368097358023d1628c21d7f1b48ec8585c405071997eabefd",
+      "reference_pyc": {
+        "size": 12228,
+        "sha256": "49218156eaf08d50b36bd503a34528cf3ff9972d2536a98dc6e8f2fa45e216f2"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Util/test_rfc1751.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Util/test_rfc1751.py",
+      "source_size": 1121,
+      "source_sha256": "891bbec4b2ec95bfe4b4d38f90ab384c058f963af10cc92c1674aaa36e6af5d0",
+      "code_sha256": "fd156774b77cd0ffb3ae8ae50c0e1fce5fd1c6c10675cff46c2d66aacff4b338",
+      "reference_pyc": {
+        "size": 2162,
+        "sha256": "941931983440b6466703821f6a9cdf78219b341f931926acce626e923baa2327"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/Util/test_strxor.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/Util/test_strxor.py",
+      "source_size": 10223,
+      "source_sha256": "05154e6488a7df2a66c8c7dd079d9fb026e65eed5633074b152c7bb30dc1532c",
+      "code_sha256": "acbf8ce901431d9915c5f38a7315eb5173adfb43425ac008b5b26a9083cf71d6",
+      "reference_pyc": {
+        "size": 12272,
+        "sha256": "69f718046fd593c6bd7702ed80208dbd30425da810af0a968d4aca8d5c8e4bcb"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/__init__.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/__init__.py",
+      "source_size": 3225,
+      "source_sha256": "fe3704de8505269e3192e29da0c4f4b6b5e4840418f0965eb8e710f242d95a9f",
+      "code_sha256": "4da842a052bea19472c173fad5f0fc2e88102bbe8c1ad47a1976d36484f73cf3",
+      "reference_pyc": {
+        "size": 3158,
+        "sha256": "de9c8b131960aee6ad020a9d05e72426ccbe8f8cdd69f6036233e7fb8b835eb0"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/__main__.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/__main__.py",
+      "source_size": 1573,
+      "source_sha256": "3605505f0226b8f852347b307741176d31ebf59bffcd464951910009ba493f1c",
+      "code_sha256": "8037d1f700b789badeb0c80fa1f44d6bdd5a97ee34dd5b7ab26cbffbef64b32c",
+      "reference_pyc": {
+        "size": 909,
+        "sha256": "edbb190cb019fc1b43f6e3a7b215cba428f04927e253aefb21eac4efcf84cfb2"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/loader.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/loader.py",
+      "source_size": 8522,
+      "source_sha256": "a1f4de0f24bec9513976c7cea55b8a2f6fa05955a09811947a5341efafbf3b1e",
+      "code_sha256": "cb008471086ea1021a07b290d275d9e81f7998f1fc60beddce764e7678f3bf8b",
+      "reference_pyc": {
+        "size": 8641,
+        "sha256": "ebadad8ec41bacc3ec193a90a918d46b72aa49f5c76436f6af7be5b327ee0815"
+      }
+    },
+    {
+      "path": "Cryptodome/SelfTest/st_common.pyc",
+      "type": "regular",
+      "source_path": "Cryptodome/SelfTest/st_common.py",
+      "source_size": 1949,
+      "source_sha256": "5eca051e647f83294cc4685126b4077daacd9c84ff32ef2df6801e6d13d179c9",
+      "code_sha256": "5e5993e9e2914a4a5eedad43e25d5fb64ac5a1c336eb663df8ea955a1d99a3e5",
+      "reference_pyc": {
+        "size": 1687,
+        "sha256": "d2ffb5f912e650c30959e7da7cf68f9a718f25b93e6aee270c2e826be45c4c43"
+      }
+    }
+  ],
+  "reference": {
+    "commit": "88abeb12ed5eee395141c747728686511460b01b",
+    "removal_manifest": "build/optional-crypto-selftests-removed-attempt-4.json",
+    "removal_manifest_sha256": "5e932d2c1a56e2a0f594900ab7e5392036602d30ad07c6f7237c512cf99ecd3a",
+    "manifest_status": "REMOVED_OPTIONAL_UPSTREAM_TEST_FIXTURES",
+    "source_lock": "packaging/android/crypto/sources.lock.json",
+    "historical_exact_wheel_recompile_count": 97,
+    "historical_bytecode_timestamp": 1793761434
+  }
+}
