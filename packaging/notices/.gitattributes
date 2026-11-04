@@ -1,0 +1,2 @@
+# Keep hash-pinned original texts and attribution metadata byte-for-byte.
+inputs/* -text

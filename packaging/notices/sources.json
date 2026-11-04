@@ -1,0 +1,209 @@
+{
+  "schema": 1,
+  "source_materials_status": "REVIEW_REQUIRED",
+  "platform_notes": {
+    "android": {
+      "en": "These supplemental notices accompany the existing bundled notices. Original legal texts are preserved in licenses. Font attribution is preserved separately. The manifest records exact versions and source hashes.",
+      "ru": "Эти дополнительные уведомления поставляются вместе с существующими уведомлениями. Оригинальные юридические тексты сохранены в licenses. Attribution шрифтов приведён отдельно. Манифест содержит точные версии и суммы исходных материалов."
+    },
+    "linux": {
+      "en": "These supplemental font notices accompany the existing Linux notices. Original legal texts and attribution are preserved separately. The manifest records the exact original font input.",
+      "ru": "Эти дополнительные уведомления шрифтов поставляются вместе с существующими Linux notices. Оригинальные юридические тексты и attribution сохранены отдельно. Манифест указывает точный исходный шрифт."
+    }
+  },
+  "components": [
+    {
+      "id": "libffi-runtime",
+      "version": "3.4.4",
+      "platforms": [
+        "android"
+      ],
+      "source": {
+        "url": "https://github.com/libffi/libffi/releases/download/v3.4.4/libffi-3.4.4.tar.gz",
+        "archive_sha256": "d66c56ad259a82cf2a9dfc408b32bf5da52371500b84745f7fb8b645712df676",
+        "archive_size": 1362394,
+        "archive_member": "libffi-3.4.4/LICENSE",
+        "notice_sha256": "2c9c2acb9743e6b007b91350475308aee44691d96aa20eacef8e199988c8c388",
+        "version_or_commit": "3.4.4",
+        "binary_scope": "Known Android CPython3.12.14 runtime ctypes. Does not identify libffi inside the separate CFFI wheel."
+      },
+      "files": [
+        {
+          "input": "inputs/libffi-3.4.4-LICENSE.txt",
+          "output": "licenses/libffi-3.4.4-LICENSE.txt",
+          "size": 1132,
+          "sha256": "2c9c2acb9743e6b007b91350475308aee44691d96aa20eacef8e199988c8c388",
+          "source_member": "libffi-3.4.4/LICENSE",
+          "transformation": "none, original archive-member bytes"
+        }
+      ],
+      "notes": {
+        "android": {
+          "en": "This is the original MIT notice for libffi3.4.4 in the Android CPython runtime.",
+          "ru": "Это оригинальное MIT-уведомление libffi3.4.4 из Android CPython runtime."
+        }
+      }
+    },
+    {
+      "id": "dart-bridge",
+      "version": "1.10.0",
+      "platforms": [
+        "android"
+      ],
+      "source": {
+        "url": "https://codeload.github.com/flet-dev/dart-bridge/tar.gz/f6cf0d43333470fb4e91aa7b887e5b0bec4f4486",
+        "archive_sha256": "a261849049b8710511a0bf264c4aad17acd2a94782c9563d59a636b520b5d7eb",
+        "archive_size": 81531,
+        "archive_member": "dart-bridge-f6cf0d43333470fb4e91aa7b887e5b0bec4f4486/LICENSE",
+        "notice_sha256": "b7150f41f2912b5289ad687eb160b3f3b3e4f55cad82e98069b4d97c895aae83",
+        "version_or_commit": "1.10.0 @f6cf0d43333470fb4e91aa7b887e5b0bec4f4486"
+      },
+      "files": [
+        {
+          "input": "inputs/dart-bridge-1.10.0-LICENSE.txt",
+          "output": "licenses/dart-bridge-1.10.0-LICENSE.txt",
+          "size": 1078,
+          "sha256": "b7150f41f2912b5289ad687eb160b3f3b3e4f55cad82e98069b4d97c895aae83",
+          "source_member": "dart-bridge-f6cf0d43333470fb4e91aa7b887e5b0bec4f4486/LICENSE",
+          "transformation": "none, original archive-member bytes"
+        }
+      ],
+      "notes": {
+        "android": {
+          "en": "This is the original MIT notice for Dart bridge1.10.0. Its source commit is recorded in the manifest.",
+          "ru": "Это оригинальное MIT-уведомление Dart bridge1.10.0. Его исходный commit указан в манифесте."
+        }
+      }
+    },
+    {
+      "id": "katex-fonts",
+      "version": "flutter_math_fork0.7.4",
+      "platforms": [
+        "android"
+      ],
+      "source": {
+        "url": "https://pub.dev/api/archives/flutter_math_fork-0.7.4.tar.gz",
+        "archive_sha256": "6d5f2f1aa57ae539ffb0a04bb39d2da67af74601d685a161aff7ce5bda5fa407",
+        "archive_size": 783424,
+        "archive_member": "lib/katex_fonts/LICENSE",
+        "notice_sha256": "34389fdd44872617b9626f76978d5daf0ec2364d660a4ab8a867ab178a29b3dc",
+        "version_or_commit": "flutter_math_fork 0.7.4",
+        "font_metadata": "Exact20originalTTFcopyright/name13OFL/RFNrecords retained in attribution metadata.",
+        "additional_sources": [
+          {
+            "url": "https://openfontlicense.org/documents/OFL.txt",
+            "version": "1.1",
+            "file_sha256": "1d361a8f8e8ce6e68457dcd93fb56e162e6baa3bbb7e7573a290d44399f6b57e",
+            "file_size": 4599,
+            "scope": "Separate original official full OFL text. The flutter_math_fork archive contains an OFL metadata link, not this standalone text."
+          }
+        ],
+        "faq": {
+          "url": "https://openfontlicense.org/ofl-faq/",
+          "section": "1.10",
+          "version": "1.1-update7",
+          "scope": "Metadata-link situation for embedded/program-bundled fonts is considered separately. This notice addition supplies complete text without declaring the previous link a violation."
+        }
+      },
+      "files": [
+        {
+          "input": "inputs/flutter_math_fork-0.7.4-katex-LICENSE.txt",
+          "output": "licenses/flutter_math_fork-0.7.4-katex-LICENSE.txt",
+          "size": 1078,
+          "sha256": "34389fdd44872617b9626f76978d5daf0ec2364d660a4ab8a867ab178a29b3dc",
+          "source_member": "lib/katex_fonts/LICENSE",
+          "transformation": "none, original archive-member bytes"
+        },
+        {
+          "input": "inputs/SIL-OFL-1.1.txt",
+          "output": "licenses/SIL-OFL-1.1.txt",
+          "size": 4599,
+          "sha256": "1d361a8f8e8ce6e68457dcd93fb56e162e6baa3bbb7e7573a290d44399f6b57e",
+          "source_url": "https://openfontlicense.org/documents/OFL.txt",
+          "source_version": "1.1",
+          "transformation": "none, complete original official SIL text including example header. Actual KaTeX copyright supplied separately."
+        },
+        {
+          "input": "inputs/KaTeX-COPYRIGHT.txt",
+          "output": "attribution/KaTeX-COPYRIGHT.txt",
+          "size": 81,
+          "sha256": "5c56bcb37eee58fc0d697894b09f3b5e12b37248d76b532e7dc5935e4ecf17b5",
+          "source_member": "flutter_math_fork0.7.4 lib/katex_fonts/fonts/*.ttf name0",
+          "transformation": "Original copyright field decoded losslessly to UTF8, no header, separator or trailing newline added."
+        },
+        {
+          "input": "inputs/katex-font-metadata.json",
+          "output": "attribution/katex-font-metadata.json",
+          "size": 77097,
+          "sha256": "bc168fbf556378326dd853cbafee1d8c13c621060c3f88fcc62a88facedfc3a9",
+          "transformation": "Selected original font name0/13/14 records, raw bytes retained as hex with SHA256 and lossless decoded text. No legal wording changed."
+        }
+      ],
+      "notes": {
+        "android": {
+          "en": "The complete official OFL1.1 text is supplied with the original KaTeX copyright and Reserved Font Names. SIL FAQ1.10 also addresses a license link in embedded-font metadata. The official OFL example header is retained unchanged. Actual font copyright appears separately.",
+          "ru": "Полный официальный OFL1.1 поставляется вместе с оригинальными copyright KaTeX и зарезервированными именами шрифтов. FAQ SIL1.10 отдельно рассматривает ссылку на лицензию в metadata встроенного шрифта. Пример заголовка официального OFL сохранён без изменений. Настоящий copyright шрифтов приведён отдельно."
+        }
+      }
+    },
+    {
+      "id": "material-icons",
+      "version": "3012db47f3130e62f7cc0beabff968a33cbec8d8",
+      "platforms": [
+        "android",
+        "linux"
+      ],
+      "source": {
+        "url": "https://storage.googleapis.com/flutter_infra_release/flutter/fonts/3012db47f3130e62f7cc0beabff968a33cbec8d8/fonts.zip",
+        "archive_sha256": "e56fa8e9bb4589fde964be3de451f3e5b251e4a1eafb1dc98d94add034dd5a86",
+        "archive_size": 2306678,
+        "archive_member": "MaterialIcons_LICENSE.txt",
+        "notice_sha256": "be698262aecd042c0de6f886cc0af622f8def446462026992cc530275d8a9e74",
+        "version_or_commit": "3012db47f3130e62f7cc0beabff968a33cbec8d8",
+        "font_sha256": "d9865b671a09d683d13a863089d8825e0f61a37696ce5d7d448bc8023aa62453",
+        "font_size": 1645184,
+        "font_member": "MaterialIcons-Regular.otf",
+        "attribution": "Copyright 2019 Google LLC. All Rights Reserved.",
+        "font_transformation": {
+          "android": "Flutter font-subset. APK39 baseline input1645184 bytes became1261080 bytes. Font is not edited by this notice change.",
+          "linux": "Font bytes equal the exact original input. No font modification by this notice change."
+        }
+      },
+      "files": [
+        {
+          "input": "inputs/MaterialIcons_LICENSE.txt",
+          "output": "licenses/MaterialIcons_LICENSE.txt",
+          "size": 18531,
+          "sha256": "be698262aecd042c0de6f886cc0af622f8def446462026992cc530275d8a9e74",
+          "source_member": "MaterialIcons_LICENSE.txt",
+          "transformation": "none, original archive-member bytes"
+        },
+        {
+          "input": "inputs/MaterialIcons-COPYRIGHT.txt",
+          "output": "attribution/MaterialIcons-COPYRIGHT.txt",
+          "size": 47,
+          "sha256": "7bdffe13023f7e7cf35ab5c7a970875fc8ae52ed40c5dc2bdf2dc10b86d11c5e",
+          "source_member": "MaterialIcons-Regular.otf name0",
+          "transformation": "Original copyright field decoded losslessly to UTF8, no header, separator or trailing newline added."
+        },
+        {
+          "input": "inputs/MaterialIcons-font-metadata.json",
+          "output": "attribution/MaterialIcons-font-metadata.json",
+          "size": 1291,
+          "sha256": "e2123dc061b9e4d6d71607c3d125ab123c05a92a3ab817e863e533a1f71ff309",
+          "transformation": "Selected original font name0/13/14 records, raw bytes retained as hex with SHA256 and lossless decoded text. No legal wording changed."
+        }
+      ],
+      "notes": {
+        "android": {
+          "en": "The full declaration from the exact Flutter font ZIP and original Google attribution are included. Material Icons is subset by Flutter during Android packaging. The original font input and this transformation are recorded separately from the license text.",
+          "ru": "Сохранены полная декларация из точного Flutter font ZIP и оригинальный attribution Google. При упаковке Android Flutter создаёт subset Material Icons. Исходный шрифт и это преобразование указаны отдельно от лицензионного текста."
+        },
+        "linux": {
+          "en": "The full declaration from the exact Flutter font ZIP and original Google attribution are included. The Linux Material Icons font matches the original input. Existing notices remain alongside this supplement.",
+          "ru": "Сохранены полная декларация из точного Flutter font ZIP и оригинальный attribution Google. Linux-шрифт Material Icons совпадает с исходным входом. Дополнение поставляется вместе с существующими уведомлениями."
+        }
+      }
+    }
+  ]
+}

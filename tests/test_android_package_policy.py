@@ -9,6 +9,7 @@ import io
 import json
 import marshal
 import os
+import runpy
 import shutil
 import stat
 import struct
@@ -36,6 +37,7 @@ OWN_INPUTS = (
     "packaging/android/package_stage.py",
     POLICY_RELATIVE,
     "packaging/android/package_stage.gradle.kts",
+    policy_module.NOTICES_MODULE,
 )
 
 
@@ -208,13 +210,32 @@ class AndroidPackagePolicyTests(unittest.TestCase):
             path.parent.mkdir(parents=True, exist_ok=True)
             if name != POLICY_RELATIVE:
                 shutil.copy2(PROJECT / name, path)
+        notices = runpy.run_path(str(PROJECT / policy_module.NOTICES_MODULE))
+        for name in notices["required_inputs"](PROJECT, "android"):
+            path = fixture.source / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(PROJECT / name, path)
+        notices["stage_notices"](
+            fixture.source, "android", fixture.source / policy_module.NOTICES_ASSETS
+        )
+        notices["stage_notices"](
+            fixture.source, "android", fixture.source / policy_module.NOTICES_APP_STAGE
+        )
         self.authenticate(fixture)
         return fixture
 
     def authenticate(self, fixture: StageFixture) -> None:
         write_json(fixture.policy_path, fixture.policy)
         files = []
-        for name in OWN_INPUTS:
+        notices = runpy.run_path(str(fixture.source / policy_module.NOTICES_MODULE))
+        names = set(OWN_INPUTS)
+        names.update(notices["required_inputs"](fixture.source, "android"))
+        names.update(
+            path.relative_to(fixture.source).as_posix()
+            for path in (fixture.source / policy_module.NOTICES_ASSETS).rglob("*")
+            if path.is_file()
+        )
+        for name in sorted(names):
             path = fixture.source / name
             files.append(
                 {
@@ -227,7 +248,7 @@ class AndroidPackagePolicyTests(unittest.TestCase):
         write_json(
             fixture.run / "preparation.json",
             {
-                "recipe_version": "5",
+                "recipe_version": "6",
                 "arch": ABI,
                 "source": str(fixture.source),
                 "package_policy": {
@@ -237,6 +258,11 @@ class AndroidPackagePolicyTests(unittest.TestCase):
                     "sha256": digest(fixture.policy_path.read_bytes()),
                     "stage": fixture.policy["stage"],
                 },
+                "packaged_notices": notices["verify_notices"](
+                    fixture.source,
+                    "android",
+                    fixture.source / policy_module.NOTICES_ASSETS,
+                ),
                 "files": files,
             },
         )
@@ -312,6 +338,56 @@ class AndroidPackagePolicyTests(unittest.TestCase):
         self.assertEqual(fixture.success_proof.read_bytes(), proof_bytes)
         self.assertEqual(fixture.success_proof.stat().st_mtime_ns, proof_modified)
         self.assertEqual(tree_bytes(fixture.stage), after)
+
+    def test_notice_input_or_shipped_text_tamper_blocks_crypto_preparation(
+        self,
+    ) -> None:
+        for variant in (
+            "missing-input",
+            "changed-input",
+            "missing-asset",
+            "changed-asset",
+            "extra-asset",
+            "missing-app-stage",
+            "changed-app-stage",
+        ):
+            with self.subTest(case=variant):
+                fixture = self.stage_fixture(variant)
+                notices = runpy.run_path(
+                    str(fixture.source / policy_module.NOTICES_MODULE)
+                )
+                if variant.endswith("input"):
+                    paths = [
+                        fixture.source / name
+                        for name in notices["required_inputs"](
+                            fixture.source, "android"
+                        )
+                    ]
+                else:
+                    paths = list(
+                        (
+                            fixture.source
+                            / (
+                                policy_module.NOTICES_APP_STAGE
+                                if variant.endswith("app-stage")
+                                else policy_module.NOTICES_ASSETS
+                            )
+                        ).rglob("*")
+                    )
+                original = next(
+                    path
+                    for path in paths
+                    if path.is_file()
+                    and digest(path.read_bytes())
+                    == "2c9c2acb9743e6b007b91350475308aee44691d96aa20eacef8e199988c8c388"
+                )
+                if variant.startswith("missing"):
+                    original.unlink()
+                elif variant.startswith("changed"):
+                    original.write_bytes(original.read_bytes() + b"edited")
+                else:
+                    original.with_name("unexpected.txt").write_bytes(b"unexpected")
+                self.assert_preflight_rejected(fixture)
 
     def test_preflight_checks_all_files_paths_sizes_versions_and_bytecode(self) -> None:
         variants = (

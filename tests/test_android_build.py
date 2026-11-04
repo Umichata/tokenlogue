@@ -84,6 +84,15 @@ class AndroidBuildTests(unittest.TestCase):
             destination = repo / name
             destination.parent.mkdir(parents=True, exist_ok=True)
             destination.write_bytes((PROJECT / name).read_bytes())
+        self.copy_notice_inputs(repo)
+
+    def copy_notice_inputs(self, repo: Path) -> None:
+        for name in helper.notice_recipe(PROJECT)["required_inputs"](
+            PROJECT, "android"
+        ):
+            destination = repo / name
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_bytes((PROJECT / name).read_bytes())
 
     def test_wrong_checksum_is_rejected_before_extraction(self) -> None:
         archive = self.archive()
@@ -298,6 +307,7 @@ class AndroidBuildTests(unittest.TestCase):
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text("current uncommitted bytes", "utf-8")
         (repo / helper.OWN_FILES[0]).chmod(0o755)
+        self.copy_notice_inputs(repo)
         destination = self.root / "snapshot"
         with patch.object(
             helper.subprocess,
@@ -306,7 +316,18 @@ class AndroidBuildTests(unittest.TestCase):
         ):
             inventory = helper.snapshot(repo, destination)
         copied = {entry["path"] for entry in inventory}
-        self.assertEqual(copied, set(names[:4]) | set(helper.OWN_FILES))
+        notice_inputs = set(
+            helper.notice_recipe(repo)["required_inputs"](repo, "android")
+        )
+        notice_assets = {
+            path.relative_to(destination).as_posix()
+            for path in (destination / helper.NOTICES_ASSETS).rglob("*")
+            if path.is_file()
+        }
+        self.assertEqual(
+            copied,
+            set(names[:4]) | set(helper.OWN_FILES) | notice_inputs | notice_assets,
+        )
         self.assertEqual(
             (destination / "src/main.py").read_text(), "current uncommitted bytes"
         )
@@ -329,6 +350,7 @@ class AndroidBuildTests(unittest.TestCase):
         repo = self.root / "repo"
         (repo / "src").mkdir(parents=True)
         (repo / "src/main.py").symlink_to(self.root / "private")
+        self.copy_notice_inputs(repo)
         with (
             patch.object(helper, "OWN_FILES", ()),
             patch.object(
@@ -361,6 +383,58 @@ assert Path(initialization.__file__).resolve() == Path(sys.argv[1]) / 'storage/e
             timeout=30,
         )
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_snapshot_supplies_original_android_notices_from_owned_inputs(self) -> None:
+        first, second = self.root / "first", self.root / "second"
+        inventory = helper.snapshot(PROJECT, first)
+        helper.snapshot(PROJECT, second)
+        expected = {
+            "2c9c2acb9743e6b007b91350475308aee44691d96aa20eacef8e199988c8c388",
+            "b7150f41f2912b5289ad687eb160b3f3b3e4f55cad82e98069b4d97c895aae83",
+        }
+        original_hashes = {
+            helper.sha256(path)
+            for path in (first / helper.NOTICES_ASSETS).rglob("*")
+            if path.is_file()
+        }
+        self.assertTrue(expected <= original_hashes)
+        entries = {row["path"]: row for row in inventory}
+        for path in (first / helper.NOTICES_ASSETS).rglob("*"):
+            if path.is_file():
+                relative = path.relative_to(first)
+                self.assertEqual(path.read_bytes(), (second / relative).read_bytes())
+                self.assertEqual(
+                    entries[relative.as_posix()]["sha256"], helper.sha256(path)
+                )
+        self.assertEqual(
+            helper.notice_recipe(first)["verify_notices"](
+                first, "android", first / helper.NOTICES_ASSETS
+            )["platform"],
+            "android",
+        )
+
+    def test_missing_or_changed_original_notice_blocks_snapshot(self) -> None:
+        for variant in ("missing", "changed"):
+            with self.subTest(case=variant):
+                repo = self.root / variant
+                self.copy_notice_inputs(repo)
+                original = next(
+                    path
+                    for path in (repo / "packaging/notices").rglob("*")
+                    if path.is_file()
+                    and helper.sha256(path)
+                    == "2c9c2acb9743e6b007b91350475308aee44691d96aa20eacef8e199988c8c388"
+                )
+                if variant == "missing":
+                    original.unlink()
+                else:
+                    original.write_bytes(original.read_bytes() + b"edited")
+                with (
+                    patch.object(helper.subprocess, "check_output", return_value=b""),
+                    self.assertRaises((ValueError, OSError)),
+                ):
+                    helper.snapshot(repo, self.root / (variant + "-destination"))
+                self.assertFalse((self.root / (variant + "-destination")).exists())
 
     def test_log_preserves_both_streams_and_failure_exit_code(self) -> None:
         run = self.root / "run"
@@ -575,6 +649,7 @@ assert Path(initialization.__file__).resolve() == Path(sys.argv[1]) / 'storage/e
             path = repo / name
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text("current allowed source", "utf-8")
+        self.copy_notice_inputs(repo)
         with patch.object(
             helper.subprocess, "check_output", return_value=b"src/main.py\0"
         ):
@@ -608,6 +683,7 @@ assert Path(initialization.__file__).resolve() == Path(sys.argv[1]) / 'storage/e
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(b"\x00\xff\x89\x00" + name.encode())
             path.chmod(0o640)
+        self.copy_notice_inputs(repo)
         destination = self.root / "snapshot"
         with patch.object(
             helper.subprocess, "check_output", return_value=b"src/main.py\0"
@@ -721,6 +797,9 @@ assert Path(initialization.__file__).resolve() == Path(sys.argv[1]) / 'storage/e
                 return_value=(self.root / "template", "identity"),
             ) as prepare,
             patch.object(helper, "snapshot", return_value=[]),
+            patch.object(
+                helper, "notice_recipe", return_value={"verify_notices": lambda *a: {}}
+            ),
             patch.object(helper, "sha256", return_value="policy-sha256"),
             patch.object(helper.subprocess, "check_output", return_value="test-head\n"),
             patch.dict(os.environ, {}, clear=True),

@@ -19,18 +19,21 @@ from pathlib import Path, PurePosixPath
 from urllib.parse import urlsplit
 from zipfile import ZipFile
 
-RECIPE_VERSION = "5"
+RECIPE_VERSION = "6"
 TEMPLATE_SIZE = 489103
 TEMPLATE_SHA256 = "8f95dc20ef6d901d9b5ee59f00e33d19f1d2bc6be8d6d3b800c4aab3d7315b73"
 TEMPLATE_URL = (
     "https://github.com/flet-dev/flet/releases/download/v0.86.5/flet-build-template.zip"
 )
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
+NOTICES_MODULE = "packaging/notices/notice_bundle.py"
+NOTICES_ASSETS = "src/assets/third-party-notices"
 OWN_FILES = (
     "packaging/android/build_apk.py",
     "packaging/android/package_stage.py",
     "packaging/android/package_stage.gradle.kts",
     "packaging/android/crypto-selftest-policy.json",
+    NOTICES_MODULE,
     "src/auth/pin_policy.py",
     "src/chat/paid_consent.py",
     "src/chat/estimates.py",
@@ -123,6 +126,13 @@ def sha256(path: Path) -> str:
 
 def write_json(path: Path, value: object) -> None:
     path.write_text(json.dumps(value, indent=2, ensure_ascii=False) + "\n", "utf-8")
+
+
+def notice_recipe(repo: Path) -> dict:
+    module = repo / NOTICES_MODULE
+    if module.is_symlink() or not module.is_file():
+        raise ValueError("Missing owned packaged notices helper")
+    return runpy.run_path(str(module))
 
 
 def prepare_template(
@@ -248,6 +258,7 @@ def snapshot(repo: Path, destination: Path) -> list[dict[str, object]]:
     )
     names = {os.fsdecode(name) for name in listed.split(b"\0") if name}
     names.update(OWN_FILES)
+    names.update(notice_recipe(repo)["required_inputs"](repo, "android"))
     destination.mkdir(parents=True, exist_ok=False)
     inventory: list[dict[str, object]] = []
     for name in sorted(names):
@@ -269,7 +280,21 @@ def snapshot(repo: Path, destination: Path) -> list[dict[str, object]]:
                 "mode": stat.S_IMODE(target.stat().st_mode),
             }
         )
-    return inventory
+    # Flet puts these app assets in assets/app.zip inside the final APK.
+    # Generate from the isolated inputs, without relying on personal audit paths.
+    recipe = notice_recipe(destination)
+    recipe["stage_notices"](destination, "android", destination / NOTICES_ASSETS)
+    by_name = {str(row["path"]): row for row in inventory}
+    for path in sorted((destination / NOTICES_ASSETS).rglob("*")):
+        if path.is_file():
+            name = path.relative_to(destination).as_posix()
+            by_name[name] = {
+                "path": name,
+                "size": path.stat().st_size,
+                "sha256": sha256(path),
+                "mode": stat.S_IMODE(path.stat().st_mode),
+            }
+    return [by_name[name] for name in sorted(by_name)]
 
 
 def check_configuration(repo: Path, environment: dict[str, str]) -> None:
@@ -486,6 +511,9 @@ def main() -> int:
                     "sha256": sha256(source / PACKAGE_POLICY),
                     "stage": "compiled-site-packages-before-native-packaging",
                 },
+                "packaged_notices": notice_recipe(source)["verify_notices"](
+                    source, "android", source / NOTICES_ASSETS
+                ),
                 "arch": args.arch,
                 "build_number_override": args.build_number,
                 "template_url": TEMPLATE_URL,

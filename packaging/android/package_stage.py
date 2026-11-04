@@ -8,6 +8,7 @@ import io
 import json
 import marshal
 import os
+import runpy
 import stat
 import struct
 import sys
@@ -19,6 +20,9 @@ from typing import Any, Iterator
 POLICY_NAME = "packaging/android/crypto-selftest-policy.json"
 MODULE_NAME = "packaging/android/package_stage.py"
 HOOK_NAME = "packaging/android/package_stage.gradle.kts"
+NOTICES_MODULE = "packaging/notices/notice_bundle.py"
+NOTICES_ASSETS = "src/assets/third-party-notices"
+NOTICES_APP_STAGE = "build/python-app/assets/third-party-notices"
 STAGE = "compiled-site-packages-before-native-packaging"
 NAMESPACE = "Cryptodome/SelfTest/"
 
@@ -254,7 +258,7 @@ def _authenticate(
         raise ValueError("Некорректный manifest входов recipe")
     source = run / "source"
     if (
-        preparation.get("recipe_version") != "5"
+        preparation.get("recipe_version") != "6"
         or preparation.get("arch") != abi
         or preparation.get("source") != str(source)
     ):
@@ -281,7 +285,8 @@ def _authenticate(
     by_name = {row["path"]: row for row in inputs}
     if len(by_name) != len(inputs):
         raise ValueError("Неоднозначный manifest входов recipe")
-    for name in (MODULE_NAME, POLICY_NAME, HOOK_NAME):
+
+    def authenticate_input(name: str) -> None:
         path = source / name
         info = path.lstat()
         row = by_name.get(name, {})
@@ -291,8 +296,30 @@ def _authenticate(
             or row.get("mode") != stat.S_IMODE(info.st_mode)
         ):
             raise ValueError("Изменён собственный вход штатной подготовки")
+
+    for name in (MODULE_NAME, POLICY_NAME, HOOK_NAME, NOTICES_MODULE):
+        authenticate_input(name)
     if _hash_file(source / MODULE_NAME) != _hash_file(Path(__file__).absolute()):
         raise ValueError("Исполняется модуль вне подтверждённого снимка")
+    notices = runpy.run_path(str(source / NOTICES_MODULE))
+    for name in notices["required_inputs"](source, "android"):
+        authenticate_input(name)
+    notice_manifest = notices["verify_notices"](
+        source, "android", source / NOTICES_ASSETS
+    )
+    for path in (source / NOTICES_ASSETS).rglob("*"):
+        if path.is_file():
+            authenticate_input(path.relative_to(source).as_posix())
+    if preparation.get("packaged_notices") != notice_manifest:
+        raise ValueError("Уведомления не совпали с provenance текущей сборки")
+    # serious_python_android packageApp archives this processed app directory.
+    # Checking only src/assets would miss losses during Flet's staging step.
+    _check_components(source / "build/python-app")
+    if (
+        notices["verify_notices"](source, "android", source / NOTICES_APP_STAGE)
+        != notice_manifest
+    ):
+        raise ValueError("Уведомления отсутствуют в конечном app staging")
     stage = source / "build/site-packages" / abi
     _check_components(stage)
     for sibling in stage.parent.iterdir():

@@ -1,0 +1,35 @@
+{
+  "source_archive_sha256": "e56fa8e9bb4589fde964be3de451f3e5b251e4a1eafb1dc98d94add034dd5a86",
+  "archive_member": "MaterialIcons-Regular.otf",
+  "font_sha256": "d9865b671a09d683d13a863089d8825e0f61a37696ce5d7d448bc8023aa62453",
+  "font_size": 1645184,
+  "names": {
+    "0": [
+      "Copyright 2019 Google LLC. All Rights Reserved."
+    ]
+  },
+  "records": [
+    {
+      "platform": 1,
+      "encoding": 0,
+      "language": 0,
+      "name_id": 0,
+      "raw_hex": "436f70797269676874203230313920476f6f676c65204c4c432e20416c6c205269676874732052657365727665642e",
+      "raw_size": 47,
+      "raw_sha256": "7bdffe13023f7e7cf35ab5c7a970875fc8ae52ed40c5dc2bdf2dc10b86d11c5e",
+      "text": "Copyright 2019 Google LLC. All Rights Reserved.",
+      "decode": "mac_roman"
+    },
+    {
+      "platform": 3,
+      "encoding": 1,
+      "language": 1033,
+      "name_id": 0,
+      "raw_hex": "0043006f00700079007200690067006800740020003200300031003900200047006f006f0067006c00650020004c004c0043002e00200041006c006c0020005200690067006800740073002000520065007300650072007600650064002e",
+      "raw_size": 94,
+      "raw_sha256": "27057c0b3bf839ab2ff01d6a9d693e2af82b116e1f021f4d8a18302e2f259d76",
+      "text": "Copyright 2019 Google LLC. All Rights Reserved.",
+      "decode": "utf-16-be"
+    }
+  ]
+}

@@ -30,8 +30,14 @@ from notice_inputs import (
 )
 
 DIRECTORY = Path(__file__).resolve().parent
+PROJECT_ROOT = DIRECTORY.parents[2]
+sys.path.insert(0, str(DIRECTORY.parents[1] / "notices"))
+
+import notice_bundle  # noqa: E402  # pyright: ignore[reportMissingImports]
+
 DOC = "usr/share/doc/tokenlogue"
 MANIFEST = f"{DOC}/notices.json"
+SUPPLEMENTAL = f"{DOC}/licenses/supplemental"
 BUNDLE = "usr/lib/tokenlogue"
 FLUTTER_LIBS = {
     "libapp.so",
@@ -285,6 +291,19 @@ class Collector:
             )
 
     def collect_fonts(self, flutter_notice: str) -> None:
+        supplemental = notice_bundle.stage_notices(
+            PROJECT_ROOT, "linux", self.root / SUPPLEMENTAL
+        )
+        supplemental_paths = [
+            f"{SUPPLEMENTAL}/{name}"
+            for name in notice_bundle.bundle_files(PROJECT_ROOT, "linux")
+        ]
+        self.notice_paths.update(supplemental_paths)
+        material = next(
+            component
+            for component in supplemental["components"]
+            if component["id"] == "material-icons"
+        )
         font_licenses = self.group("fonts")
         for path in sorted(self.root.rglob("*")):
             if path.suffix.lower() not in {".ttf", ".otf"}:
@@ -303,11 +322,21 @@ class Collector:
                     "\n".join(names.get("0", []) + names.get("13", [])) + "\n",
                 )
                 licenses = font_licenses + [copyright]
-            elif path.name in {"MaterialIcons-Regular.otf", "CupertinoIcons.ttf"}:
+            elif path.name == "MaterialIcons-Regular.otf":
+                if (
+                    sha256(path) != material["source"]["font_sha256"]
+                    or path.stat().st_size != material["source"]["font_size"]
+                ):
+                    raise NoticeError("MaterialIcons font differs from notice source")
+                licenses = [flutter_notice, *supplemental_paths]
+            elif path.name == "CupertinoIcons.ttf":
                 licenses = [flutter_notice]
             else:
                 raise NoticeError(f"unregistered font: {rel}")
-            self.add("font:" + path.name, [rel], licenses, {"font_names": names})
+            origin = {"font_names": names}
+            if path.name == "MaterialIcons-Regular.otf":
+                origin["supplemental_notices"] = material
+            self.add("font:" + path.name, [rel], licenses, origin)
 
     def collect_runtime(self, runtime: Path) -> None:
         spec = self.lock["runtime"]
@@ -342,6 +371,8 @@ class Collector:
         self.add("appimage-runtime", [], all_notices, spec)
 
     def collect(self, cache: Path, runtime: Path, pubspec: Path) -> None:
+        # Validate mandatory checkout inputs before preparing any package output.
+        notice_bundle.bundle_files(PROJECT_ROOT, "linux")
         self.collect_runtime(runtime)
         self.copy(DIRECTORY / "notices.lock.json", "upstream/notices.lock.json")
         pubspec = pubspec.resolve(strict=True)
@@ -553,6 +584,44 @@ def verify(root: Path, runtime: Path | None = None) -> dict:
     lock = load_lock(DIRECTORY)
     manifest = json.loads(relative_file(root, MANIFEST).read_text())
     verify_runtime_notice(root, manifest, lock)
+    material_files = {
+        name
+        for name in manifest["subjects"]
+        if Path(name).name == "MaterialIcons-Regular.otf"
+    }
+    if material_files:
+        supplemental = notice_bundle.verify_notices(
+            PROJECT_ROOT, "linux", root / SUPPLEMENTAL
+        )
+        material = next(
+            component
+            for component in supplemental["components"]
+            if component["id"] == "material-icons"
+        )
+        components = [
+            component
+            for component in manifest["components"]
+            if component["id"] == "font:MaterialIcons-Regular.otf"
+        ]
+        required = {
+            f"{SUPPLEMENTAL}/{name}"
+            for name in notice_bundle.bundle_files(PROJECT_ROOT, "linux")
+        }
+        if (
+            len(components) != 1
+            or set(components[0]["files"]) != material_files
+            or not required.issubset(components[0]["notices"])
+            or components[0]["origin"].get("supplemental_notices") != material
+            or not required.issubset(manifest["files"])
+        ):
+            raise NoticeError("MaterialIcons supplemental notice association differs")
+        for name in material_files:
+            path = relative_file(root, name)
+            if (
+                sha256(path) != material["source"]["font_sha256"]
+                or path.stat().st_size != material["source"]["font_size"]
+            ):
+                raise NoticeError("MaterialIcons font differs from notice source")
     if runtime is not None:
         artifact = fetch_runtime.load_lock()
         if artifact["runtime_sha256"] != lock["runtime"]["sha256"]:
