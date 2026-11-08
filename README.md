@@ -1,28 +1,23 @@
 <p align="left">
 <a href="README.ru.md" title="Русский"><img align="right" src="docs/assets/ui/buttons/en-0380058e71b5.svg" alt="Русский" width="46" height="28"></a>
 <a href="README.md" title="English"><img align="right" src="docs/assets/ui/buttons/en-927deb529a3e.svg" alt="English" width="45" height="28"></a>
-<a href="https://github.com/Umichata/tokenlogue/blob/main/README.md" title="Home"><img src="docs/assets/ui/buttons/en-2d0a42236dec.svg" alt="Home" width="34" height="28"></a>&nbsp;<a href="https://github.com/Umichata/tokenlogue/blob/android/README.md" title="Android"><img src="docs/assets/ui/buttons/en-46463edb13a7.svg" alt="Android" width="83" height="28"></a>&nbsp;<a href="https://github.com/Umichata/tokenlogue/blob/linux/README.md" title="Linux"><img src="docs/assets/ui/buttons/en-96c04f670a21.svg" alt="Linux" width="65" height="28"></a>
+<a href="docs/README.md" title="Documentation map"><img src="docs/assets/ui/buttons/en-63f7d280c22c.svg" alt="Documentation map" width="195" height="38"></a> <a href="https://github.com/Umichata/tokenlogue/blob/main/README.md" title="Home"><img src="docs/assets/ui/buttons/en-2d0a42236dec.svg" alt="Home" width="34" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/blob/android/README.md" title="Android"><img src="docs/assets/ui/buttons/en-46463edb13a7.svg" alt="Android" width="83" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/blob/linux/README.md" title="Linux"><img src="docs/assets/ui/buttons/en-96c04f670a21.svg" alt="Linux" width="65" height="28"></a>
 </p>
 
 <h1 align="center">
-  <img src="docs/assets/tokenlogue-banner.png" alt="Tokenlogue" width="100%">
+  <img src="docs/assets/tokenlogue-banner-en-v2.png" alt="Tokenlogue" width="100%">
 </h1>
+
+<p align="left"><a href="https://github.com/Umichata/tokenlogue/releases"><img src="docs/assets/ui/buttons/en-dd8bbfdbdd63.svg" alt="Downloads" width="106" height="28"></a> <a href="docs/user-guide.md#english"><img src="docs/assets/ui/buttons/en-4a1e7eca97e9.svg" alt="User guide" width="105" height="28"></a> <a href="#en-features"><img src="docs/assets/ui/buttons/en-f6b7b37e8509.svg" alt="Features" width="90" height="28"></a> <a href="#en-screenshots"><img src="docs/assets/ui/buttons/en-fcdfafa3f3ee.svg" alt="Screenshots" width="116" height="28"></a> <a href="#en-start"><img src="docs/assets/ui/buttons/en-ca3dbec2e101.svg" alt="Get started" width="109" height="28"></a></p>
 
 <a id="english"></a>
 <a id="lang-en"></a>
 
 Chat with OpenRouter models on **Linux and Android**. Keep conversations and drafts together, choose a model for each chat and see an estimate before sending a paid request.
 
-**<a href="https://github.com/Umichata/tokenlogue/releases" title="Downloads"><img src="docs/assets/ui/buttons/en-a89567006163.svg" alt="Downloads" width="132" height="34"></a>** · **<a href="docs/user-guide.md#english" title="User guide"><img src="docs/assets/ui/buttons/en-546470010fac.svg" alt="User guide" width="131" height="34"></a>** · **<a href="docs/README.md#english" title="All documents"><img src="docs/assets/ui/buttons/en-18cb00e4af42.svg" alt="All documents" width="156" height="34"></a>**
-
-<a href="#en-features" title="Features"><img src="docs/assets/ui/buttons/en-deac2ef330fc.svg" alt="Features" width="116" height="34"></a> · <a href="#en-screenshots" title="Screenshots"><img src="docs/assets/ui/buttons/en-61028e6b8281.svg" alt="Screenshots" width="142" height="34"></a> · <a href="#en-start" title="Get started"><img src="docs/assets/ui/buttons/en-c840c0639b46.svg" alt="Get started" width="135" height="34"></a>
-
-<p align="center">
-  <img src="docs/assets/ui/feature-panel-en.svg" alt="Chats and drafts · local estimates · conversation protection" width="100%">
-</p>
-
 <a id="en-features"></a>
-## ✨ Your chat workspace
+<a id="-your-chat-workspace"></a>
+## <img src="docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Your chat workspace
 
 - Separate chats, model selection and drafts that stay with the conversation.
 - English and Russian interface with a compact layout for desktop and mobile.
@@ -30,7 +25,8 @@ Chat with OpenRouter models on **Linux and Android**. Keep conversations and dra
 - PIN access and local protection for supported conversation fields, with platform-specific recovery options.
 
 <a id="en-screenshots"></a>
-## 🖼️ A look inside
+<a id="-a-look-inside"></a>
+## <img src="docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> A look inside
 
 <table>
 <tr><th align="center">Linux</th><th align="center">Android</th></tr>
@@ -48,14 +44,15 @@ Chat with OpenRouter models on **Linux and Android**. Keep conversations and dra
 Screenshots show the current interface with demonstration data. Earlier downloads retain their own release notes.
 
 <a id="en-start"></a>
-## 🚀 Get started
+<a id="-get-started"></a>
+## <img src="docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Get started
 
 <img src="docs/assets/ui/frame-top.svg" width="100%" alt="">
 
 | Platform | Package and requirements | Installation |
 | --- | --- | --- |
-| Linux | x86_64 AppImage, x86-64-v2 CPU, compatible desktop libraries | <a href="docs/linux-appimage.md#english" title="Linux guide">Linux guide&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> · <a href="https://github.com/Umichata/tokenlogue/releases" title="Available downloads">Available downloads&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> |
-| Android | ARM64 APK, Android 7.0 / API 24 or later | <a href="docs/android.md#english" title="Android guide">Android guide&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> · <a href="https://github.com/Umichata/tokenlogue/releases" title="Available downloads">Available downloads&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> |
+| Linux | x86_64 AppImage, x86-64-v2 CPU, compatible desktop libraries | <a href="docs/linux-appimage.md#english" title="Linux guide">Linux guide&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> <a href="https://github.com/Umichata/tokenlogue/releases" title="Available downloads">Available downloads&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> |
+| Android | ARM64 APK, Android 7.0 / API 24 or later | <a href="docs/android.md#english" title="Android guide">Android guide&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> <a href="https://github.com/Umichata/tokenlogue/releases" title="Available downloads">Available downloads&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> |
 
 <img src="docs/assets/ui/frame-bottom.svg" width="100%" alt="">
 
@@ -70,10 +67,6 @@ You do not need a separate Python or Flutter installation or the source archives
 
 For Linux updates, close earlier copies before launching the new file. For Android, install a compatible APK with the same signing certificate over the existing application. Removing the application or clearing its data is not an update step.
 
-<p align="center">
-  <img src="docs/assets/ui/onboarding-en.svg" alt="Check your OpenRouter key, set a PIN and create a chat" width="100%">
-</p>
-
 1. Add your own OpenRouter API key and let the application check it.
 2. Set a PIN. Read the recovery options for your platform before you need them.
 3. Create a chat, choose a model and write your first message.
@@ -82,32 +75,36 @@ See <a href="docs/user-guide.md#english" title="first connection and chat contro
 
 <a id="en-docs"></a>
 
-## 🧭 Find your document
+<a id="-find-your-document"></a>
+## <img src="docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Find your document
 
-- **Start here**
-  - <a href="https://github.com/Umichata/tokenlogue/releases" title="Available downloads"><img src="docs/assets/ui/buttons/en-eca4d42b3b1a.svg" alt="Available downloads" width="202" height="34"></a>.
-  - <a href="docs/android.md#en-install" title="Install on Android"><img src="docs/assets/ui/buttons/en-02eafac0c082.svg" alt="Install on Android" width="182" height="34"></a>.
-  - <a href="docs/linux-appimage.md#en-download" title="Run on Linux"><img src="docs/assets/ui/buttons/en-cf8a40db25e0.svg" alt="Run on Linux" width="147" height="34"></a>.
-- **Use and protect**
-  - <a href="docs/user-guide.md#english" title="Chats, drafts and limits"><img src="docs/assets/ui/buttons/en-82d34d8a31dd.svg" alt="Chats, drafts and limits" width="224" height="34"></a>.
-  - <a href="docs/security.md#english" title="PIN, encryption and recovery"><img src="docs/assets/ui/buttons/en-5e63fb088ae2.svg" alt="PIN, encryption and recovery" width="265" height="34"></a>.
-  - <a href="https://github.com/Umichata/tokenlogue/issues" title="Help and issues"><img src="docs/assets/ui/buttons/en-08a227adfa99.svg" alt="Help and issues" width="167" height="34"></a>.
-- **Sources and licenses**
-  - <a href="docs/source-materials.md#english" title="Source materials"><img src="docs/assets/ui/buttons/en-6c08d5ca10c9.svg" alt="Source materials" width="176" height="34"></a>.
-  - <a href="THIRD_PARTY_NOTICES.md#english" title="Third-party notices"><img src="docs/assets/ui/buttons/en-d83f57f8188d.svg" alt="Third-party notices" width="192" height="34"></a>.
-  - <a href="LICENSE" title="MIT license"><img src="docs/assets/ui/buttons/en-3e22b4aa274c.svg" alt="MIT license" width="134" height="34"></a>.
+<a id="start-here"></a>
+### <img src="docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Start here
 
-<a href="docs/README.md#english" title="Full documentation map">Full documentation map&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> includes packaging documents and historical release records.
+<p align="left"><a href="https://github.com/Umichata/tokenlogue/releases"><img src="docs/assets/ui/buttons/en-dd8bbfdbdd63.svg" alt="Downloads" width="106" height="28"></a> <a href="docs/android.md#en-install"><img src="docs/assets/ui/buttons/en-ec13da01a81e.svg" alt="Android install" width="133" height="28"></a> <a href="docs/linux-appimage.md#en-download"><img src="docs/assets/ui/buttons/en-ce1db4f66563.svg" alt="Linux launch" width="118" height="28"></a></p>
 
+<a id="use-and-protect"></a>
+### <img src="docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Use and protect
 
-## 🛡️ Costs and local protection
+<p align="left"><a href="docs/user-guide.md#english"><img src="docs/assets/ui/buttons/en-4a1e7eca97e9.svg" alt="User guide" width="105" height="28"></a> <a href="docs/security.md#english"><img src="docs/assets/ui/buttons/en-9c2e33444d68.svg" alt="Protection" width="102" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/issues"><img src="docs/assets/ui/buttons/en-b35e6ff4675a.svg" alt="Help and issues" width="141" height="28"></a></p>
+
+<a id="sources-and-licenses"></a>
+### <img src="docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Sources and licenses
+
+<p align="left"><a href="docs/source-materials.md#english"><img src="docs/assets/ui/buttons/en-b63fdbc05df7.svg" alt="Source materials" width="150" height="28"></a> <a href="THIRD_PARTY_NOTICES.md#english"><img src="docs/assets/ui/buttons/en-0ea52d246a12.svg" alt="Third-party notices" width="166" height="28"></a> <a href="LICENSE"><img src="docs/assets/ui/buttons/en-35273ad53d41.svg" alt="MIT license" width="108" height="28"></a></p>
+
+The full documentation map also includes packaging documents and historical release records.
+
+<a id="-costs-and-local-protection"></a>
+## <img src="docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Costs and local protection
 
 A chat budget, an OpenRouter key limit and your account balance are different amounts. The local token and price estimate is approximate. It is not the model's exact tokenizer or a promise of the final charge. Disabling paid-request confirmation applies from the first request in that chat, while the limits remain in effect.
 
 PIN and encryption protect access and selected local fields. They do not encrypt your whole device. Recovery depends on the saved keys and the configured platform method. When you send a message, the selected conversation content goes to OpenRouter and the chosen model provider. Tokenlogue is independent of OpenRouter.
 
-<a href="docs/user-guide.md#english" title="Using chats and estimates"><img src="docs/assets/ui/buttons/en-3a9ca4dfd18c.svg" alt="Using chats and estimates" width="246" height="34"></a> · <a href="docs/security.md#english" title="Protecting your conversations"><img src="docs/assets/ui/buttons/en-76193eae674e.svg" alt="Protecting your conversations" width="273" height="34"></a>
+<p align="left"><a href="docs/user-guide.md#english"><img src="docs/assets/ui/buttons/en-c6cc0af96e1c.svg" alt="Using chats and estimates" width="220" height="28"></a> <a href="docs/security.md#english"><img src="docs/assets/ui/buttons/en-5098cef88c2b.svg" alt="Protecting your conversations" width="247" height="28"></a></p>
 
-## 📚 Sources and licenses
+<a id="-sources-and-licenses"></a>
+## <img src="docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Sources and licenses
 
 Tokenlogue's code uses the <a href="LICENSE" title="MIT license">MIT license&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a>. <a href="docs/source-materials.md#english" title="Source materials">Source materials&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> explain the available archives and the remaining gaps in linking some native binaries to their sources. <a href="THIRD_PARTY_NOTICES.md#english" title="Third-party notices">Third-party notices&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> preserve the original terms for libraries and fonts.

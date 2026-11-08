@@ -1,7 +1,7 @@
 <p align="left">
 <a href="security.ru.md" title="Русский"><img align="right" src="assets/ui/buttons/ru-1e800a389462.svg" alt="Русский" width="46" height="28"></a>
 <a href="security.md" title="English"><img align="right" src="assets/ui/buttons/ru-ccbd7ff610ca.svg" alt="English" width="45" height="28"></a>
-<a href="../README.ru.md" title="Главная"><img src="assets/ui/buttons/ru-461b9280bad5.svg" alt="Главная" width="34" height="28"></a>&nbsp;<a href="README.ru.md" title="Документы"><img src="assets/ui/buttons/ru-2ceca5a8917e.svg" alt="Документы" width="111" height="28"></a>
+<a href="README.ru.md" title="Карта документации"><img src="assets/ui/buttons/ru-be11dde003f4.svg" alt="Карта документации" width="207" height="38"></a> <a href="../README.ru.md" title="Главная"><img src="assets/ui/buttons/ru-461b9280bad5.svg" alt="Главная" width="34" height="28"></a>
 </p>
 
 # 🛡️ Защита переписки
@@ -21,13 +21,14 @@ Tokenlogue защищает доступ к локальной переписк�
 
 <img src="assets/ui/frame-bottom.svg" width="100%" alt="">
 
-<a href="#ru-pin" title="PIN"><img src="assets/ui/buttons/ru-e6bc1ccd31eb.svg" alt="PIN" width="77" height="34"></a> · <a href="#ru-locking" title="Блокировка"><img src="assets/ui/buttons/ru-6d50554e1261.svg" alt="Блокировка" width="142" height="34"></a> · <a href="#ru-recovery" title="Восстановление"><img src="assets/ui/buttons/ru-8938cf7b1bdb.svg" alt="Восстановление" width="173" height="34"></a> · <a href="#ru-encryption" title="Шифрование"><img src="assets/ui/buttons/ru-a06b7be1c031.svg" alt="Шифрование" width="152" height="34"></a> · <a href="#ru-delete" title="Удаление профиля"><img src="assets/ui/buttons/ru-0ffb39f5501e.svg" alt="Удаление профиля" width="198" height="34"></a>
+<p align="left"><a href="#ru-pin"><img src="assets/ui/buttons/ru-8713cbed185a.svg" alt="PIN" width="51" height="28"></a> <a href="#ru-locking"><img src="assets/ui/buttons/ru-b0976986eac0.svg" alt="Блокировка" width="116" height="28"></a> <a href="#ru-recovery"><img src="assets/ui/buttons/ru-4ac5eacc0684.svg" alt="Восстановление" width="147" height="28"></a> <a href="#ru-encryption"><img src="assets/ui/buttons/ru-15b26e512b34.svg" alt="Шифрование" width="126" height="28"></a> <a href="#ru-delete"><img src="assets/ui/buttons/ru-cd67830fbad0.svg" alt="Удаление профиля" width="172" height="28"></a></p>
 
 <a id="ru-pin"></a>
 
 <a id="pin-приложения"></a>
 
-### 🔑 PIN приложения
+<a id="-pin-приложения"></a>
+### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> PIN приложения
 
 При настройке выберите четыре цифры `0`–`9` и повторите их. Ноль в начале допустим. Сохраните PIN отдельно. Кнопка с глазом позволяет увидеть его, но Tokenlogue никогда не копирует его автоматически.
 
@@ -39,7 +40,8 @@ PIN приложения отличается от пароля Linux и PIN б�
 
 <a id="блокировка-перед-уходом"></a>
 
-### 🔒 Блокировка перед уходом
+<a id="-блокировка-перед-уходом"></a>
+### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Блокировка перед уходом
 
 Нажмите кнопку блокировки в шапке, чтобы закрыть доступ к чатам. Для возврата нужен PIN приложения. Последний черновик сохраняется. Уже отправленный запрос может завершиться и сохранить ответ и расходы. При возвращении приложение не отправляет черновик автоматически.
 
@@ -49,7 +51,8 @@ PIN приложения отличается от пароля Linux и PIN б�
 
 <a id="проверка-блокировки-экрана-и-сна-в-linux"></a>
 
-### 🖥️ Проверка блокировки экрана и сна в Linux
+<a id="-проверка-блокировки-экрана-и-сна-в-linux"></a>
+### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Проверка блокировки экрана и сна в Linux
 
 После сохранения нового защищённого профиля Linux экран `Проверка локальной защиты` объясняет проверку до открытия чатов. Ваш PIN уже сохранён. Только кнопка `Начать проверку` запрашивает системную блокировку экрана. Разблокируйте Linux обычным способом и введите PIN приложения. После просмотра результата выберите `Перейти к чатам`. Если шаг прервался, войдите с сохранённым PIN, чтобы продолжить. Можно выбрать `Продолжить с ручной блокировкой` и проверить позднее.
 
@@ -65,7 +68,8 @@ Android использует блокировку при уходе в фон. �
 
 <a id="восстановление-забытого-pin"></a>
 
-### 🛟 Восстановление забытого PIN
+<a id="-восстановление-забытого-pin"></a>
+### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Восстановление забытого PIN
 
 Восстановление позволяет выбрать и сохранить новый PIN приложения. Для него нужны ранее доступный действующий способ подтверждения и исходный защищённый ключ шифрования. Оно не воссоздаёт потерянный ключ и не восстанавливает базу по одному коду.
 
@@ -73,7 +77,8 @@ Android использует блокировку при уходе в фон. �
 
 <a id="резервный-код-linux"></a>
 
-#### 🗝️ Резервный код Linux
+<a id="-резервный-код-linux"></a>
+#### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Резервный код Linux
 
 Сохраните код заранее. После входа откройте `⋮` и выберите `Резервный код`. Ещё раз подтвердите PIN приложения. Новый профиль также предлагает это после начального шага локальной защиты.
 
@@ -89,7 +94,8 @@ Android использует блокировку при уходе в фон. �
 
 <a id="дополнительное-системное-восстановление-linux"></a>
 
-#### 🖥️ Дополнительное системное восстановление Linux
+<a id="-дополнительное-системное-восстановление-linux"></a>
+#### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Дополнительное системное восстановление Linux
 
 `Системное восстановление Linux` выбирается отдельно. Оно запрашивает новое подтверждение вашей учётной записи Linux через системное окно. Вводите пароль Linux только в нём, никогда в Tokenlogue. Другой администратор или уже открытая связка ключей не заменяют проверку.
 
@@ -97,7 +103,8 @@ Android использует блокировку при уходе в фон. �
 
 <a id="системное-восстановление-android"></a>
 
-#### 📱 Системное восстановление Android
+<a id="-системное-восстановление-android"></a>
+#### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Системное восстановление Android
 
 В Android 11 и новее `Забыли PIN?` может запросить отдельную системную проверку PIN, графического ключа или пароля устройства. Также могут предлагаться поддерживаемые биометрические способы. Отпечаток пальца не обязателен. Должна быть настроена поддерживаемая блокировка экрана. Обычная разблокировка устройства не заменяет эту новую проверку.
 
@@ -107,7 +114,8 @@ Android использует блокировку при уходе в фон. �
 
 <a id="что-шифруется"></a>
 
-### 🔐 Что шифруется
+<a id="-что-шифруется"></a>
+### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Что шифруется
 
 Tokenlogue шифрует сохранённые названия чатов, сообщения пользователя и модели, а также черновики. Случайный ключ шифрования находится отдельно в платформенном защищённом хранилище. Он не выводится из четырёхзначного PIN или ключа OpenRouter. В Linux нужен доступный и разблокированный Secret Service, например GNOME Keyring.
 
@@ -125,7 +133,8 @@ Tokenlogue шифрует сохранённые названия чатов, с
 
 <a id="удаление-локального-профиля"></a>
 
-### 🗑️ Удаление локального профиля
+<a id="-удаление-локального-профиля"></a>
+### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Удаление локального профиля
 
 **Удаление необратимо средствами Tokenlogue.** Для сохранения переписки используйте действующий способ восстановления.
 
@@ -141,4 +150,4 @@ Tokenlogue шифрует сохранённые названия чатов, с
 
 Локальное удаление не отзывает ключ OpenRouter, не удаляет аккаунт, не отменяет отправленные запросы и не возвращает списания. Если нужно сменить ключ с сохранением переписки, после входа используйте `Заменить ключ OpenRouter`.
 
-<a href="user-guide.ru.md#russian" title="Руководство пользователя"><img src="assets/ui/buttons/ru-05083bc209d6.svg" alt="Руководство пользователя" width="255" height="34"></a> · <a href="linux-appimage.ru.md#russian" title="Linux"><img src="assets/ui/buttons/ru-ea25cef89739.svg" alt="Linux" width="91" height="34"></a> · <a href="android.ru.md#russian" title="Android"><img src="assets/ui/buttons/ru-00eb8599e656.svg" alt="Android" width="109" height="34"></a> · <a href="../README.ru.md#russian" title="Tokenlogue"><img src="assets/ui/buttons/ru-a11b6395ee6e.svg" alt="Tokenlogue" width="135" height="34"></a>
+<p align="left"><a href="user-guide.ru.md#russian"><img src="assets/ui/buttons/ru-e485e94805d4.svg" alt="Руководство пользователя" width="229" height="28"></a> <a href="linux-appimage.ru.md#russian"><img src="assets/ui/buttons/ru-66f2899ff23a.svg" alt="Linux" width="65" height="28"></a> <a href="android.ru.md#russian"><img src="assets/ui/buttons/ru-007800957d4f.svg" alt="Android" width="83" height="28"></a> <a href="../README.ru.md#russian"><img src="assets/ui/buttons/ru-b038324b5bbd.svg" alt="Tokenlogue" width="109" height="28"></a></p>
