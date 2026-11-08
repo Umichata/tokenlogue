@@ -1,19 +1,33 @@
-# Conversation protection / Защита переписки
+<p align="left">
+<a href="security.ru.md" title="Русский"><img align="right" src="assets/ui/buttons/en-0380058e71b5.svg" alt="Русский" width="46" height="28"></a>
+<a href="security.md" title="English"><img align="right" src="assets/ui/buttons/en-927deb529a3e.svg" alt="English" width="45" height="28"></a>
+<a href="../README.md" title="Home"><img src="assets/ui/buttons/en-2c296d10dfa5.svg" alt="Home" width="34" height="28"></a>&nbsp;<a href="README.md" title="Docs"><img src="assets/ui/buttons/en-0fba477f99e0.svg" alt="Docs" width="61" height="28"></a>
+</p>
 
-[English](#english) · [Русский](#russian)
+# 🛡️ Conversation protection
 
 <a id="english"></a>
 <a id="lang-en"></a>
 
-## English
-
 Tokenlogue protects access to locally stored conversations with an app PIN and a separate encryption key. This guide covers the current Linux and Android preview. Earlier published versions can store conversation content without this protection.
 
-[PIN](#en-pin) · [Locking](#en-locking) · [Recovery](#en-recovery) · [Encryption](#en-encryption) · [Delete a profile](#en-delete)
+<img src="assets/ui/frame-top.svg" width="100%" alt="">
+
+| Protection element | What it does |
+| --- | --- |
+| App PIN | Controls access through Tokenlogue. It is not the encryption key. |
+| Encryption key | Is stored separately and is needed to decrypt protected conversation fields. |
+| Recovery method | Lets you replace a forgotten PIN when the original protected encryption key remains available. |
+
+<img src="assets/ui/frame-bottom.svg" width="100%" alt="">
+
+<a href="#en-pin" title="PIN"><img src="assets/ui/buttons/en-7195c33ea7af.svg" alt="PIN" width="77" height="34"></a> · <a href="#en-locking" title="Locking"><img src="assets/ui/buttons/en-9176886ca175.svg" alt="Locking" width="108" height="34"></a> · <a href="#en-recovery" title="Recovery"><img src="assets/ui/buttons/en-e965a7f9ec2e.svg" alt="Recovery" width="119" height="34"></a> · <a href="#en-encryption" title="Encryption"><img src="assets/ui/buttons/en-780abd498991.svg" alt="Encryption" width="130" height="34"></a> · <a href="#en-delete" title="Delete a profile"><img src="assets/ui/buttons/en-87bf12e93447.svg" alt="Delete a profile" width="165" height="34"></a>
 
 <a id="en-pin"></a>
 
-### Your app PIN
+<a id="your-app-pin"></a>
+
+### 🔑 Your app PIN
 
 Choose four digits `0`–`9` and repeat them during setup. A leading zero is allowed. Save the PIN separately. The eye button can reveal it, but Tokenlogue never copies it automatically.
 
@@ -23,7 +37,9 @@ The app PIN is different from your Linux password and Android screen-lock PIN. I
 
 <a id="en-locking"></a>
 
-### Lock the app when you leave
+<a id="lock-the-app-when-you-leave"></a>
+
+### 🔒 Lock the app when you leave
 
 Use the lock button in the header to close access to chats. Returning requires the app PIN. Locking saves the latest draft. A request already sent can still finish and record its response and cost. The app does not automatically send a draft when you return.
 
@@ -31,7 +47,9 @@ On Android, leaving the app for the background locks access and closes dialogs. 
 
 On Linux, screen-lock and sleep monitoring depends on the desktop. The supported Cinnamon/X11 session can close access on screen lock, session switching and suspend. Minimizing or changing focus alone does not lock the app. Use manual app locking whenever monitoring is unavailable or unconfirmed. Other desktops, Wayland, additional displays and ambiguous sessions can limit automatic detection.
 
-### Check Linux screen-lock and sleep protection
+<a id="check-linux-screen-lock-and-sleep-protection"></a>
+
+### 🖥️ Check Linux screen-lock and sleep protection
 
 After saving a new protected Linux profile, `Check local protection` explains the check before opening chats. Your PIN is already saved. Only `Start check` requests the system screen lock. Unlock Linux normally, then enter that app PIN. Choose `Open chats` after reviewing the result. If interrupted, sign in with your saved PIN to resume. You can choose `Continue with manual locking` and check again later.
 
@@ -45,13 +63,17 @@ Android uses background locking and has no desktop screen-lock or sleep tests in
 
 <a id="en-recovery"></a>
 
-### Recover a forgotten app PIN
+<a id="recover-a-forgotten-app-pin"></a>
+
+### 🛟 Recover a forgotten app PIN
 
 Recovery lets you choose and save a new app PIN. It needs an existing valid recovery method and the original protected encryption key. It cannot rebuild a lost key or restore a database from a code alone.
 
 Opening `Forgot PIN?` does not change the PIN. Your previous PIN keeps working until a new one is saved. A system lock, backgrounding or language change can cancel an unfinished attempt. Start again if needed. A new PIN already saved remains active.
 
-#### Linux recovery code
+<a id="linux-recovery-code"></a>
+
+#### 🗝️ Linux recovery code
 
 Save a code before you need it. After signing in, open `⋮` and choose `Recovery code`. Confirm your app PIN again. New profiles also offer this after the local-protection introduction.
 
@@ -65,13 +87,17 @@ Saving the new PIN consumes the code. Save and confirm the replacement offered a
 
 Code recovery needs no Linux password, administrator rights or system policy. It keeps your API key, encryption key, conversations, drafts and budgets. It cannot be enrolled while a profile is already locked with a forgotten PIN. A new API key or an unlocked keyring does not prove access to that profile.
 
-#### Optional Linux system recovery
+<a id="optional-linux-system-recovery"></a>
+
+#### 🖥️ Optional Linux system recovery
 
 `Use Linux system recovery` is a separate choice. It requests fresh confirmation of your own Linux account through the desktop authentication window. Enter your Linux password only in that system window, never into Tokenlogue. A different administrator account or an already unlocked keyring does not replace this check.
 
-This option needs the separately installed Tokenlogue policy and a working desktop authentication agent. Without them, conversations stay closed. The [Linux guide](linux-appimage.md#en-system-recovery) explains the optional setup. Recovery codes work without it.
+This option needs the separately installed Tokenlogue policy and a working desktop authentication agent. Without them, conversations stay closed. The <a href="linux-appimage.md#en-system-recovery" title="Linux guide">Linux guide&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> explains the optional setup. Recovery codes work without it.
 
-#### Android system recovery
+<a id="android-system-recovery"></a>
+
+#### 📱 Android system recovery
 
 On Android 11 or later, `Forgot PIN?` can request a separate system check of the device PIN, pattern or password. Supported biometrics may also be offered. A fingerprint is not required. A supported screen lock must be configured. Simply unlocking the device does not complete this fresh check.
 
@@ -79,7 +105,9 @@ After verification, choose a new app PIN, repeat it and select `Save new PIN`. C
 
 <a id="en-encryption"></a>
 
-### What is encrypted
+<a id="what-is-encrypted"></a>
+
+### 🔐 What is encrypted
 
 Tokenlogue encrypts saved chat titles, user and model messages, and drafts. A random encryption key is stored separately in platform secure storage. It is not derived from the four-digit PIN or OpenRouter key. Linux needs an available, unlocked Secret Service such as GNOME Keyring.
 
@@ -95,7 +123,9 @@ Locking clears the visible workspace and closes new access. It does not promise 
 
 <a id="en-delete"></a>
 
-### Delete a local profile
+<a id="delete-a-local-profile"></a>
+
+### 🗑️ Delete a local profile
 
 **Deletion is irreversible within Tokenlogue.** To keep conversations, use a valid recovery method instead.
 
@@ -111,115 +141,4 @@ Once deletion has begun, it must finish. If storage fails, chats stay closed. Us
 
 Deleting locally does not revoke your key at OpenRouter, delete that account, cancel submitted requests or refund charges. Use `Replace OpenRouter key` after sign-in when you want to change keys and keep conversations.
 
-[User guide](user-guide.md#english) · [Linux](linux-appimage.md#english) · [Android](android.md#english) · [Tokenlogue](../README.md#english)
-
-<a id="russian"></a>
-<a id="lang-ru"></a>
-
-## Русский
-
-Tokenlogue защищает доступ к локальной переписке PIN приложения и отдельным ключом шифрования. Это руководство относится к текущей предварительной версии для Linux и Android. Прежние опубликованные версии могут хранить переписку без этой защиты.
-
-[PIN](#ru-pin) · [Блокировка](#ru-locking) · [Восстановление](#ru-recovery) · [Шифрование](#ru-encryption) · [Удаление профиля](#ru-delete)
-
-<a id="ru-pin"></a>
-
-### PIN приложения
-
-При настройке выберите четыре цифры `0`–`9` и повторите их. Ноль в начале допустим. Сохраните PIN отдельно. Кнопка с глазом позволяет увидеть его, но Tokenlogue никогда не копирует его автоматически.
-
-После трёх неверных проверок ввод PIN блокируется на пять минут. Вход и подтверждение PIN перед выдачей резервного кода используют общий предел. Перезапуск, сон и смена языка не сбрасывают его. Дождитесь окончания показанного отсчёта. Восстановление и удаление локального профиля остаются доступны.
-
-PIN приложения отличается от пароля Linux и PIN блокировки Android. Он управляет доступом через Tokenlogue. Это не ключ шифрования и не замена защите учётной записи ОС.
-
-<a id="ru-locking"></a>
-
-### Блокировка перед уходом
-
-Нажмите кнопку блокировки в шапке, чтобы закрыть доступ к чатам. Для возврата нужен PIN приложения. Последний черновик сохраняется. Уже отправленный запрос может завершиться и сохранить ответ и расходы. При возвращении приложение не отправляет черновик автоматически.
-
-В Android уход приложения в фон закрывает доступ и диалоги. Возврат в приложение или разблокировка Android не открывают Tokenlogue. Появление клавиатуры или краткая потеря фокуса сами по себе не равны уходу в фон.
-
-В Linux наблюдение за блокировкой и сном зависит от рабочего окружения. Поддерживаемая сессия Cinnamon/X11 позволяет закрывать доступ при блокировке экрана, переключении сессии и засыпании. Сворачивание или смена фокуса сами по себе не блокируют приложение. Используйте ручную блокировку, если наблюдение недоступно или не подтверждено. Другие рабочие окружения, Wayland, дополнительные дисплеи и неоднозначные сессии могут ограничивать автоматическое обнаружение.
-
-### Проверка блокировки экрана и сна в Linux
-
-После сохранения нового защищённого профиля Linux экран `Проверка локальной защиты` объясняет проверку до открытия чатов. Ваш PIN уже сохранён. Только кнопка `Начать проверку` запрашивает системную блокировку экрана. Разблокируйте Linux обычным способом и введите PIN приложения. После просмотра результата выберите `Перейти к чатам`. Если шаг прервался, войдите с сохранённым PIN, чтобы продолжить. Можно выбрать `Продолжить с ручной блокировкой` и проверить позднее.
-
-Щит в шапке открывает панель защиты до или после входа. Само открытие не блокирует и не усыпляет компьютер. Если выбрать проверку до входа, сначала потребуется обычный PIN приложения. `Начать тест` остаётся отдельным действием.
-
-`Тест блокировки` сохраняет черновик и запрашивает обычную системную блокировку. `Тест перехода в сон` сохраняет его и отправляет компьютер в сон. Во втором случае разбудите компьютер, разблокируйте Linux и введите PIN приложения. Для проверки сна не нужна предварительная успешная проверка экрана. Результаты двух проверок сохраняются отдельно.
-
-Панель различает сохранённые результаты и наблюдение, доступное сейчас. Прежняя успешная проверка не доказывает работу временно недоступной службы. Результаты относятся к этому устройству и учётной записи ОС. Другая настройка рабочего окружения может потребовать новой проверки. Отмена или отказ не подтверждают защиту. Не меняйте системные настройки безопасности только ради успешного результата.
-
-Android использует блокировку при уходе в фон. В его панели нет настольных проверок экрана или сна.
-
-<a id="ru-recovery"></a>
-
-### Восстановление забытого PIN
-
-Восстановление позволяет выбрать и сохранить новый PIN приложения. Для него нужны ранее доступный действующий способ подтверждения и исходный защищённый ключ шифрования. Оно не воссоздаёт потерянный ключ и не восстанавливает базу по одному коду.
-
-Открытие `Забыли PIN?` не меняет PIN. Прежний PIN работает, пока новый не сохранён. Системная блокировка, уход в фон или смена языка могут отменить незавершённую попытку. При необходимости начните заново. Уже сохранённый новый PIN остаётся действующим.
-
-#### Резервный код Linux
-
-Сохраните код заранее. После входа откройте `⋮` и выберите `Резервный код`. Ещё раз подтвердите PIN приложения. Новый профиль также предлагает это после начального шага локальной защиты.
-
-Код содержит 32 символа Base32, показанных группами по четыре. Любой, у кого есть этот код, может заменить PIN приложения. Сохраните его отдельно в менеджере паролей или на бумаге, затем повторите сохранённый код для подтверждения. Он показывается один раз. Копирование необязательно, а история буфера обмена может сохранить копию.
-
-Прежний код действует до подтверждения нового. Отмена или ошибка сохранения оставляют рабочий код. Повторно показать тот же код нельзя. Если нужен новый, войдите и выпустите замену.
-
-Для использования выберите `Забыли PIN?`, введите сохранённый код, затем выберите, повторите и сохраните новый PIN. Регистр ASCII-букв, обычные пробелы и дефисы допустимы. Нужны все 32 символа. После пяти неверных проверок ввод кода блокируется на 30 секунд отдельно от ограничения PIN. Перезапуск не обходит задержку.
-
-Сохранение нового PIN расходует использованный код. Сохраните и подтвердите предложенную замену. Если вы сначала закроете приложение, войдите с новым PIN и создайте другой код через `⋮`.
-
-Для кода не нужны пароль Linux, права администратора или системная policy. Восстановление сохраняет API-ключ, ключ шифрования, переписку, черновики и бюджеты. Создать код для уже закрытого профиля с забытым PIN нельзя. Новый API-ключ или разблокированная связка ключей не подтверждают доступ к этому профилю.
-
-#### Дополнительное системное восстановление Linux
-
-`Системное восстановление Linux` выбирается отдельно. Оно запрашивает новое подтверждение вашей учётной записи Linux через системное окно. Вводите пароль Linux только в нём, никогда в Tokenlogue. Другой администратор или уже открытая связка ключей не заменяют проверку.
-
-Для этого способа нужны отдельно установленная policy Tokenlogue и работающий системный агент аутентификации. Без них переписка остаётся закрытой. Необязательная настройка описана в [руководстве Linux](linux-appimage.md#ru-system-recovery). Резервный код работает без неё.
-
-#### Системное восстановление Android
-
-В Android 11 и новее `Забыли PIN?` может запросить отдельную системную проверку PIN, графического ключа или пароля устройства. Также могут предлагаться поддерживаемые биометрические способы. Отпечаток пальца не обязателен. Должна быть настроена поддерживаемая блокировка экрана. Обычная разблокировка устройства не заменяет эту новую проверку.
-
-После подтверждения выберите новый PIN приложения, повторите его и нажмите `Сохранить новый PIN`. Отмена до сохранения оставляет прежний PIN и переписку. Если проверка недоступна или отклонена, используйте прежний PIN. В Android 7–10 приложение может работать, но этого способа восстановления нет.
-
-<a id="ru-encryption"></a>
-
-### Что шифруется
-
-Tokenlogue шифрует сохранённые названия чатов, сообщения пользователя и модели, а также черновики. Случайный ключ шифрования находится отдельно в платформенном защищённом хранилище. Он не выводится из четырёхзначного PIN или ключа OpenRouter. В Linux нужен доступный и разблокированный Secret Service, например GNOME Keyring.
-
-Даты, ID моделей, режимы чатов, число токенов, бюджеты и состояния учёта остаются читаемыми. Это шифрование отдельных полей базы. Оно не шифрует всю базу или устройство и не является сквозным шифрованием с OpenRouter. При отправке нужные сообщения и контекст передаются в OpenRouter и выбранному поставщику модели. Изучите их правила обработки данных перед передачей личных сведений.
-
-Если защищённое хранилище или ключ шифрования недоступны, переписка остаётся закрытой. После временной ошибки восстановите доступ к системному хранилищу и повторите вход с прежним PIN. Не удаляйте базу и не сбрасывайте защиту устройства ради устранения сообщения.
-
-При обновлении старых локальных данных первый успешный вход защищает содержимое до открытия чатов. История, черновики, модели и учёт сохраняются. Сначала закройте все прежние копии Linux и держите их закрытыми. Текущие сборки допускают один процесс на каталог данных, но прежние версии это правило не соблюдают.
-
-Копия базы сама по себе не сохраняет ключ шифрования. Резервное копирование приложения в Android отключено. Удаление приложения, очистка данных, потеря защищённого хранилища или недействительность Android Keystore могут сделать переписку невосстановимой. На некоторых устройствах изменение системной защиты влияет на доступность ключей. Новый PIN, резервный код или API-ключ не воссоздают потерянный ключ шифрования.
-
-Блокировка очищает видимое рабочее пространство и закрывает новый доступ. Она не обещает мгновенного удаления всех копий открытого текста и ключей из памяти процесса. Она не защищает уже скомпрометированную ОС. Старые внешние копии, блоки накопителя, swap или снимки системы могут хранить прежнее содержимое.
-
-<a id="ru-delete"></a>
-
-### Удаление локального профиля
-
-**Удаление необратимо средствами Tokenlogue.** Для сохранения переписки используйте действующий способ восстановления.
-
-`Удалить локальный профиль` доступно на экране PIN и внизу `⋮` после входа, в том числе без выбранного чата. Действие остаётся доступным при блокировке ввода PIN. Прежний PIN, резервный код, пароль Linux и сеть не требуются. Подтвердить удаление может любой, у кого есть доступ к этому экрану.
-
-Прочитайте диалог, точно введите показанную фразу `УДАЛИТЬ ПРОФИЛЬ` и нажмите `Удалить профиль`. `Сохранить профиль` отменяет действие до принятия. Фраза подтверждает намерение, а не личность. Смена языка или закрытие неподтверждённого диалога отменяют его.
-
-Удаляются локальные API-ключ, PIN, резервный код, ключ шифрования, чаты, сообщения, черновики, лимиты и записи расходов этого профиля. Новый профиль не сможет восстановить прежнюю переписку. Язык и компоновка панели сохраняются. Внешние экспорты и резервные копии остаются. Надёжное физическое стирание всех копий на устройстве не гарантируется.
-
-В Linux Tokenlogue может сначала ограничить доступ к собственному поддерживаемому каталогу данных. Ошибка до начала удаления сохраняет профиль. Если права уже ограничены, каталог остаётся закрытым для других пользователей. Не удаляйте файлы и не меняйте права вручную для обхода ошибки.
-
-Начатое удаление должно завершиться. При ошибке хранилища чаты остаются закрытыми. Нажмите `Завершить удаление` или перезапустите приложение, чтобы продолжить. Новая настройка откроется только после полного удаления. Для пустого профиля введите ключ и выберите новый PIN.
-
-Локальное удаление не отзывает ключ OpenRouter, не удаляет аккаунт, не отменяет отправленные запросы и не возвращает списания. Если нужно сменить ключ с сохранением переписки, после входа используйте `Заменить ключ OpenRouter`.
-
-[Руководство пользователя](user-guide.md#russian) · [Linux](linux-appimage.md#russian) · [Android](android.md#russian) · [Tokenlogue](../README.md#russian)
+<a href="user-guide.md#english" title="User guide"><img src="assets/ui/buttons/en-546470010fac.svg" alt="User guide" width="131" height="34"></a> · <a href="linux-appimage.md#english" title="Linux"><img src="assets/ui/buttons/en-411f244045b9.svg" alt="Linux" width="91" height="34"></a> · <a href="android.md#english" title="Android"><img src="assets/ui/buttons/en-5d10a1d077a6.svg" alt="Android" width="109" height="34"></a> · <a href="../README.md#english" title="Tokenlogue"><img src="assets/ui/buttons/en-931ef4e6d14f.svg" alt="Tokenlogue" width="135" height="34"></a>
