@@ -1,19 +1,19 @@
 <p align="left">
 <a href="README.ru.md" title="Русский"><img align="right" src="docs/assets/ui/buttons/ru-1e800a389462.svg" alt="Русский" width="46" height="28"></a>
 <a href="README.md" title="English"><img align="right" src="docs/assets/ui/buttons/ru-ccbd7ff610ca.svg" alt="English" width="45" height="28"></a>
-<a href="docs/README.ru.md" title="Карта документации"><img src="docs/assets/ui/buttons/ru-be11dde003f4.svg" alt="Карта документации" width="207" height="38"></a> <a href="https://github.com/Umichata/tokenlogue/blob/main/README.ru.md" title="Главная"><img src="docs/assets/ui/buttons/ru-63dc819bd55f.svg" alt="Главная" width="34" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/blob/android/README.ru.md" title="Android"><img src="docs/assets/ui/buttons/ru-007800957d4f.svg" alt="Android" width="83" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/blob/linux/README.ru.md" title="Linux"><img src="docs/assets/ui/buttons/ru-66f2899ff23a.svg" alt="Linux" width="65" height="28"></a>
+<a href="https://github.com/Umichata/tokenlogue/blob/main/README.ru.md" title="Главная"><img src="docs/assets/ui/buttons/ru-63dc819bd55f.svg" alt="Главная" width="34" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/blob/android/README.ru.md" title="Android"><img src="docs/assets/ui/buttons/ru-007800957d4f.svg" alt="Android" width="83" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/blob/linux/README.ru.md" title="Linux"><img src="docs/assets/ui/buttons/ru-66f2899ff23a.svg" alt="Linux" width="65" height="28"></a>
 </p>
 
 <h1 align="center">
   <img src="docs/assets/tokenlogue-banner-ru-v2.png" alt="Tokenlogue" width="100%">
 </h1>
 
-<p align="left"><a href="https://github.com/Umichata/tokenlogue/releases"><img src="docs/assets/ui/buttons/ru-f3b0f21094a4.svg" alt="Скачать" width="86" height="28"></a> <a href="docs/user-guide.ru.md#russian"><img src="docs/assets/ui/buttons/ru-7c519bac3145.svg" alt="Руководство" width="121" height="28"></a> <a href="#ru-features"><img src="docs/assets/ui/buttons/ru-c233223e41f1.svg" alt="Функции" width="93" height="28"></a> <a href="#ru-screenshots"><img src="docs/assets/ui/buttons/ru-2ac04551ccc4.svg" alt="Скриншоты" width="113" height="28"></a> <a href="#ru-start"><img src="docs/assets/ui/buttons/ru-f1eadb913310.svg" alt="Начать" width="79" height="28"></a></p>
+<p align="left"><a href="https://github.com/Umichata/tokenlogue/releases"><img src="docs/assets/ui/buttons/ru-f3b0f21094a4.svg" alt="Скачать" width="86" height="28"></a> <a href="docs/user-guide.ru.md#russian"><img src="docs/assets/ui/buttons/ru-7c519bac3145.svg" alt="Руководство" width="121" height="28"></a> <a href="docs/README.ru.md"><img src="docs/assets/ui/buttons/ru-b4e89d854289.svg" alt="Карта документации" width="184" height="28"></a> <a href="#ru-features"><img src="docs/assets/ui/buttons/ru-c233223e41f1.svg" alt="Функции" width="93" height="28"></a> <a href="#ru-screenshots"><img src="docs/assets/ui/buttons/ru-2ac04551ccc4.svg" alt="Скриншоты" width="113" height="28"></a> <a href="#ru-start"><img src="docs/assets/ui/buttons/ru-f1eadb913310.svg" alt="Начать" width="79" height="28"></a></p>
 
 <a id="russian"></a>
 <a id="lang-ru"></a>
 
-Общайтесь с моделями OpenRouter на **Linux и Android**. Храните чаты и черновики вместе, выбирайте модель для каждого разговора и смотрите оценку перед платным запросом.
+<h3 align="left">Общайтесь с моделями OpenRouter на <strong>Linux и Android</strong>. Храните чаты и черновики вместе, выбирайте модель для каждого разговора и смотрите оценку перед платным запросом.</h3>
 
 <a id="ru-features"></a>
 <a id="-всё-для-переписки"></a>
@@ -76,22 +76,25 @@
 <a id="ru-docs"></a>
 
 <a id="-найдите-нужный-документ"></a>
-## <img src="docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Найдите нужный документ
+<a id="найдите-нужный-документ"></a>
+<a id="-документация"></a>
+## <img src="docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Документация
 
-<a id="начало-работы"></a>
-### <img src="docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Начало работы
-
-<p align="left"><a href="https://github.com/Umichata/tokenlogue/releases"><img src="docs/assets/ui/buttons/ru-840902d46c65.svg" alt="Загрузки" width="94" height="28"></a> <a href="docs/android.ru.md#ru-install"><img src="docs/assets/ui/buttons/ru-0abdbebf204e.svg" alt="Установка Android" width="166" height="28"></a> <a href="docs/linux-appimage.ru.md#ru-download"><img src="docs/assets/ui/buttons/ru-4b91e607dca0.svg" alt="Запуск Linux" width="122" height="28"></a></p>
-
-<a id="переписка-и-защита"></a>
-### <img src="docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Переписка и защита
-
-<p align="left"><a href="docs/user-guide.ru.md#russian"><img src="docs/assets/ui/buttons/ru-7c519bac3145.svg" alt="Руководство" width="121" height="28"></a> <a href="docs/security.ru.md#russian"><img src="docs/assets/ui/buttons/ru-287972bc31ba.svg" alt="Защита" width="83" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/issues"><img src="docs/assets/ui/buttons/ru-9079b2556a7e.svg" alt="Помощь" width="87" height="28"></a></p>
-
-<a id="исходники-и-лицензии"></a>
-### <img src="docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Исходники и лицензии
-
-<p align="left"><a href="docs/source-materials.ru.md#russian"><img src="docs/assets/ui/buttons/ru-2d110f2e4021.svg" alt="Исходники" width="108" height="28"></a> <a href="THIRD_PARTY_NOTICES.ru.md#russian"><img src="docs/assets/ui/buttons/ru-775331545a3f.svg" alt="Уведомления" width="127" height="28"></a> <a href="LICENSE"><img src="docs/assets/ui/buttons/ru-b92966969a04.svg" alt="Лицензия MIT" width="129" height="28"></a></p>
+<table>
+<tr><th align="left">Раздел</th><th align="left">Документы</th></tr>
+<tr>
+<td><a id="начало-работы"></a><a id="начало-работы-1"></a><strong>Начало работы</strong></td>
+<td><a href="https://github.com/Umichata/tokenlogue/releases" title="Загрузки"><img src="docs/assets/ui/buttons/ru-f0e4eb0b92d5.svg" alt="Загрузки" width="94" height="28"></a> <a href="docs/android.ru.md#ru-install" title="Установка Android"><img src="docs/assets/ui/buttons/ru-0abdbebf204e.svg" alt="Установка Android" width="166" height="28"></a> <a href="docs/linux-appimage.ru.md#ru-download" title="Запуск Linux"><img src="docs/assets/ui/buttons/ru-4b91e607dca0.svg" alt="Запуск Linux" width="122" height="28"></a></td>
+</tr>
+<tr>
+<td><a id="переписка-и-защита"></a><strong>Переписка и защита</strong></td>
+<td><a href="docs/user-guide.ru.md#russian" title="Руководство"><img src="docs/assets/ui/buttons/ru-7c519bac3145.svg" alt="Руководство" width="121" height="28"></a> <a href="docs/security.ru.md#russian" title="Защита"><img src="docs/assets/ui/buttons/ru-287972bc31ba.svg" alt="Защита" width="83" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/issues" title="Помощь"><img src="docs/assets/ui/buttons/ru-9079b2556a7e.svg" alt="Помощь" width="87" height="28"></a></td>
+</tr>
+<tr>
+<td><a id="исходники-и-лицензии"></a><a id="исходники-и-лицензии-1"></a><strong>Исходники и лицензии</strong></td>
+<td><a href="docs/source-materials.ru.md#russian" title="Исходники"><img src="docs/assets/ui/buttons/ru-2d110f2e4021.svg" alt="Исходники" width="108" height="28"></a> <a href="THIRD_PARTY_NOTICES.ru.md#russian" title="Уведомления"><img src="docs/assets/ui/buttons/ru-775331545a3f.svg" alt="Уведомления" width="127" height="28"></a> <a href="LICENSE" title="Лицензия MIT"><img src="docs/assets/ui/buttons/ru-b92966969a04.svg" alt="Лицензия MIT" width="129" height="28"></a></td>
+</tr>
+</table>
 
 Полная карта документации также содержит материалы упаковки и историю выпусков.
 

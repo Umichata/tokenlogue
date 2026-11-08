@@ -1,7 +1,7 @@
 <p align="left">
 <a href="linux-appimage.ru.md" title="Русский"><img align="right" src="assets/ui/buttons/ru-1e800a389462.svg" alt="Русский" width="46" height="28"></a>
 <a href="linux-appimage.md" title="English"><img align="right" src="assets/ui/buttons/ru-ccbd7ff610ca.svg" alt="English" width="45" height="28"></a>
-<a href="README.ru.md" title="Карта документации"><img src="assets/ui/buttons/ru-be11dde003f4.svg" alt="Карта документации" width="207" height="38"></a> <a href="../README.ru.md" title="Главная"><img src="assets/ui/buttons/ru-461b9280bad5.svg" alt="Главная" width="34" height="28"></a>
+<a href="../README.ru.md" title="Главная"><img src="assets/ui/buttons/ru-461b9280bad5.svg" alt="Главная" width="34" height="28"></a> <a href="README.ru.md" title="Карта документации"><img src="assets/ui/buttons/ru-b4e89d854289.svg" alt="Карта документации" width="184" height="28"></a>
 </p>
 
 # Tokenlogue для Linux
