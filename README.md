@@ -26,7 +26,7 @@ Tokenlogue chat on an Android tablet.
 
 You need **ARM64 Android 7.0 / API 24 or later**. This minimum does not mean every Android version has been tested. Static 16 KiB checks passed, while operation on a native ARM64 device with a 16 KiB kernel has not yet been checked.
 
-Use the APK supplied with your preview package and compare it with the accompanying SHA256SUMS. Public downloads, when available, are listed on [Releases](https://github.com/Umichata/tokenlogue/releases). There is no public Android APK there at present.
+For this preview, choose `Tokenlogue-0.1.0-65aa62f-arm64-v8a-v41-test.apk` and `RELEASE_SHA256SUMS` from [Releases](https://github.com/Umichata/tokenlogue/releases). If this preview is not listed, its downloads are not public yet. Check only the APK against its manifest entry as explained in the Android guide below. You do not need a separate Python or Flutter installation or the source archives to run Tokenlogue.
 
 Allow installation from your chosen file manager or browser, open the verified APK and follow Android's prompts. For an update, install over a compatible previous version with the same signing certificate. Do not uninstall or clear application data as a routine update step.
 
@@ -65,7 +65,7 @@ Selected local conversation fields are encrypted, not the whole device. System r
 
 Нужен **Android 7.0 / API 24 или новее с ARM64**. Поддерживаемый минимум не означает проверку каждой версии Android. Статические проверки 16 КиБ пройдены, но работа на нативном ARM64-устройстве с ядром 16 КиБ пока не проверена.
 
-Используйте APK из своего комплекта предварительной версии и сравните его с прилагаемым SHA256SUMS. Публичные загрузки по мере появления перечисляются в [Releases](https://github.com/Umichata/tokenlogue/releases). Сейчас публичного APK Android там нет.
+Для этой предварительной версии выберите `Tokenlogue-0.1.0-65aa62f-arm64-v8a-v41-test.apk` и `RELEASE_SHA256SUMS` на странице [Releases](https://github.com/Umichata/tokenlogue/releases). Если этой версии нет в списке, её загрузки ещё не опубликованы. Проверьте только APK по его записи в манифесте, как описано в руководстве Android ниже. Для запуска Tokenlogue не нужны отдельная установка Python или Flutter и архивы исходников.
 
 Разрешите установку выбранному файловому менеджеру или браузеру, откройте проверенный APK и следуйте подсказкам Android. Для обновления устанавливайте его поверх совместимой прежней версии с тем же сертификатом. Не удаляйте приложение и не очищайте данные как обычный шаг обновления.
 

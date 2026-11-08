@@ -26,7 +26,7 @@ The minimum API level does not mean that every Android version or device has bee
 
 ### Obtain and install the APK
 
-There is currently no publicly downloadable Android APK on the project's [Releases page](https://github.com/Umichata/tokenlogue/releases). Use the APK provided with the current preview bundle. The existing published Linux release is a different package.
+The [Releases page](https://github.com/Umichata/tokenlogue/releases) lists publicly available downloads. For this preview, download the APK identified below and `RELEASE_SHA256SUMS`. If this preview is not listed, its downloads are not public yet. The earlier published Linux release is a separate package.
 
 | Current Android preview | Value |
 | --- | --- |
@@ -36,13 +36,20 @@ There is currently no publicly downloadable Android APK on the project's [Releas
 | SHA-256 | `2f7c699960e3967220f526245ca2acbf4335104a141ccf3fa2b8a04dae4709d9` |
 | Signing certificate SHA-256 | `927292ad5a76ff049059d1c5d8e9497a42c03f3e995a5d9ca935c59ad8d0b09e` |
 
-Verify the APK against the bundle's `SHA256SUMS` before installation. On Linux, run the following command from the folder containing those files.
+Before installation, check only the selected APK against `RELEASE_SHA256SUMS`. Save both files in the same folder. On your computer, use Bash and SHA-256 tools to run this command from that folder.
 
 ```bash
-sha256sum --check SHA256SUMS
+set -o pipefail
+file='Tokenlogue-0.1.0-65aa62f-arm64-v8a-v41-test.apk'
+awk -v wanted="$file" '$2 == wanted { entry = $0; count++ } END { if (count != 1) exit 1; print entry }' RELEASE_SHA256SUMS |
+  sha256sum --check -
 ```
 
-All listed files must report `OK`. Transfer the verified APK to the device, open it and follow Android's installer. Android may ask to allow installations from the file manager or browser you used. Grant that permission only if you trust the package. You can turn it off again afterwards.
+The selected APK must report `OK`. A missing or duplicate manifest entry, a changed file or a missing file makes the command fail. A checksum detects changed bytes and does not replace a publisher signature.
+
+The original preview bundle has an internal `SHA256SUMS` for checking the complete extracted bundle. You do not need that bundle or the source archives to install or run Tokenlogue.
+
+Transfer the verified APK to the device, open it and follow Android's installer. Android may ask to allow installations from the file manager or browser you used. Grant that permission only if you trust the package. You can turn it off again afterwards.
 
 <a id="en-update"></a>
 
@@ -50,7 +57,7 @@ All listed files must report `OK`. Transfer the verified APK to the device, open
 
 Install the new APK over the compatible existing installation with the same application identity and signing certificate. Keep the existing application data. Uninstalling or clearing data is not an ordinary update step and can make encrypted conversations unrecoverable.
 
-If Android refuses the update, check the package version, architecture and signing identity. Do not remove the old app just to bypass a signature error. Keep the existing data and ask for help.
+If Android refuses the update, check the package version, architecture and signing identity. Do not remove the old app just to bypass a signature error. Keep the existing data and [ask for help](https://github.com/Umichata/tokenlogue/issues). Include the package filename, Android version and relevant error. Remove API keys, private messages and personal paths before sharing.
 
 <a id="en-first-launch"></a>
 
@@ -98,7 +105,7 @@ Tokenlogue позволяет общаться с моделями OpenRouter н
 
 ### Получение и установка APK
 
-На странице [Releases](https://github.com/Umichata/tokenlogue/releases) проекта сейчас нет общедоступного Android APK. Используйте APK из текущего комплекта предварительной версии. Уже опубликованный выпуск Linux является другим пакетом.
+На странице [Releases](https://github.com/Umichata/tokenlogue/releases) перечислены общедоступные загрузки. Для этой предварительной версии скачайте указанный ниже APK и `RELEASE_SHA256SUMS`. Если этой версии нет в списке, её загрузки ещё не опубликованы. Прежний опубликованный выпуск Linux является отдельным пакетом.
 
 | Текущая версия Android | Значение |
 | --- | --- |
@@ -108,13 +115,20 @@ Tokenlogue позволяет общаться с моделями OpenRouter н
 | SHA-256 | `2f7c699960e3967220f526245ca2acbf4335104a141ccf3fa2b8a04dae4709d9` |
 | SHA-256 сертификата подписи | `927292ad5a76ff049059d1c5d8e9497a42c03f3e995a5d9ca935c59ad8d0b09e` |
 
-Перед установкой сверьте APK с файлом `SHA256SUMS` из комплекта. В Linux выполните следующую команду из папки с этими файлами.
+Перед установкой сверьте только выбранный APK с `RELEASE_SHA256SUMS`. Сохраните оба файла в одной папке. На компьютере используйте Bash и средства SHA-256, чтобы выполнить из этой папки следующую команду.
 
 ```bash
-sha256sum --check SHA256SUMS
+set -o pipefail
+file='Tokenlogue-0.1.0-65aa62f-arm64-v8a-v41-test.apk'
+awk -v wanted="$file" '$2 == wanted { entry = $0; count++ } END { if (count != 1) exit 1; print entry }' RELEASE_SHA256SUMS |
+  sha256sum --check -
 ```
 
-Каждый перечисленный файл должен получить `OK`. Передайте проверенный APK на устройство, откройте его и следуйте установщику Android. Система может попросить разрешить установку из использованного файлового менеджера или браузера. Давайте разрешение только для пакета, которому доверяете. После установки его можно отключить.
+Выбранный APK должен получить `OK`. Отсутствующая или повторная запись в манифесте, изменённый или отсутствующий файл вызывают ошибку команды. Контрольная сумма обнаруживает изменение байтов и не заменяет подпись издателя.
+
+Исходный комплект предварительной версии содержит внутренний `SHA256SUMS` для проверки полного распакованного комплекта. Для установки и запуска Tokenlogue этот комплект и архивы исходников не нужны.
+
+Передайте проверенный APK на устройство, откройте его и следуйте установщику Android. Система может попросить разрешить установку из использованного файлового менеджера или браузера. Давайте разрешение только для пакета, которому доверяете. После установки его можно отключить.
 
 <a id="ru-update"></a>
 
@@ -122,7 +136,7 @@ sha256sum --check SHA256SUMS
 
 Установите новый APK поверх совместимой прежней версии с тем же идентификатором приложения и сертификатом подписи. Сохраните данные приложения. Удаление приложения и очистка данных не являются обычным шагом обновления и могут сделать зашифрованную переписку невосстановимой.
 
-Если Android отказывает в обновлении, проверьте версию, архитектуру и подпись пакета. Не удаляйте прежнее приложение только для обхода ошибки подписи. Сохраните данные и обратитесь за помощью.
+Если Android отказывает в обновлении, проверьте версию, архитектуру и подпись пакета. Не удаляйте прежнее приложение только для обхода ошибки подписи. Сохраните данные и [обратитесь за помощью](https://github.com/Umichata/tokenlogue/issues). Укажите имя пакета, версию Android и существенную ошибку. Перед отправкой уберите API-ключи, личную переписку и персональные пути.
 
 <a id="ru-first-launch"></a>
 
