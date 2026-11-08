@@ -1,7 +1,7 @@
 <p align="left">
 <a href="android.ru.md" title="Русский"><img align="right" src="assets/ui/buttons/ru-1e800a389462.svg" alt="Русский" width="46" height="28"></a>
 <a href="android.md" title="English"><img align="right" src="assets/ui/buttons/ru-ccbd7ff610ca.svg" alt="English" width="45" height="28"></a>
-<a href="../README.ru.md" title="Главная"><img src="assets/ui/buttons/ru-461b9280bad5.svg" alt="Главная" width="34" height="28"></a>&nbsp;<a href="README.ru.md" title="Документы"><img src="assets/ui/buttons/ru-2ceca5a8917e.svg" alt="Документы" width="111" height="28"></a>
+<a href="README.ru.md" title="Карта документации"><img src="assets/ui/buttons/ru-be11dde003f4.svg" alt="Карта документации" width="207" height="38"></a> <a href="../README.ru.md" title="Главная"><img src="assets/ui/buttons/ru-461b9280bad5.svg" alt="Главная" width="34" height="28"></a>
 </p>
 
 # Tokenlogue для Android
@@ -11,11 +11,12 @@
 
 Tokenlogue позволяет общаться с моделями OpenRouter на телефоне или планшете Android ARM64. Есть русский и английский интерфейс, отдельные черновики чатов и компоновка, которая учитывает доступное место.
 
-<a href="#ru-requirements" title="Требования"><img src="assets/ui/buttons/ru-33e6b25676ed.svg" alt="Требования" width="140" height="34"></a> · <a href="#ru-install" title="Установка"><img src="assets/ui/buttons/ru-f3b204701c35.svg" alt="Установка" width="129" height="34"></a> · <a href="#ru-update" title="Обновление"><img src="assets/ui/buttons/ru-3bf1d7200c88.svg" alt="Обновление" width="143" height="34"></a> · <a href="#ru-first-launch" title="Первый запуск"><img src="assets/ui/buttons/ru-5665f25d37e6.svg" alt="Первый запуск" width="164" height="34"></a> · <a href="security.ru.md#russian" title="Защита"><img src="assets/ui/buttons/ru-c71fb64e5880.svg" alt="Защита" width="109" height="34"></a>
+<p align="left"><a href="#ru-requirements"><img src="assets/ui/buttons/ru-c8c1bdfd645d.svg" alt="Требования" width="114" height="28"></a> <a href="#ru-install"><img src="assets/ui/buttons/ru-e282b6fdb500.svg" alt="Установка" width="103" height="28"></a> <a href="#ru-update"><img src="assets/ui/buttons/ru-fee57eb0b9e5.svg" alt="Обновление" width="117" height="28"></a> <a href="#ru-first-launch"><img src="assets/ui/buttons/ru-50fa519ff78f.svg" alt="Первый запуск" width="138" height="28"></a> <a href="security.ru.md#russian"><img src="assets/ui/buttons/ru-287972bc31ba.svg" alt="Защита" width="83" height="28"></a></p>
 
 <a id="ru-requirements"></a>
 
-## 🧩 Требования и совместимость
+<a id="-требования-и-совместимость"></a>
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Требования и совместимость
 
 - Android 7.0 или новее, API 24 и выше.
 - Устройство ARM64 с поддержкой ABI `arm64-v8a`.
@@ -26,7 +27,8 @@ Tokenlogue позволяет общаться с моделями OpenRouter н
 
 <a id="ru-install"></a>
 
-## 📦 Получение и установка APK
+<a id="-получение-и-установка-apk"></a>
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Получение и установка APK
 
 На странице <a href="https://github.com/Umichata/tokenlogue/releases" title="Releases">Releases&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> перечислены общедоступные загрузки. Для этой предварительной версии скачайте указанный ниже APK и `RELEASE_SHA256SUMS`. Если этой версии нет в списке, её загрузки ещё не опубликованы. Прежний опубликованный выпуск Linux является отдельным пакетом.
 
@@ -58,7 +60,8 @@ awk -v wanted="$file" '$2 == wanted { entry = $0; count++ } END { if (count != 1
 
 <a id="ru-update"></a>
 
-## 🔄 Обновление совместимой установки
+<a id="-обновление-совместимой-установки"></a>
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Обновление совместимой установки
 
 Установите новый APK поверх совместимой прежней версии с тем же идентификатором приложения и сертификатом подписи. Сохраните данные приложения. Удаление приложения и очистка данных не являются обычным шагом обновления и могут сделать зашифрованную переписку невосстановимой.
 
@@ -66,7 +69,8 @@ awk -v wanted="$file" '$2 == wanted { entry = $0; count++ } END { if (count != 1
 
 <a id="ru-first-launch"></a>
 
-## 💬 Подключение и первый чат
+<a id="-подключение-и-первый-чат"></a>
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Подключение и первый чат
 
 <img src="assets/ui/frame-top.svg" width="320" alt=""><br>
 <img src="assets/screenshots/android-start-ru.png" alt="Первый запуск на Android" width="320"><br>
@@ -84,7 +88,8 @@ awk -v wanted="$file" '$2 == wanted { entry = $0; count++ } END { if (count != 1
 
 Рабочее пространство чата Android.
 
-## 🔒 Защита локального профиля
+<a id="-защита-локального-профиля"></a>
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Защита локального профиля
 
 Уход Tokenlogue в фон закрывает доступ. При возвращении введите PIN приложения. Сохранённый черновик восстановится. Разблокировка Android не открывает Tokenlogue автоматически.
 
@@ -92,4 +97,4 @@ awk -v wanted="$file" '$2 == wanted { entry = $0; count++ } END { if (count != 1
 
 Резервное копирование приложения в Android отключено. Приложение использует интернет и системные возможности аутентификации. Доступ к микрофону не запрашивается. Изменение защиты устройства, удаление приложения и очистка данных могут повлиять на ключи, нужные для чтения защищённой переписки. Одна копия базы не является переносимой резервной копией.
 
-<a href="user-guide.ru.md#russian" title="Руководство пользователя"><img src="assets/ui/buttons/ru-05083bc209d6.svg" alt="Руководство пользователя" width="255" height="34"></a> · <a href="security.ru.md#russian" title="Защита"><img src="assets/ui/buttons/ru-c71fb64e5880.svg" alt="Защита" width="109" height="34"></a> · <a href="source-materials.ru.md#russian" title="Исходные материалы"><img src="assets/ui/buttons/ru-810b0819d2f5.svg" alt="Исходные материалы" width="216" height="34"></a> · <a href="../README.ru.md#russian" title="Tokenlogue"><img src="assets/ui/buttons/ru-a11b6395ee6e.svg" alt="Tokenlogue" width="135" height="34"></a>
+<p align="left"><a href="user-guide.ru.md#russian"><img src="assets/ui/buttons/ru-e485e94805d4.svg" alt="Руководство пользователя" width="229" height="28"></a> <a href="security.ru.md#russian"><img src="assets/ui/buttons/ru-287972bc31ba.svg" alt="Защита" width="83" height="28"></a> <a href="source-materials.ru.md#russian"><img src="assets/ui/buttons/ru-324cbf015392.svg" alt="Исходные материалы" width="190" height="28"></a> <a href="../README.ru.md#russian"><img src="assets/ui/buttons/ru-b038324b5bbd.svg" alt="Tokenlogue" width="109" height="28"></a></p>

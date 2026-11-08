@@ -1,7 +1,7 @@
 <p align="left">
 <a href="user-guide.ru.md" title="Русский"><img align="right" src="assets/ui/buttons/en-0380058e71b5.svg" alt="Русский" width="46" height="28"></a>
 <a href="user-guide.md" title="English"><img align="right" src="assets/ui/buttons/en-927deb529a3e.svg" alt="English" width="45" height="28"></a>
-<a href="../README.md" title="Home"><img src="assets/ui/buttons/en-2c296d10dfa5.svg" alt="Home" width="34" height="28"></a>&nbsp;<a href="README.md" title="Docs"><img src="assets/ui/buttons/en-0fba477f99e0.svg" alt="Docs" width="61" height="28"></a>
+<a href="README.md" title="Documentation map"><img src="assets/ui/buttons/en-63f7d280c22c.svg" alt="Documentation map" width="195" height="38"></a> <a href="../README.md" title="Home"><img src="assets/ui/buttons/en-2c296d10dfa5.svg" alt="Home" width="34" height="28"></a>
 </p>
 
 # 📘 Using Tokenlogue
@@ -11,14 +11,15 @@
 
 Tokenlogue lets you chat with OpenRouter models on Linux and Android. This guide describes the current preview. Earlier published previews can have fewer features. Start with the <a href="linux-appimage.md#english" title="Linux installation guide">Linux installation guide&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> or <a href="android.md#english" title="Android installation guide">Android installation guide&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a>.
 
-<a href="#en-access" title="Get started"><img src="assets/ui/buttons/en-c840c0639b46.svg" alt="Get started" width="135" height="34"></a> · <a href="#en-chats" title="Chats"><img src="assets/ui/buttons/en-e17c579b9a6d.svg" alt="Chats" width="93" height="34"></a> · <a href="#en-drafts" title="Drafts"><img src="assets/ui/buttons/en-0db65ae32e2b.svg" alt="Drafts" width="97" height="34"></a> · <a href="#en-limits" title="Limits"><img src="assets/ui/buttons/en-b9e511d82744.svg" alt="Limits" width="96" height="34"></a> · <a href="#en-chat-metrics" title="Costs"><img src="assets/ui/buttons/en-b239ee455553.svg" alt="Costs" width="92" height="34"></a> · <a href="security.md#english" title="Protection"><img src="assets/ui/buttons/en-c8aca5cd0ad1.svg" alt="Protection" width="128" height="34"></a>
+<p align="left"><a href="#en-access"><img src="assets/ui/buttons/en-ca3dbec2e101.svg" alt="Get started" width="109" height="28"></a> <a href="#en-chats"><img src="assets/ui/buttons/en-474e166de580.svg" alt="Chats" width="67" height="28"></a> <a href="#en-drafts"><img src="assets/ui/buttons/en-1cd72768132b.svg" alt="Drafts" width="71" height="28"></a> <a href="#en-limits"><img src="assets/ui/buttons/en-d98731f70acd.svg" alt="Limits" width="70" height="28"></a> <a href="#en-chat-metrics"><img src="assets/ui/buttons/en-0ee613298d92.svg" alt="Costs" width="66" height="28"></a> <a href="security.md#english"><img src="assets/ui/buttons/en-9c2e33444d68.svg" alt="Protection" width="102" height="28"></a></p>
 
 <a id="en-access"></a>
 <a id="en-current"></a>
 
 <a id="get-started"></a>
 
-### 🚀 Get started
+<a id="-get-started"></a>
+### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Get started
 
 1. Choose English or Russian on the sign-in screen.
 2. Enter an API key created in your [OpenRouter account](https://openrouter.ai/settings/keys) and choose `Check key`. This contacts OpenRouter. A connection error alone does not mean that the key is invalid.
@@ -39,7 +40,8 @@ At later launches, enter your app PIN and choose `Sign in`. Updating a compatibl
 
 <a id="create-and-manage-chats"></a>
 
-### 💬 Create and manage chats
+<a id="-create-and-manage-chats"></a>
+### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Create and manage chats
 
 Choose free or paid mode, search by model name or ID, then set the chat limits. Each chat keeps its mode and model. Create another chat to choose a different model.
 
@@ -53,7 +55,8 @@ The `⋮` menu contains key status, model details, token prices, budget details 
 
 <a id="arrange-the-workspace"></a>
 
-### 🧭 Arrange the workspace
+<a id="-arrange-the-workspace"></a>
+### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Arrange the workspace
 
 The top-left button hides or shows the chat list in a wide Linux window. Tokenlogue remembers that choice. On a narrow screen it opens a drawer. Choose a chat, tap outside, or use Back or Escape to close the drawer. Changing to a narrow layout does not overwrite the saved wide-window choice.
 
@@ -71,7 +74,8 @@ Long titles are shortened visually. When the keyboard or a short window leaves l
 
 <a id="send-messages-and-keep-drafts"></a>
 
-### ✍️ Send messages and keep drafts
+<a id="-send-messages-and-keep-drafts"></a>
+### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Send messages and keep drafts
 
 Type in `Message` and choose `Send`. With a keyboard, Enter sends and Shift+Enter inserts a line break. Empty messages cannot be sent. Tokenlogue sends the message and eligible conversation context to OpenRouter and the selected model provider.
 
@@ -85,7 +89,8 @@ If a reply is incomplete or a request fails, read its status before retrying. Re
 
 <a id="set-chat-limits"></a>
 
-### 🎚️ Set chat limits
+<a id="-set-chat-limits"></a>
+### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Set chat limits
 
 Configure limits before the first request. Use `Set limits` or `Edit limits` in `⋮` to change them later.
 
@@ -107,7 +112,8 @@ The chat budget, the spending limit of your OpenRouter key and your OpenRouter a
 
 <a id="choose-when-paid-requests-need-confirmation"></a>
 
-### ✅ Choose when paid requests need confirmation
+<a id="-choose-when-paid-requests-need-confirmation"></a>
+### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Choose when paid requests need confirmation
 
 New paid chats ask for confirmation before sending. Review the model, estimated input, response maximum and spending reserve. Cancel to leave the message unsent.
 
@@ -119,7 +125,8 @@ Turn the option off to require confirmation from the next request onward. The ch
 
 <a id="read-token-and-cost-information"></a>
 
-### 💳 Read token and cost information
+<a id="-read-token-and-cost-information"></a>
+### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Read token and cost information
 
 <img src="assets/ui/frame-top.svg" width="100%" alt="">
 
@@ -142,7 +149,8 @@ Calculating an estimate makes no network request and reserves no budget. The nor
 
 <a id="handle-an-unknown-request-result"></a>
 
-### ❔ Handle an unknown request result
+<a id="-handle-an-unknown-request-result"></a>
+### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Handle an unknown request result
 
 A lost connection can leave uncertainty about whether OpenRouter processed a request. Tokenlogue keeps its protective reserve rather than treating it as free. Check the request and billing in your OpenRouter account before retrying.
 
@@ -152,7 +160,8 @@ After checking, `Release unknown reservation` returns that local reserve to the 
 
 <a id="replace-an-openrouter-key"></a>
 
-### 🔑 Replace an OpenRouter key
+<a id="-replace-an-openrouter-key"></a>
+### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Replace an OpenRouter key
 
 Sign in with your existing PIN, open `⋮` and choose `Replace OpenRouter key`. This works with or without a selected chat. Finish any current send or key check first.
 
@@ -165,10 +174,11 @@ The old key stays saved until the replacement passes validation and is stored. C
 
 <a id="protect-your-conversations"></a>
 
-### 🛡️ Protect your conversations
+<a id="-protect-your-conversations"></a>
+### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Protect your conversations
 
 Use the header lock button before leaving the device. On Android, moving the app to the background closes access. Linux screen-lock and sleep monitoring depends on the desktop session.
 
 Read <a href="security.md#english" title="conversation protection and recovery">conversation protection and recovery&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> before relying on a PIN or changing device security. It explains encrypted fields, the Linux recovery code, Android system recovery, local-protection checks and irreversible profile deletion. Copying a database alone does not back up its separate encryption key.
 
-<a href="../README.md#english" title="Tokenlogue"><img src="assets/ui/buttons/en-931ef4e6d14f.svg" alt="Tokenlogue" width="135" height="34"></a> · <a href="linux-appimage.md#english" title="Linux"><img src="assets/ui/buttons/en-411f244045b9.svg" alt="Linux" width="91" height="34"></a> · <a href="android.md#english" title="Android"><img src="assets/ui/buttons/en-5d10a1d077a6.svg" alt="Android" width="109" height="34"></a> · <a href="source-materials.md#english" title="Source materials"><img src="assets/ui/buttons/en-6c08d5ca10c9.svg" alt="Source materials" width="176" height="34"></a>
+<p align="left"><a href="../README.md#english"><img src="assets/ui/buttons/en-2e5a16e1977a.svg" alt="Tokenlogue" width="109" height="28"></a> <a href="linux-appimage.md#english"><img src="assets/ui/buttons/en-96c04f670a21.svg" alt="Linux" width="65" height="28"></a> <a href="android.md#english"><img src="assets/ui/buttons/en-46463edb13a7.svg" alt="Android" width="83" height="28"></a> <a href="source-materials.md#english"><img src="assets/ui/buttons/en-b63fdbc05df7.svg" alt="Source materials" width="150" height="28"></a></p>

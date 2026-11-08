@@ -1,7 +1,7 @@
 <p align="left">
 <a href="14b87ac-source-materials.ru.md" title="Русский"><img align="right" src="../assets/ui/buttons/ru-1e800a389462.svg" alt="Русский" width="46" height="28"></a>
 <a href="14b87ac-source-materials.md" title="English"><img align="right" src="../assets/ui/buttons/ru-ccbd7ff610ca.svg" alt="English" width="45" height="28"></a>
-<a href="../../README.ru.md" title="Главная"><img src="../assets/ui/buttons/ru-461b9280bad5.svg" alt="Главная" width="34" height="28"></a>&nbsp;<a href="../README.ru.md" title="Документы"><img src="../assets/ui/buttons/ru-2ceca5a8917e.svg" alt="Документы" width="111" height="28"></a>
+<a href="../README.ru.md" title="Карта документации"><img src="../assets/ui/buttons/ru-be11dde003f4.svg" alt="Карта документации" width="207" height="38"></a> <a href="../../README.ru.md" title="Главная"><img src="../assets/ui/buttons/ru-461b9280bad5.svg" alt="Главная" width="34" height="28"></a>
 </p>
 
 # Исторический комплект исходников
@@ -11,7 +11,8 @@
 
 Комплект собран 10 сентября 2026 года для <a href="v0.1.0-linux-preview.1.ru.md#russian" title="прежней Linux-сборки">прежней Linux-сборки&nbsp;<img src="../assets/ui/inline-link.svg" alt="" width="17" height="17"></a>. Он сохраняет исходные материалы той версии. Его копия также включена в более поздний [опубликованный базовый набор](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-linux-preview.986c6ad), откуда можно повторно использовать выбранные неизменившиеся зависимости.
 
-## 🗂️ Данные архива
+<a id="-данные-архива"></a>
+## <img src="../assets/ui/section-mark.svg" alt="" width="20" height="20"> Данные архива
 
 <img src="../assets/ui/frame-top.svg" width="100%" alt="">
 
@@ -27,7 +28,8 @@
 
 Бинарное приложение в архив не входит. Отдельной ссылки на скачивание ZIP здесь нет. Чтобы получить сохранённую копию, используйте <a href="../source-materials.ru.md#russian" title="инструкцию восстановления базового набора">инструкцию восстановления базового набора&nbsp;<img src="../assets/ui/inline-link.svg" alt="" width="17" height="17"></a>.
 
-## 🔍 Состав и целостность
+<a id="-состав-и-целостность"></a>
+## <img src="../assets/ui/section-mark.svg" alt="" width="20" height="20"> Состав и целостность
 
 ZIP содержит исходники Tokenlogue, исходные пакеты Ubuntu и правила упаковки, CPython 3.12.14, рецепты Python Build Standalone, исходные дистрибутивы Python-пакетов, пакеты Dart, Flet 0.86.5, Flutter 3.44.8, Dart bridge 1.9.0, исходные файлы шрифтов и материалы прежнего runtime.
 
@@ -40,7 +42,8 @@ python3 verify_materials.py
 
 Скрипт проверяет соответствие предоставленных файлов манифесту. Он не подтверждает наличие каждого файла, необходимого для полной пересборки.
 
-## 📌 Границы исторического комплекта
+<a id="-границы-исторического-комплекта"></a>
+## <img src="../assets/ui/section-mark.svg" alt="" width="20" height="20"> Границы исторического комплекта
 
 Для прежних исходников Ubuntu libgcrypt20 сохранена [публикация Launchpad](https://api.launchpad.net/1.0/ubuntu/+archive/primary/+sourcepub/18430640). [Историческая ревизия type2-runtime](https://github.com/AppImage/type2-runtime/tree/caf24f9f712084686bfc24a70b75e50df0aefb9c) указывает на прежний исходный код. В ZIP есть рецепты Alpine, которые могут соответствовать старому runtime, но нет подтверждённой описи пакетов его сборки.
 
