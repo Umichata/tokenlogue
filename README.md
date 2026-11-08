@@ -26,9 +26,9 @@ Linux chat with local demonstration messages.
 
 The package is an **unsigned x86_64 AppImage**. You need an x86-64-v2 CPU, compatible desktop libraries and graphics drivers. Ubuntu 22.04 is the system-library baseline. Normal startup uses FUSE, with an extract-and-run option when FUSE is unavailable.
 
-Use [Releases](https://github.com/Umichata/tokenlogue/releases) to see public downloads, including the [published Linux preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-linux-preview.2b1f7d3). That earlier package retains its own release notes. The screenshot above shows the current interface.
+For this preview, choose `Tokenlogue-0.1.0-65aa62f-linux-x86_64.AppImage` and `RELEASE_SHA256SUMS` from [Releases](https://github.com/Umichata/tokenlogue/releases). If this preview is not listed, its downloads are not public yet. The [earlier published Linux preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-linux-preview.2b1f7d3) remains a historical package with its own release notes. The screenshot above shows the current interface.
 
-Compare your download with its accompanying SHA256SUMS, make the AppImage executable and run it as a normal user. For updates, close earlier copies before starting the replacement file. No separate Python, Flutter or Java installation is needed.
+Check only the selected AppImage against its entry in `RELEASE_SHA256SUMS` as explained in the Linux guide below, make it executable and run it as a normal user. For updates, close earlier copies before starting the replacement file. No separate Python, Flutter or Java installation or source archives are needed.
 
 [Linux requirements, checksum and launch instructions](docs/linux-appimage.md#english)
 
@@ -65,9 +65,9 @@ A working Secret Service in your desktop session stores protected key material. 
 
 Пакет поставляется как **неподписанная AppImage x86_64**. Нужны процессор x86-64-v2, совместимые библиотеки рабочего стола и видеодрайверы. Базовая версия системных библиотек соответствует Ubuntu 22.04. Обычный запуск использует FUSE, при его отсутствии можно запустить с распаковкой.
 
-Публичные загрузки перечислены в [Releases](https://github.com/Umichata/tokenlogue/releases), включая [опубликованную предварительную Linux-версию](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-linux-preview.2b1f7d3). У этого прежнего пакета свои примечания к выпуску. На снимке выше показан текущий интерфейс.
+Для этой предварительной версии выберите `Tokenlogue-0.1.0-65aa62f-linux-x86_64.AppImage` и `RELEASE_SHA256SUMS` на странице [Releases](https://github.com/Umichata/tokenlogue/releases). Если этой версии нет в списке, её загрузки ещё не опубликованы. [Прежний опубликованный Linux preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-linux-preview.2b1f7d3) остаётся историческим пакетом с собственными примечаниями к выпуску. На снимке выше показан текущий интерфейс.
 
-Сравните загрузку с прилагаемым SHA256SUMS, разрешите выполнение AppImage и запустите её от обычного пользователя. При обновлении закройте прежние копии перед открытием нового файла. Отдельная установка Python, Flutter или Java не нужна.
+Проверьте только выбранную AppImage по её записи в `RELEASE_SHA256SUMS`, как описано в руководстве Linux ниже. Разрешите выполнение и запустите её от обычного пользователя. При обновлении закройте прежние копии перед открытием нового файла. Отдельная установка Python, Flutter или Java и архивы исходников не нужны.
 
 [Требования Linux, проверка суммы и запуск](docs/linux-appimage.md#russian)
 
