@@ -28,7 +28,7 @@ Screen-lock and sleep protection is designed for the supported Cinnamon/X11 desk
 
 ### Download and verify
 
-The [Releases page](https://github.com/Umichata/tokenlogue/releases) lists publicly available packages. The current Linux and Android preview has not yet been published there. Its Linux package is identified below for users who received the preview bundle.
+The [Releases page](https://github.com/Umichata/tokenlogue/releases) lists publicly available downloads. For this preview, download the AppImage identified below and `RELEASE_SHA256SUMS`. If this preview is not listed, its downloads are not public yet.
 
 | Current preview file | Value |
 | --- | --- |
@@ -36,13 +36,18 @@ The [Releases page](https://github.com/Umichata/tokenlogue/releases) lists publi
 | Size | 35,350,920 bytes |
 | SHA-256 | `227ad9991dc0b00dfd160003967de6b9a321078b89f6129d0fdd2a620cf8c1ae` |
 
-Download the checksum file supplied with the same package. Open a terminal in that folder and verify it.
+Save the AppImage and `RELEASE_SHA256SUMS` in the same folder. Use Bash and SHA-256 tools to check only the selected package from that folder.
 
 ```bash
-sha256sum --check SHA256SUMS
+set -o pipefail
+file='Tokenlogue-0.1.0-65aa62f-linux-x86_64.AppImage'
+awk -v wanted="$file" '$2 == wanted { entry = $0; count++ } END { if (count != 1) exit 1; print entry }' RELEASE_SHA256SUMS |
+  sha256sum --check -
 ```
 
-Every listed file must report `OK`. A checksum detects changed bytes but does not replace a publisher's signature. This AppImage is unsigned. Do not replace an expected checksum with the hash of a file that failed verification.
+The selected AppImage must report `OK`. A missing or duplicate manifest entry, a changed file or a missing file makes the command fail. A checksum detects changed bytes but does not replace a publisher's signature. This AppImage is unsigned. Do not replace an expected checksum with the hash of a file that failed verification.
+
+The original preview bundle has an internal `SHA256SUMS` for checking the complete extracted bundle. You do not need that bundle or the source archives to run Tokenlogue.
 
 The [earlier published Linux preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-linux-preview.2b1f7d3) remains a separate version. It uses `Tokenlogue-0.1.0-2b1f7d3-x86_64.AppImage`, with SHA-256 `0852f9432cb089e31fef2722d84ce7124714588afb65d6f25cd64d0616a4779d`. Its Russian-only interface and older data-protection behavior differ from this guide. Use its own checksum file and [release notes](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.2b1f7d3/RELEASE_NOTES.md) when identifying older packages.
 
@@ -154,7 +159,7 @@ For [a support request](https://github.com/Umichata/tokenlogue/issues), include 
 
 ### Скачивание и проверка
 
-На странице [Releases](https://github.com/Umichata/tokenlogue/releases) находятся общедоступные пакеты. Текущая предварительная версия Linux и Android там пока не опубликована. Ниже указан её Linux-пакет для пользователей, получивших комплект предварительной версии.
+На странице [Releases](https://github.com/Umichata/tokenlogue/releases) перечислены общедоступные загрузки. Для этой предварительной версии скачайте указанную ниже AppImage и `RELEASE_SHA256SUMS`. Если этой версии нет в списке, её загрузки ещё не опубликованы.
 
 | Файл текущей версии | Значение |
 | --- | --- |
@@ -162,13 +167,18 @@ For [a support request](https://github.com/Umichata/tokenlogue/issues), include 
 | Размер | 35 350 920 байт |
 | SHA-256 | `227ad9991dc0b00dfd160003967de6b9a321078b89f6129d0fdd2a620cf8c1ae` |
 
-Получите файл сумм из того же комплекта. Откройте терминал в этой папке и выполните проверку.
+Сохраните AppImage и `RELEASE_SHA256SUMS` в одной папке. Используйте Bash и средства SHA-256, чтобы проверить из этой папки только выбранный пакет.
 
 ```bash
-sha256sum --check SHA256SUMS
+set -o pipefail
+file='Tokenlogue-0.1.0-65aa62f-linux-x86_64.AppImage'
+awk -v wanted="$file" '$2 == wanted { entry = $0; count++ } END { if (count != 1) exit 1; print entry }' RELEASE_SHA256SUMS |
+  sha256sum --check -
 ```
 
-Для каждого перечисленного файла должно появиться `OK`. Сумма обнаруживает изменение байтов, но не заменяет подпись издателя. Эта AppImage не подписана. Не подменяйте ожидаемую сумму хешем файла, который не прошёл проверку.
+Выбранная AppImage должна получить `OK`. Отсутствующая или повторная запись в манифесте, изменённый или отсутствующий файл вызывают ошибку команды. Сумма обнаруживает изменение байтов, но не заменяет подпись издателя. Эта AppImage не подписана. Не подменяйте ожидаемую сумму хешем файла, который не прошёл проверку.
+
+Исходный комплект предварительной версии содержит внутренний `SHA256SUMS` для проверки полного распакованного комплекта. Для запуска Tokenlogue этот комплект и архивы исходников не нужны.
 
 [Прежний опубликованный Linux preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-linux-preview.2b1f7d3) остаётся отдельной версией. Его файл называется `Tokenlogue-0.1.0-2b1f7d3-x86_64.AppImage`, а SHA-256 равен `0852f9432cb089e31fef2722d84ce7124714588afb65d6f25cd64d0616a4779d`. Русский интерфейс и прежняя защита данных отличаются от описанных здесь. Для проверки старых пакетов используйте их файл сумм и [примечания к выпуску](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.2b1f7d3/RELEASE_NOTES.md).
 

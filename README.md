@@ -44,10 +44,17 @@ Screenshots show the current interface with demonstration data. Earlier download
 
 | Platform | Package and requirements | Installation |
 | --- | --- | --- |
-| Linux | x86_64 AppImage, x86-64-v2 CPU, compatible desktop libraries | [Linux guide](docs/linux-appimage.md#english) · [Published Linux preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-linux-preview.2b1f7d3) |
-| Android | ARM64 APK, Android 7.0 / API 24 or later | [Android guide](docs/android.md#english) · Use the APK supplied with your preview package |
+| Linux | x86_64 AppImage, x86-64-v2 CPU, compatible desktop libraries | [Linux guide](docs/linux-appimage.md#english) · [Available downloads](https://github.com/Umichata/tokenlogue/releases) |
+| Android | ARM64 APK, Android 7.0 / API 24 or later | [Android guide](docs/android.md#english) · [Available downloads](https://github.com/Umichata/tokenlogue/releases) |
 
-[Releases](https://github.com/Umichata/tokenlogue/releases) lists the files currently available publicly. An Android APK is not currently published there. Check the package checksum before installation. The Linux AppImage is unsigned.
+Choose the package for your platform and download `RELEASE_SHA256SUMS` with it. The platform guide explains how to check only your selected package.
+
+- Android — `Tokenlogue-0.1.0-65aa62f-arm64-v8a-v41-test.apk`.
+- Linux — `Tokenlogue-0.1.0-65aa62f-linux-x86_64.AppImage`.
+
+[Releases](https://github.com/Umichata/tokenlogue/releases) lists publicly available files. If this preview is not listed, its downloads are not public yet. The [earlier Linux preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-linux-preview.2b1f7d3) remains a historical package with its own release notes.
+
+You do not need a separate Python or Flutter installation or the source archives to run Tokenlogue. The Linux AppImage is unsigned.
 
 For Linux updates, close earlier copies before launching the new file. For Android, install a compatible APK with the same signing certificate over the existing application. Removing the application or clearing its data is not an update step.
 
@@ -105,10 +112,17 @@ Tokenlogue's code uses the [MIT license](LICENSE). [Source materials](docs/sourc
 
 | Платформа | Пакет и требования | Установка |
 | --- | --- | --- |
-| Linux | AppImage x86_64, процессор x86-64-v2, совместимые библиотеки рабочего стола | [Руководство Linux](docs/linux-appimage.md#russian) · [Опубликованная Linux-версия](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-linux-preview.2b1f7d3) |
-| Android | APK ARM64, Android 7.0 / API 24 или новее | [Руководство Android](docs/android.md#russian) · Используйте APK из своего комплекта предварительной версии |
+| Linux | AppImage x86_64, процессор x86-64-v2, совместимые библиотеки рабочего стола | [Руководство Linux](docs/linux-appimage.md#russian) · [Доступные загрузки](https://github.com/Umichata/tokenlogue/releases) |
+| Android | APK ARM64, Android 7.0 / API 24 или новее | [Руководство Android](docs/android.md#russian) · [Доступные загрузки](https://github.com/Umichata/tokenlogue/releases) |
 
-На странице [Releases](https://github.com/Umichata/tokenlogue/releases) перечислены файлы, доступные публично. APK Android там пока не опубликован. Перед установкой проверьте сумму пакета. AppImage Linux не подписана.
+Выберите пакет для своей платформы и скачайте вместе с ним `RELEASE_SHA256SUMS`. Руководство платформы объясняет, как проверить только выбранный пакет.
+
+- Android — `Tokenlogue-0.1.0-65aa62f-arm64-v8a-v41-test.apk`.
+- Linux — `Tokenlogue-0.1.0-65aa62f-linux-x86_64.AppImage`.
+
+На странице [Releases](https://github.com/Umichata/tokenlogue/releases) перечислены общедоступные файлы. Если этой предварительной версии нет в списке, её загрузки ещё не опубликованы. [Прежний Linux preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-linux-preview.2b1f7d3) остаётся историческим пакетом с собственными примечаниями к выпуску.
+
+Для запуска Tokenlogue не нужны отдельная установка Python или Flutter и архивы исходников. AppImage Linux не подписана.
 
 Для обновления Linux закройте прежние копии перед запуском нового файла. На Android устанавливайте совместимый APK с прежним сертификатом поверх приложения. Удаление приложения и очистка его данных не являются обычным шагом обновления.
 
