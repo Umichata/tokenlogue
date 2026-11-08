@@ -1,7 +1,7 @@
 <p align="left">
 <a href="source-materials.ru.md" title="Русский"><img align="right" src="assets/ui/buttons/en-0380058e71b5.svg" alt="Русский" width="46" height="28"></a>
 <a href="source-materials.md" title="English"><img align="right" src="assets/ui/buttons/en-927deb529a3e.svg" alt="English" width="45" height="28"></a>
-<a href="../README.md" title="Home"><img src="assets/ui/buttons/en-2c296d10dfa5.svg" alt="Home" width="34" height="28"></a>&nbsp;<a href="README.md" title="Docs"><img src="assets/ui/buttons/en-0fba477f99e0.svg" alt="Docs" width="61" height="28"></a>
+<a href="README.md" title="Documentation map"><img src="assets/ui/buttons/en-63f7d280c22c.svg" alt="Documentation map" width="195" height="38"></a> <a href="../README.md" title="Home"><img src="assets/ui/buttons/en-2c296d10dfa5.svg" alt="Home" width="34" height="28"></a>
 </p>
 
 # Source materials
@@ -11,13 +11,15 @@
 
 Tokenlogue is available under the <a href="../LICENSE" title="MIT License">MIT License&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a>. The repository contains the application, its dependency locks and packaging recipes. Third-party components retain their own licenses.
 
-## 📦 Application sources
+<a id="-application-sources"></a>
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Application sources
 
 Use the source revision identified in your package's `PROVENANCE.json`. A later repository revision may include different code or documentation. The application source archive is distinct from the dependency collections below.
 
 <a id="en-run-from-source"></a>
 
-## 🧰 Run from source on Linux
+<a id="-run-from-source-on-linux"></a>
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Run from source on Linux
 
 Install Python 3.12 and [uv](https://docs.astral.sh/uv/). Download the project sources and open a terminal in the directory containing `pyproject.toml` and `uv.lock`. The <a href="linux-appimage.md#english" title="Linux desktop and key-store requirements">Linux desktop and key-store requirements&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> also apply.
 ```bash
@@ -27,7 +29,8 @@ uv run --locked flet run
 
 These commands run the source application. They do not create an AppImage or APK. Preparing the environment and downloading Flet desktop components may require internet access. Ready-to-use packages do not require a separate Python or Flutter installation.
 
-## 🧭 Find the matching collection
+<a id="-find-the-matching-collection"></a>
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Find the matching collection
 
 Start with the `SOURCE_MATERIALS.md` and `SOURCE_MATERIALS.json` supplied with your package. The JSON index maps each identified component to an exact archive member, version, size and SHA-256. Keep the named archives unchanged. A shared dependency collection can remain useful for a newer package without making its old application snapshot current.
 
@@ -45,7 +48,8 @@ The <a href="https://github.com/Umichata/tokenlogue/releases" title="Releases pa
 
 The supplement is 745,485 bytes. Its SHA-256 is `66b6f130c47f4a58d7708fc7c528574040c6c27d5511b8bbe1865d1412abc29e`. Its application snapshot describes its own release. It does not replace the source revision named by a newer package.
 
-## 🗂️ Restore the published baseline
+<a id="-restore-the-published-baseline"></a>
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Restore the published baseline
 
 Download all seven parts into the same directory. Keep their exact names. Their total size is 12,338,636,800 bytes. Allow at least 30 GB for the downloaded parts and extracted materials.
 
@@ -76,7 +80,8 @@ cat Tokenlogue-986c6ad-source-materials.tar.part00{1..7} | tar --extract --file 
 
 The baseline already contains the historical source ZIP and `appimage-runtime-34749438406-1.zip`. The [separate runtime ZIP](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/appimage-runtime-34749438406-1.zip) is an alternative download of the same member. It is 391,916,671 bytes with SHA-256 `a9869ba745218ea8b0e2dec0c3da6af15b4d28fbd6e1ec1170afcadb758b06c9`. You do not need to download it twice.
 
-## 🔬 What the available materials establish
+<a id="-what-the-available-materials-establish"></a>
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> What the available materials establish
 
 Identifying an intact source archive is different from establishing which sources produced a particular binary. The current Android and Linux collections include source archives and recipes for the following components, but their exact selected wheel bytes are not fully linked to all actual source revisions, patches and build inputs.
 
@@ -87,8 +92,9 @@ The exact libffi source and patches inside the selected CFFI wheels are not full
 
 Retained compiler binaries are build inputs rather than compiler source. The collection does not establish a complete offline rebuild or independent reproduction of every native dependency. An archive with the same version number and matching download checksum does not establish that connection by itself. These technical limits are separate from whether the application runs on a particular device.
 
-## 📜 Licenses and older collections
+<a id="-licenses-and-older-collections"></a>
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Licenses and older collections
 
 The <a href="../packaging/linux/appimage/notices.md#english" title="license guide">license guide&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> explains where to find the original notices included in the packages. The <a href="releases/14b87ac-source-materials.md#english" title="historical source collection">historical source collection&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> and <a href="releases/v0.1.0-linux-preview.1.md#english" title="older Linux preview record">older Linux preview record&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> describe their own files. Their earlier versions and limitations do not automatically describe newer packages.
 
-<a href="../README.md#english" title="Back to Tokenlogue"><img src="assets/ui/buttons/en-dde838cb3ea6.svg" alt="Back to Tokenlogue" width="194" height="34"></a>
+<p align="left"><a href="../README.md#english"><img src="assets/ui/buttons/en-e3d813162a8e.svg" alt="Back to Tokenlogue" width="168" height="28"></a></p>

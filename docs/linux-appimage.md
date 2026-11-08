@@ -1,7 +1,7 @@
 <p align="left">
 <a href="linux-appimage.ru.md" title="Русский"><img align="right" src="assets/ui/buttons/en-0380058e71b5.svg" alt="Русский" width="46" height="28"></a>
 <a href="linux-appimage.md" title="English"><img align="right" src="assets/ui/buttons/en-927deb529a3e.svg" alt="English" width="45" height="28"></a>
-<a href="../README.md" title="Home"><img src="assets/ui/buttons/en-2c296d10dfa5.svg" alt="Home" width="34" height="28"></a>&nbsp;<a href="README.md" title="Docs"><img src="assets/ui/buttons/en-0fba477f99e0.svg" alt="Docs" width="61" height="28"></a>
+<a href="README.md" title="Documentation map"><img src="assets/ui/buttons/en-63f7d280c22c.svg" alt="Documentation map" width="195" height="38"></a> <a href="../README.md" title="Home"><img src="assets/ui/buttons/en-2c296d10dfa5.svg" alt="Home" width="34" height="28"></a>
 </p>
 
 # Tokenlogue for Linux
@@ -17,11 +17,12 @@ Run Tokenlogue as an AppImage on a Linux desktop. Python, Flutter and build tool
 
 Current Linux interface. This screenshot uses English.
 
-<a href="#en-requirements" title="Requirements"><img src="assets/ui/buttons/en-dc416f56b423.svg" alt="Requirements" width="154" height="34"></a> · <a href="#en-download" title="Download"><img src="assets/ui/buttons/en-db204ed89fe6.svg" alt="Download" width="124" height="34"></a> · <a href="#en-run" title="Run"><img src="assets/ui/buttons/en-876ad5070bd8.svg" alt="Run" width="80" height="34"></a> · <a href="#en-updates" title="Update"><img src="assets/ui/buttons/en-b99119964e0c.svg" alt="Update" width="104" height="34"></a> · <a href="#en-help" title="Troubleshooting"><img src="assets/ui/buttons/en-8995d901e17c.svg" alt="Troubleshooting" width="170" height="34"></a>
+<p align="left"><a href="#en-requirements"><img src="assets/ui/buttons/en-54cd239b749b.svg" alt="Requirements" width="128" height="28"></a> <a href="#en-download"><img src="assets/ui/buttons/en-eb7306e41747.svg" alt="Download" width="98" height="28"></a> <a href="#en-run"><img src="assets/ui/buttons/en-ae7b8814a827.svg" alt="Run" width="54" height="28"></a> <a href="#en-updates"><img src="assets/ui/buttons/en-c94624d60136.svg" alt="Update" width="78" height="28"></a> <a href="#en-help"><img src="assets/ui/buttons/en-f0fa42aa9ee2.svg" alt="Troubleshooting" width="144" height="28"></a></p>
 
 <a id="en-requirements"></a>
 
-## 🧩 Requirements
+<a id="-requirements"></a>
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Requirements
 
 - Linux x86_64 and an x86-64-v2 compatible processor. The system-library baseline is Ubuntu 22.04.
 - A graphical desktop, GTK3 and its runtime dependencies. GTK4 alone does not replace GTK3.
@@ -34,7 +35,8 @@ Screen-lock and sleep protection is designed for the supported Cinnamon/X11 desk
 
 <a id="en-download"></a>
 
-## 📦 Download and verify
+<a id="-download-and-verify"></a>
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Download and verify
 
 The <a href="https://github.com/Umichata/tokenlogue/releases" title="Releases page">Releases page&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> lists publicly available downloads. For this preview, download the AppImage identified below and `RELEASE_SHA256SUMS`. If this preview is not listed, its downloads are not public yet.
 
@@ -64,7 +66,8 @@ The [earlier published Linux preview](https://github.com/Umichata/tokenlogue/rel
 
 <a id="en-run"></a>
 
-## 🚀 Start Tokenlogue
+<a id="-start-tokenlogue"></a>
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Start Tokenlogue
 
 Grant execute permission once, then start the verified AppImage as your normal user.
 ```bash
@@ -76,7 +79,8 @@ You can keep the file in a convenient folder. A file manager that supports progr
 
 <a id="en-without-fuse"></a>
 
-## 🧰 Run without FUSE
+<a id="-run-without-fuse"></a>
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Run without FUSE
 
 If your system cannot mount AppImages through FUSE, use extract-and-run.
 ```bash
@@ -87,7 +91,8 @@ This unpacks files to a temporary directory and starts the app without FUSE. Ens
 
 <a id="en-updates"></a>
 
-## 🔄 Update without removing your profile
+<a id="-update-without-removing-your-profile"></a>
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Update without removing your profile
 
 Close every older Tokenlogue copy before opening the replacement. Verify the new file and run it under the same OS account. There is no automatic updater. Replacing the AppImage does not remove the separately stored application data.
 
@@ -98,7 +103,8 @@ The database alone is not a complete portable backup. Its encryption key stays i
 <a id="en-current-protection"></a>
 <a id="en-system-recovery"></a>
 
-## 🔑 Optional recovery through your Linux account
+<a id="-optional-recovery-through-your-linux-account"></a>
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Optional recovery through your Linux account
 
 A saved <a href="security.md#en-recovery" title="recovery code">recovery code&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> is the usual Linux PIN-recovery method. It needs no administrator setup. The optional `Use Linux system recovery` action requires a Tokenlogue polkit policy and the desktop authentication agent.
 
@@ -121,7 +127,8 @@ sudo /usr/bin/python3 -I packaging/linux/polkit/tokenlogue-polkit.py uninstall
 
 <a id="en-help"></a>
 
-## 🛠️ Troubleshoot startup
+<a id="-troubleshoot-startup"></a>
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Troubleshoot startup
 
 <img src="assets/ui/frame-top.svg" width="100%" alt="">
 
@@ -141,4 +148,6 @@ For <a href="https://github.com/Umichata/tokenlogue/issues" title="a support req
 
 <a id="en-delete"></a>
 
-<a href="user-guide.md#english" title="First connection and chat controls"><img src="assets/ui/buttons/en-a2a9891e8515.svg" alt="First connection and chat controls" width="239" height="50"></a> · <a href="security.md#english" title="PIN, recovery and profile deletion"><img src="assets/ui/buttons/en-87082426092b.svg" alt="PIN, recovery and profile deletion" width="234" height="50"></a> · <a href="source-materials.md#english" title="Sources and licenses"><img src="assets/ui/buttons/en-90726ae50ba7.svg" alt="Sources and licenses" width="205" height="34"></a> · <a href="../README.md#english" title="Tokenlogue"><img src="assets/ui/buttons/en-931ef4e6d14f.svg" alt="Tokenlogue" width="135" height="34"></a>
+<p align="left"><a href="user-guide.md#english"><img src="assets/ui/buttons/en-79f288eb22b3.svg" alt="First connection and chat controls" width="277" height="28"></a> <a href="security.md#english"><img src="assets/ui/buttons/en-9a82d8d2cc30.svg" alt="PIN, recovery and profile deletion" width="273" height="28"></a></p>
+
+<p align="left"><a href="source-materials.md#english"><img src="assets/ui/buttons/en-4c5f291c4b59.svg" alt="Sources and licenses" width="179" height="28"></a> <a href="../README.md#english"><img src="assets/ui/buttons/en-2e5a16e1977a.svg" alt="Tokenlogue" width="109" height="28"></a></p>

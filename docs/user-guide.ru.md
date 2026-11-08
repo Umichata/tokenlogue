@@ -1,7 +1,7 @@
 <p align="left">
 <a href="user-guide.ru.md" title="Русский"><img align="right" src="assets/ui/buttons/ru-1e800a389462.svg" alt="Русский" width="46" height="28"></a>
 <a href="user-guide.md" title="English"><img align="right" src="assets/ui/buttons/ru-ccbd7ff610ca.svg" alt="English" width="45" height="28"></a>
-<a href="../README.ru.md" title="Главная"><img src="assets/ui/buttons/ru-461b9280bad5.svg" alt="Главная" width="34" height="28"></a>&nbsp;<a href="README.ru.md" title="Документы"><img src="assets/ui/buttons/ru-2ceca5a8917e.svg" alt="Документы" width="111" height="28"></a>
+<a href="README.ru.md" title="Карта документации"><img src="assets/ui/buttons/ru-be11dde003f4.svg" alt="Карта документации" width="207" height="38"></a> <a href="../README.ru.md" title="Главная"><img src="assets/ui/buttons/ru-461b9280bad5.svg" alt="Главная" width="34" height="28"></a>
 </p>
 
 # 📘 Работа с Tokenlogue
@@ -11,14 +11,15 @@
 
 Tokenlogue позволяет общаться с моделями OpenRouter в Linux и Android. Руководство описывает текущую предварительную версию. В прежних опубликованных выпусках возможностей может быть меньше. Начните с <a href="linux-appimage.ru.md#russian" title="установки в Linux">установки в Linux&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> или <a href="android.ru.md#russian" title="установки в Android">установки в Android&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a>.
 
-<a href="#ru-access" title="Начало работы"><img src="assets/ui/buttons/ru-9668d1235083.svg" alt="Начало работы" width="167" height="34"></a> · <a href="#ru-chats" title="Чаты"><img src="assets/ui/buttons/ru-57e45a957c0c.svg" alt="Чаты" width="90" height="34"></a> · <a href="#ru-drafts" title="Черновики"><img src="assets/ui/buttons/ru-3d3c79ad631d.svg" alt="Черновики" width="133" height="34"></a> · <a href="#ru-limits" title="Лимиты"><img src="assets/ui/buttons/ru-2202d502688b.svg" alt="Лимиты" width="110" height="34"></a> · <a href="#ru-chat-metrics" title="Расходы"><img src="assets/ui/buttons/ru-a9bc2a6a3471.svg" alt="Расходы" width="117" height="34"></a> · <a href="security.ru.md#russian" title="Защита"><img src="assets/ui/buttons/ru-c71fb64e5880.svg" alt="Защита" width="109" height="34"></a>
+<p align="left"><a href="#ru-access"><img src="assets/ui/buttons/ru-1e67d84c7855.svg" alt="Начало работы" width="141" height="28"></a> <a href="#ru-chats"><img src="assets/ui/buttons/ru-a1d1053a8a78.svg" alt="Чаты" width="64" height="28"></a> <a href="#ru-drafts"><img src="assets/ui/buttons/ru-947280e04422.svg" alt="Черновики" width="107" height="28"></a> <a href="#ru-limits"><img src="assets/ui/buttons/ru-2fb3ebb3382b.svg" alt="Лимиты" width="84" height="28"></a> <a href="#ru-chat-metrics"><img src="assets/ui/buttons/ru-d8db4581d3fd.svg" alt="Расходы" width="91" height="28"></a> <a href="security.ru.md#russian"><img src="assets/ui/buttons/ru-287972bc31ba.svg" alt="Защита" width="83" height="28"></a></p>
 
 <a id="ru-access"></a>
 <a id="ru-current"></a>
 
 <a id="начало-работы"></a>
 
-### 🚀 Начало работы
+<a id="-начало-работы"></a>
+### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Начало работы
 
 1. Выберите русский или английский язык на экране входа.
 2. Введите API-ключ из своего [аккаунта OpenRouter](https://openrouter.ai/settings/keys) и нажмите `Проверить ключ`. Для этого нужен доступ к OpenRouter. Ошибка соединения сама по себе не означает, что ключ неверный.
@@ -39,7 +40,8 @@ Tokenlogue позволяет общаться с моделями OpenRouter в
 
 <a id="создание-чатов-и-управление-ими"></a>
 
-### 💬 Создание чатов и управление ими
+<a id="-создание-чатов-и-управление-ими"></a>
+### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Создание чатов и управление ими
 
 Выберите бесплатный или платный режим, найдите модель по названию или ID и задайте лимиты чата. В каждом чате сохраняются его режим и модель. Для другой модели создайте новый чат.
 
@@ -53,7 +55,8 @@ Tokenlogue позволяет общаться с моделями OpenRouter в
 
 <a id="настройка-рабочего-пространства"></a>
 
-### 🧭 Настройка рабочего пространства
+<a id="-настройка-рабочего-пространства"></a>
+### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Настройка рабочего пространства
 
 В широком окне Linux верхняя левая кнопка скрывает или показывает список чатов. Tokenlogue запоминает выбор. На узком экране эта кнопка открывает выдвижную панель. Выберите чат, нажмите вне панели или используйте Back либо Escape, чтобы её закрыть. Узкая компоновка не меняет сохранённую настройку широкого окна.
 
@@ -71,7 +74,8 @@ Tokenlogue позволяет общаться с моделями OpenRouter в
 
 <a id="отправка-сообщений-и-сохранение-черновиков"></a>
 
-### ✍️ Отправка сообщений и сохранение черновиков
+<a id="-отправка-сообщений-и-сохранение-черновиков"></a>
+### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Отправка сообщений и сохранение черновиков
 
 Введите текст в поле `Сообщение` и нажмите `Отправить`. При работе с клавиатурой Enter отправляет сообщение, а Shift+Enter добавляет перенос строки. Пустые сообщения отправить нельзя. Tokenlogue передаёт сообщение и подходящий контекст переписки в OpenRouter и выбранному поставщику модели.
 
@@ -85,7 +89,8 @@ Tokenlogue позволяет общаться с моделями OpenRouter в
 
 <a id="настройка-лимитов-чата"></a>
 
-### 🎚️ Настройка лимитов чата
+<a id="-настройка-лимитов-чата"></a>
+### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Настройка лимитов чата
 
 Задайте лимиты до первого запроса. Для изменения откройте `Настроить лимиты` или `Изменить лимиты` в `⋮`.
 
@@ -107,7 +112,8 @@ Tokenlogue позволяет общаться с моделями OpenRouter в
 
 <a id="подтверждение-платных-запросов"></a>
 
-### ✅ Подтверждение платных запросов
+<a id="-подтверждение-платных-запросов"></a>
+### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Подтверждение платных запросов
 
 В новых платных чатах перед отправкой появляется подтверждение. Проверьте модель, оценку входа, максимум ответа и денежный резерв. Отмена оставляет сообщение неотправленным.
 
@@ -119,7 +125,8 @@ Tokenlogue позволяет общаться с моделями OpenRouter в
 
 <a id="как-читать-статистику-и-оценку-расходов"></a>
 
-### 💳 Как читать статистику и оценку расходов
+<a id="-как-читать-статистику-и-оценку-расходов"></a>
+### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Как читать статистику и оценку расходов
 
 <img src="assets/ui/frame-top.svg" width="100%" alt="">
 
@@ -142,7 +149,8 @@ Tokenlogue позволяет общаться с моделями OpenRouter в
 
 <a id="если-результат-запроса-неизвестен"></a>
 
-### ❔ Если результат запроса неизвестен
+<a id="-если-результат-запроса-неизвестен"></a>
+### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Если результат запроса неизвестен
 
 После потери соединения может быть неизвестно, обработал ли OpenRouter запрос. Tokenlogue сохраняет защитный резерв, а не считает запрос бесплатным. Перед повтором проверьте запрос и списания в аккаунте OpenRouter.
 
@@ -152,7 +160,8 @@ Tokenlogue позволяет общаться с моделями OpenRouter в
 
 <a id="замена-ключа-openrouter"></a>
 
-### 🔑 Замена ключа OpenRouter
+<a id="-замена-ключа-openrouter"></a>
+### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Замена ключа OpenRouter
 
 Войдите с прежним PIN, откройте `⋮` и выберите `Заменить ключ OpenRouter`. Это доступно и без выбранного чата. Сначала завершите текущую отправку или проверку ключа.
 
@@ -165,10 +174,11 @@ Tokenlogue позволяет общаться с моделями OpenRouter в
 
 <a id="защита-переписки"></a>
 
-### 🛡️ Защита переписки
+<a id="-защита-переписки"></a>
+### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Защита переписки
 
 Перед тем как оставить устройство, используйте кнопку блокировки в шапке. В Android уход приложения в фон закрывает доступ. В Linux наблюдение за блокировкой экрана и сном зависит от рабочего окружения.
 
 Прочитайте <a href="security.ru.md#russian" title="руководство по защите и восстановлению">руководство по защите и восстановлению&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a>, прежде чем полагаться на PIN или менять защиту устройства. Оно объясняет шифруемые поля, резервный код Linux, системное восстановление Android, проверку локальной защиты и необратимое удаление профиля. Копия базы сама по себе не сохраняет отдельный ключ шифрования.
 
-<a href="../README.ru.md#russian" title="Tokenlogue"><img src="assets/ui/buttons/ru-a11b6395ee6e.svg" alt="Tokenlogue" width="135" height="34"></a> · <a href="linux-appimage.ru.md#russian" title="Linux"><img src="assets/ui/buttons/ru-ea25cef89739.svg" alt="Linux" width="91" height="34"></a> · <a href="android.ru.md#russian" title="Android"><img src="assets/ui/buttons/ru-00eb8599e656.svg" alt="Android" width="109" height="34"></a> · <a href="source-materials.ru.md#russian" title="Исходные материалы"><img src="assets/ui/buttons/ru-810b0819d2f5.svg" alt="Исходные материалы" width="216" height="34"></a>
+<p align="left"><a href="../README.ru.md#russian"><img src="assets/ui/buttons/ru-b038324b5bbd.svg" alt="Tokenlogue" width="109" height="28"></a> <a href="linux-appimage.ru.md#russian"><img src="assets/ui/buttons/ru-66f2899ff23a.svg" alt="Linux" width="65" height="28"></a> <a href="android.ru.md#russian"><img src="assets/ui/buttons/ru-007800957d4f.svg" alt="Android" width="83" height="28"></a> <a href="source-materials.ru.md#russian"><img src="assets/ui/buttons/ru-324cbf015392.svg" alt="Исходные материалы" width="190" height="28"></a></p>

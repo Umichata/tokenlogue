@@ -1,82 +1,93 @@
 <p align="left">
 <a href="README.ru.md" title="Русский"><img align="right" src="assets/ui/buttons/en-0380058e71b5.svg" alt="Русский" width="46" height="28"></a>
 <a href="README.md" title="English"><img align="right" src="assets/ui/buttons/en-927deb529a3e.svg" alt="English" width="45" height="28"></a>
-<a href="../README.md" title="Home"><img src="assets/ui/buttons/en-2c296d10dfa5.svg" alt="Home" width="34" height="28"></a>&nbsp;<a href="README.md" title="Docs"><img src="assets/ui/buttons/en-0fba477f99e0.svg" alt="Docs" width="61" height="28"></a>
+<a href="README.md" title="Documentation map"><img src="assets/ui/buttons/en-63f7d280c22c.svg" alt="Documentation map" width="195" height="38"></a> <a href="../README.md" title="Home"><img src="assets/ui/buttons/en-2c296d10dfa5.svg" alt="Home" width="34" height="28"></a>
 </p>
 
 <p align="center">
-  <img src="assets/tokenlogue-banner.png" alt="Tokenlogue — documentation" width="100%">
+  <img src="assets/tokenlogue-banner-en-v2.png" alt="Tokenlogue — documentation" width="100%">
 </p>
 
 # 🧭 Documentation
 
-<a href="../README.md" title="Project overview"><img src="assets/ui/buttons/en-1a7d8f7e93dc.svg" alt="Project overview" width="174" height="34"></a> · <a href="https://github.com/Umichata/tokenlogue/releases" title="Downloads"><img src="assets/ui/buttons/en-a89567006163.svg" alt="Downloads" width="132" height="34"></a> · <a href="https://github.com/Umichata/tokenlogue/issues" title="Help"><img src="assets/ui/buttons/en-009e97cb1f73.svg" alt="Help" width="85" height="34"></a>
+<p align="left"><a href="../README.md"><img src="assets/ui/buttons/en-7a9481e952d5.svg" alt="Project overview" width="148" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/releases"><img src="assets/ui/buttons/en-dd8bbfdbdd63.svg" alt="Downloads" width="106" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/issues"><img src="assets/ui/buttons/en-90990361e68d.svg" alt="Help" width="59" height="28"></a></p>
 
 <a id="english"></a>
 
 Choose a document below. Installation and everyday use come first. Technical materials and historical records are grouped separately.
 
-## 🚀 Start here
+<a id="-start-here"></a>
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Start here
 
-- **Get Tokenlogue**
-  - <a href="https://github.com/Umichata/tokenlogue/releases" title="Available downloads"><img src="assets/ui/buttons/en-eca4d42b3b1a.svg" alt="Available downloads" width="202" height="34"></a>.
-  - <a href="android.md#english" title="Android installation and updates"><img src="assets/ui/buttons/en-1db0af7a5171.svg" alt="Android installation and updates" width="229" height="50"></a>.
-  - <a href="linux-appimage.md#english" title="Linux requirements, checksum and launch"><img src="assets/ui/buttons/en-5296afb36bb3.svg" alt="Linux requirements, checksum and launch" width="277" height="50"></a>.
-- **Your first conversation**
-  - <a href="user-guide.md#en-access" title="Connect your OpenRouter key and set a PIN"><img src="assets/ui/buttons/en-165a4ae1cb80.svg" alt="Connect your OpenRouter key and set a PIN" width="272" height="50"></a>.
-  - <a href="user-guide.md#en-chats" title="Create and manage chats"><img src="assets/ui/buttons/en-6f71f568f79f.svg" alt="Create and manage chats" width="239" height="34"></a>.
-  - <a href="user-guide.md#en-workspace" title="Arrange the workspace"><img src="assets/ui/buttons/en-837a8d42a272.svg" alt="Arrange the workspace" width="222" height="34"></a>.
+<a id="get-tokenlogue"></a>
+### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Get Tokenlogue
 
-## 💬 Use and protect
+<p align="left"><a href="https://github.com/Umichata/tokenlogue/releases"><img src="assets/ui/buttons/en-dd8bbfdbdd63.svg" alt="Downloads" width="106" height="28"></a> <a href="android.md#english"><img src="assets/ui/buttons/en-46463edb13a7.svg" alt="Android" width="83" height="28"></a> <a href="linux-appimage.md#english"><img src="assets/ui/buttons/en-96c04f670a21.svg" alt="Linux" width="65" height="28"></a></p>
 
-- **Chats and costs**
-  - <a href="user-guide.md#english" title="Full user guide"><img src="assets/ui/buttons/en-04b4f65f71a1.svg" alt="Full user guide" width="160" height="34"></a>.
-  - <a href="user-guide.md#en-drafts" title="Messages and saved drafts"><img src="assets/ui/buttons/en-4a9cbe060180.svg" alt="Messages and saved drafts" width="251" height="34"></a>.
-  - <a href="user-guide.md#en-limits" title="Chat limits"><img src="assets/ui/buttons/en-3c865992b1bb.svg" alt="Chat limits" width="131" height="34"></a>.
-  - <a href="user-guide.md#en-paid-confirmation" title="Paid-request confirmation"><img src="assets/ui/buttons/en-527feb5d2e72.svg" alt="Paid-request confirmation" width="243" height="34"></a>.
-  - <a href="user-guide.md#en-chat-metrics" title="Tokens and cost information"><img src="assets/ui/buttons/en-1ade7a424a88.svg" alt="Tokens and cost information" width="259" height="34"></a>.
-  - <a href="user-guide.md#en-key-replacement" title="Replace an OpenRouter key"><img src="assets/ui/buttons/en-5f711b654e35.svg" alt="Replace an OpenRouter key" width="255" height="34"></a>.
-- **Local protection**
-  - <a href="security.md#english" title="Protection guide"><img src="assets/ui/buttons/en-582bb7e2f886.svg" alt="Protection guide" width="174" height="34"></a>.
-  - <a href="security.md#en-pin" title="App PIN"><img src="assets/ui/buttons/en-d2f3426934e7.svg" alt="App PIN" width="110" height="34"></a>.
-  - <a href="security.md#en-locking" title="Lock the app when you leave"><img src="assets/ui/buttons/en-e81357481417.svg" alt="Lock the app when you leave" width="265" height="34"></a>.
-  - <a href="security.md#en-recovery" title="Recover access"><img src="assets/ui/buttons/en-38ce20701236.svg" alt="Recover access" width="164" height="34"></a>.
-  - <a href="security.md#en-encryption" title="What is encrypted"><img src="assets/ui/buttons/en-c8f8be9c2417.svg" alt="What is encrypted" width="186" height="34"></a>.
-  - <a href="security.md#en-delete" title="Delete a local profile"><img src="assets/ui/buttons/en-c31fb448651a.svg" alt="Delete a local profile" width="204" height="34"></a>.
-- **Get help**
-  - <a href="linux-appimage.md#en-help" title="Linux startup troubleshooting"><img src="assets/ui/buttons/en-47bdf9544afc.svg" alt="Linux startup troubleshooting" width="272" height="34"></a>.
-  - <a href="android.md#en-update" title="Android update checks"><img src="assets/ui/buttons/en-2ba3b5a57cd8.svg" alt="Android update checks" width="220" height="34"></a>.
-  - <a href="https://github.com/Umichata/tokenlogue/issues" title="Report an issue"><img src="assets/ui/buttons/en-7fb1fdd67b1a.svg" alt="Report an issue" width="166" height="34"></a>.
+<a id="your-first-conversation"></a>
+### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Your first conversation
 
-## 📚 Sources and licenses
+<p align="left"><a href="user-guide.md#en-access"><img src="assets/ui/buttons/en-0fc8a6135faa.svg" alt="Key &amp; PIN" width="98" height="28"></a> <a href="user-guide.md#en-chats"><img src="assets/ui/buttons/en-474e166de580.svg" alt="Chats" width="67" height="28"></a> <a href="user-guide.md#en-workspace"><img src="assets/ui/buttons/en-3609742cc153.svg" alt="Workspace" width="106" height="28"></a></p>
 
-- **Inspect the materials**
-  - <a href="source-materials.md#english" title="Source archives and provenance limits"><img src="assets/ui/buttons/en-1e9f2421a4d0.svg" alt="Source archives and provenance limits" width="200" height="50"></a>.
-  - <a href="../THIRD_PARTY_NOTICES.md#english" title="Third-party software"><img src="assets/ui/buttons/en-f871b7386640.svg" alt="Third-party software" width="203" height="34"></a>.
-  - <a href="../LICENSE" title="MIT license for Tokenlogue"><img src="assets/ui/buttons/en-411784d52009.svg" alt="MIT license for Tokenlogue" width="247" height="34"></a>.
-- **Read package notices**
-  - <a href="../packaging/linux/appimage/notices.md#english" title="Licenses inside the AppImage"><img src="assets/ui/buttons/en-661f6d64168a.svg" alt="Licenses inside the AppImage" width="270" height="34"></a>.
-  - <a href="../packaging/notices/README.md#english" title="Original notices for libraries and fonts"><img src="assets/ui/buttons/en-9e18bfbebab2.svg" alt="Original notices for libraries and fonts" width="258" height="50"></a>.
+<a id="-use-and-protect"></a>
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Use and protect
+
+<a id="chats-and-costs"></a>
+### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Chats and costs
+
+<p align="left"><a href="user-guide.md#english"><img src="assets/ui/buttons/en-4a1e7eca97e9.svg" alt="User guide" width="105" height="28"></a> <a href="user-guide.md#en-drafts"><img src="assets/ui/buttons/en-1777ed98d7e9.svg" alt="Messages &amp; drafts" width="162" height="28"></a> <a href="user-guide.md#en-limits"><img src="assets/ui/buttons/en-b2d0b67eac9d.svg" alt="Chat limits" width="105" height="28"></a></p>
+
+<p align="left"><a href="user-guide.md#en-paid-confirmation"><img src="assets/ui/buttons/en-5a0b3a486d6d.svg" alt="Paid requests" width="126" height="28"></a> <a href="user-guide.md#en-chat-metrics"><img src="assets/ui/buttons/en-01167d8fea8f.svg" alt="Tokens &amp; costs" width="134" height="28"></a> <a href="user-guide.md#en-key-replacement"><img src="assets/ui/buttons/en-93588488066d.svg" alt="Replace key" width="113" height="28"></a></p>
+
+<a id="local-protection"></a>
+### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Local protection
+
+<p align="left"><a href="security.md#english"><img src="assets/ui/buttons/en-9c2e33444d68.svg" alt="Protection" width="102" height="28"></a> <a href="security.md#en-pin"><img src="assets/ui/buttons/en-d6b117134c16.svg" alt="App PIN" width="84" height="28"></a> <a href="security.md#en-locking"><img src="assets/ui/buttons/en-6e865081cb96.svg" alt="Lock the app" width="120" height="28"></a></p>
+
+<p align="left"><a href="security.md#en-recovery"><img src="assets/ui/buttons/en-3cd17d23de14.svg" alt="Recovery" width="93" height="28"></a> <a href="security.md#en-encryption"><img src="assets/ui/buttons/en-4d3b89576c1d.svg" alt="Encryption" width="104" height="28"></a> <a href="security.md#en-delete"><img src="assets/ui/buttons/en-ed47109f52fe.svg" alt="Delete profile" width="126" height="28"></a></p>
+
+<a id="get-help"></a>
+### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Get help
+
+<p align="left"><a href="linux-appimage.md#en-help"><img src="assets/ui/buttons/en-d5c42bc85a3b.svg" alt="Linux help" width="101" height="28"></a> <a href="android.md#en-update"><img src="assets/ui/buttons/en-5714595991cb.svg" alt="APK updates" width="119" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/issues"><img src="assets/ui/buttons/en-b35e6ff4675a.svg" alt="Help and issues" width="141" height="28"></a></p>
+
+<a id="-sources-and-licenses"></a>
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Sources and licenses
+
+<a id="inspect-the-materials"></a>
+### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Inspect the materials
+
+<p align="left"><a href="source-materials.md#english"><img src="assets/ui/buttons/en-b63fdbc05df7.svg" alt="Source materials" width="150" height="28"></a> <a href="../THIRD_PARTY_NOTICES.md#english"><img src="assets/ui/buttons/en-0ea52d246a12.svg" alt="Third-party notices" width="166" height="28"></a> <a href="../LICENSE"><img src="assets/ui/buttons/en-35273ad53d41.svg" alt="MIT license" width="108" height="28"></a></p>
+
+<a id="read-package-notices"></a>
+### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Read package notices
+
+<p align="left"><a href="../packaging/linux/appimage/notices.md#english"><img src="assets/ui/buttons/en-2727fc3ca492.svg" alt="AppImage notices" width="157" height="28"></a> <a href="../packaging/notices/README.md#english"><img src="assets/ui/buttons/en-32331fd55ca3.svg" alt="Libraries &amp; fonts" width="148" height="28"></a></p>
 
 <details>
 <summary><strong>Developer and packaging documents</strong></summary>
 
-- **Sources and dependencies**
-  - <a href="source-materials.md#en-run-from-source" title="Run from source on Linux"><img src="assets/ui/buttons/en-07cc7f768734.svg" alt="Run from source on Linux" width="239" height="34"></a>.
-  - <a href="../packaging/android/crypto/README.md#english" title="Android cryptography and authentication dependency materials"><img src="assets/ui/buttons/en-65daa6240ee1.svg" alt="Android cryptography and authentication dependency materials" width="253" height="66"></a>.
-- **Linux package**
-  - <a href="../packaging/linux/appimage/README.md#english" title="AppImage overview"><img src="assets/ui/buttons/en-98a827c263e5.svg" alt="AppImage overview" width="196" height="34"></a>.
-  - <a href="../packaging/linux/appimage/runtime/README.md#english" title="AppImage runtime and its source bundle"><img src="assets/ui/buttons/en-98dbdda13bfd.svg" alt="AppImage runtime and its source bundle" width="243" height="50"></a>.
-- **Visual identity**
-  - <a href="../branding/README.md#english" title="Tokenlogue logo and icons"><img src="assets/ui/buttons/en-f1e9ca241592.svg" alt="Tokenlogue logo and icons" width="245" height="34"></a>.
+<a id="sources-and-dependencies"></a>
+### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Sources and dependencies
+
+<p align="left"><a href="source-materials.md#en-run-from-source"><img src="assets/ui/buttons/en-0e5162369257.svg" alt="Run from source" width="146" height="28"></a> <a href="../packaging/android/crypto/README.md#english"><img src="assets/ui/buttons/en-8300c229571c.svg" alt="Android dependencies" width="189" height="28"></a></p>
+
+<a id="linux-package"></a>
+### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Linux package
+
+<p align="left"><a href="../packaging/linux/appimage/README.md#english"><img src="assets/ui/buttons/en-5ec83d48dc3d.svg" alt="AppImage build" width="141" height="28"></a> <a href="../packaging/linux/appimage/runtime/README.md#english"><img src="assets/ui/buttons/en-08c28848e643.svg" alt="AppImage runtime" width="162" height="28"></a></p>
+
+<a id="visual-identity"></a>
+### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Visual identity
+
+<p align="left"><a href="../branding/README.md#english"><img src="assets/ui/buttons/en-991b17fae354.svg" alt="Logo &amp; icons" width="119" height="28"></a></p>
 
 </details>
 
 <details>
 <summary><strong>Historical release records</strong></summary>
 
-- <a href="releases/v0.1.0-linux-preview.1.md#english" title="Earlier Linux preview"><img src="assets/ui/buttons/en-2eeb54aa031f.svg" alt="Earlier Linux preview" width="207" height="34"></a>.
-- <a href="releases/14b87ac-source-materials.md#english" title="Historical source collection"><img src="assets/ui/buttons/en-2e619c05e9f8.svg" alt="Historical source collection" width="250" height="34"></a>.
+<p align="left"><a href="releases/v0.1.0-linux-preview.1.md#english"><img src="assets/ui/buttons/en-a087d5b054c3.svg" alt="Earlier Linux preview" width="181" height="28"></a> <a href="releases/14b87ac-source-materials.md#english"><img src="assets/ui/buttons/en-30d9fac3bbd0.svg" alt="Source archive history" width="190" height="28"></a></p>
 
 These documents describe their own earlier packages. Use the installation guides above for the current preview.
 

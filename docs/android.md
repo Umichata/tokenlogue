@@ -1,7 +1,7 @@
 <p align="left">
 <a href="android.ru.md" title="Русский"><img align="right" src="assets/ui/buttons/en-0380058e71b5.svg" alt="Русский" width="46" height="28"></a>
 <a href="android.md" title="English"><img align="right" src="assets/ui/buttons/en-927deb529a3e.svg" alt="English" width="45" height="28"></a>
-<a href="../README.md" title="Home"><img src="assets/ui/buttons/en-2c296d10dfa5.svg" alt="Home" width="34" height="28"></a>&nbsp;<a href="README.md" title="Docs"><img src="assets/ui/buttons/en-0fba477f99e0.svg" alt="Docs" width="61" height="28"></a>
+<a href="README.md" title="Documentation map"><img src="assets/ui/buttons/en-63f7d280c22c.svg" alt="Documentation map" width="195" height="38"></a> <a href="../README.md" title="Home"><img src="assets/ui/buttons/en-2c296d10dfa5.svg" alt="Home" width="34" height="28"></a>
 </p>
 
 # Tokenlogue for Android
@@ -11,11 +11,12 @@
 
 Tokenlogue brings OpenRouter chats to an ARM64 Android phone or tablet. The interface supports English and Russian, saved per-chat drafts and layouts that adapt to the available space.
 
-<a href="#en-requirements" title="Requirements"><img src="assets/ui/buttons/en-dc416f56b423.svg" alt="Requirements" width="154" height="34"></a> · <a href="#en-install" title="Install"><img src="assets/ui/buttons/en-005861163dc4.svg" alt="Install" width="97" height="34"></a> · <a href="#en-update" title="Update"><img src="assets/ui/buttons/en-b99119964e0c.svg" alt="Update" width="104" height="34"></a> · <a href="#en-first-launch" title="First launch"><img src="assets/ui/buttons/en-450d767394ee.svg" alt="First launch" width="138" height="34"></a> · <a href="security.md#english" title="Protection"><img src="assets/ui/buttons/en-c8aca5cd0ad1.svg" alt="Protection" width="128" height="34"></a>
+<p align="left"><a href="#en-requirements"><img src="assets/ui/buttons/en-54cd239b749b.svg" alt="Requirements" width="128" height="28"></a> <a href="#en-install"><img src="assets/ui/buttons/en-c1a92da25825.svg" alt="Install" width="71" height="28"></a> <a href="#en-update"><img src="assets/ui/buttons/en-c94624d60136.svg" alt="Update" width="78" height="28"></a> <a href="#en-first-launch"><img src="assets/ui/buttons/en-1de6f9fc48e6.svg" alt="First launch" width="112" height="28"></a> <a href="security.md#english"><img src="assets/ui/buttons/en-9c2e33444d68.svg" alt="Protection" width="102" height="28"></a></p>
 
 <a id="en-requirements"></a>
 
-## 🧩 Requirements and compatibility
+<a id="-requirements-and-compatibility"></a>
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Requirements and compatibility
 
 - Android 7.0 or later, API 24 or newer.
 - An ARM64 device that supports the `arm64-v8a` ABI.
@@ -26,7 +27,8 @@ The minimum API level does not mean that every Android version or device has bee
 
 <a id="en-install"></a>
 
-## 📦 Obtain and install the APK
+<a id="-obtain-and-install-the-apk"></a>
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Obtain and install the APK
 
 The <a href="https://github.com/Umichata/tokenlogue/releases" title="Releases page">Releases page&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> lists publicly available downloads. For this preview, download the APK identified below and `RELEASE_SHA256SUMS`. If this preview is not listed, its downloads are not public yet. The earlier published Linux release is a separate package.
 
@@ -58,7 +60,8 @@ Transfer the verified APK to the device, open it and follow Android's installer.
 
 <a id="en-update"></a>
 
-## 🔄 Update a compatible installation
+<a id="-update-a-compatible-installation"></a>
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Update a compatible installation
 
 Install the new APK over the compatible existing installation with the same application identity and signing certificate. Keep the existing application data. Uninstalling or clearing data is not an ordinary update step and can make encrypted conversations unrecoverable.
 
@@ -66,7 +69,8 @@ If Android refuses the update, check the package version, architecture and signi
 
 <a id="en-first-launch"></a>
 
-## 💬 Connect and start chatting
+<a id="-connect-and-start-chatting"></a>
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Connect and start chatting
 
 <img src="assets/ui/frame-top.svg" width="320" alt=""><br>
 <img src="assets/screenshots/android-start.png" alt="First launch on Android" width="320"><br>
@@ -84,7 +88,8 @@ The top-left button opens the chat drawer. Select a chat, tap outside or press B
 
 The Android chat workspace.
 
-## 🔒 Protect the local profile
+<a id="-protect-the-local-profile"></a>
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Protect the local profile
 
 Moving Tokenlogue to the background closes access. Enter the app PIN when returning. Your saved draft is restored. Unlocking Android does not unlock Tokenlogue automatically.
 
@@ -92,4 +97,4 @@ On supported Android 11 or later devices, `Forgot PIN?` requests fresh system ve
 
 Android application backup is disabled. The app uses internet access and system authentication capabilities. It does not request microphone access. Changing device security, uninstalling or clearing data can affect the keys needed to read protected conversations. A copied database alone is not a portable backup.
 
-<a href="user-guide.md#english" title="User guide"><img src="assets/ui/buttons/en-546470010fac.svg" alt="User guide" width="131" height="34"></a> · <a href="security.md#english" title="Protection"><img src="assets/ui/buttons/en-c8aca5cd0ad1.svg" alt="Protection" width="128" height="34"></a> · <a href="source-materials.md#english" title="Source materials"><img src="assets/ui/buttons/en-6c08d5ca10c9.svg" alt="Source materials" width="176" height="34"></a> · <a href="../README.md#english" title="Tokenlogue"><img src="assets/ui/buttons/en-931ef4e6d14f.svg" alt="Tokenlogue" width="135" height="34"></a>
+<p align="left"><a href="user-guide.md#english"><img src="assets/ui/buttons/en-4a1e7eca97e9.svg" alt="User guide" width="105" height="28"></a> <a href="security.md#english"><img src="assets/ui/buttons/en-9c2e33444d68.svg" alt="Protection" width="102" height="28"></a> <a href="source-materials.md#english"><img src="assets/ui/buttons/en-b63fdbc05df7.svg" alt="Source materials" width="150" height="28"></a> <a href="../README.md#english"><img src="assets/ui/buttons/en-2e5a16e1977a.svg" alt="Tokenlogue" width="109" height="28"></a></p>

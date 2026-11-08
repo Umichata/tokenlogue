@@ -1,7 +1,7 @@
 <p align="left">
 <a href="14b87ac-source-materials.ru.md" title="Русский"><img align="right" src="../assets/ui/buttons/en-0380058e71b5.svg" alt="Русский" width="46" height="28"></a>
 <a href="14b87ac-source-materials.md" title="English"><img align="right" src="../assets/ui/buttons/en-927deb529a3e.svg" alt="English" width="45" height="28"></a>
-<a href="../../README.md" title="Home"><img src="../assets/ui/buttons/en-2c296d10dfa5.svg" alt="Home" width="34" height="28"></a>&nbsp;<a href="../README.md" title="Docs"><img src="../assets/ui/buttons/en-0fba477f99e0.svg" alt="Docs" width="61" height="28"></a>
+<a href="../README.md" title="Documentation map"><img src="../assets/ui/buttons/en-63f7d280c22c.svg" alt="Documentation map" width="195" height="38"></a> <a href="../../README.md" title="Home"><img src="../assets/ui/buttons/en-2c296d10dfa5.svg" alt="Home" width="34" height="28"></a>
 </p>
 
 # Historical source collection
@@ -11,7 +11,8 @@
 
 This collection was assembled on 10 September 2026 for the <a href="v0.1.0-linux-preview.1.md#english" title="earlier Linux preview">earlier Linux preview&nbsp;<img src="../assets/ui/inline-link.svg" alt="" width="17" height="17"></a>. It preserves that version's source materials. It is also retained inside the later [published baseline](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-linux-preview.986c6ad), where selected unchanged dependencies can be reused.
 
-## 🗂️ Identify the archive
+<a id="-identify-the-archive"></a>
+## <img src="../assets/ui/section-mark.svg" alt="" width="20" height="20"> Identify the archive
 
 <img src="../assets/ui/frame-top.svg" width="100%" alt="">
 
@@ -27,7 +28,8 @@ This collection was assembled on 10 September 2026 for the <a href="v0.1.0-linux
 
 The application binary is not inside this archive. There is no separate ZIP download linked here. To obtain its retained copy, follow the <a href="../source-materials.md#english" title="baseline restoration guide">baseline restoration guide&nbsp;<img src="../assets/ui/inline-link.svg" alt="" width="17" height="17"></a>.
 
-## 🔍 Contents and integrity
+<a id="-contents-and-integrity"></a>
+## <img src="../assets/ui/section-mark.svg" alt="" width="20" height="20"> Contents and integrity
 
 The ZIP includes Tokenlogue sources, Ubuntu source packages and packaging, CPython 3.12.14, Python Build Standalone recipes, Python source distributions, Dart packages, Flet 0.86.5, Flutter 3.44.8, Dart bridge 1.9.0, font inputs and older runtime materials.
 
@@ -40,7 +42,8 @@ python3 verify_materials.py
 
 The checker verifies the supplied files against the manifest. It does not establish that every file needed for a complete rebuild is present.
 
-## 📌 Scope of this historical collection
+<a id="-scope-of-this-historical-collection"></a>
+## <img src="../assets/ui/section-mark.svg" alt="" width="20" height="20"> Scope of this historical collection
 
 The earlier Ubuntu libgcrypt20 sources have a [retained Launchpad publication](https://api.launchpad.net/1.0/ubuntu/+archive/primary/+sourcepub/18430640). The [historical type2-runtime source revision](https://github.com/AppImage/type2-runtime/tree/caf24f9f712084686bfc24a70b75e50df0aefb9c) identifies the older upstream code. The ZIP contains Alpine recipes that may correspond to the older runtime, but no confirmed inventory of the packages used to build it.
 
