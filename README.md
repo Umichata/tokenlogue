@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/tokenlogue-logo-transparent.png" alt="Tokenlogue" width="104">
+  <img src="docs/assets/tokenlogue-banner.png" alt="Tokenlogue — OpenRouter chats on Linux and Android" width="100%">
 </p>
 
 # Tokenlogue
@@ -15,7 +15,29 @@
 
 Chat with OpenRouter models on **Linux and Android**. Keep conversations and drafts together, choose a model for each chat and see an estimate before sending a paid request.
 
-[Features](#en-features) · [Screenshots](#en-screenshots) · [Get started](#en-start) · [Guide](docs/user-guide.md#english)
+**[Downloads](https://github.com/Umichata/tokenlogue/releases)** · **[User guide](docs/user-guide.md#english)** · **[All documents](docs/README.md#english)**
+
+[Features](#en-features) · [Screenshots](#en-screenshots) · [Get started](#en-start)
+
+<a id="en-docs"></a>
+
+### Find your document
+
+- **Start here**
+  - [Available downloads](https://github.com/Umichata/tokenlogue/releases).
+  - [Install on Android](docs/android.md#en-install).
+  - [Run on Linux](docs/linux-appimage.md#en-download).
+- **Use and protect**
+  - [Chats, drafts and limits](docs/user-guide.md#english).
+  - [PIN, encryption and recovery](docs/security.md#english).
+  - [Help and issues](https://github.com/Umichata/tokenlogue/issues).
+- **Sources and licenses**
+  - [Source materials](docs/source-materials.md#english).
+  - [Third-party notices](THIRD_PARTY_NOTICES.md#english).
+  - [MIT license](LICENSE).
+
+[Full documentation map](docs/README.md#english) includes packaging documents and historical release records.
+
 
 <a id="en-features"></a>
 ### Your chat workspace
@@ -29,10 +51,10 @@ Chat with OpenRouter models on **Linux and Android**. Keep conversations and dra
 ### A look inside
 
 <table>
-<tr><th>Linux</th><th>Android</th></tr>
+<tr><th align="center">Linux</th><th align="center">Android</th></tr>
 <tr>
-<td><a href="docs/assets/screenshots/linux-chat.png"><img src="docs/assets/screenshots/linux-chat.png" alt="Linux chat with local demonstration messages" width="520"></a></td>
-<td><a href="docs/assets/screenshots/android-chat-en.png"><img src="docs/assets/screenshots/android-chat-en.png" alt="Tokenlogue chat on an Android tablet" width="260"></a></td>
+<td align="center"><a href="docs/assets/screenshots/linux-chat.png"><img src="docs/assets/screenshots/linux-chat.png" alt="Linux chat with local demonstration messages" width="520"></a></td>
+<td align="center"><a href="docs/assets/screenshots/android-chat-en.png"><img src="docs/assets/screenshots/android-chat-en.png" alt="Tokenlogue chat on an Android tablet" width="260"></a></td>
 </tr>
 <tr><td>Linux chat with local demonstration messages</td><td>Tokenlogue chat on an Android tablet</td></tr>
 </table>
@@ -76,6 +98,8 @@ PIN and encryption protect access and selected local fields. They do not encrypt
 
 Tokenlogue's code uses the [MIT license](LICENSE). [Source materials](docs/source-materials.md#english) explain the available archives and the remaining gaps in linking some native binaries to their sources. [Third-party notices](THIRD_PARTY_NOTICES.md#english) preserve the original terms for libraries and fonts.
 
+---
+
 <a id="russian"></a>
 <a id="lang-ru"></a>
 
@@ -83,7 +107,29 @@ Tokenlogue's code uses the [MIT license](LICENSE). [Source materials](docs/sourc
 
 Общайтесь с моделями OpenRouter на **Linux и Android**. Храните чаты и черновики вместе, выбирайте модель для каждого разговора и смотрите оценку перед платным запросом.
 
-[Возможности](#ru-features) · [Скриншоты](#ru-screenshots) · [Начало работы](#ru-start) · [Руководство](docs/user-guide.md#russian)
+**[Скачать](https://github.com/Umichata/tokenlogue/releases)** · **[Руководство](docs/user-guide.md#russian)** · **[Все документы](docs/README.md#russian)**
+
+[Возможности](#ru-features) · [Скриншоты](#ru-screenshots) · [Начало работы](#ru-start)
+
+<a id="ru-docs"></a>
+
+### Найдите нужный документ
+
+- **Начало работы**
+  - [Доступные загрузки](https://github.com/Umichata/tokenlogue/releases).
+  - [Установка на Android](docs/android.md#ru-install).
+  - [Запуск на Linux](docs/linux-appimage.md#ru-download).
+- **Переписка и защита**
+  - [Чаты, черновики и лимиты](docs/user-guide.md#russian).
+  - [PIN, шифрование и восстановление](docs/security.md#russian).
+  - [Помощь и обращения](https://github.com/Umichata/tokenlogue/issues).
+- **Исходники и лицензии**
+  - [Исходные материалы](docs/source-materials.md#russian).
+  - [Сторонние уведомления](THIRD_PARTY_NOTICES.md#russian).
+  - [Лицензия MIT](LICENSE).
+
+[Полная карта документации](docs/README.md#russian) также содержит материалы упаковки и историю выпусков.
+
 
 <a id="ru-features"></a>
 ### Всё для переписки
@@ -97,10 +143,10 @@ Tokenlogue's code uses the [MIT license](LICENSE). [Source materials](docs/sourc
 ### Как выглядит приложение
 
 <table>
-<tr><th>Linux</th><th>Android</th></tr>
+<tr><th align="center">Linux</th><th align="center">Android</th></tr>
 <tr>
-<td><a href="docs/assets/screenshots/linux-chat.png"><img src="docs/assets/screenshots/linux-chat.png" alt="Чат Linux с локальными демонстрационными сообщениями" width="520"></a></td>
-<td><a href="docs/assets/screenshots/android-chat-ru.png"><img src="docs/assets/screenshots/android-chat-ru.png" alt="Рабочий чат Tokenlogue на планшете Android" width="260"></a></td>
+<td align="center"><a href="docs/assets/screenshots/linux-chat.png"><img src="docs/assets/screenshots/linux-chat.png" alt="Чат Linux с локальными демонстрационными сообщениями" width="520"></a></td>
+<td align="center"><a href="docs/assets/screenshots/android-chat-ru.png"><img src="docs/assets/screenshots/android-chat-ru.png" alt="Рабочий чат Tokenlogue на планшете Android" width="260"></a></td>
 </tr>
 <tr><td>Чат Linux с локальными демонстрационными сообщениями</td><td>Рабочий чат Tokenlogue на планшете Android</td></tr>
 </table>
