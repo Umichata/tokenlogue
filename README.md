@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/tokenlogue-logo-transparent.png" alt="Tokenlogue" width="104">
+  <img src="docs/assets/tokenlogue-banner.png" alt="Tokenlogue — OpenRouter chats on Linux and Android" width="100%">
 </p>
 
 # Tokenlogue
@@ -15,7 +15,29 @@
 
 Use OpenRouter models from your Android phone or tablet. Tokenlogue keeps your chats, drafts and model choices in one mobile workspace.
 
+**[Downloads](https://github.com/Umichata/tokenlogue/releases)** · **[Android guide](docs/android.md#english)** · **[All documents](docs/README.md#english)**
+
 [Install](#en-install) · [First chat](#en-chat) · [Protection](docs/security.md#english)
+
+<a id="en-docs"></a>
+
+### Find your document
+
+- **Start here**
+  - [Available downloads](https://github.com/Umichata/tokenlogue/releases).
+  - [Install on Android](docs/android.md#en-install).
+  - [Run on Linux](docs/linux-appimage.md#en-download).
+- **Use and protect**
+  - [Chats, drafts and limits](docs/user-guide.md#english).
+  - [PIN, encryption and recovery](docs/security.md#english).
+  - [Help and issues](https://github.com/Umichata/tokenlogue/issues).
+- **Sources and licenses**
+  - [Source materials](docs/source-materials.md#english).
+  - [Third-party notices](THIRD_PARTY_NOTICES.md#english).
+  - [MIT license](LICENSE).
+
+[Full documentation map](docs/README.md#english) includes packaging documents and historical release records.
+
 
 <a href="docs/assets/screenshots/android-chat-en.png"><img src="docs/assets/screenshots/android-chat-en.png" alt="Tokenlogue chat on an Android tablet" width="320"></a>
 
@@ -47,6 +69,8 @@ Selected local conversation fields are encrypted, not the whole device. System r
 
 [Sources and provenance limits](docs/source-materials.md#english) · [Third-party licenses](THIRD_PARTY_NOTICES.md#english) · [MIT license](LICENSE)
 
+---
+
 <a id="russian"></a>
 <a id="lang-ru"></a>
 
@@ -54,7 +78,29 @@ Selected local conversation fields are encrypted, not the whole device. System r
 
 Общайтесь с моделями OpenRouter на телефоне или планшете Android. Tokenlogue объединяет чаты, черновики и выбор модели в одном мобильном рабочем пространстве.
 
+**[Скачать](https://github.com/Umichata/tokenlogue/releases)** · **[Руководство Android](docs/android.md#russian)** · **[Все документы](docs/README.md#russian)**
+
 [Установка](#ru-install) · [Первый чат](#ru-chat) · [Защита](docs/security.md#russian)
+
+<a id="ru-docs"></a>
+
+### Найдите нужный документ
+
+- **Начало работы**
+  - [Доступные загрузки](https://github.com/Umichata/tokenlogue/releases).
+  - [Установка на Android](docs/android.md#ru-install).
+  - [Запуск на Linux](docs/linux-appimage.md#ru-download).
+- **Переписка и защита**
+  - [Чаты, черновики и лимиты](docs/user-guide.md#russian).
+  - [PIN, шифрование и восстановление](docs/security.md#russian).
+  - [Помощь и обращения](https://github.com/Umichata/tokenlogue/issues).
+- **Исходники и лицензии**
+  - [Исходные материалы](docs/source-materials.md#russian).
+  - [Сторонние уведомления](THIRD_PARTY_NOTICES.md#russian).
+  - [Лицензия MIT](LICENSE).
+
+[Полная карта документации](docs/README.md#russian) также содержит материалы упаковки и историю выпусков.
+
 
 <a href="docs/assets/screenshots/android-chat-ru.png"><img src="docs/assets/screenshots/android-chat-ru.png" alt="Рабочий чат Tokenlogue на планшете Android" width="320"></a>
 
