@@ -1,15 +1,19 @@
-# Third-party software / Сторонние компоненты
+<p align="left">
+<a href="THIRD_PARTY_NOTICES.ru.md" title="Русский"><img align="right" src="docs/assets/ui/buttons/en-0380058e71b5.svg" alt="Русский" width="46" height="28"></a>
+<a href="THIRD_PARTY_NOTICES.md" title="English"><img align="right" src="docs/assets/ui/buttons/en-927deb529a3e.svg" alt="English" width="45" height="28"></a>
+<a href="README.md" title="Home"><img src="docs/assets/ui/buttons/en-2c296d10dfa5.svg" alt="Home" width="34" height="28"></a>&nbsp;<a href="docs/README.md" title="Docs"><img src="docs/assets/ui/buttons/en-0fba477f99e0.svg" alt="Docs" width="61" height="28"></a>
+</p>
 
-[English](#english) · [Русский](#russian)
+# Third-party software
 
 <a id="english"></a>
 <a id="lang-en"></a>
 
-## English
+Tokenlogue's own code uses the <a href="LICENSE" title="MIT license">MIT license&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a>. Its dependencies retain their respective original licenses. The original texts are not translated or replaced by this overview.
 
-Tokenlogue's own code uses the [MIT license](LICENSE). Its dependencies retain their respective original licenses. The original texts are not translated or replaced by this overview.
+## 📦 Application libraries
 
-### Application libraries
+<img src="docs/assets/ui/frame-top.svg" width="100%" alt="">
 
 | Component | Version | License | Purpose |
 | --- | --- | --- | --- |
@@ -19,47 +23,18 @@ Tokenlogue's own code uses the [MIT license](LICENSE). Its dependencies retain t
 | CFFI | 2.0.0 | MIT | Native interface |
 | pycparser | 3.11 | BSD 3-Clause | C declaration parsing |
 
+<img src="docs/assets/ui/frame-bottom.svg" width="100%" alt="">
+
 Android secure storage uses flutter_secure_storage 10.3.1. Device recovery uses local_auth 3.0.2, local_auth_android 2.2.0 and local_auth_platform_interface 1.1.0. These Flutter packages use BSD 3-Clause licenses. Other platform implementations in the dependency graph do not imply that a Windows or Apple version is distributed.
 
-### Notices inside your package
+## 🧾 Notices inside your package
 
-Android includes Flutter's notices and a supplemental bundle inside `assets/app.zip`, under `assets/third-party-notices/`. It contains the original Android runtime libffi and Dart bridge MIT notices, complete OFL, KaTeX copyright and Material Icons declaration and attribution. See the [library and font texts](packaging/notices/README.md#english).
+Android includes Flutter's notices and a supplemental bundle inside `assets/app.zip`, under `assets/third-party-notices/`. It contains the original Android runtime libffi and Dart bridge MIT notices, complete OFL, KaTeX copyright and Material Icons declaration and attribution. See the <a href="packaging/notices/README.md#english" title="library and font texts">library and font texts&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a>.
 
-Linux includes its component index, original license collection and font supplement under `usr/share/doc/tokenlogue/`. The [AppImage license guide](packaging/linux/appimage/notices.md#english) explains these files and the separate runtime materials. Always use the index supplied with your particular package to identify its actual components.
+Linux includes its component index, original license collection and font supplement under `usr/share/doc/tokenlogue/`. The <a href="packaging/linux/appimage/notices.md#english" title="AppImage license guide">AppImage license guide&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> explains these files and the separate runtime materials. Always use the index supplied with your particular package to identify its actual components.
 
-### Sources and provenance
+## 🔎 Sources and provenance
 
-The [source guide](docs/source-materials.md#english) identifies the available archives, patches and recipes. The [Android native-library overview](packaging/android/crypto/README.md#english) explains native inputs. Some source-to-binary links remain incomplete, including the actual libffi inside CFFI. The presence of a license or a matching-version source archive alone does not prove how a particular binary was produced.
+The <a href="docs/source-materials.md#english" title="source guide">source guide&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> identifies the available archives, patches and recipes. The <a href="packaging/android/crypto/README.md#english" title="Android native-library overview">Android native-library overview&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> explains native inputs. Some source-to-binary links remain incomplete, including the actual libffi inside CFFI. The presence of a license or a matching-version source archive alone does not prove how a particular binary was produced.
 
-[Back to Tokenlogue](README.md#english)
-
-<a id="russian"></a>
-<a id="lang-ru"></a>
-
-## Русский
-
-Собственный код Tokenlogue распространяется по [лицензии MIT](LICENSE). Зависимости сохраняют свои оригинальные лицензии. Их тексты не переводятся и не заменяются этим обзором.
-
-### Библиотеки приложения
-
-| Компонент | Версия | Лицензия | Назначение |
-| --- | --- | --- | --- |
-| Flet и Flet Secure Storage | 0.86.5 | Apache 2.0 | Интерфейс и платформенное защищённое хранилище |
-| HTTPX | 0.28.1 | BSD 3-Clause | HTTPS-запросы OpenRouter |
-| PyCryptodomex | 3.23.0 | BSD 2-Clause и уведомления public domain | Примитивы локального шифрования |
-| CFFI | 2.0.0 | MIT | Нативный интерфейс |
-| pycparser | 3.11 | BSD 3-Clause | Разбор объявлений C |
-
-Защищённое хранилище Android использует flutter_secure_storage 10.3.1. Для системного восстановления применяются local_auth 3.0.2, local_auth_android 2.2.0 и local_auth_platform_interface 1.1.0. Эти пакеты Flutter имеют лицензии BSD 3-Clause. Реализации других платформ в графе зависимостей не означают поставку версии для Windows или Apple.
-
-### Уведомления внутри пакета
-
-Android содержит уведомления Flutter и дополнительный комплект внутри `assets/app.zip`, в каталоге `assets/third-party-notices/`. В нём сохранены оригинальные MIT-уведомления libffi среды Android и Dart bridge, полный OFL, авторские права KaTeX, декларация и авторство Material Icons. См. [тексты библиотек и шрифтов](packaging/notices/README.md#russian).
-
-Linux содержит список компонентов, оригинальные лицензии и дополнение для шрифтов в `usr/share/doc/tokenlogue/`. [Руководство по лицензиям AppImage](packaging/linux/appimage/notices.md#russian) объясняет их состав и отдельные материалы runtime. Определяйте фактические компоненты по списку, поставленному именно с вашим пакетом.
-
-### Исходники и происхождение
-
-[Руководство по исходным материалам](docs/source-materials.md#russian) описывает доступные архивы, патчи и рецепты. [Обзор нативных библиотек Android](packaging/android/crypto/README.md#russian) объясняет нативные входы. Связь части исходников с бинарниками подтверждена не полностью, включая фактическую libffi внутри CFFI. Наличие лицензии или архива исходников с подходящей версией само по себе не доказывает происхождение конкретного бинарника.
-
-[К Tokenlogue](README.md#russian)
+<a href="README.md#english" title="Back to Tokenlogue"><img src="docs/assets/ui/buttons/en-dde838cb3ea6.svg" alt="Back to Tokenlogue" width="194" height="34"></a>

@@ -1,19 +1,21 @@
-# Tokenlogue for Android / Tokenlogue для Android
+<p align="left">
+<a href="android.ru.md" title="Русский"><img align="right" src="assets/ui/buttons/en-0380058e71b5.svg" alt="Русский" width="46" height="28"></a>
+<a href="android.md" title="English"><img align="right" src="assets/ui/buttons/en-927deb529a3e.svg" alt="English" width="45" height="28"></a>
+<a href="../README.md" title="Home"><img src="assets/ui/buttons/en-2c296d10dfa5.svg" alt="Home" width="34" height="28"></a>&nbsp;<a href="README.md" title="Docs"><img src="assets/ui/buttons/en-0fba477f99e0.svg" alt="Docs" width="61" height="28"></a>
+</p>
 
-[English](#english) · [Русский](#russian)
+# Tokenlogue for Android
 
 <a id="english"></a>
 <a id="lang-en"></a>
 
-## English
-
 Tokenlogue brings OpenRouter chats to an ARM64 Android phone or tablet. The interface supports English and Russian, saved per-chat drafts and layouts that adapt to the available space.
 
-[Requirements](#en-requirements) · [Install](#en-install) · [Update](#en-update) · [First launch](#en-first-launch) · [Protection](security.md#english)
+<a href="#en-requirements" title="Requirements"><img src="assets/ui/buttons/en-dc416f56b423.svg" alt="Requirements" width="154" height="34"></a> · <a href="#en-install" title="Install"><img src="assets/ui/buttons/en-005861163dc4.svg" alt="Install" width="97" height="34"></a> · <a href="#en-update" title="Update"><img src="assets/ui/buttons/en-b99119964e0c.svg" alt="Update" width="104" height="34"></a> · <a href="#en-first-launch" title="First launch"><img src="assets/ui/buttons/en-450d767394ee.svg" alt="First launch" width="138" height="34"></a> · <a href="security.md#english" title="Protection"><img src="assets/ui/buttons/en-c8aca5cd0ad1.svg" alt="Protection" width="128" height="34"></a>
 
 <a id="en-requirements"></a>
 
-### Requirements and compatibility
+## 🧩 Requirements and compatibility
 
 - Android 7.0 or later, API 24 or newer.
 - An ARM64 device that supports the `arm64-v8a` ABI.
@@ -24,9 +26,11 @@ The minimum API level does not mean that every Android version or device has bee
 
 <a id="en-install"></a>
 
-### Obtain and install the APK
+## 📦 Obtain and install the APK
 
-The [Releases page](https://github.com/Umichata/tokenlogue/releases) lists publicly available downloads. For this preview, download the APK identified below and `RELEASE_SHA256SUMS`. If this preview is not listed, its downloads are not public yet. The earlier published Linux release is a separate package.
+The <a href="https://github.com/Umichata/tokenlogue/releases" title="Releases page">Releases page&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> lists publicly available downloads. For this preview, download the APK identified below and `RELEASE_SHA256SUMS`. If this preview is not listed, its downloads are not public yet. The earlier published Linux release is a separate package.
+
+<img src="assets/ui/frame-top.svg" width="100%" alt="">
 
 | Current Android preview | Value |
 | --- | --- |
@@ -36,8 +40,9 @@ The [Releases page](https://github.com/Umichata/tokenlogue/releases) lists publi
 | SHA-256 | `2f7c699960e3967220f526245ca2acbf4335104a141ccf3fa2b8a04dae4709d9` |
 | Signing certificate SHA-256 | `927292ad5a76ff049059d1c5d8e9497a42c03f3e995a5d9ca935c59ad8d0b09e` |
 
-Before installation, check only the selected APK against `RELEASE_SHA256SUMS`. Save both files in the same folder. On your computer, use Bash and SHA-256 tools to run this command from that folder.
+<img src="assets/ui/frame-bottom.svg" width="100%" alt="">
 
+Before installation, check only the selected APK against `RELEASE_SHA256SUMS`. Save both files in the same folder. On your computer, use Bash and SHA-256 tools to run this command from that folder.
 ```bash
 set -o pipefail
 file='Tokenlogue-0.1.0-65aa62f-arm64-v8a-v41-test.apk'
@@ -53,109 +58,38 @@ Transfer the verified APK to the device, open it and follow Android's installer.
 
 <a id="en-update"></a>
 
-### Update a compatible installation
+## 🔄 Update a compatible installation
 
 Install the new APK over the compatible existing installation with the same application identity and signing certificate. Keep the existing application data. Uninstalling or clearing data is not an ordinary update step and can make encrypted conversations unrecoverable.
 
-If Android refuses the update, check the package version, architecture and signing identity. Do not remove the old app just to bypass a signature error. Keep the existing data and [ask for help](https://github.com/Umichata/tokenlogue/issues). Include the package filename, Android version and relevant error. Remove API keys, private messages and personal paths before sharing.
+If Android refuses the update, check the package version, architecture and signing identity. Do not remove the old app just to bypass a signature error. Keep the existing data and <a href="https://github.com/Umichata/tokenlogue/issues" title="ask for help">ask for help&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a>. Include the package filename, Android version and relevant error. Remove API keys, private messages and personal paths before sharing.
 
 <a id="en-first-launch"></a>
 
-### Connect and start chatting
+## 💬 Connect and start chatting
 
-<img src="assets/screenshots/android-start.png" alt="First launch of Android" width="320">
+<img src="assets/ui/frame-top.svg" width="320" alt=""><br>
+<img src="assets/screenshots/android-start.png" alt="First launch on Android" width="320"><br>
+<img src="assets/ui/frame-bottom.svg" width="320" alt="">
 
-First launch of Android.
+First launch on Android.
 
-Choose a language, enter your OpenRouter API key and select `Check key`. Choose and repeat a four-digit app PIN, then save it. Use `+` to choose free or paid mode, a model and limits. The [user guide](user-guide.md#english) explains chats, drafts and cost information.
+Choose a language, enter your OpenRouter API key and select `Check key`. Choose and repeat a four-digit app PIN, then save it. Use `+` to choose free or paid mode, a model and limits. The <a href="user-guide.md#english" title="user guide">user guide&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> explains chats, drafts and cost information.
 
 The top-left button opens the chat drawer. Select a chat, tap outside or press Back to close it. The keyboard can reduce the space for header actions. Dismiss it to show the rename and delete shortcuts again.
 
-### Protect the local profile
+<img src="assets/ui/frame-top.svg" width="360" alt=""><br>
+<img src="assets/screenshots/android-chat-en.png" alt="The Android chat workspace" width="360"><br>
+<img src="assets/ui/frame-bottom.svg" width="360" alt="">
+
+The Android chat workspace.
+
+## 🔒 Protect the local profile
 
 Moving Tokenlogue to the background closes access. Enter the app PIN when returning. Your saved draft is restored. Unlocking Android does not unlock Tokenlogue automatically.
 
-On supported Android 11 or later devices, `Forgot PIN?` requests fresh system verification before letting you save a new app PIN. The old PIN and conversations remain if you cancel. See [recovery and encryption](security.md#en-recovery).
+On supported Android 11 or later devices, `Forgot PIN?` requests fresh system verification before letting you save a new app PIN. The old PIN and conversations remain if you cancel. See <a href="security.md#en-recovery" title="recovery and encryption">recovery and encryption&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a>.
 
 Android application backup is disabled. The app uses internet access and system authentication capabilities. It does not request microphone access. Changing device security, uninstalling or clearing data can affect the keys needed to read protected conversations. A copied database alone is not a portable backup.
 
-[User guide](user-guide.md#english) · [Protection](security.md#english) · [Source materials](source-materials.md#english) · [Tokenlogue](../README.md#english)
-
-<a id="russian"></a>
-<a id="lang-ru"></a>
-
-## Русский
-
-Tokenlogue позволяет общаться с моделями OpenRouter на телефоне или планшете Android ARM64. Есть русский и английский интерфейс, отдельные черновики чатов и компоновка, которая учитывает доступное место.
-
-[Требования](#ru-requirements) · [Установка](#ru-install) · [Обновление](#ru-update) · [Первый запуск](#ru-first-launch) · [Защита](security.md#russian)
-
-<a id="ru-requirements"></a>
-
-### Требования и совместимость
-
-- Android 7.0 или новее, API 24 и выше.
-- Устройство ARM64 с поддержкой ABI `arm64-v8a`.
-- API-ключ OpenRouter и интернет для проверки ключа, моделей и сообщений.
-- Поддерживаемая блокировка устройства для необязательного системного восстановления PIN в Android 11 и новее.
-
-Минимальный API не означает проверку каждой версии Android или каждого устройства. Текущий пакет прошёл статические проверки выравнивания ELF и ZIP для страниц 4 КиБ и 16 КиБ. Работа на настоящем ARM64-устройстве с ядром 16 КиБ ещё не проверена. Прежний запуск другого пакета через ARM-трансляцию не подтверждает такую работу этого пакета.
-
-<a id="ru-install"></a>
-
-### Получение и установка APK
-
-На странице [Releases](https://github.com/Umichata/tokenlogue/releases) перечислены общедоступные загрузки. Для этой предварительной версии скачайте указанный ниже APK и `RELEASE_SHA256SUMS`. Если этой версии нет в списке, её загрузки ещё не опубликованы. Прежний опубликованный выпуск Linux является отдельным пакетом.
-
-| Текущая версия Android | Значение |
-| --- | --- |
-| APK | `Tokenlogue-0.1.0-65aa62f-arm64-v8a-v41-test.apk` |
-| Версия | `0.1.0`, versionCode `41` |
-| Размер | 56 160 490 байт |
-| SHA-256 | `2f7c699960e3967220f526245ca2acbf4335104a141ccf3fa2b8a04dae4709d9` |
-| SHA-256 сертификата подписи | `927292ad5a76ff049059d1c5d8e9497a42c03f3e995a5d9ca935c59ad8d0b09e` |
-
-Перед установкой сверьте только выбранный APK с `RELEASE_SHA256SUMS`. Сохраните оба файла в одной папке. На компьютере используйте Bash и средства SHA-256, чтобы выполнить из этой папки следующую команду.
-
-```bash
-set -o pipefail
-file='Tokenlogue-0.1.0-65aa62f-arm64-v8a-v41-test.apk'
-awk -v wanted="$file" '$2 == wanted { entry = $0; count++ } END { if (count != 1) exit 1; print entry }' RELEASE_SHA256SUMS |
-  sha256sum --check -
-```
-
-Выбранный APK должен получить `OK`. Отсутствующая или повторная запись в манифесте, изменённый или отсутствующий файл вызывают ошибку команды. Контрольная сумма обнаруживает изменение байтов и не заменяет подпись издателя.
-
-Исходный комплект предварительной версии содержит внутренний `SHA256SUMS` для проверки полного распакованного комплекта. Для установки и запуска Tokenlogue этот комплект и архивы исходников не нужны.
-
-Передайте проверенный APK на устройство, откройте его и следуйте установщику Android. Система может попросить разрешить установку из использованного файлового менеджера или браузера. Давайте разрешение только для пакета, которому доверяете. После установки его можно отключить.
-
-<a id="ru-update"></a>
-
-### Обновление совместимой установки
-
-Установите новый APK поверх совместимой прежней версии с тем же идентификатором приложения и сертификатом подписи. Сохраните данные приложения. Удаление приложения и очистка данных не являются обычным шагом обновления и могут сделать зашифрованную переписку невосстановимой.
-
-Если Android отказывает в обновлении, проверьте версию, архитектуру и подпись пакета. Не удаляйте прежнее приложение только для обхода ошибки подписи. Сохраните данные и [обратитесь за помощью](https://github.com/Umichata/tokenlogue/issues). Укажите имя пакета, версию Android и существенную ошибку. Перед отправкой уберите API-ключи, личную переписку и персональные пути.
-
-<a id="ru-first-launch"></a>
-
-### Подключение и первый чат
-
-<img src="assets/screenshots/android-start-ru.png" alt="Первый запуск Android" width="320">
-
-Первый запуск Android.
-
-Выберите язык, введите API-ключ OpenRouter и нажмите `Проверить ключ`. Выберите и повторите четырёхзначный PIN приложения, затем сохраните его. Через `+` выберите бесплатный или платный режим, модель и лимиты. Работа с чатами, черновиками и расходами описана в [руководстве пользователя](user-guide.md#russian).
-
-Верхняя левая кнопка открывает панель чатов. Для закрытия выберите чат, нажмите вне панели или используйте Back. Клавиатура может уменьшить место для действий в шапке. Закройте её, чтобы снова показать кнопки переименования и удаления.
-
-### Защита локального профиля
-
-Уход Tokenlogue в фон закрывает доступ. При возвращении введите PIN приложения. Сохранённый черновик восстановится. Разблокировка Android не открывает Tokenlogue автоматически.
-
-На поддерживаемом Android 11 и новее `Забыли PIN?` запрашивает новое системное подтверждение перед сохранением нового PIN приложения. Отмена сохраняет прежний PIN и переписку. Подробнее в разделе [о восстановлении и шифровании](security.md#ru-recovery).
-
-Резервное копирование приложения в Android отключено. Приложение использует интернет и системные возможности аутентификации. Доступ к микрофону не запрашивается. Изменение защиты устройства, удаление приложения и очистка данных могут повлиять на ключи, нужные для чтения защищённой переписки. Одна копия базы не является переносимой резервной копией.
-
-[Руководство пользователя](user-guide.md#russian) · [Защита](security.md#russian) · [Исходные материалы](source-materials.md#russian) · [Tokenlogue](../README.md#russian)
+<a href="user-guide.md#english" title="User guide"><img src="assets/ui/buttons/en-546470010fac.svg" alt="User guide" width="131" height="34"></a> · <a href="security.md#english" title="Protection"><img src="assets/ui/buttons/en-c8aca5cd0ad1.svg" alt="Protection" width="128" height="34"></a> · <a href="source-materials.md#english" title="Source materials"><img src="assets/ui/buttons/en-6c08d5ca10c9.svg" alt="Source materials" width="176" height="34"></a> · <a href="../README.md#english" title="Tokenlogue"><img src="assets/ui/buttons/en-931ef4e6d14f.svg" alt="Tokenlogue" width="135" height="34"></a>

@@ -1,33 +1,45 @@
-# Using Tokenlogue / Работа с Tokenlogue
+<p align="left">
+<a href="user-guide.ru.md" title="Русский"><img align="right" src="assets/ui/buttons/en-0380058e71b5.svg" alt="Русский" width="46" height="28"></a>
+<a href="user-guide.md" title="English"><img align="right" src="assets/ui/buttons/en-927deb529a3e.svg" alt="English" width="45" height="28"></a>
+<a href="../README.md" title="Home"><img src="assets/ui/buttons/en-2c296d10dfa5.svg" alt="Home" width="34" height="28"></a>&nbsp;<a href="README.md" title="Docs"><img src="assets/ui/buttons/en-0fba477f99e0.svg" alt="Docs" width="61" height="28"></a>
+</p>
 
-[English](#english) · [Русский](#russian)
+# 📘 Using Tokenlogue
 
 <a id="english"></a>
 <a id="lang-en"></a>
 
-## English
+Tokenlogue lets you chat with OpenRouter models on Linux and Android. This guide describes the current preview. Earlier published previews can have fewer features. Start with the <a href="linux-appimage.md#english" title="Linux installation guide">Linux installation guide&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> or <a href="android.md#english" title="Android installation guide">Android installation guide&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a>.
 
-Tokenlogue lets you chat with OpenRouter models on Linux and Android. This guide describes the current preview. Earlier published previews can have fewer features. Start with the [Linux installation guide](linux-appimage.md#english) or [Android installation guide](android.md#english).
-
-[Get started](#en-access) · [Chats](#en-chats) · [Drafts](#en-drafts) · [Limits](#en-limits) · [Costs](#en-chat-metrics) · [Protection](security.md#english)
+<a href="#en-access" title="Get started"><img src="assets/ui/buttons/en-c840c0639b46.svg" alt="Get started" width="135" height="34"></a> · <a href="#en-chats" title="Chats"><img src="assets/ui/buttons/en-e17c579b9a6d.svg" alt="Chats" width="93" height="34"></a> · <a href="#en-drafts" title="Drafts"><img src="assets/ui/buttons/en-0db65ae32e2b.svg" alt="Drafts" width="97" height="34"></a> · <a href="#en-limits" title="Limits"><img src="assets/ui/buttons/en-b9e511d82744.svg" alt="Limits" width="96" height="34"></a> · <a href="#en-chat-metrics" title="Costs"><img src="assets/ui/buttons/en-b239ee455553.svg" alt="Costs" width="92" height="34"></a> · <a href="security.md#english" title="Protection"><img src="assets/ui/buttons/en-c8aca5cd0ad1.svg" alt="Protection" width="128" height="34"></a>
 
 <a id="en-access"></a>
 <a id="en-current"></a>
 
-### Get started
+<a id="get-started"></a>
+
+### 🚀 Get started
 
 1. Choose English or Russian on the sign-in screen.
 2. Enter an API key created in your [OpenRouter account](https://openrouter.ai/settings/keys) and choose `Check key`. This contacts OpenRouter. A connection error alone does not mean that the key is invalid.
 3. Choose a four-digit PIN, repeat it and select `Save PIN`. Use digits `0`–`9`. A leading zero is allowed. `Suggest PIN` fills a random suggestion that you can change. Both fields must match before saving.
 4. Keep the PIN somewhere safe. The eye button reveals it when needed. Tokenlogue does not copy it automatically.
-5. On Linux, follow the local-protection introduction and save a recovery code when offered. You can choose to continue with manual app locking and check automatic protection later. See [protecting your conversations](security.md#en-locking).
+5. On Linux, follow the local-protection introduction and save a recovery code when offered. You can choose to continue with manual app locking and check automatic protection later. See <a href="security.md#en-locking" title="protecting your conversations">protecting your conversations&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a>.
 6. Choose `+` to create a chat.
 
-At later launches, enter your app PIN and choose `Sign in`. Updating a compatible installation preserves that PIN. Three incorrect checks temporarily block PIN entry for five minutes. Restarting does not clear the countdown. See [access and recovery](security.md#en-pin).
+<img src="assets/ui/frame-top.svg" width="320" alt=""><br>
+<img src="assets/screenshots/android-start.png" alt="First-launch setup on Android" width="320"><br>
+<img src="assets/ui/frame-bottom.svg" width="320" alt="">
+
+*First-launch setup on Android. The instructions above apply to both platforms.*
+
+At later launches, enter your app PIN and choose `Sign in`. Updating a compatible installation preserves that PIN. Three incorrect checks temporarily block PIN entry for five minutes. Restarting does not clear the countdown. See <a href="security.md#en-pin" title="access and recovery">access and recovery&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a>.
 
 <a id="en-chats"></a>
 
-### Create and manage chats
+<a id="create-and-manage-chats"></a>
+
+### 💬 Create and manage chats
 
 Choose free or paid mode, search by model name or ID, then set the chat limits. Each chat keeps its mode and model. Create another chat to choose a different model.
 
@@ -39,9 +51,17 @@ The `⋮` menu contains key status, model details, token prices, budget details 
 
 <a id="en-workspace"></a>
 
-### Arrange the workspace
+<a id="arrange-the-workspace"></a>
+
+### 🧭 Arrange the workspace
 
 The top-left button hides or shows the chat list in a wide Linux window. Tokenlogue remembers that choice. On a narrow screen it opens a drawer. Choose a chat, tap outside, or use Back or Escape to close the drawer. Changing to a narrow layout does not overwrite the saved wide-window choice.
+
+<img src="assets/ui/frame-top.svg" width="760" alt=""><br>
+<img src="assets/screenshots/linux-chat.png" alt="Linux conversation workspace with demonstration data" width="760"><br>
+<img src="assets/ui/frame-bottom.svg" width="760" alt="">
+
+*The Linux workspace with demonstration data. Your chat list, conversation and editor remain together.*
 
 Choose `Interface language` in `⋮` to switch between English and Russian. The choice is remembered. Chat titles, your messages and model replies are not translated. Changing language preserves ordinary editor input and drafts. For safety, an unfinished recovery-code or profile-deletion confirmation must be started again in the selected language.
 
@@ -49,7 +69,9 @@ Long titles are shortened visually. When the keyboard or a short window leaves l
 
 <a id="en-drafts"></a>
 
-### Send messages and keep drafts
+<a id="send-messages-and-keep-drafts"></a>
+
+### ✍️ Send messages and keep drafts
 
 Type in `Message` and choose `Send`. With a keyboard, Enter sends and Shift+Enter inserts a line break. Empty messages cannot be sent. Tokenlogue sends the message and eligible conversation context to OpenRouter and the selected model provider.
 
@@ -61,9 +83,13 @@ If a reply is incomplete or a request fails, read its status before retrying. Re
 
 <a id="en-limits"></a>
 
-### Set chat limits
+<a id="set-chat-limits"></a>
+
+### 🎚️ Set chat limits
 
 Configure limits before the first request. Use `Set limits` or `Edit limits` in `⋮` to change them later.
+
+<img src="assets/ui/frame-top.svg" width="100%" alt="">
 
 | Setting | What it controls |
 | --- | --- |
@@ -71,13 +97,17 @@ Configure limits before the first request. Use `Set limits` or `Edit limits` in 
 | Maximum tokens per response | The requested upper bound for each answer. An answer can be shorter. |
 | Chat spending limit, USD | The local spending cap for a paid chat. Increasing it asks for confirmation. |
 
+<img src="assets/ui/frame-bottom.svg" width="100%" alt="">
+
 Before sending, Tokenlogue reserves tokens and, in paid mode, money. The available chat budget excludes actual use and active reservations. A request can be refused when the remaining budget cannot cover its reserve. A local reservation is not an OpenRouter charge.
 
 The chat budget, the spending limit of your OpenRouter key and your OpenRouter account balance are separate. Tokenlogue does not fetch the total account balance. A key without its own spending limit does not imply unlimited account funds.
 
 <a id="en-paid-confirmation"></a>
 
-### Choose when paid requests need confirmation
+<a id="choose-when-paid-requests-need-confirmation"></a>
+
+### ✅ Choose when paid requests need confirmation
 
 New paid chats ask for confirmation before sending. Review the model, estimated input, response maximum and spending reserve. Cancel to leave the message unsent.
 
@@ -87,7 +117,11 @@ Turn the option off to require confirmation from the next request onward. The ch
 
 <a id="en-chat-metrics"></a>
 
-### Read token and cost information
+<a id="read-token-and-cost-information"></a>
+
+### 💳 Read token and cost information
+
+<img src="assets/ui/frame-top.svg" width="100%" alt="">
 
 | Display | Meaning |
 | --- | --- |
@@ -95,6 +129,8 @@ Turn the option off to require confirmation from the next request onward. The ch
 | Tokens remaining | Free-chat token budget remaining after use and active reservations. This is not OpenRouter's global free quota. |
 | Last request | Confirmed cost for a paid chat or total input-and-response tokens for a free chat. Retries count as new attempts. |
 | Key remaining | The current API key's known remaining spending limit, separate from the chat budget and account balance. |
+
+<img src="assets/ui/frame-bottom.svg" width="100%" alt="">
 
 `Key limit not set` means that the key has no separate cap. `Key data unavailable` means its remainder is unknown. An exhausted limit is shown explicitly. Hover or long-press a metric for details and the key-data receipt time when available. Use `Refresh key status` in `⋮` to request fresh data. Typing or reopening the display does not make old data fresh.
 
@@ -104,7 +140,9 @@ The estimate under the editor changes as you type. It includes eligible history 
 
 Calculating an estimate makes no network request and reserves no budget. The normal checks still run when you send.
 
-### Handle an unknown request result
+<a id="handle-an-unknown-request-result"></a>
+
+### ❔ Handle an unknown request result
 
 A lost connection can leave uncertainty about whether OpenRouter processed a request. Tokenlogue keeps its protective reserve rather than treating it as free. Check the request and billing in your OpenRouter account before retrying.
 
@@ -112,7 +150,9 @@ After checking, `Release unknown reservation` returns that local reserve to the 
 
 <a id="en-key-replacement"></a>
 
-### Replace an OpenRouter key
+<a id="replace-an-openrouter-key"></a>
+
+### 🔑 Replace an OpenRouter key
 
 Sign in with your existing PIN, open `⋮` and choose `Replace OpenRouter key`. This works with or without a selected chat. Finish any current send or key check first.
 
@@ -123,139 +163,12 @@ The old key stays saved until the replacement passes validation and is stored. C
 <a id="en-delete"></a>
 <a id="en-data"></a>
 
-### Protect your conversations
+<a id="protect-your-conversations"></a>
+
+### 🛡️ Protect your conversations
 
 Use the header lock button before leaving the device. On Android, moving the app to the background closes access. Linux screen-lock and sleep monitoring depends on the desktop session.
 
-Read [conversation protection and recovery](security.md#english) before relying on a PIN or changing device security. It explains encrypted fields, the Linux recovery code, Android system recovery, local-protection checks and irreversible profile deletion. Copying a database alone does not back up its separate encryption key.
+Read <a href="security.md#english" title="conversation protection and recovery">conversation protection and recovery&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> before relying on a PIN or changing device security. It explains encrypted fields, the Linux recovery code, Android system recovery, local-protection checks and irreversible profile deletion. Copying a database alone does not back up its separate encryption key.
 
-[Tokenlogue](../README.md#english) · [Linux](linux-appimage.md#english) · [Android](android.md#english) · [Source materials](source-materials.md#english)
-
-<a id="russian"></a>
-<a id="lang-ru"></a>
-
-## Русский
-
-Tokenlogue позволяет общаться с моделями OpenRouter в Linux и Android. Руководство описывает текущую предварительную версию. В прежних опубликованных выпусках возможностей может быть меньше. Начните с [установки в Linux](linux-appimage.md#russian) или [установки в Android](android.md#russian).
-
-[Начало работы](#ru-access) · [Чаты](#ru-chats) · [Черновики](#ru-drafts) · [Лимиты](#ru-limits) · [Расходы](#ru-chat-metrics) · [Защита](security.md#russian)
-
-<a id="ru-access"></a>
-<a id="ru-current"></a>
-
-### Начало работы
-
-1. Выберите русский или английский язык на экране входа.
-2. Введите API-ключ из своего [аккаунта OpenRouter](https://openrouter.ai/settings/keys) и нажмите `Проверить ключ`. Для этого нужен доступ к OpenRouter. Ошибка соединения сама по себе не означает, что ключ неверный.
-3. Выберите четырёхзначный PIN, повторите его и нажмите `Сохранить PIN`. Используйте цифры `0`–`9`. Ноль в начале допустим. Кнопка `Предложить PIN` заполняет случайный вариант, который можно изменить. Для сохранения значения обоих полей должны совпадать.
-4. Сохраните PIN в надёжном месте. Кнопка с глазом позволяет увидеть его. Tokenlogue не копирует PIN автоматически.
-5. В Linux пройдите начальную проверку локальной защиты и сохраните резервный код, когда приложение предложит это. Можно продолжить с ручной блокировкой приложения и проверить автоматическую защиту позднее. Подробнее в разделе [о защите переписки](security.md#ru-locking).
-6. Нажмите `+`, чтобы создать чат.
-
-При следующих запусках введите PIN приложения и нажмите `Войти`. Обновление совместимой установки сохраняет этот PIN. После трёх неверных проверок ввод блокируется на пять минут. Перезапуск не сбрасывает отсчёт. Подробнее в разделе [о входе и восстановлении](security.md#ru-pin).
-
-<a id="ru-chats"></a>
-
-### Создание чатов и управление ими
-
-Выберите бесплатный или платный режим, найдите модель по названию или ID и задайте лимиты чата. В каждом чате сохраняются его режим и модель. Для другой модели создайте новый чат.
-
-В бесплатном режиме доступны автоматический выбор и модели, у которых все применимые цены равны нулю. При автоматическом выборе модель для каждого запроса определяет OpenRouter. Доступность и ограничения частоты бесплатных запросов сервиса сохраняются. Для платного режима нужны действующий ключ и известные цены модели. Наличие средств OpenRouter проверяет при обработке запросов.
-
-Возвращайтесь к переписке через список чатов. Если хватает места по высоте, под заголовком находятся `Переименовать` и `Удалить чат`. Переименование сохраняет сообщения и черновик. Удаление требует подтверждения и удаляет локальную историю и черновик только этого чата. Весь профиль при этом сохраняется. Эти действия и изменение лимитов недоступны во время отправки.
-
-В меню `⋮` находятся состояние ключа, сведения о модели, цены токенов, подробный бюджет и настройки лимитов. Здесь же доступны язык, замена ключа и действия с профилем. Открытие меню не отправляет сообщение и не обновляет ключ автоматически. Если пункты не помещаются, прокрутите меню.
-
-<a id="ru-workspace"></a>
-
-### Настройка рабочего пространства
-
-В широком окне Linux верхняя левая кнопка скрывает или показывает список чатов. Tokenlogue запоминает выбор. На узком экране эта кнопка открывает выдвижную панель. Выберите чат, нажмите вне панели или используйте Back либо Escape, чтобы её закрыть. Узкая компоновка не меняет сохранённую настройку широкого окна.
-
-Для переключения русского и английского выберите `Язык интерфейса` в `⋮`. Выбор сохраняется. Названия чатов, ваши сообщения и ответы модели не переводятся. Обычный ввод и черновики сохраняются при смене языка. Незавершённое подтверждение резервного кода или удаления профиля нужно начать заново на выбранном языке.
-
-Длинные названия визуально сокращаются. Когда клавиатура или низкое окно оставляют мало места, кнопки переименования и удаления скрываются. Закройте клавиатуру или увеличьте высоту окна, чтобы они снова появились. Переписка и редактор используют оставшееся пространство.
-
-<a id="ru-drafts"></a>
-
-### Отправка сообщений и сохранение черновиков
-
-Введите текст в поле `Сообщение` и нажмите `Отправить`. При работе с клавиатурой Enter отправляет сообщение, а Shift+Enter добавляет перенос строки. Пустые сообщения отправить нельзя. Tokenlogue передаёт сообщение и подходящий контекст переписки в OpenRouter и выбранному поставщику модели.
-
-У каждого чата свой локальный черновик. Сохранённый текст восстанавливается после переключения чатов, изменения размера окна, переименования, блокировки и перезапуска. Черновик существует отдельно от истории. Ввод текста не отправляет его, не расходует средства и не добавляет в контекст модели.
-
-Когда сообщение принято к отправке, отправленный черновик очищается. Пока ответ готовится, можно писать новый. Завершение прошлого запроса не удалит новый текст. Неудачная проверка до отправки или отменённое подтверждение платного запроса сохраняют исходный черновик.
-
-Если ответ неполный или запрос завершился ошибкой, прочитайте его состояние перед повтором. Повтор запроса, уже дошедшего до сервиса, может привести к ещё одному списанию.
-
-<a id="ru-limits"></a>
-
-### Настройка лимитов чата
-
-Задайте лимиты до первого запроса. Для изменения откройте `Настроить лимиты` или `Изменить лимиты` в `⋮`.
-
-| Настройка | Что она ограничивает |
-| --- | --- |
-| Общий лимит токенов чата | Входные токены и ответы во всех запросах чата. Повторная передача контекста тоже расходует токены. |
-| Максимум токенов одного ответа | Запрашиваемая верхняя граница ответа. Ответ может быть короче. |
-| Денежный лимит чата, USD | Локальный предел расходов платного чата. Повышение требует подтверждения. |
-
-Перед отправкой Tokenlogue резервирует токены, а в платном режиме ещё и деньги. Из доступного бюджета чата вычитаются фактический расход и действующие резервы. Если остатка недостаточно для нового резерва, запрос может быть отклонён. Локальный резерв не является списанием OpenRouter.
-
-Бюджет чата, лимит расходов ключа OpenRouter и баланс аккаунта OpenRouter — разные величины. Tokenlogue не получает общий баланс аккаунта. Отсутствие отдельного лимита ключа не означает неограниченные средства.
-
-<a id="ru-paid-confirmation"></a>
-
-### Подтверждение платных запросов
-
-В новых платных чатах перед отправкой появляется подтверждение. Проверьте модель, оценку входа, максимум ответа и денежный резерв. Отмена оставляет сообщение неотправленным.
-
-Пункт `Без подтверждений` над перепиской отключает этот диалог для выбранного чата с первого запроса, включая повторы и изменение цен. Само включение ничего не отправляет. Лимиты, проверка ключа и проверка цен продолжают действовать. Повышение денежного лимита сохраняет отдельное подтверждение.
-
-Отключите этот пункт, чтобы запрашивать подтверждение начиная со следующего запроса. Выбор сохраняется для каждого чата. Блокировка или изменение настройки никогда не отправляют ожидающее сообщение автоматически. Нажмите `Отправить`, когда будете готовы.
-
-<a id="ru-chat-metrics"></a>
-
-### Как читать статистику и оценку расходов
-
-| Показатель | Значение |
-| --- | --- |
-| В чате доступно | Остаток бюджета платного чата после фактических расходов и действующих резервов. |
-| Осталось токенов | Остаток токенов бесплатного чата после расхода и действующих резервов. Это не общая бесплатная квота OpenRouter. |
-| Последний запрос | Подтверждённая стоимость в платном чате или сумма входных токенов и ответа в бесплатном. Повтор считается новой попыткой. |
-| Осталось по ключу | Известный остаток лимита расходов текущего API-ключа. Он отличается от бюджета чата и баланса аккаунта. |
-
-`Лимит ключа не установлен` означает отсутствие отдельного ограничения ключа. `Данные ключа недоступны` означает неизвестный остаток. Исчерпанный лимит обозначается отдельно. Наведите указатель или удерживайте показатель для пояснения и времени получения данных ключа, если оно известно. Пункт `Обновить статус ключа` в `⋮` запрашивает свежие данные. Ввод текста или повторное открытие показателей не обновляет старые сведения.
-
-Состояния `Нет запросов`, `Выполняется`, `Уточняется` и `Неизвестно` различаются. Неизвестный результат не считается нулевой стоимостью.
-
-Оценка под редактором меняется во время ввода. Она учитывает подходящую историю и действующий максимум ответа. Это консервативная локальная оценка на основе текста UTF-8, а не точная токенизация модели и не прогноз длины ответа. Возможная стоимость является верхней оценкой при известных ценах. При отсутствующих или устаревших ценах показывается `Стоимость неизвестна`. Фактические токены и стоимость определяются после отправки.
-
-Расчёт оценки не обращается к сети и не резервирует бюджет. При отправке выполняются обычные проверки.
-
-### Если результат запроса неизвестен
-
-После потери соединения может быть неизвестно, обработал ли OpenRouter запрос. Tokenlogue сохраняет защитный резерв, а не считает запрос бесплатным. Перед повтором проверьте запрос и списания в аккаунте OpenRouter.
-
-После проверки пункт `Освободить неизвестный резерв` возвращает локальный резерв в бюджет чата. Он не отменяет удалённый запрос и не возвращает оплату. Повтор может привести к новому списанию.
-
-<a id="ru-key-replacement"></a>
-
-### Замена ключа OpenRouter
-
-Войдите с прежним PIN, откройте `⋮` и выберите `Заменить ключ OpenRouter`. Это доступно и без выбранного чата. Сначала завершите текущую отправку или проверку ключа.
-
-Старый ключ сохраняется, пока новый не пройдёт проверку и не будет записан. Отмена или неудачная проверка оставляют его. PIN, ключ шифрования, чаты, черновики и бюджеты не меняются. Это действие не восстанавливает забытый PIN и не отзывает старый ключ на стороне OpenRouter. При необходимости отзовите ключ в аккаунте OpenRouter.
-
-<a id="ru-protection-check"></a>
-<a id="ru-pin-recovery"></a>
-<a id="ru-delete"></a>
-<a id="ru-data"></a>
-
-### Защита переписки
-
-Перед тем как оставить устройство, используйте кнопку блокировки в шапке. В Android уход приложения в фон закрывает доступ. В Linux наблюдение за блокировкой экрана и сном зависит от рабочего окружения.
-
-Прочитайте [руководство по защите и восстановлению](security.md#russian), прежде чем полагаться на PIN или менять защиту устройства. Оно объясняет шифруемые поля, резервный код Linux, системное восстановление Android, проверку локальной защиты и необратимое удаление профиля. Копия базы сама по себе не сохраняет отдельный ключ шифрования.
-
-[Tokenlogue](../README.md#russian) · [Linux](linux-appimage.md#russian) · [Android](android.md#russian) · [Исходные материалы](source-materials.md#russian)
+<a href="../README.md#english" title="Tokenlogue"><img src="assets/ui/buttons/en-931ef4e6d14f.svg" alt="Tokenlogue" width="135" height="34"></a> · <a href="linux-appimage.md#english" title="Linux"><img src="assets/ui/buttons/en-411f244045b9.svg" alt="Linux" width="91" height="34"></a> · <a href="android.md#english" title="Android"><img src="assets/ui/buttons/en-5d10a1d077a6.svg" alt="Android" width="109" height="34"></a> · <a href="source-materials.md#english" title="Source materials"><img src="assets/ui/buttons/en-6c08d5ca10c9.svg" alt="Source materials" width="176" height="34"></a>

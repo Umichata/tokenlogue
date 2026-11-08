@@ -1,19 +1,27 @@
-# Tokenlogue for Linux / Tokenlogue для Linux
+<p align="left">
+<a href="linux-appimage.ru.md" title="Русский"><img align="right" src="assets/ui/buttons/en-0380058e71b5.svg" alt="Русский" width="46" height="28"></a>
+<a href="linux-appimage.md" title="English"><img align="right" src="assets/ui/buttons/en-927deb529a3e.svg" alt="English" width="45" height="28"></a>
+<a href="../README.md" title="Home"><img src="assets/ui/buttons/en-2c296d10dfa5.svg" alt="Home" width="34" height="28"></a>&nbsp;<a href="README.md" title="Docs"><img src="assets/ui/buttons/en-0fba477f99e0.svg" alt="Docs" width="61" height="28"></a>
+</p>
 
-[English](#english) · [Русский](#russian)
+# Tokenlogue for Linux
 
 <a id="english"></a>
 <a id="lang-en"></a>
 
-## English
-
 Run Tokenlogue as an AppImage on a Linux desktop. Python, Flutter and build tools are included or unnecessary for normal use. The current preview has an English and Russian interface.
 
-[Requirements](#en-requirements) · [Download](#en-download) · [Run](#en-run) · [Update](#en-updates) · [Troubleshooting](#en-help)
+<img src="assets/ui/frame-top.svg" width="880" alt=""><br>
+<img src="assets/screenshots/linux-chat.png" alt="Current Linux chat interface in English" width="880"><br>
+<img src="assets/ui/frame-bottom.svg" width="880" alt="">
+
+Current Linux interface. This screenshot uses English.
+
+<a href="#en-requirements" title="Requirements"><img src="assets/ui/buttons/en-dc416f56b423.svg" alt="Requirements" width="154" height="34"></a> · <a href="#en-download" title="Download"><img src="assets/ui/buttons/en-db204ed89fe6.svg" alt="Download" width="124" height="34"></a> · <a href="#en-run" title="Run"><img src="assets/ui/buttons/en-876ad5070bd8.svg" alt="Run" width="80" height="34"></a> · <a href="#en-updates" title="Update"><img src="assets/ui/buttons/en-b99119964e0c.svg" alt="Update" width="104" height="34"></a> · <a href="#en-help" title="Troubleshooting"><img src="assets/ui/buttons/en-8995d901e17c.svg" alt="Troubleshooting" width="170" height="34"></a>
 
 <a id="en-requirements"></a>
 
-### Requirements
+## 🧩 Requirements
 
 - Linux x86_64 and an x86-64-v2 compatible processor. The system-library baseline is Ubuntu 22.04.
 - A graphical desktop, GTK3 and its runtime dependencies. GTK4 alone does not replace GTK3.
@@ -26,9 +34,11 @@ Screen-lock and sleep protection is designed for the supported Cinnamon/X11 desk
 
 <a id="en-download"></a>
 
-### Download and verify
+## 📦 Download and verify
 
-The [Releases page](https://github.com/Umichata/tokenlogue/releases) lists publicly available downloads. For this preview, download the AppImage identified below and `RELEASE_SHA256SUMS`. If this preview is not listed, its downloads are not public yet.
+The <a href="https://github.com/Umichata/tokenlogue/releases" title="Releases page">Releases page&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> lists publicly available downloads. For this preview, download the AppImage identified below and `RELEASE_SHA256SUMS`. If this preview is not listed, its downloads are not public yet.
+
+<img src="assets/ui/frame-top.svg" width="100%" alt="">
 
 | Current preview file | Value |
 | --- | --- |
@@ -36,8 +46,9 @@ The [Releases page](https://github.com/Umichata/tokenlogue/releases) lists publi
 | Size | 35,350,920 bytes |
 | SHA-256 | `227ad9991dc0b00dfd160003967de6b9a321078b89f6129d0fdd2a620cf8c1ae` |
 
-Save the AppImage and `RELEASE_SHA256SUMS` in the same folder. Use Bash and SHA-256 tools to check only the selected package from that folder.
+<img src="assets/ui/frame-bottom.svg" width="100%" alt="">
 
+Save the AppImage and `RELEASE_SHA256SUMS` in the same folder. Use Bash and SHA-256 tools to check only the selected package from that folder.
 ```bash
 set -o pipefail
 file='Tokenlogue-0.1.0-65aa62f-linux-x86_64.AppImage'
@@ -49,14 +60,13 @@ The selected AppImage must report `OK`. A missing or duplicate manifest entry, a
 
 The original preview bundle has an internal `SHA256SUMS` for checking the complete extracted bundle. You do not need that bundle or the source archives to run Tokenlogue.
 
-The [earlier published Linux preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-linux-preview.2b1f7d3) remains a separate version. It uses `Tokenlogue-0.1.0-2b1f7d3-x86_64.AppImage`, with SHA-256 `0852f9432cb089e31fef2722d84ce7124714588afb65d6f25cd64d0616a4779d`. Its Russian-only interface and older data-protection behavior differ from this guide. Use its own checksum file and [release notes](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.2b1f7d3/RELEASE_NOTES.md) when identifying older packages.
+The [earlier published Linux preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-linux-preview.2b1f7d3) remains a separate version. It uses `Tokenlogue-0.1.0-2b1f7d3-x86_64.AppImage`, with SHA-256 `0852f9432cb089e31fef2722d84ce7124714588afb65d6f25cd64d0616a4779d`. Its Russian-only interface and older data-protection behavior differ from this guide. Use its own checksum file and <a href="https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.2b1f7d3/RELEASE_NOTES.md" title="release notes">release notes&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> when identifying older packages.
 
 <a id="en-run"></a>
 
-### Start Tokenlogue
+## 🚀 Start Tokenlogue
 
 Grant execute permission once, then start the verified AppImage as your normal user.
-
 ```bash
 chmod u+x ./Tokenlogue-0.1.0-65aa62f-linux-x86_64.AppImage
 ./Tokenlogue-0.1.0-65aa62f-linux-x86_64.AppImage
@@ -66,10 +76,9 @@ You can keep the file in a convenient folder. A file manager that supports progr
 
 <a id="en-without-fuse"></a>
 
-### Run without FUSE
+## 🧰 Run without FUSE
 
 If your system cannot mount AppImages through FUSE, use extract-and-run.
-
 ```bash
 ./Tokenlogue-0.1.0-65aa62f-linux-x86_64.AppImage --appimage-extract-and-run
 ```
@@ -78,29 +87,27 @@ This unpacks files to a temporary directory and starts the app without FUSE. Ens
 
 <a id="en-updates"></a>
 
-### Update without removing your profile
+## 🔄 Update without removing your profile
 
 Close every older Tokenlogue copy before opening the replacement. Verify the new file and run it under the same OS account. There is no automatic updater. Replacing the AppImage does not remove the separately stored application data.
 
 At the first successful sign-in, older unprotected conversation content is converted before chats open. Keep older copies closed throughout. Do not downgrade a profile without a compatible backup. Earlier versions may not understand the updated database or its protection.
 
-The database alone is not a complete portable backup. Its encryption key stays in the system key store. Losing that key can make history unrecoverable. Read [conversation protection](security.md#en-encryption) before moving data or changing keyring settings.
+The database alone is not a complete portable backup. Its encryption key stays in the system key store. Losing that key can make history unrecoverable. Read <a href="security.md#en-encryption" title="conversation protection">conversation protection&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> before moving data or changing keyring settings.
 
 <a id="en-current-protection"></a>
 <a id="en-system-recovery"></a>
 
-### Optional recovery through your Linux account
+## 🔑 Optional recovery through your Linux account
 
-A saved [recovery code](security.md#en-recovery) is the usual Linux PIN-recovery method. It needs no administrator setup. The optional `Use Linux system recovery` action requires a Tokenlogue polkit policy and the desktop authentication agent.
+A saved <a href="security.md#en-recovery" title="recovery code">recovery code&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> is the usual Linux PIN-recovery method. It needs no administrator setup. The optional `Use Linux system recovery` action requires a Tokenlogue polkit policy and the desktop authentication agent.
 
 If you choose this optional method, review the [policy](../packaging/linux/polkit/io.github.umichata.tokenlogue.policy) and [installation helper](../packaging/linux/polkit/tokenlogue-polkit.py) from the source package matching your app. From the repository root, the one-time installation command is below. This installs the policy, not the application.
-
 ```bash
 sudo /usr/bin/python3 -I packaging/linux/polkit/tokenlogue-polkit.py install
 ```
 
 Check the installed policy as your ordinary user.
-
 ```bash
 /usr/bin/python3 -I packaging/linux/polkit/tokenlogue-polkit.py check
 ```
@@ -108,14 +115,15 @@ Check the installed policy as your ordinary user.
 The helper installs only the verified Tokenlogue policy. It refuses unexpected existing files and does not change Linux passwords, PAM or login settings. Tokenlogue is still run as your ordinary user. Each recovery attempt requires fresh confirmation of your own account in the system window. Enter the Linux password only there.
 
 To remove only that policy later, use the following command. Application data stays in place.
-
 ```bash
 sudo /usr/bin/python3 -I packaging/linux/polkit/tokenlogue-polkit.py uninstall
 ```
 
 <a id="en-help"></a>
 
-### Troubleshoot startup
+## 🛠️ Troubleshoot startup
+
+<img src="assets/ui/frame-top.svg" width="100%" alt="">
 
 | Problem | What to check |
 | --- | --- |
@@ -127,139 +135,10 @@ sudo /usr/bin/python3 -I packaging/linux/polkit/tokenlogue-polkit.py uninstall
 | Graphics error | Check system graphics drivers and GTK3. Terminal output may explain the failure. |
 | Another copy is running | Close the other copy using the same data folder. Do not bypass the profile lock. |
 
-For [a support request](https://github.com/Umichata/tokenlogue/issues), include the package filename, distribution, desktop session and relevant error. Remove API keys, private messages and personal paths before sharing.
+<img src="assets/ui/frame-bottom.svg" width="100%" alt="">
+
+For <a href="https://github.com/Umichata/tokenlogue/issues" title="a support request">a support request&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a>, include the package filename, distribution, desktop session and relevant error. Remove API keys, private messages and personal paths before sharing.
 
 <a id="en-delete"></a>
 
-[First connection and chat controls](user-guide.md#english) · [PIN, recovery and profile deletion](security.md#english) · [Sources and licenses](source-materials.md#english) · [Tokenlogue](../README.md#english)
-
-<a id="russian"></a>
-<a id="lang-ru"></a>
-
-## Русский
-
-Запускайте Tokenlogue на рабочем столе Linux в формате AppImage. Для обычного использования не нужно отдельно устанавливать Python, Flutter или инструменты сборки. В текущей предварительной версии есть русский и английский интерфейс.
-
-[Требования](#ru-requirements) · [Скачивание](#ru-download) · [Запуск](#ru-run) · [Обновление](#ru-updates) · [Помощь](#ru-help)
-
-<a id="ru-requirements"></a>
-
-### Требования
-
-- Linux x86_64 и процессор с поддержкой x86-64-v2. Базовая среда системных библиотек — Ubuntu 22.04.
-- Графический рабочий стол, GTK3 и его зависимости. Одного GTK4 недостаточно.
-- Работающие графические драйверы вашего дистрибутива.
-- Пользовательская сессия D-Bus и доступный разблокированный Secret Service, например GNOME Keyring. Включённый клиент libsecret сам по себе не является хранилищем ключей.
-- FUSE для обычного запуска или место во временном каталоге для extract-and-run.
-- API-ключ OpenRouter и интернет для проверки ключа, загрузки моделей и отправки сообщений.
-
-Защита при блокировке экрана и сне рассчитана на поддерживаемую сессию Cinnamon/X11. В других окружениях и Wayland автоматическое наблюдение может быть ограничено. Проверяйте панель защиты приложения и при необходимости блокируйте его вручную.
-
-<a id="ru-download"></a>
-
-### Скачивание и проверка
-
-На странице [Releases](https://github.com/Umichata/tokenlogue/releases) перечислены общедоступные загрузки. Для этой предварительной версии скачайте указанную ниже AppImage и `RELEASE_SHA256SUMS`. Если этой версии нет в списке, её загрузки ещё не опубликованы.
-
-| Файл текущей версии | Значение |
-| --- | --- |
-| AppImage | `Tokenlogue-0.1.0-65aa62f-linux-x86_64.AppImage` |
-| Размер | 35 350 920 байт |
-| SHA-256 | `227ad9991dc0b00dfd160003967de6b9a321078b89f6129d0fdd2a620cf8c1ae` |
-
-Сохраните AppImage и `RELEASE_SHA256SUMS` в одной папке. Используйте Bash и средства SHA-256, чтобы проверить из этой папки только выбранный пакет.
-
-```bash
-set -o pipefail
-file='Tokenlogue-0.1.0-65aa62f-linux-x86_64.AppImage'
-awk -v wanted="$file" '$2 == wanted { entry = $0; count++ } END { if (count != 1) exit 1; print entry }' RELEASE_SHA256SUMS |
-  sha256sum --check -
-```
-
-Выбранная AppImage должна получить `OK`. Отсутствующая или повторная запись в манифесте, изменённый или отсутствующий файл вызывают ошибку команды. Сумма обнаруживает изменение байтов, но не заменяет подпись издателя. Эта AppImage не подписана. Не подменяйте ожидаемую сумму хешем файла, который не прошёл проверку.
-
-Исходный комплект предварительной версии содержит внутренний `SHA256SUMS` для проверки полного распакованного комплекта. Для запуска Tokenlogue этот комплект и архивы исходников не нужны.
-
-[Прежний опубликованный Linux preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-linux-preview.2b1f7d3) остаётся отдельной версией. Его файл называется `Tokenlogue-0.1.0-2b1f7d3-x86_64.AppImage`, а SHA-256 равен `0852f9432cb089e31fef2722d84ce7124714588afb65d6f25cd64d0616a4779d`. Русский интерфейс и прежняя защита данных отличаются от описанных здесь. Для проверки старых пакетов используйте их файл сумм и [примечания к выпуску](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.2b1f7d3/RELEASE_NOTES.md).
-
-<a id="ru-run"></a>
-
-### Запуск Tokenlogue
-
-Один раз разрешите исполнение и запустите проверенную AppImage от своего обычного пользователя.
-
-```bash
-chmod u+x ./Tokenlogue-0.1.0-65aa62f-linux-x86_64.AppImage
-./Tokenlogue-0.1.0-65aa62f-linux-x86_64.AppImage
-```
-
-Хранить файл можно в удобной папке. После выдачи прав его можно открыть через файловый менеджер, поддерживающий запуск программ. AppImage не добавляет пункт меню автоматически. Не запускайте её через `sudo` или `pkexec`.
-
-<a id="ru-without-fuse"></a>
-
-### Запуск без FUSE
-
-Если система не может монтировать AppImage через FUSE, используйте extract-and-run.
-
-```bash
-./Tokenlogue-0.1.0-65aa62f-linux-x86_64.AppImage --appimage-extract-and-run
-```
-
-Программа распакует файлы во временный каталог и запустится без FUSE. Убедитесь, что во временной файловой системе хватает места для распакованных файлов.
-
-<a id="ru-updates"></a>
-
-### Обновление с сохранением профиля
-
-Перед запуском замены закройте все прежние копии Tokenlogue. Проверьте новый файл и запустите его в той же учётной записи ОС. Автоматического обновления нет. Замена AppImage не удаляет отдельно сохранённые данные приложения.
-
-При первом успешном входе ранее незащищённая переписка преобразуется до открытия чатов. Всё это время держите прежние копии закрытыми. Не возвращайтесь к старой версии профиля без совместимой резервной копии. Прежние версии могут не понимать обновлённую базу и её защиту.
-
-Одна база не является полной переносимой резервной копией. Ключ шифрования остаётся в системном хранилище. Его потеря может сделать переписку невосстановимой. Перед переносом данных или изменением связки ключей прочитайте [о защите переписки](security.md#ru-encryption).
-
-<a id="ru-current-protection"></a>
-<a id="ru-system-recovery"></a>
-
-### Необязательное восстановление через учётную запись Linux
-
-Основной способ восстановления PIN в Linux — заранее сохранённый [резервный код](security.md#ru-recovery). Для него не нужна настройка администратора. Дополнительный пункт `Системное восстановление Linux` требует policy Tokenlogue для polkit и системного агента аутентификации.
-
-Если вы выбираете этот способ, изучите [policy](../packaging/linux/polkit/io.github.umichata.tokenlogue.policy) и [помощник установки](../packaging/linux/polkit/tokenlogue-polkit.py) из исходного комплекта, соответствующего приложению. Однократная команда установки приведена ниже. Выполняйте её из корня репозитория. Она устанавливает policy, а не приложение.
-
-```bash
-sudo /usr/bin/python3 -I packaging/linux/polkit/tokenlogue-polkit.py install
-```
-
-Проверьте установленную policy от обычного пользователя.
-
-```bash
-/usr/bin/python3 -I packaging/linux/polkit/tokenlogue-polkit.py check
-```
-
-Помощник устанавливает только проверенную policy Tokenlogue. Он отказывается заменять неожиданные файлы и не меняет пароли Linux, PAM или настройки входа. Сам Tokenlogue по-прежнему запускается обычным пользователем. Каждая попытка восстановления требует нового подтверждения вашей учётной записи в системном окне. Вводите пароль Linux только там.
-
-Для удаления только этой policy используйте команду ниже. Данные приложения сохранятся.
-
-```bash
-sudo /usr/bin/python3 -I packaging/linux/polkit/tokenlogue-polkit.py uninstall
-```
-
-<a id="ru-help"></a>
-
-### Помощь при запуске
-
-| Проблема | Что проверить |
-| --- | --- |
-| Отказано в доступе | Право исполнения и возможность запуска программ на выбранной файловой системе. |
-| Ошибка монтирования FUSE | Попробуйте extract-and-run выше. |
-| Не найдена библиотека GTK | Восстановите GTK3 и его зависимости через пакетный менеджер дистрибутива. |
-| Хранилище ключей недоступно | Разблокируйте Secret Service и проверьте пользовательскую сессию D-Bus. Сохраните файлы профиля. |
-| Illegal instruction | Убедитесь, что процессор поддерживает x86-64-v2. |
-| Ошибка графики | Проверьте драйверы системы и GTK3. Сообщение в терминале может объяснить причину. |
-| Уже работает другая копия | Закройте другую копию с тем же каталогом данных. Не обходите блокировку профиля. |
-
-В [обращении за помощью](https://github.com/Umichata/tokenlogue/issues) укажите имя пакета, дистрибутив, рабочее окружение и существенную ошибку. Перед отправкой уберите API-ключи, личную переписку и персональные пути.
-
-<a id="ru-delete"></a>
-
-[Подключение и работа с чатами](user-guide.md#russian) · [PIN, восстановление и удаление профиля](security.md#russian) · [Исходники и лицензии](source-materials.md#russian) · [Tokenlogue](../README.md#russian)
+<a href="user-guide.md#english" title="First connection and chat controls"><img src="assets/ui/buttons/en-a2a9891e8515.svg" alt="First connection and chat controls" width="239" height="50"></a> · <a href="security.md#english" title="PIN, recovery and profile deletion"><img src="assets/ui/buttons/en-87082426092b.svg" alt="PIN, recovery and profile deletion" width="234" height="50"></a> · <a href="source-materials.md#english" title="Sources and licenses"><img src="assets/ui/buttons/en-90726ae50ba7.svg" alt="Sources and licenses" width="205" height="34"></a> · <a href="../README.md#english" title="Tokenlogue"><img src="assets/ui/buttons/en-931ef4e6d14f.svg" alt="Tokenlogue" width="135" height="34"></a>
