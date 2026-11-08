@@ -1,104 +1,49 @@
-# Tokenlogue - Linux AppImage
+# Tokenlogue for Linux / Tokenlogue для Linux
 
-[English](#lang-en) | [Русский](#lang-ru)
+[English](#english) · [Русский](#russian)
 
-<a name="lang-en"></a>
+<a id="english"></a>
+<a id="lang-en"></a>
 
 ## English
 
-The Tokenlogue AppImage is an unsigned preview for Linux x86_64.
-This page covers preview `2b1f7d3` from application commit
-`2b1f7d30e612416d8d88adde18a44aa235a7fe25` and the file
-`Tokenlogue-0.1.0-2b1f7d3-x86_64.AppImage`.
-The [Linux guide](../../../docs/linux-appimage.md#lang-en) explains how to
-download it, check the file and launch the application.
+Tokenlogue is available as a portable x86_64 AppImage. You do not need to install Python, Flutter or Java to use it.
 
-### What you need
+### Get started
 
-The CPU must support x86-64-v2. The AppImage includes Python, Flutter and
-application plugins. System GTK3, GLib/GIO, graphics drivers and desktop services
-come from your Linux distribution. Ubuntu 22.04 is the system library baseline.
-The bundled libsecret client requires
-a working Secret Service in your user session. Java and a separate Python
-installation are not needed.
+Follow the [Linux installation guide](../../../docs/linux-appimage.md#english) for download availability, checksum verification, first launch and updates. Close any running copy before opening a replacement AppImage. The package has no automatic updater and is not digitally signed.
 
-Ordinary startup uses FUSE. An extract-and-run option is available when FUSE
-cannot be used. The AppImage does not update automatically or add an entry
-to the applications menu. Run the file as your normal user.
+You need an x86-64-v2 processor, a graphical Linux desktop and compatible system libraries. Ubuntu 22.04 is the system-library baseline. GTK3, GLib/GIO and graphics drivers come from your distribution. FUSE is used for the usual launch, with an extract-and-run alternative described in the guide.
 
-### Before you start
+### Protect your conversations
 
-Download the file from the [public prerelease](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-linux-preview.2b1f7d3).
-The [AppImage](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.2b1f7d3/Tokenlogue-0.1.0-2b1f7d3-x86_64.AppImage)
-and its [SHA256SUMS file](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.2b1f7d3/SHA256SUMS)
-are available without signing in to GitHub.
-It has no signature or automatic updater. Check its checksum before running
-it. The [Linux guide](../../../docs/linux-appimage.md#lang-en) describes
-the requirements, download verification and startup options.
+A working Secret Service in your desktop session is needed for protected key storage. See [local protection and recovery](../../../docs/security.md#english) before changing your key-store settings or moving your profile. An AppImage is the application, not a backup of your conversations.
 
-The AppImage SHA-256 is
-`0852f9432cb089e31fef2722d84ce7124714588afb65d6f25cd64d0616a4779d`.
+### Licenses and sources
 
-Compatibility depends on the system libraries and graphics environment.
-Wayland support has not been verified.
+[Included notices](notices.md#english) explain the license collection. The [runtime overview](runtime/README.md#english) describes the included startup component. [Source materials](../../../docs/source-materials.md#english) explain the separate source archives and their limits.
 
-### Included licenses and available sources
+[Back to Tokenlogue](../../../README.md#english)
 
-The [license guide](notices.md#lang-en) explains where to find the list of
-included components and their original license texts. The [runtime overview](runtime/README.md#lang-en)
-describes the startup component and its separate source bundle.
-For available application sources and the gaps in their collection, see
-[source materials](../../../docs/source-materials.md#lang-en).
-
-[Back to Tokenlogue](../../../README.md#lang-en)
-
-<a name="lang-ru"></a>
+<a id="russian"></a>
+<a id="lang-ru"></a>
 
 ## Русский
 
-AppImage Tokenlogue - неподписанная предварительная сборка
-для Linux x86_64. На этой странице описан файл
-`Tokenlogue-0.1.0-2b1f7d3-x86_64.AppImage` предварительной версии `2b1f7d3`
-из коммита приложения `2b1f7d30e612416d8d88adde18a44aa235a7fe25`.
-В [руководстве для Linux](../../../docs/linux-appimage.md#lang-ru) объясняется,
-как скачать его, проверить и запустить приложение.
+Tokenlogue доступен в переносимом AppImage для x86_64. Для работы не нужно устанавливать Python, Flutter или Java.
 
-### Что потребуется
+### Начало работы
 
-Процессор должен поддерживать x86-64-v2. AppImage содержит Python, Flutter
-и плагины приложения. GTK3, GLib/GIO, видеодрайверы и службы рабочего стола
-предоставляет ваш дистрибутив Linux. Базовая среда системных библиотек - Ubuntu 22.04.
-Для встроенного клиента libsecret нужен
-работающий Secret Service в пользовательской сессии. Java и отдельная
-установка Python не требуются.
+В [руководстве для Linux](../../../docs/linux-appimage.md#russian) описаны доступные загрузки, проверка суммы, первый запуск и обновление. Перед открытием нового AppImage закройте прежние копии. Автоматического обновления и цифровой подписи у пакета нет.
 
-Обычный запуск использует FUSE. Если FUSE недоступен, можно запустить приложение
-с распаковкой. AppImage не обновляется автоматически
-и не добавляет ярлык в меню приложений. Запускайте файл от обычного пользователя.
+Нужны процессор x86-64-v2, графическая среда Linux и совместимые системные библиотеки. Базовая версия системных библиотек соответствует Ubuntu 22.04. GTK3, GLib/GIO и видеодрайверы предоставляет дистрибутив. Обычный запуск использует FUSE, а вариант с распаковкой описан в руководстве.
 
-### Перед запуском
+### Защита переписки
 
-Скачайте файл со [страницы опубликованной предварительной версии](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-linux-preview.2b1f7d3).
-[AppImage](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.2b1f7d3/Tokenlogue-0.1.0-2b1f7d3-x86_64.AppImage)
-и его [файл SHA256SUMS](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.2b1f7d3/SHA256SUMS)
-доступны без входа в GitHub.
-Подписи и автоматического обновления нет. Перед запуском проверьте контрольную
-сумму. В [руководстве для Linux](../../../docs/linux-appimage.md#lang-ru)
-описаны требования, проверка загрузки и способы запуска.
+Для защищённого хранения ключей нужен работающий Secret Service в сеансе рабочего стола. Перед изменением настроек хранилища ключей или переносом профиля прочитайте о [защите и восстановлении](../../../docs/security.md#russian). AppImage содержит приложение, а не резервную копию переписки.
 
-SHA-256 AppImage равна
-`0852f9432cb089e31fef2722d84ce7124714588afb65d6f25cd64d0616a4779d`.
+### Лицензии и исходники
 
-Совместимость зависит от системных библиотек и графической среды.
-Поддержка Wayland не проверена.
+[Уведомления компонентов](notices.md#russian) помогут найти лицензии. [Обзор runtime](runtime/README.md#russian) объясняет встроенный компонент запуска. В [руководстве по исходным материалам](../../../docs/source-materials.md#russian) описаны отдельные архивы и ограничения их полноты.
 
-### Включённые лицензии и доступные исходники
-
-[Руководство по лицензиям](notices.md#lang-ru) поможет найти список
-включённых компонентов и оригинальные тексты их лицензий.
-[Обзор runtime](runtime/README.md#lang-ru) объясняет компонент запуска
-и его отдельный комплект исходников. Доступные исходники приложения
-и недостающие части комплекта описаны на странице
-[исходных материалов](../../../docs/source-materials.md#lang-ru).
-
-[К Tokenlogue](../../../README.md#lang-ru)
+[К Tokenlogue](../../../README.md#russian)

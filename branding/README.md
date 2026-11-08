@@ -1,79 +1,53 @@
-# Tokenlogue - Logo and icons / Логотип и значки
+# Tokenlogue logo and icons / Логотип и значки Tokenlogue
 
-[English](#lang-en) | [Русский](#lang-ru)
+[English](#english) · [Русский](#russian)
 
-<a name="lang-en"></a>
+<a id="english"></a>
+<a id="lang-en"></a>
 
 ## English
 
-### Transparent logo
+<img src="../docs/assets/tokenlogue-logo-transparent.png" alt="Transparent Tokenlogue logo" width="112">
 
-<img src="../docs/assets/tokenlogue-logo-transparent.png" alt="Tokenlogue logo on a transparent background" width="128">
+The speech bubble and token shapes identify Tokenlogue. The transparent logo works on light and dark surfaces. Use the [PNG](../docs/assets/tokenlogue-logo-transparent.png) in documents or the [SVG](../docs/assets/tokenlogue-logo-transparent.svg) when scaling it.
 
-This logo appears in the application headers and documentation. Its transparent
-background lets the speech bubble and token shapes sit directly on a light
-or dark surface.
+### Application icons
 
-Download the [transparent PNG](../docs/assets/tokenlogue-logo-transparent.png)
-or [transparent SVG](../docs/assets/tokenlogue-logo-transparent.svg).
-The PNG is suitable for documents. The SVG stays sharp when scaled.
+System icons use a graphite background so Tokenlogue remains recognizable in launchers and file managers. They are distinct from the transparent documentation logo.
 
-### System icons
+- [System PNG](../docs/assets/tokenlogue-icon-512.png) and [full-color SVG](source/tokenlogue-icon.svg).
+- [Monochrome icon](source/tokenlogue-icon-monochrome.svg).
+- [Adaptive foreground](source/tokenlogue-icon-foreground.svg) and [background](source/tokenlogue-icon-background.svg).
 
-The existing system icons identify Tokenlogue in the file manager and
-application launcher. They retain their graphite background and are separate
-from the transparent logo.
-
-The [system PNG](../docs/assets/tokenlogue-icon-512.png) and
-[full-color system SVG](source/tokenlogue-icon.svg) are available for download.
-The SVG uses solid colors without gradients or filters.
-A [monochrome icon](source/tokenlogue-icon-monochrome.svg) is also available.
-The [foreground](source/tokenlogue-icon-foreground.svg) and
-[background](source/tokenlogue-icon-background.svg) are separate files
-for adaptive system icons.
-
-| System icon color | Value |
+| Color | Value |
 | --- | --- |
 | Graphite | `#151A1F` |
 | Turquoise | `#27D3C2` |
 | Pale mint | `#8AF1E5` |
 
-[Back to Tokenlogue](../README.md#lang-en)
+[Back to Tokenlogue](../README.md#english)
 
-<a name="lang-ru"></a>
+<a id="russian"></a>
+<a id="lang-ru"></a>
 
 ## Русский
 
-### Прозрачный логотип
+<img src="../docs/assets/tokenlogue-logo-transparent.png" alt="Прозрачный логотип Tokenlogue" width="112">
 
-<img src="../docs/assets/tokenlogue-logo-transparent.png" alt="Логотип Tokenlogue на прозрачном фоне" width="128">
+Облачко диалога и фигуры токенов обозначают Tokenlogue. Прозрачный логотип подходит для светлой и тёмной поверхности. Для документов используйте [PNG](../docs/assets/tokenlogue-logo-transparent.png), для масштабирования — [SVG](../docs/assets/tokenlogue-logo-transparent.svg).
 
-Этот логотип используется в заголовках приложения и документации. Прозрачный
-фон позволяет разместить облачко диалога и фигуры токенов прямо на светлой
-или тёмной поверхности.
+### Значки приложения
 
-Скачать можно [прозрачный PNG](../docs/assets/tokenlogue-logo-transparent.png)
-или [прозрачный SVG](../docs/assets/tokenlogue-logo-transparent.svg).
-PNG подходит для документов. SVG сохраняет чёткость при масштабировании.
+Системные значки имеют графитовый фон, чтобы Tokenlogue было легко узнать в меню приложений и файловом менеджере. Они отличаются от прозрачного логотипа документации.
 
-### Системные значки
+- [Системный PNG](../docs/assets/tokenlogue-icon-512.png) и [полноцветный SVG](source/tokenlogue-icon.svg).
+- [Монохромный значок](source/tokenlogue-icon-monochrome.svg).
+- [Передний план](source/tokenlogue-icon-foreground.svg) и [фон](source/tokenlogue-icon-background.svg) адаптивного значка.
 
-По прежним системным значкам можно найти Tokenlogue в файловом менеджере
-и меню приложений. Они сохраняют графитовый фон и используются отдельно
-от прозрачного логотипа.
-
-Для скачивания доступны [системный PNG](../docs/assets/tokenlogue-icon-512.png)
-и [полноцветный системный SVG](source/tokenlogue-icon.svg).
-SVG использует сплошные заливки без градиентов и фильтров.
-Также доступен [одноцветный значок](source/tokenlogue-icon-monochrome.svg).
-[Передний план](source/tokenlogue-icon-foreground.svg) и
-[фон](source/tokenlogue-icon-background.svg) сохранены отдельно
-для адаптивных системных значков.
-
-| Цвет системного значка | Значение |
+| Цвет | Значение |
 | --- | --- |
 | Графитовый | `#151A1F` |
 | Бирюзовый | `#27D3C2` |
 | Светлый мятный | `#8AF1E5` |
 
-[К Tokenlogue](../README.md#lang-ru)
+[К Tokenlogue](../README.md#russian)

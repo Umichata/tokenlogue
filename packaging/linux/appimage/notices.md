@@ -1,129 +1,65 @@
-# Tokenlogue - AppImage licenses / Лицензии AppImage
+# Licenses inside the AppImage / Лицензии внутри AppImage
 
-[English](#lang-en) | [Русский](#lang-ru)
+[English](#english) · [Русский](#russian)
 
-<a name="lang-en"></a>
+<a id="english"></a>
+<a id="lang-en"></a>
 
 ## English
 
-The `2b1f7d3` Linux preview includes the original notices and license texts
-for its packaged components. This guide explains how to find and read
-those files. The [repository overview](../../../THIRD_PARTY_NOTICES.md#lang-en)
-lists the direct application dependencies.
+The Linux package carries the original licenses and copyright notices for its included software. Tokenlogue's own code uses the [MIT license](../../../LICENSE).
 
-### Finding the notices
+### Find the original texts
 
-After extracting the AppImage, open these paths relative to its extracted root:
+After extracting your verified AppImage, these paths are relative to its extracted root:
 
-| Path | Contents |
+| Path | What it contains |
 | --- | --- |
-| `LICENSE` | Tokenlogue's MIT license. |
-| `THIRD_PARTY_NOTICES.md` | Index of components and their notice paths. |
-| `usr/share/doc/tokenlogue/THIRD_PARTY_NOTICES.md` | Another copy of that index. |
-| `usr/share/doc/tokenlogue/licenses/` | Original license and copyright texts. |
-| `usr/share/doc/tokenlogue/notices.json` | Component files, checksums and information about their sources. |
+| `LICENSE` | Tokenlogue's license |
+| `THIRD_PARTY_NOTICES.md` | Component index and notice locations |
+| `usr/share/doc/tokenlogue/notices.json` | Component mapping, file hashes and source references |
+| `usr/share/doc/tokenlogue/licenses/` | Original third-party texts |
+| `usr/share/doc/tokenlogue/licenses/supplemental/` | Additional font declaration, attribution and source mapping |
 
-If you want to read the notices without starting Tokenlogue, use an installed
-`unsquashfs` tool. Open a terminal in the folder containing the verified
-AppImage. Choose a destination name that does not already exist.
+The [Linux guide](../../../docs/linux-appimage.md#english) covers checksum verification and launch options. An extraction offset belongs to a particular AppImage and should not be reused for a different download.
 
-```bash
-unsquashfs -no-xattrs -o 678280 -d "./tokenlogue-notices" "./Tokenlogue-0.1.0-2b1f7d3-x86_64.AppImage"
-```
+### Read the collection
 
-This extracts the filesystem to `tokenlogue-notices` without executing the
-AppImage runtime or the application. The offset `678280` applies only to
-this exact file. Confirm its [name and checksum](../../../docs/linux-appimage.md#en-download)
-before using the command. Other AppImages can have different offsets.
+The collection covers Python, Flutter and its plugins, native libraries, fonts and the AppImage runtime. Material Icons retains its original declaration and Google attribution. The Linux font matches the original font input. KaTeX license and font notices remain with their corresponding fonts.
 
-### Reading the license collection
+Debian copyright files can mention source-package files that are absent from the AppImage. Python's upstream license collection can also describe optional modules that are not included. Use the component mapping to identify the software actually supplied. A license reference does not imply that an optional feature is available in Tokenlogue.
 
-The collection includes notices for Ubuntu libraries, the Python runtime and
-packages, Flutter and its plugins, Dart bridge, fonts and the AppImage runtime.
-The runtime license set includes GCC's runtime exception and the applicable
-texts for libfuse and its other components.
+Original legal texts are neither translated nor shortened. Their terms take precedence over this explanation. Source archives are separate from the license collection. See [available source materials and their limitations](../../../docs/source-materials.md#english).
 
-A Debian copyright file can describe source-package files that are absent
-from this AppImage. Python's license collection can include optional modules
-that are not shipped here. Use the component index to find the relevant
-license text. A mention of a module in a license file does not mean that
-Tokenlogue includes that module or its features.
+[Back to the Linux package](README.md#english)
 
-License and copyright texts are kept unchanged in their original language.
-The explanations in this guide do not replace those terms.
-Earlier previews may have an English-only component index.
-
-### Where to find the source code
-
-Source code is provided separately from these license texts. The
-[source materials guide](../../../docs/source-materials.md#lang-en) links to
-the application source, the supplement and the previous source and runtime
-bundles. Completeness of the source collection remains unconfirmed, with
-status `REVIEW_REQUIRED`. Rebuilding the full application from the available
-materials has not been verified.
-
-[Back to the AppImage overview](README.md#lang-en)
-
-<a name="lang-ru"></a>
+<a id="russian"></a>
+<a id="lang-ru"></a>
 
 ## Русский
 
-Предварительная Linux-сборка `2b1f7d3` содержит оригинальные уведомления
-и тексты лицензий упакованных компонентов. В этом руководстве объясняется,
-как найти и прочитать эти файлы.
-[Обзор в репозитории](../../../THIRD_PARTY_NOTICES.md#lang-ru)
-перечисляет прямые зависимости приложения.
+Пакет Linux содержит оригинальные лицензии и уведомления об авторских правах включённого программного обеспечения. Собственный код Tokenlogue распространяется по [лицензии MIT](../../../LICENSE).
 
-### Как найти лицензии
+### Где найти оригинальные тексты
 
-После распаковки AppImage откройте следующие пути относительно его корня:
+После распаковки проверенного AppImage пути отсчитываются от корня извлечённого каталога:
 
 | Путь | Содержимое |
 | --- | --- |
-| `LICENSE` | Лицензия MIT для Tokenlogue. |
-| `THIRD_PARTY_NOTICES.md` | Список компонентов и файлов с их лицензиями. |
-| `usr/share/doc/tokenlogue/THIRD_PARTY_NOTICES.md` | Ещё одна копия списка компонентов. |
-| `usr/share/doc/tokenlogue/licenses/` | Оригинальные тексты лицензий и уведомлений об авторских правах. |
-| `usr/share/doc/tokenlogue/notices.json` | Файлы компонентов, контрольные суммы и сведения об их исходниках. |
+| `LICENSE` | Лицензия Tokenlogue |
+| `THIRD_PARTY_NOTICES.md` | Список компонентов и расположение уведомлений |
+| `usr/share/doc/tokenlogue/notices.json` | Связи компонентов, суммы файлов и сведения об источниках |
+| `usr/share/doc/tokenlogue/licenses/` | Оригинальные тексты сторонних компонентов |
+| `usr/share/doc/tokenlogue/licenses/supplemental/` | Дополнительная декларация шрифта, авторство и связь с источником |
 
-Чтобы прочитать лицензии без запуска Tokenlogue, используйте установленную
-утилиту `unsquashfs`. Откройте терминал в папке с проверенным AppImage.
-Выберите ещё не существующее имя каталога назначения.
+В [руководстве для Linux](../../../docs/linux-appimage.md#russian) описаны проверка суммы и варианты запуска. Смещение файловой системы относится к конкретному AppImage, его нельзя переносить на другой файл.
 
-```bash
-unsquashfs -no-xattrs -o 678280 -d "./tokenlogue-notices" "./Tokenlogue-0.1.0-2b1f7d3-x86_64.AppImage"
-```
+### Как читать комплект
 
-Команда извлекает файловую систему в `tokenlogue-notices`, не выполняя
-runtime AppImage или приложение. Смещение `678280` относится только к
-этому файлу. Перед выполнением сверьте его
-[имя и контрольную сумму](../../../docs/linux-appimage.md#ru-download).
-У других AppImage смещение может отличаться.
+В комплект входят уведомления Python, Flutter и его плагинов, нативных библиотек, шрифтов и runtime AppImage. Для Material Icons сохранены исходная декларация и сведения об авторстве Google. Шрифт Linux совпадает с исходным файлом. Лицензия KaTeX и уведомления о шрифтах находятся вместе с соответствующими шрифтами.
 
-### Как читать комплект лицензий
+Copyright-файлы Debian могут описывать файлы исходного пакета, отсутствующие в AppImage. Коллекция лицензий Python может упоминать необязательные модули, которые не включены. Сверяйтесь со связями компонентов, чтобы определить фактический состав. Упоминание в лицензии не означает доступность необязательной функции в Tokenlogue.
 
-Комплект содержит уведомления для библиотек Ubuntu, среды и пакетов Python,
-Flutter и его плагинов, Dart bridge, шрифтов и runtime AppImage.
-Лицензии runtime включают исключение GCC для библиотек времени выполнения,
-а также применимые тексты для libfuse и остальных компонентов.
+Оригинальные юридические тексты не переводятся и не сокращаются. Их условия имеют приоритет над этим пояснением. Архивы исходников поставляются отдельно от лицензий. Подробнее о [доступных исходных материалах и ограничениях](../../../docs/source-materials.md#russian).
 
-Copyright-файл Debian может описывать файлы исходного пакета, которых нет
-в этом AppImage. Комплект лицензий Python может включать необязательные модули,
-не вошедшие в приложение. Сверяйтесь со списком компонентов, чтобы найти нужную лицензию.
-Упоминание модуля в тексте лицензии ещё не означает, что этот модуль
-или его функции включены в Tokenlogue.
-
-Тексты лицензий и уведомлений об авторских правах сохранены без изменений
-на языке оригинала. Пояснения в этом руководстве не заменяют их условия.
-В ранних сборках список компонентов может быть только на английском языке.
-
-### Где найти исходный код
-
-Исходный код предоставляется отдельно от текстов лицензий.
-[Руководство по исходным материалам](../../../docs/source-materials.md#lang-ru)
-содержит ссылки на код приложения, дополнение и прежние комплекты исходников
-и runtime. Полнота коллекции остаётся неподтверждённой, со статусом
-`REVIEW_REQUIRED`.
-Пересборка всего приложения из доступных материалов не проверена.
-
-[К обзору AppImage](README.md#lang-ru)
+[К пакету Linux](README.md#russian)

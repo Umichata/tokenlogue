@@ -173,12 +173,10 @@ class PackagedNoticesTests(unittest.TestCase):
             manifest,
         )
         readme = (self.destination / "README.md").read_text()
-        self.assertTrue(
-            readme.startswith("[English](#english) · [Русский](#русский)\n")
-        )
-        self.assertEqual(readme.count("[English](#english)"), 1)
-        self.assertIn("## English", readme)
-        self.assertIn("## Русский", readme)
+        for title, anchor in (("English", "english"), ("Русский", "russian")):
+            self.assertEqual(readme.count(f"[{title}](#{anchor})"), 1)
+            self.assertIn(f'<a id="{anchor}"></a>', readme)
+            self.assertIn(f"## {title}", readme)
         self.assertNotIn("manifest.json", [row["path"] for row in manifest["files"]])
 
     def test_linux_uses_only_its_platform_inputs(self):

@@ -1,146 +1,89 @@
-# Tokenlogue 14b87ac - Source archive / Архив исходников
+# Historical source collection / Исторический комплект исходников
 
-[English](#lang-en) | [Русский](#lang-ru)
+[English](#english) · [Русский](#russian)
 
-<a name="lang-en"></a>
+<a id="lang-en"></a>
+<a id="english"></a>
 
 ## English
 
-This collection was assembled on 10 September 2026 for the older AppImage
-`14b87ac`. It is not the complete source bundle for current preview `2b1f7d3`.
-See [current source materials](../source-materials.md#lang-en) for that version.
+This collection was assembled on 10 September 2026 for the [earlier Linux preview](v0.1.0-linux-preview.1.md#english). It preserves that version's source materials. It is also retained inside the later [published baseline](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-linux-preview.986c6ad), where selected unchanged dependencies can be reused.
 
-### Archive details
+### Identify the archive
 
-If you already have `Tokenlogue-14b87ac-source-materials.zip`, use the values
-below to identify your copy. This page does not offer a download link for the ZIP.
-
-| Property | Value |
+| Archive detail | Value |
 | --- | --- |
-| Application commit | `14b87ac03e5c03c2ed9c4acf6caae29daa39d20e` |
-| Source archive | `Tokenlogue-14b87ac-source-materials.zip` |
-| Archive size in bytes | `440966310` |
-| Archive SHA-256 | `744b0e7a6d82566324ff9555be2f33bcc1c732ef99caf55d1ff841b7d0870e54` |
+| File | `Tokenlogue-14b87ac-source-materials.zip` |
+| Size | 440,966,310 bytes |
+| SHA-256 | `744b0e7a6d82566324ff9555be2f33bcc1c732ef99caf55d1ff841b7d0870e54` |
+| Application source | `14b87ac03e5c03c2ed9c4acf6caae29daa39d20e` |
 | Corresponding AppImage SHA-256 | `edbdaf7c10ecd336b6c9896a893be55e9d70f241c2e16eb987ea7eeb82c3f483` |
 
-The AppImage itself is not included in this archive. Its identity is described
-in the [historical preview record](v0.1.0-linux-preview.1.md#lang-en).
+The application binary is not inside this archive. There is no separate ZIP download linked here. To obtain its retained copy, follow the [baseline restoration guide](../source-materials.md#english).
 
-### Included materials
+### Contents and integrity
 
-The collection contains Tokenlogue sources, Ubuntu source packages and
-packaging, CPython 3.12.14 with Python Build Standalone recipes, Python source
-distributions, Dart packages, Flet 0.86.5, Flutter 3.44.8, Dart bridge 1.9.0,
-font source files and materials for the older runtime.
+The ZIP includes Tokenlogue sources, Ubuntu source packages and packaging, CPython 3.12.14, Python Build Standalone recipes, Python source distributions, Dart packages, Flet 0.86.5, Flutter 3.44.8, Dart bridge 1.9.0, font inputs and older runtime materials.
 
-The exact Flutter engine revision is
-`0cd610717bde95fd88343c64f81c11ba4e5c0010`.
-Its dependency inventory is included. The source manifest
-`source-materials.json` records file sizes and SHA-256 values, and
-`coverage.json` associates materials with components.
+The recorded Flutter engine revision is `0cd610717bde95fd88343c64f81c11ba4e5c0010`. The included `source-materials.json` records file sizes and SHA-256 values. `coverage.json` maps materials to components.
 
-The older Ubuntu libgcrypt20 source package is linked to its
-[retained Launchpad publication](https://api.launchpad.net/1.0/ubuntu/+archive/primary/+sourcepub/18430640).
-The [historical type2-runtime sources](https://github.com/AppImage/type2-runtime/tree/caf24f9f712084686bfc24a70b75e50df0aefb9c)
-identify the upstream runtime code. They identify the sources used for those components. The limitations of
-the full collection are described below.
-
-### Checking a copy
-
-After extracting the ZIP, open a terminal in its
-`Tokenlogue-14b87ac-source-materials` folder, where `verify_materials.py`
-is located. With Python 3 available, run the following command.
+After extracting the ZIP, open a terminal in `Tokenlogue-14b87ac-source-materials` and run its included checker with Python 3.
 
 ```bash
 python3 verify_materials.py
 ```
 
-The included checker compares the archive's files with its manifest.
-It checks whether the supplied files are intact. It does not check that all
-files needed to rebuild the application are present.
+The checker verifies the supplied files against the manifest. It does not establish that every file needed for a complete rebuild is present.
 
-### What this archive cannot provide
+### Scope of this historical collection
 
-The collection is incomplete. It contains Alpine recipes that may correspond
-to the older runtime, but no confirmed list of the packages used to build it.
-Version `1472c00` uses a different runtime with a separate source bundle.
+The earlier Ubuntu libgcrypt20 sources have a [retained Launchpad publication](https://api.launchpad.net/1.0/ubuntu/+archive/primary/+sourcepub/18430640). The [historical type2-runtime source revision](https://github.com/AppImage/type2-runtime/tree/caf24f9f712084686bfc24a70b75e50df0aefb9c) identifies the older upstream code. The ZIP contains Alpine recipes that may correspond to the older runtime, but no confirmed inventory of the packages used to build it.
 
-The Flutter engine dependency inventory contains 109 entries. Not every
-external Git repository or CIPD asset is archived, so an offline engine build
-from this ZIP alone is not established. Compiler bootstrap, relinking, font
-subsetting and a whole-application rebuild remain unverified.
+The Flutter engine dependency inventory contains 109 entries. Some external Git and CIPD inputs are not included. Offline engine compilation, compiler bootstrap, relinking, font subsetting and a whole-application rebuild from this ZIP alone are not established.
 
-The source archive is associated with `14b87ac`. It cannot be assumed to
-cover newer application code, runtime inputs or dependency versions.
+Later packages have different application code, runtime inputs and some dependency versions. For example, the subsequent baseline replaces Dart `archive` 4.2.0 with 4.3.0, Dart `image` 4.9.2 with 4.10.1, `flutter_secure_storage_linux` 3.0.2 with 3.0.3 and Ubuntu `libgcrypt20` 1.9.4-3ubuntu3.2 with 1.9.4-3ubuntu3.3. The historical ZIP keeps its original versions.
 
-<a name="lang-ru"></a>
+Use the [source materials guide](../source-materials.md#english) and the index supplied with your package to select matching files.
+
+<a id="lang-ru"></a>
+<a id="russian"></a>
 
 ## Русский
 
-Комплект собран 10 сентября 2026 года для прежнего AppImage `14b87ac`.
-Он не является полным комплектом исходников текущей предварительной сборки `2b1f7d3`.
-Для неё смотрите [текущие исходные материалы](../source-materials.md#lang-ru).
+Комплект собран 10 сентября 2026 года для [прежней Linux-сборки](v0.1.0-linux-preview.1.md#russian). Он сохраняет исходные материалы той версии. Его копия также включена в более поздний [опубликованный базовый набор](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-linux-preview.986c6ad), откуда можно повторно использовать выбранные неизменившиеся зависимости.
 
 ### Данные архива
 
-Если у вас уже есть `Tokenlogue-14b87ac-source-materials.zip`, сверьте его
-со значениями ниже. На этой странице нет ссылки для скачивания ZIP.
-
-| Свойство | Значение |
+| Данные архива | Значение |
 | --- | --- |
-| Коммит приложения | `14b87ac03e5c03c2ed9c4acf6caae29daa39d20e` |
-| Архив исходников | `Tokenlogue-14b87ac-source-materials.zip` |
-| Размер архива в байтах | `440966310` |
-| SHA-256 архива | `744b0e7a6d82566324ff9555be2f33bcc1c732ef99caf55d1ff841b7d0870e54` |
+| Файл | `Tokenlogue-14b87ac-source-materials.zip` |
+| Размер | 440 966 310 байт |
+| SHA-256 | `744b0e7a6d82566324ff9555be2f33bcc1c732ef99caf55d1ff841b7d0870e54` |
+| Исходники приложения | `14b87ac03e5c03c2ed9c4acf6caae29daa39d20e` |
 | SHA-256 соответствующего AppImage | `edbdaf7c10ecd336b6c9896a893be55e9d70f241c2e16eb987ea7eeb82c3f483` |
 
-Сам AppImage в архив не включён. Его данные приведены в
-[описании прежней сборки](v0.1.0-linux-preview.1.md#lang-ru).
+Бинарное приложение в архив не входит. Отдельной ссылки на скачивание ZIP здесь нет. Чтобы получить сохранённую копию, используйте [инструкцию восстановления базового набора](../source-materials.md#russian).
 
-### Включённые материалы
+### Состав и целостность
 
-Комплект содержит исходники Tokenlogue, исходные пакеты Ubuntu и их правила
-упаковки, CPython 3.12.14 с рецептами Python Build Standalone, исходные
-дистрибутивы Python-пакетов, пакеты Dart, Flet 0.86.5, Flutter 3.44.8,
-Dart bridge 1.9.0, исходные файлы шрифтов и материалы старого runtime.
+ZIP содержит исходники Tokenlogue, исходные пакеты Ubuntu и правила упаковки, CPython 3.12.14, рецепты Python Build Standalone, исходные дистрибутивы Python-пакетов, пакеты Dart, Flet 0.86.5, Flutter 3.44.8, Dart bridge 1.9.0, исходные файлы шрифтов и материалы прежнего runtime.
 
-Точная версия Flutter engine -
-`0cd610717bde95fd88343c64f81c11ba4e5c0010`.
-Список её зависимостей включён в комплект. В манифесте
-`source-materials.json` записаны размеры файлов и SHA-256, а
-`coverage.json` связывает материалы с компонентами.
+Записанная ревизия Flutter engine равна `0cd610717bde95fd88343c64f81c11ba4e5c0010`. Файл `source-materials.json` содержит размеры и SHA-256. Файл `coverage.json` связывает материалы с компонентами.
 
-Старый исходный пакет Ubuntu libgcrypt20 связан с
-[сохранённой публикацией Launchpad](https://api.launchpad.net/1.0/ubuntu/+archive/primary/+sourcepub/18430640).
-[Исторические исходники type2-runtime](https://github.com/AppImage/type2-runtime/tree/caf24f9f712084686bfc24a70b75e50df0aefb9c)
-указывают на исходный код runtime. По этим ссылкам можно найти исходники указанных компонентов.
-Ограничения полного комплекта описаны ниже.
-
-### Проверка копии
-
-После распаковки ZIP откройте терминал в его папке
-`Tokenlogue-14b87ac-source-materials`, где находится `verify_materials.py`.
-При установленном Python 3 выполните следующую команду.
+Распакуйте ZIP, откройте терминал в папке `Tokenlogue-14b87ac-source-materials` и запустите включённый проверяющий скрипт с Python 3.
 
 ```bash
 python3 verify_materials.py
 ```
 
-Включённый проверяющий скрипт сопоставляет файлы архива с манифестом.
-Он проверяет целостность включённых файлов. Наличие всех материалов,
-необходимых для пересборки приложения, этот скрипт не проверяет.
+Скрипт проверяет соответствие предоставленных файлов манифесту. Он не подтверждает наличие каждого файла, необходимого для полной пересборки.
 
-### Чего не хватает в этом архиве
+### Границы исторического комплекта
 
-Комплект неполон. В нём есть рецепты Alpine, которые могут соответствовать
-старому runtime, но точный список пакетов его сборки неизвестен.
-Версия `1472c00` использует другой runtime с отдельным комплектом исходников.
+Для прежних исходников Ubuntu libgcrypt20 сохранена [публикация Launchpad](https://api.launchpad.net/1.0/ubuntu/+archive/primary/+sourcepub/18430640). [Историческая ревизия type2-runtime](https://github.com/AppImage/type2-runtime/tree/caf24f9f712084686bfc24a70b75e50df0aefb9c) указывает на прежний исходный код. В ZIP есть рецепты Alpine, которые могут соответствовать старому runtime, но нет подтверждённой описи пакетов его сборки.
 
-Опись зависимостей Flutter engine содержит 109 записей. Внешние Git-репозитории
-и материалы CIPD вложены не полностью, поэтому сборка engine без сети
-только из этого ZIP не подтверждена. Начальная сборка компилятора, повторная
-линковка, формирование подмножеств шрифтов и пересборка всего приложения
-остаются непроверенными.
+Опись зависимостей Flutter engine содержит 109 записей. Часть внешних входов Git и CIPD не включена. Сборка engine без сети, начальная сборка компилятора, перелинковка, создание подмножеств шрифтов и пересборка всего приложения только из этого ZIP не подтверждены.
 
-Архив относится к `14b87ac`. Для более новых версий приложения, runtime
-и зависимостей потребуются соответствующие им исходники.
+У более поздних пакетов другие исходники приложения, входы runtime и некоторые версии зависимостей. Например, следующий базовый набор заменяет Dart `archive` 4.2.0 на 4.3.0, Dart `image` 4.9.2 на 4.10.1, `flutter_secure_storage_linux` 3.0.2 на 3.0.3 и Ubuntu `libgcrypt20` 1.9.4-3ubuntu3.2 на 1.9.4-3ubuntu3.3. Исторический ZIP сохраняет первоначальные версии.
+
+Чтобы выбрать соответствующие файлы, используйте [руководство по исходным материалам](../source-materials.md#russian) и индекс из вашего пакета.

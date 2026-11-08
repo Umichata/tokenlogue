@@ -421,7 +421,7 @@ class Collector:
             raise NoticeError(
                 "unregistered packaged components: " + ", ".join(sorted(missing))
             )
-        switch = "[English](#lang-en) | [Русский](#lang-ru)\n\n"
+        switch = "[English](#english) · [Русский](#russian)\n\n"
         index = "# Third-party notices / Сторонние лицензии\n\n" + switch
         introductions = (
             (
@@ -457,7 +457,11 @@ class Collector:
             ),
         )
         for language, title, introduction in introductions:
-            index += f'<a name="lang-{language}"></a>\n\n## {title}\n\n'
+            anchor = "english" if language == "en" else "russian"
+            index += (
+                f'<a id="{anchor}"></a>\n'
+                f'<a name="lang-{language}"></a>\n\n## {title}\n\n'
+            )
             index += introduction
             for position, component in enumerate(self.components, start=1):
                 index += f'<a name="{language}-component-{position}"></a>\n\n'

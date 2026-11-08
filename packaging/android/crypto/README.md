@@ -1,129 +1,87 @@
-# Tokenlogue dependency sources / Исходники зависимостей Tokenlogue
+# Dependency source materials / Исходные материалы зависимостей
 
-[English](#lang-en) | [Русский](#lang-ru)
+[English](#english) · [Русский](#russian)
 
-<a name="lang-en"></a>
+<a id="english"></a>
+<a id="lang-en"></a>
 
 ## English
 
-This directory contains source materials for the additional cryptographic and
-Android device authentication dependencies in the current application source.
-It does not replace the historical Linux preview source collections.
+This collection makes the cryptography and Android device-authentication dependencies available for inspection. It contains original archives, licenses and selected upstream build recipes. You do not need to install these materials to use Tokenlogue.
 
 ### Included materials
 
-| Component | Version | Materials |
+| Component | Version | Source and license |
 | --- | --- | --- |
-| PyCryptodomex | `3.23.0` | [Original source archive](sources/pycryptodomex-3.23.0.tar.gz), [license](licenses/pycryptodomex/LICENSE.rst) and package-specific legal notices. |
-| CFFI | `2.0.0` | [Original source archive](sources/cffi-2.0.0.tar.gz) and [MIT license](licenses/cffi/LICENSE). |
-| pycparser | `3.11` | [Original source archive](sources/pycparser-3.11.tar.gz) and [BSD 3-Clause license](licenses/pycparser/LICENSE). |
-| Mobile Forge | `0fadbfab0d63d11164030dfddc955ed980e32e2c` | [Repository archive](sources/mobile-forge-0fadbfab0d63d11164030dfddc955ed980e32e2c.tar.gz), [build recipes and patches](recipes/recipes) and [BSD 3-Clause license](recipes/LICENSE). |
-| local_auth | `3.0.2` | [Original package archive](sources/local_auth-3.0.2.tar.gz) and [BSD 3-Clause license](licenses/local_auth/LICENSE). |
-| local_auth_android | `2.2.0` | [Original package archive](sources/local_auth_android-2.2.0.tar.gz) and [BSD 3-Clause license](licenses/local_auth_android/LICENSE). |
-| local_auth_platform_interface | `1.1.0` | [Original package archive](sources/local_auth_platform_interface-1.1.0.tar.gz) and [BSD 3-Clause license](licenses/local_auth_platform_interface/LICENSE). |
-| local_auth_darwin | `2.0.4` | [Original package archive](sources/local_auth_darwin-2.0.4.tar.gz) and [BSD 3-Clause license](licenses/local_auth_darwin/LICENSE). |
-| flutter_secure_storage | `10.3.1` | [Original package archive](sources/flutter_secure_storage-10.3.1.tar.gz) and [BSD 3-Clause license](licenses/flutter_secure_storage/LICENSE). |
-| local_auth_windows | `2.0.2` | [Original package archive](sources/local_auth_windows-2.0.2.tar.gz) and [BSD 3-Clause license](licenses/local_auth_windows/LICENSE). |
+| PyCryptodomex | `3.23.0` | [Archive](sources/pycryptodomex-3.23.0.tar.gz), [license and legal notices](licenses/pycryptodomex/LICENSE.rst) |
+| CFFI | `2.0.0` | [Archive](sources/cffi-2.0.0.tar.gz), [MIT license](licenses/cffi/LICENSE) |
+| pycparser | `3.11` | [Archive](sources/pycparser-3.11.tar.gz), [BSD 3-Clause license](licenses/pycparser/LICENSE) |
+| Mobile Forge | `0fadbfab0d63d11164030dfddc955ed980e32e2c` | [Archive](sources/mobile-forge-0fadbfab0d63d11164030dfddc955ed980e32e2c.tar.gz), [recipes and patches](recipes/recipes), [BSD 3-Clause license](recipes/LICENSE) |
+| local_auth | `3.0.2` | [Archive](sources/local_auth-3.0.2.tar.gz), [BSD 3-Clause license](licenses/local_auth/LICENSE) |
+| local_auth_android | `2.2.0` | [Archive](sources/local_auth_android-2.2.0.tar.gz), [BSD 3-Clause license](licenses/local_auth_android/LICENSE) |
+| local_auth_platform_interface | `1.1.0` | [Archive](sources/local_auth_platform_interface-1.1.0.tar.gz), [BSD 3-Clause license](licenses/local_auth_platform_interface/LICENSE) |
+| local_auth_darwin | `2.0.4` | [Archive](sources/local_auth_darwin-2.0.4.tar.gz), [BSD 3-Clause license](licenses/local_auth_darwin/LICENSE) |
+| flutter_secure_storage | `10.3.1` | [Archive](sources/flutter_secure_storage-10.3.1.tar.gz), [BSD 3-Clause license](licenses/flutter_secure_storage/LICENSE) |
+| local_auth_windows | `2.0.2` | [Archive](sources/local_auth_windows-2.0.2.tar.gz), [BSD 3-Clause license](licenses/local_auth_windows/LICENSE) |
 
-The Darwin and Windows packages belong to the resolved Flutter dependency graph.
-Their platform implementations are not used for Android recovery. The original
-license texts and upstream source comments retain their original language.
+The Darwin and Windows packages belong to the resolved Flutter dependency graph. Their platform implementations are not used for Android recovery. Their presence does not indicate an available Tokenlogue package for those platforms.
 
-[sources.lock.json](sources.lock.json) records the source URLs, archive hashes
-and exact Android wheel filenames for CPython 3.12, ARM64 and x86_64.
-[SHA256SUMS](SHA256SUMS) verifies the files in this directory. From this directory,
-run the following command to check the downloaded source materials.
+### Verify the collection
+
+[sources.lock.json](sources.lock.json) records source URLs, archive hashes and the selected Android wheel filenames. [SHA256SUMS](SHA256SUMS) covers the files in this collection. From this directory, run the following command.
 
 ```bash
 sha256sum --check SHA256SUMS
 ```
 
-The [Tokenlogue bridge](../recovery_bridge.dart) and
-[template recipe](../recovery_template.py) provide the application-specific
-connection to Flet 0.86.5. They are part of Tokenlogue's own source.
-Android permissions and activity configuration are generated by that recipe.
-Flutter Secure Storage is the Android backend used by Flet Secure Storage.
-Its original source makes the persistence behavior inspectable alongside
-Tokenlogue's secure-storage write barrier.
+The [Tokenlogue device adapter](../recovery_bridge.dart) and [template configuration](../recovery_template.py) are Tokenlogue's own source. They connect Android system recovery to the application. Flutter Secure Storage supplies the Android secure-storage implementation used through Flet Secure Storage.
 
-### Completeness limits
+### What these materials establish
 
-These files do not constitute a complete offline Android build environment.
-Matching an archive checksum or running encryption successfully does not prove
-that a native wheel can be reproduced byte for byte.
+The original archives and their checksums identify the available source materials. They do not, by themselves, prove how a particular native wheel was built. The collection is not a complete offline Android build environment or a promise of byte-for-byte reproducibility.
 
-The CFFI build recipe uses a host libffi dependency without identifying its
-version. The exact source version of libffi statically linked into the Android
-CFFI wheel and its complete build provenance remain unconfirmed. The CFFI source
-archive retains its bundled source notices. This collection does not label an
-unverified libffi archive as a matching source.
+The Mobile Forge CFFI recipe names a host libffi dependency without its version. The exact libffi incorporated in the selected CFFI wheel has not been identified. The separately documented libffi in the Android Python runtime does not identify the library inside CFFI. Original CFFI notices remain included.
 
-The older limitations described in the
-[source materials guide](../../../docs/source-materials.md#lang-en) remain open.
-The presence of these files does not change the contents of a published APK or
-AppImage. Check the notices and provenance supplied with the particular build.
+See [source materials and remaining provenance limits](../../../docs/source-materials.md#english) for the wider collection. [Third-party notices](../../../THIRD_PARTY_NOTICES.md#english) explain the licensing materials. Documentation changes here do not change the notices inside an already built APK or AppImage.
 
-[Third-party software](../../../THIRD_PARTY_NOTICES.md#lang-en)
-
-<a name="lang-ru"></a>
+<a id="russian"></a>
+<a id="lang-ru"></a>
 
 ## Русский
 
-В этом каталоге находятся исходные материалы дополнительных криптографических
-зависимостей и системной аутентификации Android для текущих исходников приложения.
-Они не заменяют исторические комплекты исходников Linux preview.
+Этот комплект позволяет изучить зависимости криптографии и системной аутентификации Android. Здесь находятся оригинальные архивы, лицензии и отдельные upstream-рецепты сборки. Для использования Tokenlogue устанавливать эти материалы не нужно.
 
 ### Включённые материалы
 
-| Компонент | Версия | Материалы |
+| Компонент | Версия | Исходники и лицензия |
 | --- | --- | --- |
-| PyCryptodomex | `3.23.0` | [Исходный архив](sources/pycryptodomex-3.23.0.tar.gz), [лицензия](licenses/pycryptodomex/LICENSE.rst) и дополнительные правовые уведомления пакета. |
-| CFFI | `2.0.0` | [Исходный архив](sources/cffi-2.0.0.tar.gz) и [лицензия MIT](licenses/cffi/LICENSE). |
-| pycparser | `3.11` | [Исходный архив](sources/pycparser-3.11.tar.gz) и [лицензия BSD 3-Clause](licenses/pycparser/LICENSE). |
-| Mobile Forge | `0fadbfab0d63d11164030dfddc955ed980e32e2c` | [Архив репозитория](sources/mobile-forge-0fadbfab0d63d11164030dfddc955ed980e32e2c.tar.gz), [рецепты сборки и патчи](recipes/recipes) и [лицензия BSD 3-Clause](recipes/LICENSE). |
-| local_auth | `3.0.2` | [Исходный архив пакета](sources/local_auth-3.0.2.tar.gz) и [лицензия BSD 3-Clause](licenses/local_auth/LICENSE). |
-| local_auth_android | `2.2.0` | [Исходный архив пакета](sources/local_auth_android-2.2.0.tar.gz) и [лицензия BSD 3-Clause](licenses/local_auth_android/LICENSE). |
-| local_auth_platform_interface | `1.1.0` | [Исходный архив пакета](sources/local_auth_platform_interface-1.1.0.tar.gz) и [лицензия BSD 3-Clause](licenses/local_auth_platform_interface/LICENSE). |
-| local_auth_darwin | `2.0.4` | [Исходный архив пакета](sources/local_auth_darwin-2.0.4.tar.gz) и [лицензия BSD 3-Clause](licenses/local_auth_darwin/LICENSE). |
-| flutter_secure_storage | `10.3.1` | [Исходный архив пакета](sources/flutter_secure_storage-10.3.1.tar.gz) и [лицензия BSD 3-Clause](licenses/flutter_secure_storage/LICENSE). |
-| local_auth_windows | `2.0.2` | [Исходный архив пакета](sources/local_auth_windows-2.0.2.tar.gz) и [лицензия BSD 3-Clause](licenses/local_auth_windows/LICENSE). |
+| PyCryptodomex | `3.23.0` | [Архив](sources/pycryptodomex-3.23.0.tar.gz), [лицензия и правовые уведомления](licenses/pycryptodomex/LICENSE.rst) |
+| CFFI | `2.0.0` | [Архив](sources/cffi-2.0.0.tar.gz), [лицензия MIT](licenses/cffi/LICENSE) |
+| pycparser | `3.11` | [Архив](sources/pycparser-3.11.tar.gz), [лицензия BSD 3-Clause](licenses/pycparser/LICENSE) |
+| Mobile Forge | `0fadbfab0d63d11164030dfddc955ed980e32e2c` | [Архив](sources/mobile-forge-0fadbfab0d63d11164030dfddc955ed980e32e2c.tar.gz), [рецепты и патчи](recipes/recipes), [лицензия BSD 3-Clause](recipes/LICENSE) |
+| local_auth | `3.0.2` | [Архив](sources/local_auth-3.0.2.tar.gz), [лицензия BSD 3-Clause](licenses/local_auth/LICENSE) |
+| local_auth_android | `2.2.0` | [Архив](sources/local_auth_android-2.2.0.tar.gz), [лицензия BSD 3-Clause](licenses/local_auth_android/LICENSE) |
+| local_auth_platform_interface | `1.1.0` | [Архив](sources/local_auth_platform_interface-1.1.0.tar.gz), [лицензия BSD 3-Clause](licenses/local_auth_platform_interface/LICENSE) |
+| local_auth_darwin | `2.0.4` | [Архив](sources/local_auth_darwin-2.0.4.tar.gz), [лицензия BSD 3-Clause](licenses/local_auth_darwin/LICENSE) |
+| flutter_secure_storage | `10.3.1` | [Архив](sources/flutter_secure_storage-10.3.1.tar.gz), [лицензия BSD 3-Clause](licenses/flutter_secure_storage/LICENSE) |
+| local_auth_windows | `2.0.2` | [Архив](sources/local_auth_windows-2.0.2.tar.gz), [лицензия BSD 3-Clause](licenses/local_auth_windows/LICENSE) |
 
-Пакеты Darwin и Windows входят в разрешённый граф зависимостей Flutter.
-Их платформенные реализации не используются для восстановления Android.
-Оригинальные лицензии и комментарии upstream-исходников сохранены на исходном языке.
+Пакеты Darwin и Windows входят в разрешённый граф зависимостей Flutter. Их платформенные реализации не используются для восстановления Android. Их наличие не означает, что Tokenlogue доступен для этих платформ.
 
-Файл [sources.lock.json](sources.lock.json) содержит исходные URL, контрольные
-суммы архивов и точные имена Android wheels для CPython 3.12, ARM64 и x86_64.
-Файл [SHA256SUMS](SHA256SUMS) позволяет проверить файлы этого каталога.
-Выполните следующую команду из этого каталога для проверки исходных материалов.
+### Проверка комплекта
+
+Файл [sources.lock.json](sources.lock.json) содержит исходные URL, суммы архивов и выбранные имена Android wheels. [SHA256SUMS](SHA256SUMS) покрывает файлы комплекта. Выполните следующую команду из этого каталога.
 
 ```bash
 sha256sum --check SHA256SUMS
 ```
 
-[Платформенный адаптер Tokenlogue](../recovery_bridge.dart) и
-[рецепт шаблона](../recovery_template.py) обеспечивают подключение к Flet 0.86.5.
-Они относятся к собственным исходникам Tokenlogue. Разрешения Android и
-настройки Activity формируются этим рецептом.
-Flutter Secure Storage является реализацией Flet Secure Storage для Android.
-Его оригинальные исходники позволяют проверить сохранение записей вместе
-с механизмом ожидания записи защищённого хранилища Tokenlogue.
+[Платформенный адаптер](../recovery_bridge.dart) и [настройка шаблона](../recovery_template.py) относятся к собственным исходникам Tokenlogue. Они подключают системное восстановление Android к приложению. Flutter Secure Storage предоставляет реализацию защищённого хранилища Android, используемую через Flet Secure Storage.
 
-### Ограничения полноты
+### Что подтверждают эти материалы
 
-Эти файлы не составляют полное окружение для автономной сборки Android.
-Совпадение контрольной суммы архива и успешное шифрование не доказывают
-возможность побайтного воспроизведения нативного wheel.
+Оригинальные архивы и их суммы идентифицируют доступные исходные материалы. Сами по себе они не доказывают способ сборки конкретного нативного wheel. Комплект не является полным автономным окружением Android и не обещает побайтного воспроизведения сборки.
 
-Рецепт CFFI использует host-зависимость libffi без указания версии.
-Точная версия исходников libffi, статически включённой в Android wheel CFFI,
-и полное происхождение входов её сборки пока не подтверждены. Архив CFFI
-сохраняет уведомления включённых исходников. Непроверенный архив libffi
-не обозначается в этом комплекте как соответствующий wheel.
+Рецепт CFFI из Mobile Forge указывает host-зависимость libffi без версии. Точная libffi внутри выбранного wheel CFFI пока не определена. Отдельно описанная libffi из Python runtime Android не идентифицирует библиотеку внутри CFFI. Оригинальные уведомления CFFI сохранены.
 
-Прежние ограничения из
-[руководства по исходным материалам](../../../docs/source-materials.md#lang-ru)
-остаются открытыми. Наличие этих файлов не меняет содержимое опубликованного APK
-или AppImage. Проверяйте уведомления и сведения о происхождении конкретной сборки.
-
-[Сторонние компоненты](../../../THIRD_PARTY_NOTICES.md#lang-ru)
+Общий комплект и границы подтверждённого происхождения описаны в [руководстве по исходным материалам](../../../docs/source-materials.md#russian). [Сторонние уведомления](../../../THIRD_PARTY_NOTICES.md#russian) объясняют лицензионные материалы. Изменение этого документа не меняет уведомления внутри уже собранного APK или AppImage.

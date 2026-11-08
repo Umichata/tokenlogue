@@ -3,12 +3,12 @@
   "source_materials_status": "REVIEW_REQUIRED",
   "platform_notes": {
     "android": {
-      "en": "These supplemental notices accompany the existing bundled notices. Original legal texts are preserved in licenses. Font attribution is preserved separately. The manifest records exact versions and source hashes.",
-      "ru": "Эти дополнительные уведомления поставляются вместе с существующими уведомлениями. Оригинальные юридические тексты сохранены в licenses. Attribution шрифтов приведён отдельно. Манифест содержит точные версии и суммы исходных материалов."
+      "en": "These licenses accompany the libraries and fonts in the Android package. Original texts are preserved in licenses and font copyright is listed in attribution. The manifest links each component to its exact version and sources.",
+      "ru": "Эти лицензии относятся к библиотекам и шрифтам пакета Android. Оригинальные тексты находятся в licenses, сведения об авторстве шрифтов — в attribution. Манифест связывает каждый компонент с точной версией и источниками."
     },
     "linux": {
-      "en": "These supplemental font notices accompany the existing Linux notices. Original legal texts and attribution are preserved separately. The manifest records the exact original font input.",
-      "ru": "Эти дополнительные уведомления шрифтов поставляются вместе с существующими Linux notices. Оригинальные юридические тексты и attribution сохранены отдельно. Манифест указывает точный исходный шрифт."
+      "en": "These font notices accompany the Linux package. Original legal texts are in licenses and copyright is listed in attribution. The manifest identifies the original font source.",
+      "ru": "Эти уведомления шрифтов поставляются с пакетом Linux. Оригинальные юридические тексты находятся в licenses, сведения об авторстве — в attribution. Манифест указывает исходный шрифт."
     }
   },
   "components": [
@@ -39,8 +39,8 @@
       ],
       "notes": {
         "android": {
-          "en": "This is the original MIT notice for libffi3.4.4 in the Android CPython runtime.",
-          "ru": "Это оригинальное MIT-уведомление libffi3.4.4 из Android CPython runtime."
+          "en": "Original MIT license for libffi 3.4.4 in the Android Python runtime. This notice does not identify libffi inside the separate CFFI wheel.",
+          "ru": "Оригинальная лицензия MIT для libffi 3.4.4 в среде Python для Android. Это уведомление не определяет libffi внутри отдельного wheel CFFI."
         }
       }
     },
@@ -70,8 +70,8 @@
       ],
       "notes": {
         "android": {
-          "en": "This is the original MIT notice for Dart bridge1.10.0. Its source commit is recorded in the manifest.",
-          "ru": "Это оригинальное MIT-уведомление Dart bridge1.10.0. Его исходный commit указан в манифесте."
+          "en": "Original MIT license for Dart bridge 1.10.0. The manifest records its exact source revision.",
+          "ru": "Оригинальная лицензия MIT для Dart bridge 1.10.0. Манифест содержит точную ревизию его исходников."
         }
       }
     },
@@ -141,8 +141,8 @@
       ],
       "notes": {
         "android": {
-          "en": "The complete official OFL1.1 text is supplied with the original KaTeX copyright and Reserved Font Names. SIL FAQ1.10 also addresses a license link in embedded-font metadata. The official OFL example header is retained unchanged. Actual font copyright appears separately.",
-          "ru": "Полный официальный OFL1.1 поставляется вместе с оригинальными copyright KaTeX и зарезервированными именами шрифтов. FAQ SIL1.10 отдельно рассматривает ссылку на лицензию в metadata встроенного шрифта. Пример заголовка официального OFL сохранён без изменений. Настоящий copyright шрифтов приведён отдельно."
+          "en": "The complete SIL Open Font License 1.1 is supplied with the original KaTeX copyright and Reserved Font Names. The official license example header is unchanged. The actual font copyright is provided separately.",
+          "ru": "Полный текст SIL Open Font License 1.1 поставляется с оригинальными сведениями об авторстве KaTeX и зарезервированными именами шрифтов. Пример заголовка официальной лицензии не изменён. Авторские права на сами шрифты приведены отдельно."
         }
       }
     },
@@ -196,12 +196,12 @@
       ],
       "notes": {
         "android": {
-          "en": "The full declaration from the exact Flutter font ZIP and original Google attribution are included. Material Icons is subset by Flutter during Android packaging. The original font input and this transformation are recorded separately from the license text.",
-          "ru": "Сохранены полная декларация из точного Flutter font ZIP и оригинальный attribution Google. При упаковке Android Flutter создаёт subset Material Icons. Исходный шрифт и это преобразование указаны отдельно от лицензионного текста."
+          "en": "The original Flutter font archive declaration and Google copyright are supplied in full. Flutter creates a subset of Material Icons for Android. The original font and this transformation are identified separately from the legal text.",
+          "ru": "Декларация исходного архива шрифтов Flutter и авторские права Google приведены полностью. Flutter создаёт подмножество Material Icons для Android. Исходный шрифт и преобразование описаны отдельно от юридического текста."
         },
         "linux": {
-          "en": "The full declaration from the exact Flutter font ZIP and original Google attribution are included. The Linux Material Icons font matches the original input. Existing notices remain alongside this supplement.",
-          "ru": "Сохранены полная декларация из точного Flutter font ZIP и оригинальный attribution Google. Linux-шрифт Material Icons совпадает с исходным входом. Дополнение поставляется вместе с существующими уведомлениями."
+          "en": "The original Flutter font archive declaration and Google copyright are supplied in full. The Linux font matches the original input. These texts accompany the other Linux notices.",
+          "ru": "Декларация исходного архива шрифтов Flutter и авторские права Google приведены полностью. Шрифт Linux совпадает с исходным файлом. Эти тексты дополняют остальные уведомления Linux."
         }
       }
     }

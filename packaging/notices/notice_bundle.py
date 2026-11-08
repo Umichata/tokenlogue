@@ -183,14 +183,22 @@ def _bundle(project_root: Path, platform: str) -> tuple[dict[str, bytes], dict]:
             }
         )
     readme = [
-        "[English](#english) · [Русский](#русский)",
+        "[English](#english) · [Русский](#russian)",
         "",
         "# Third-party notices",
         "",
     ]
     for language, title in (("en", "English"), ("ru", "Русский")):
+        anchor = "english" if language == "en" else "russian"
         readme.extend(
-            [f"## {title}", "", registry["platform_notes"][platform][language], ""]
+            [
+                f'<a id="{anchor}"></a>',
+                "",
+                f"## {title}",
+                "",
+                registry["platform_notes"][platform][language],
+                "",
+            ]
         )
         for component in components:
             readme.extend(

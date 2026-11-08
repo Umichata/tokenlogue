@@ -445,12 +445,13 @@ class PubspecNoticeTests(unittest.TestCase):
                 encoding="utf-8"
             ),
         )
-        anchors = re.findall(r'<a name="([^"]+)"></a>', index)
+        anchors = re.findall(r'<a (?:name|id)="([^"]+)"></a>', index)
         self.assertEqual(len(anchors), len(set(anchors)))
-        for label, anchor in (("English", "lang-en"), ("Русский", "lang-ru")):
+        for label, anchor in (("English", "english"), ("Русский", "russian")):
             link = f"[{label}](#{anchor})"
             self.assertEqual(index.count(link), 1)
             self.assertLess(index.index(link), index.index('<a name="lang-en">'))
+            self.assertIn(f'<a id="{anchor}"></a>', index)
             self.assertIn(anchor, anchors)
         english, russian = index.split('<a name="lang-ru"></a>')
         self.assertIn('<a name="lang-en"></a>', english)

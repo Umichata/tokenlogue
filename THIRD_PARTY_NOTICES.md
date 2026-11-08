@@ -1,117 +1,65 @@
-# Tokenlogue - Third-party software / Сторонние компоненты
+# Third-party software / Сторонние компоненты
 
-[English](#lang-en) | [Русский](#lang-ru)
+[English](#english) · [Русский](#russian)
 
-<a name="lang-en"></a>
+<a id="english"></a>
+<a id="lang-en"></a>
 
 ## English
 
-Tokenlogue uses third-party software under its respective licenses.
-Tokenlogue's own code is covered by the [MIT License](LICENSE).
-The original third-party license texts retain their original language.
+Tokenlogue's own code uses the [MIT license](LICENSE). Its dependencies retain their respective original licenses. The original texts are not translated or replaced by this overview.
 
-### Main components
+### Application libraries
 
-| Component | Version | License | Role |
+| Component | Version | License | Purpose |
 | --- | --- | --- | --- |
-| [Flet](https://github.com/flet-dev/flet) | `0.86.5` | Apache License 2.0, `Apache-2.0` | Application framework and user interface. |
-| [Flet Secure Storage](https://github.com/flet-dev/flet/tree/main/sdk/python/packages/flet-secure-storage) | `0.86.5` | Apache License 2.0, `Apache-2.0` | Platform secure storage. |
-| [HTTPX](https://github.com/encode/httpx) | `0.28.1` | BSD 3-Clause License, `BSD-3-Clause` | HTTPS communication with OpenRouter. |
-| [PyCryptodomex](https://www.pycryptodome.org/) | `3.23.0` | BSD 2-Clause and public-domain notices | AES-GCM primitives used by local-content protection. |
-| [CFFI](https://cffi.readthedocs.io/) | `2.0.0` | MIT, with bundled libffi notices | Connection to the native cryptographic routines. |
-| [pycparser](https://github.com/eliben/pycparser) | `3.11` | BSD 3-Clause License | C declaration parser used by CFFI. |
+| Flet and Flet Secure Storage | 0.86.5 | Apache 2.0 | Interface and platform secure storage |
+| HTTPX | 0.28.1 | BSD 3-Clause | OpenRouter HTTPS requests |
+| PyCryptodomex | 3.23.0 | BSD 2-Clause and public-domain notices | Local encryption primitives |
+| CFFI | 2.0.0 | MIT | Native interface |
+| pycparser | 3.11 | BSD 3-Clause | C declaration parsing |
 
-Current Android builds use `flutter_secure_storage 10.3.1` as the platform
-backend for Flet Secure Storage. It uses the BSD 3-Clause license. Its
-[source archive and license](packaging/android/crypto/README.md#lang-en) are
-included in the additional source collection.
+Android secure storage uses flutter_secure_storage 10.3.1. Device recovery uses local_auth 3.0.2, local_auth_android 2.2.0 and local_auth_platform_interface 1.1.0. These Flutter packages use BSD 3-Clause licenses. Other platform implementations in the dependency graph do not imply that a Windows or Apple version is distributed.
 
-### Android device authentication
+### Notices inside your package
 
-The Android bridge uses Flutter's `local_auth 3.0.2`,
-`local_auth_android 2.2.0` and `local_auth_platform_interface 1.1.0`.
-These packages use the BSD 3-Clause license. The resolved Flutter dependency
-graph also includes `local_auth_darwin 2.0.4` and `local_auth_windows 2.0.2`.
-Their implementations do not provide Android recovery.
+Android includes Flutter's notices and a supplemental bundle inside `assets/app.zip`, under `assets/third-party-notices/`. It contains the original Android runtime libffi and Dart bridge MIT notices, complete OFL, KaTeX copyright and Material Icons declaration and attribution. See the [library and font texts](packaging/notices/README.md#english).
 
-The [additional source collection](packaging/android/crypto/README.md#lang-en)
-contains the original package archives, licenses, Mobile Forge build recipes
-and patches. It also records the exact Android wheel inputs. The version of
-libffi statically linked into the CFFI Android wheel remains unconfirmed.
-The collection does not establish a complete offline native rebuild.
+Linux includes its component index, original license collection and font supplement under `usr/share/doc/tokenlogue/`. The [AppImage license guide](packaging/linux/appimage/notices.md#english) explains these files and the separate runtime materials. Always use the index supplied with your particular package to identify its actual components.
 
-### Licenses supplied with the AppImage
+### Sources and provenance
 
-The table above describes the current application source. Previously published
-AppImages retain the dependencies recorded in their own component index. The AppImage
-also contains Python, Flutter, Dart plugins, native libraries, fonts and a
-startup component called the runtime. Its component index lists the licenses
-for the software included in that build. The full texts are in
-`usr/share/doc/tokenlogue/licenses/` inside the extracted AppImage.
+The [source guide](docs/source-materials.md#english) identifies the available archives, patches and recipes. The [Android native-library overview](packaging/android/crypto/README.md#english) explains native inputs. Some source-to-binary links remain incomplete, including the actual libffi inside CFFI. The presence of a license or a matching-version source archive alone does not prove how a particular binary was produced.
 
-The [AppImage license guide](packaging/linux/appimage/notices.md#lang-en)
-explains how to find those files. Earlier previews may have an English-only index.
-The license texts are kept in their original language.
+[Back to Tokenlogue](README.md#english)
 
-To inspect the source code, use the [source materials guide](docs/source-materials.md#lang-en).
-It explains which archives are available and which parts of the Flutter SDK
-source collection are still missing.
-
-[Back to Tokenlogue](README.md#lang-en)
-
-<a name="lang-ru"></a>
+<a id="russian"></a>
+<a id="lang-ru"></a>
 
 ## Русский
 
-Tokenlogue использует стороннее программное обеспечение на условиях его
-собственных лицензий. На собственный код Tokenlogue распространяется
-[лицензия MIT](LICENSE). Оригинальные тексты сторонних лицензий сохранены
-на исходном языке.
+Собственный код Tokenlogue распространяется по [лицензии MIT](LICENSE). Зависимости сохраняют свои оригинальные лицензии. Их тексты не переводятся и не заменяются этим обзором.
 
-### Основные компоненты
+### Библиотеки приложения
 
 | Компонент | Версия | Лицензия | Назначение |
 | --- | --- | --- | --- |
-| [Flet](https://github.com/flet-dev/flet) | `0.86.5` | Apache License 2.0, `Apache-2.0` | Основа приложения и пользовательский интерфейс. |
-| [Flet Secure Storage](https://github.com/flet-dev/flet/tree/main/sdk/python/packages/flet-secure-storage) | `0.86.5` | Apache License 2.0, `Apache-2.0` | Платформенное защищённое хранилище. |
-| [HTTPX](https://github.com/encode/httpx) | `0.28.1` | BSD 3-Clause License, `BSD-3-Clause` | Обмен с OpenRouter по HTTPS. |
-| [PyCryptodomex](https://www.pycryptodome.org/) | `3.23.0` | BSD 2-Clause и уведомления о public domain | Примитивы AES-GCM для защиты локального содержимого. |
-| [CFFI](https://cffi.readthedocs.io/) | `2.0.0` | MIT и уведомления включённого libffi | Обращение к нативным криптографическим функциям. |
-| [pycparser](https://github.com/eliben/pycparser) | `3.11` | BSD 3-Clause License | Разбор объявлений C для CFFI. |
+| Flet и Flet Secure Storage | 0.86.5 | Apache 2.0 | Интерфейс и платформенное защищённое хранилище |
+| HTTPX | 0.28.1 | BSD 3-Clause | HTTPS-запросы OpenRouter |
+| PyCryptodomex | 3.23.0 | BSD 2-Clause и уведомления public domain | Примитивы локального шифрования |
+| CFFI | 2.0.0 | MIT | Нативный интерфейс |
+| pycparser | 3.11 | BSD 3-Clause | Разбор объявлений C |
 
-Текущие сборки Android используют `flutter_secure_storage 10.3.1` как
-платформенную реализацию Flet Secure Storage. Она распространяется по лицензии
-BSD 3-Clause. Её [исходный архив и лицензия](packaging/android/crypto/README.md#lang-ru)
-входят в дополнительный комплект исходников.
+Защищённое хранилище Android использует flutter_secure_storage 10.3.1. Для системного восстановления применяются local_auth 3.0.2, local_auth_android 2.2.0 и local_auth_platform_interface 1.1.0. Эти пакеты Flutter имеют лицензии BSD 3-Clause. Реализации других платформ в графе зависимостей не означают поставку версии для Windows или Apple.
 
-### Системная аутентификация Android
+### Уведомления внутри пакета
 
-Платформенный адаптер Android использует пакеты Flutter `local_auth 3.0.2`,
-`local_auth_android 2.2.0` и `local_auth_platform_interface 1.1.0`.
-Они распространяются по лицензии BSD 3-Clause. Разрешённый граф зависимостей
-Flutter также включает `local_auth_darwin 2.0.4` и `local_auth_windows 2.0.2`.
-Их реализации не обеспечивают восстановление Android.
+Android содержит уведомления Flutter и дополнительный комплект внутри `assets/app.zip`, в каталоге `assets/third-party-notices/`. В нём сохранены оригинальные MIT-уведомления libffi среды Android и Dart bridge, полный OFL, авторские права KaTeX, декларация и авторство Material Icons. См. [тексты библиотек и шрифтов](packaging/notices/README.md#russian).
 
-[Дополнительный комплект исходников](packaging/android/crypto/README.md#lang-ru)
-содержит оригинальные архивы пакетов, лицензии, рецепты сборки Mobile Forge
-и патчи. В нём также указаны точные входные Android wheels. Версия libffi,
-статически включённой в Android wheel CFFI, пока не подтверждена.
-Комплект не доказывает полноту автономной нативной сборки.
+Linux содержит список компонентов, оригинальные лицензии и дополнение для шрифтов в `usr/share/doc/tokenlogue/`. [Руководство по лицензиям AppImage](packaging/linux/appimage/notices.md#russian) объясняет их состав и отдельные материалы runtime. Определяйте фактические компоненты по списку, поставленному именно с вашим пакетом.
 
-### Лицензии внутри AppImage
+### Исходники и происхождение
 
-В таблице описаны текущие исходники приложения. Прежние опубликованные AppImage
-сохраняют зависимости, перечисленные в их собственном списке компонентов. В AppImage также
-включены Python, Flutter, плагины Dart, нативные библиотеки, шрифты
-и компонент запуска runtime. Внутри есть список компонентов со ссылками
-на их лицензии. Полные тексты находятся в папке
-`usr/share/doc/tokenlogue/licenses/` распакованного AppImage.
+[Руководство по исходным материалам](docs/source-materials.md#russian) описывает доступные архивы, патчи и рецепты. [Обзор нативных библиотек Android](packaging/android/crypto/README.md#russian) объясняет нативные входы. Связь части исходников с бинарниками подтверждена не полностью, включая фактическую libffi внутри CFFI. Наличие лицензии или архива исходников с подходящей версией само по себе не доказывает происхождение конкретного бинарника.
 
-Найти эти файлы поможет [руководство по лицензиям AppImage](packaging/linux/appimage/notices.md#lang-ru).
-В ранних сборках список может быть только на английском языке.
-Тексты лицензий сохранены на языке оригинала.
-
-Для изучения исходного кода откройте [руководство по исходным материалам](docs/source-materials.md#lang-ru).
-В нём описаны доступные архивы и недостающие части комплекта исходников Flutter SDK.
-
-[К Tokenlogue](README.md#lang-ru)
+[К Tokenlogue](README.md#russian)
