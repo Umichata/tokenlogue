@@ -7,6 +7,7 @@ import importlib
 import io
 import json
 import os
+import shutil
 import stat
 import subprocess
 import sys
@@ -14,7 +15,7 @@ import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import ANY, patch
 from zipfile import ZipFile, ZipInfo
 
 PROJECT = Path(__file__).resolve().parents[1]
@@ -30,6 +31,18 @@ class AndroidBuildTests(unittest.TestCase):
         temporary = tempfile.TemporaryDirectory(prefix="tokenlogue-apk-test-")
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name)
+        create_workspace = helper.new_build_root
+
+        def isolated_workspace(path, prefixes):
+            workspace = create_workspace(path, prefixes)
+            self.addCleanup(shutil.rmtree, workspace, ignore_errors=True)
+            return workspace
+
+        workspace_patch = patch.object(
+            helper, "new_build_root", side_effect=isolated_workspace
+        )
+        workspace_patch.start()
+        self.addCleanup(workspace_patch.stop)
 
     def archive(
         self,
@@ -77,7 +90,11 @@ class AndroidBuildTests(unittest.TestCase):
         return path
 
     def copy_package_inputs(self, repo: Path, *, with_module: bool = False) -> None:
-        names = [helper.PACKAGE_STAGE_GRADLE, helper.PACKAGE_POLICY]
+        names = [
+            helper.PACKAGE_STAGE_GRADLE,
+            helper.PACKAGE_POLICY,
+            "packaging/android/build_paths.py",
+        ]
         if with_module:
             names.append("packaging/android/package_stage.py")
         for name in names:
@@ -200,7 +217,7 @@ class AndroidBuildTests(unittest.TestCase):
         events = []
         outcomes = []
 
-        def run_flet(command, source, environment, actual_run):
+        def run_flet(command, source, environment, actual_run, *, redact_prefixes):
             events.append("flet")
             self.assertEqual(
                 command[:3], [str(repo / ".venv/bin/flet"), "build", "apk"]
@@ -238,6 +255,8 @@ class AndroidBuildTests(unittest.TestCase):
             if result.returncode == 0:
                 events.extend(("python-zip", "sign"))
             self.assertEqual(actual_run, run)
+            self.assertNotEqual(source.parent, run)
+            self.assertEqual(Path(environment["TMPDIR"]), source.parent / "tmp")
             return result.returncode
 
         argv = [
@@ -274,9 +293,11 @@ class AndroidBuildTests(unittest.TestCase):
         self.assertEqual(len(outcomes), 1)
         self.assertNotIn("Traceback", outcomes[0].stderr)
         metadata = json.loads((run / "preparation.json").read_text())
+        source = Path(metadata["source"])
+        self.addCleanup(shutil.rmtree, source.parent)
         self.assertEqual(
             metadata["package_policy"]["sha256"],
-            helper.sha256(run / "source" / helper.PACKAGE_POLICY),
+            helper.sha256(source / helper.PACKAGE_POLICY),
         )
 
     def test_path_traversal_is_rejected(self) -> None:
@@ -456,6 +477,46 @@ assert Path(initialization.__file__).resolve() == Path(sys.argv[1]) / 'storage/e
             json.loads((run / "command.json").read_text())["argv"], command
         )
 
+    def test_log_redaction_handles_split_unicode_prefix_without_changing_child(
+        self,
+    ) -> None:
+        prefix = "/home/Other user Пользователь"
+        paths = helper.runpy.run_path(str(PROJECT / "packaging/android/build_paths.py"))
+        needles = paths["redaction_needles"]((prefix,))
+        payload = b"\xffbefore " + prefix.encode() + b"/compiler after\0"
+        expected = b"\xffbefore <builder-home>/compiler after\0"
+        for cut in range(1, len(payload)):
+            self.assertEqual(
+                b"".join(
+                    helper.redact_log_chunks((payload[:cut], payload[cut:]), needles)
+                ),
+                expected,
+            )
+        run = self.root / "redacted-log"
+        run.mkdir()
+        command = [
+            sys.executable,
+            "-c",
+            "import os,sys; os.write(1,sys.argv[1].encode()); raise SystemExit(9)",
+            prefix + "/compiler",
+        ]
+        environment = os.environ.copy()
+        code = helper.run_logged(
+            command,
+            self.root,
+            environment,
+            run,
+            mirror=False,
+            redact_prefixes=(prefix,),
+        )
+        self.assertEqual(code, 9)
+        self.assertEqual((run / "build.log").read_bytes(), b"<builder-home>/compiler")
+        saved = json.loads((run / "command.json").read_text())
+        self.assertTrue(saved["paths_redacted"])
+        self.assertEqual(saved["argv"][-1], "<builder-home>/compiler")
+        self.assertEqual(command[-1], prefix + "/compiler")
+        self.assertEqual(environment, os.environ.copy())
+
     def test_production_signing_environment_is_blocked_without_exposure(self) -> None:
         repo = self.root / "repo"
         repo.mkdir()
@@ -511,6 +572,70 @@ assert Path(initialization.__file__).resolve() == Path(sys.argv[1]) / 'storage/e
         self.assertIn(
             str(self.root / "flutter/3.44.8/bin"), environment["PATH"].split(os.pathsep)
         )
+
+    def test_neutral_workspace_is_physical_and_does_not_inherit_personal_tmp(
+        self,
+    ) -> None:
+        home = self.root / "Home space Пользователь"
+        home.mkdir()
+        with patch.dict(os.environ, {"TMPDIR": str(home)}):
+            work = helper.new_build_root(None, (str(home),))
+        self.addCleanup(shutil.rmtree, work)
+        self.assertEqual(work.parent, Path("/tmp"))
+        self.assertFalse(work.is_relative_to(home))
+        self.assertEqual(work.absolute(), work.resolve())
+        self.assertEqual(stat.S_IMODE(work.stat().st_mode), 0o700)
+        with self.assertRaisesRegex(ValueError, "outside personal"):
+            helper.new_build_root(home / "build", (str(home),))
+        self.assertFalse((home / "build").exists())
+        with self.assertRaisesRegex(ValueError, "parent traversal"):
+            helper.new_build_root(
+                self.root / "unused" / ".." / home.name / "build", (str(home),)
+            )
+        self.assertFalse((home / "build").exists())
+        linked = self.root / "linked"
+        linked.symlink_to(self.root, target_is_directory=True)
+        with self.assertRaisesRegex(ValueError, "symlink components"):
+            helper.new_build_root(linked / "build", ())
+        self.assertFalse((self.root / "build").exists())
+
+    def test_final_path_gate_reads_real_output_before_copying_it(self) -> None:
+        work, run = self.root / "compiler", self.root / "reports"
+        apk = work / "source/build/apk/app-arm64-v8a-release.apk"
+        apk.parent.mkdir(parents=True)
+        apk.write_bytes(b"unpublished compiled output")
+        run.mkdir()
+        observed = []
+
+        def verify(candidate, *, prefixes, report):
+            observed.append((candidate, prefixes, report))
+            self.assertFalse((run / "artifacts").exists())
+            raise ValueError("Personal build path in final APK")
+
+        with (
+            patch.object(helper.runpy, "run_path", return_value={"verify_apk": verify}),
+            self.assertRaisesRegex(ValueError, "Personal build path"),
+        ):
+            helper.collect_build_results(work, run, ("/home/Other user",), success=True)
+        self.assertEqual(
+            observed,
+            [(apk, ("/home/Other user",), run / "build-paths.json")],
+        )
+        self.assertFalse((run / "artifacts").exists())
+        self.assertEqual(apk.read_bytes(), b"unpublished compiled output")
+
+        def accepted(candidate, *, prefixes, report):
+            self.assertEqual(candidate, apk)
+            self.assertEqual(prefixes, ("/home/Other user",))
+            self.assertFalse((run / "artifacts").exists())
+            report.write_text('{"status": "VERIFIED"}\n')
+            return {"status": "VERIFIED"}
+
+        with patch.object(
+            helper.runpy, "run_path", return_value={"verify_apk": accepted}
+        ):
+            helper.collect_build_results(work, run, ("/home/Other user",), success=True)
+        self.assertEqual((run / "artifacts" / apk.name).read_bytes(), apk.read_bytes())
 
     def test_legacy_flutter_settings_block_unisolated_global_writes(self) -> None:
         legacy = self.root / ".flutter_settings"
@@ -570,6 +695,8 @@ assert Path(initialization.__file__).resolve() == Path(sys.argv[1]) / 'storage/e
                 ):
                     self.assertEqual(helper.main(), 0 if prepare_only else 7)
                 metadata = json.loads((run / "preparation.json").read_text())
+                source = Path(metadata["source"])
+                self.addCleanup(shutil.rmtree, source.parent)
                 command = [
                     str(repo / ".venv/bin/flet"),
                     "build",
@@ -586,7 +713,12 @@ assert Path(initialization.__file__).resolve() == Path(sys.argv[1]) / 'storage/e
                     metadata["build"], "NOT_RUN" if prepare_only else "PENDING"
                 )
                 self.assertEqual(
-                    (run / "source/src/main.py").read_text(), "current source bytes"
+                    (source / "src/main.py").read_text(), "current source bytes"
+                )
+                self.assertNotEqual(source.parent, run)
+                self.assertEqual(
+                    (source.parent / "preparation.json").read_bytes(),
+                    (run / "preparation.json").read_bytes(),
                 )
                 if prepare_only:
                     check_tools.assert_not_called()
@@ -598,11 +730,15 @@ assert Path(initialization.__file__).resolve() == Path(sys.argv[1]) / 'storage/e
                     runner.assert_called_once()
                     actual_command, cwd, environment, actual_run = runner.call_args.args
                     self.assertEqual(actual_command, command)
-                    self.assertEqual(cwd, run / "source")
+                    self.assertEqual(cwd, source)
                     self.assertEqual(actual_run, run)
                     self.assertEqual(environment["HOME"], "/unchanged-home")
                     self.assertEqual(
                         environment["XDG_CONFIG_HOME"], str(run / "flutter-config")
+                    )
+                    self.assertEqual(environment["TMPDIR"], str(source.parent / "tmp"))
+                    self.assertEqual(
+                        environment["GRADLE_USER_HOME"], str(run / "gradle-user-home")
                     )
 
     def test_unsupported_abi_is_rejected_before_preparation_or_flet(self) -> None:
@@ -740,11 +876,15 @@ assert Path(initialization.__file__).resolve() == Path(sys.argv[1]) / 'storage/e
             ),
             patch.object(helper, "check_tools"),
             patch.object(helper, "run_logged", return_value=0) as runner,
+            patch.object(helper, "collect_build_results") as collect,
             redirect_stdout(io.StringIO()),
             redirect_stderr(io.StringIO()),
         ):
             self.assertEqual(helper.main(), 0)
         metadata = json.loads((run / "preparation.json").read_text())
+        work = Path(metadata["source"]).parent
+        self.addCleanup(shutil.rmtree, work)
+        collect.assert_called_once_with(work, run, ANY, success=True)
         self.assertEqual(metadata["build_number_override"], 2)
         command = metadata["command"]
         self.assertEqual(command[command.index("--build-number") + 1], "2")
@@ -758,6 +898,7 @@ assert Path(initialization.__file__).resolve() == Path(sys.argv[1]) / 'storage/e
     def test_main_enables_recovery_recipe_by_default(self) -> None:
         repo = self.root / "default-recovery"
         repo.mkdir()
+        self.copy_package_inputs(repo)
         (repo / "pyproject.toml").write_bytes((PROJECT / "pyproject.toml").read_bytes())
         run = self.root / "default-recovery-run"
         argv = [
@@ -786,6 +927,7 @@ assert Path(initialization.__file__).resolve() == Path(sys.argv[1]) / 'storage/e
                         "ANDROID_USER_HOME",
                         "XDG_CONFIG_HOME",
                         "GRADLE_USER_HOME",
+                        "TMPDIR",
                         "TOKENLOGUE_PACKAGING_PYTHON",
                         "PATH",
                     )
@@ -808,6 +950,8 @@ assert Path(initialization.__file__).resolve() == Path(sys.argv[1]) / 'storage/e
         ):
             self.assertEqual(helper.main(), 0)
         self.assertTrue(prepare.call_args.kwargs["with_device_recovery"])
+        metadata = json.loads((run / "preparation.json").read_text())
+        self.addCleanup(shutil.rmtree, Path(metadata["source"]).parent)
         self.assertTrue(
             json.loads((run / "preparation.json").read_text())["device_recovery"]
         )

@@ -54,6 +54,7 @@ from ui.styles import (
     input_style,
     primary_button_style,
     secondary_button_style,
+    text_action_button_style,
 )
 
 WIDE_LAYOUT_BREAKPOINT = 760
@@ -185,7 +186,7 @@ class ChatWorkspaceView:
         self._sidebar_divider: ft.Container | None = None
         self._chat_actions = ft.Row(wrap=True, spacing=8, run_spacing=0)
         self._chat_actions_row = ft.Container(
-            padding=ft.Padding.symmetric(horizontal=12),
+            padding=ft.Padding.only(left=12, right=12, bottom=8),
             content=self._chat_actions,
         )
         self._privacy_warning = _history_warning()
@@ -570,6 +571,9 @@ class ChatWorkspaceView:
         # Flet filters invisible siblings before building unkeyed ControlWidgets.
         # Keep these outer slots present so the editor is not disposed on resize.
         self._chat_actions_row.height = None if actions_visible else 0
+        self._chat_actions_row.padding = ft.Padding.only(
+            left=12, right=12, bottom=8 if actions_visible else 0
+        )
         self._chat_actions.visible = actions_visible
         self._privacy_footer.height = 0 if short else None
         self._privacy_footer.padding = ft.Padding.symmetric(
@@ -629,6 +633,7 @@ class ChatWorkspaceView:
             icon=ft.Icons.EDIT_OUTLINED,
             height=48,
             disabled=self._sending,
+            style=text_action_button_style(),
             on_click=self._chat_action(self._on_rename_chat, chat.id, menu=False),
         )
         self.delete_button = ft.TextButton(
@@ -636,7 +641,7 @@ class ChatWorkspaceView:
             icon=ft.Icons.DELETE_OUTLINE,
             height=48,
             disabled=self._sending,
-            style=danger_button_style(),
+            style=text_action_button_style(destructive=True),
             on_click=self._chat_action(self._on_delete_chat, chat.id, menu=False),
         )
         self._chat_actions.controls = [self.rename_button, self.delete_button]
@@ -781,7 +786,7 @@ class ChatWorkspaceView:
             spacing=0,
             controls=[
                 ft.Container(
-                    padding=ft.Padding.symmetric(horizontal=8, vertical=4),
+                    padding=ft.Padding.symmetric(horizontal=8),
                     content=ft.Row(spacing=0, controls=header_controls),
                 ),
                 self._chat_actions_row,

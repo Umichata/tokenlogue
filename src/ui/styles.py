@@ -100,6 +100,24 @@ def danger_button_style() -> ft.ButtonStyle:
     return style
 
 
+def text_action_button_style(*, destructive: bool = False) -> ft.ButtonStyle:
+    """Keep text actions clear at rest, with shared pointer and focus feedback."""
+    style = secondary_button_style()
+    foreground = ERROR_COLOR if destructive else PRIMARY_COLOR
+    style.color = {
+        ft.ControlState.DEFAULT: foreground,
+        ft.ControlState.DISABLED: MUTED_COLOR,
+    }
+    style.icon_color = style.color
+    style.bgcolor = {
+        ft.ControlState.PRESSED: BORDER_COLOR,
+        ft.ControlState.HOVERED: ELEVATED_BACKGROUND,
+        ft.ControlState.DEFAULT: ft.Colors.TRANSPARENT,
+    }
+    style.overlay_color = ft.Colors.TRANSPARENT
+    return style
+
+
 def input_style() -> dict[str, Any]:
     """Без фиксированной высоты, чтобы подпись и счётчик не обрезались."""
     return dict(

@@ -248,7 +248,7 @@ class AndroidPackagePolicyTests(unittest.TestCase):
         write_json(
             fixture.run / "preparation.json",
             {
-                "recipe_version": "6",
+                "recipe_version": "7",
                 "arch": ABI,
                 "source": str(fixture.source),
                 "package_policy": {
@@ -388,6 +388,67 @@ class AndroidPackagePolicyTests(unittest.TestCase):
                 else:
                     original.with_name("unexpected.txt").write_bytes(b"unexpected")
                 self.assert_preflight_rejected(fixture)
+
+    def test_compileall_physical_stage_reaches_nested_code_without_rewriting(
+        self,
+    ) -> None:
+        fixture = self.stage_fixture("neutral physical workspace Юникод")
+        source = fixture.stage / "neighbor/compiled.py"
+        source.write_bytes(
+            b"def outer(value):\n"
+            b"    def inner():\n"
+            b"        return [item + value for item in range(3)]\n"
+            b"    return inner\n"
+        )
+        result = subprocess.run(
+            [sys.executable, "-I", "-B", "-m", "compileall", "-q", "-b", str(source)],
+            capture_output=True,
+            timeout=3,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        path = source.with_suffix(".pyc")
+        source.unlink()
+        compiled = path.read_bytes()
+        code = marshal.loads(compiled[16:])
+        self.assertTrue(policy_module._filenames_match(code, str(source)))
+        self.assertTrue(any(isinstance(value, type(code)) for value in code.co_consts))
+        receipt = policy_module.prepare_stage(fixture.run, ABI)
+        self.assertEqual(path.read_bytes(), compiled)
+        self.assertIn(
+            {
+                "path": path.relative_to(fixture.stage).as_posix(),
+                "size": len(compiled),
+                "sha256": digest(compiled),
+                "mode": stat.S_IMODE(path.stat().st_mode),
+            },
+            receipt["retained"],
+        )
+
+    def test_nested_selftest_filename_tamper_preserves_code_but_is_rejected(
+        self,
+    ) -> None:
+        fixture = self.stage_fixture("nested-filename")
+        path = fixture.stage / sorted(fixture.excluded)[-1]
+        data = path.read_bytes()
+        code = marshal.loads(data[16:])
+        constants = tuple(
+            value.replace(co_filename="/home/synthetic-builder/private.py")
+            if isinstance(value, type(code))
+            else value
+            for value in code.co_consts
+        )
+        altered = code.replace(co_consts=constants)
+        self.assertEqual(altered.co_filename, code.co_filename)
+        self.assertEqual(
+            policy_module._code_fingerprint(altered),
+            policy_module._code_fingerprint(code),
+        )
+        path.write_bytes(data[:16] + marshal.dumps(altered))
+        self.assert_preflight_rejected(fixture)
+        self.assertTrue(
+            all((fixture.stage / name).exists() for name in fixture.excluded)
+        )
 
     def test_preflight_checks_all_files_paths_sizes_versions_and_bytecode(self) -> None:
         variants = (

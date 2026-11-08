@@ -13,13 +13,14 @@ import shutil
 import stat
 import subprocess
 import sys
+import tempfile
 import tomllib
-from collections.abc import Mapping
+from collections.abc import Callable, Iterable, Iterator, Mapping
 from pathlib import Path, PurePosixPath
 from urllib.parse import urlsplit
 from zipfile import ZipFile
 
-RECIPE_VERSION = "6"
+RECIPE_VERSION = "7"
 TEMPLATE_SIZE = 489103
 TEMPLATE_SHA256 = "8f95dc20ef6d901d9b5ee59f00e33d19f1d2bc6be8d6d3b800c4aab3d7315b73"
 TEMPLATE_URL = (
@@ -30,6 +31,7 @@ NOTICES_MODULE = "packaging/notices/notice_bundle.py"
 NOTICES_ASSETS = "src/assets/third-party-notices"
 OWN_FILES = (
     "packaging/android/build_apk.py",
+    "packaging/android/build_paths.py",
     "packaging/android/package_stage.py",
     "packaging/android/package_stage.gradle.kts",
     "packaging/android/crypto-selftest-policy.json",
@@ -104,6 +106,7 @@ OWN_FILES = (
     "src/ui/profile_deletion_view.py",
     "src/ui/security_status.py",
     "tests/test_android_build.py",
+    "tests/test_android_build_paths.py",
     "tests/test_android_package_policy.py",
 )
 OLD_AGP = 'id("com.android.application") version "8.11.1" apply false'
@@ -126,6 +129,47 @@ def sha256(path: Path) -> str:
 
 def write_json(path: Path, value: object) -> None:
     path.write_text(json.dumps(value, indent=2, ensure_ascii=False) + "\n", "utf-8")
+
+
+def redact_metadata(value: object, redact: Callable[[str], str]) -> object:
+    """Keep real launch parameters in memory and redact only their saved view."""
+    if isinstance(value, str):
+        return redact(value)
+    if isinstance(value, list):
+        return [redact_metadata(item, redact) for item in value]
+    if isinstance(value, dict):
+        return {key: redact_metadata(item, redact) for key, item in value.items()}
+    return value
+
+
+def redact_log_chunks(
+    chunks: Iterable[bytes], needles: tuple[bytes, ...]
+) -> Iterator[bytes]:
+    """Retain partial prefixes between reads before writing any log or console bytes."""
+    pending = b""
+    longest = max(map(len, needles), default=1)
+
+    def replace(value: bytes) -> bytes:
+        for needle in needles:
+            value = value.replace(needle, b"<builder-home>")
+        return value
+
+    for chunk in chunks:
+        pending += chunk
+        cut = max(0, len(pending) - longest + 1)
+        while cut:
+            previous = cut
+            for needle in needles:
+                start = pending.find(needle, max(0, cut - len(needle) + 1))
+                if 0 <= start < cut < start + len(needle):
+                    cut = start
+            if cut == previous:
+                break
+        if cut:
+            yield replace(pending[:cut])
+            pending = pending[cut:]
+    if pending:
+        yield replace(pending)
 
 
 def notice_recipe(repo: Path) -> dict:
@@ -347,13 +391,34 @@ def removed_socks_proxy_names(environment: Mapping[str, str]) -> list[str]:
     ]
 
 
-def build_environment(jdk: Path, sdk: Path, run: Path) -> dict[str, str]:
+def new_build_root(path: Path | None, prefixes: tuple[str, ...]) -> Path:
+    """Create a private physical workspace, independent of the report destination."""
+    if path is None:
+        # Never inherit TMPDIR here because it can point into a personal directory.
+        return Path(tempfile.mkdtemp(prefix="tokenlogue-android-", dir="/tmp"))
+    physical = path.expanduser().absolute()
+    if ".." in physical.parts:
+        raise ValueError("Build root must not contain parent traversal")
+    if any(part.is_symlink() for part in (physical, *physical.parents)):
+        raise ValueError("Build root must have no symlink components")
+    if physical.is_relative_to(PROJECT_ROOT) or any(
+        physical.is_relative_to(Path(prefix)) for prefix in prefixes
+    ):
+        raise ValueError("Build root must be outside personal and project paths")
+    physical.mkdir(mode=0o700, parents=True, exist_ok=False)
+    return physical
+
+
+def build_environment(
+    jdk: Path, sdk: Path, run: Path, *, work: Path | None = None
+) -> dict[str, str]:
     legacy = Path.home() / ".flutter_settings"
     if legacy.exists() or legacy.is_symlink():
         raise ValueError("Legacy Flutter settings override scoped XDG_CONFIG_HOME")
     environment = os.environ.copy()
     for name in removed_socks_proxy_names(environment):
         environment.pop(name)
+    compiler_root = work if work is not None else run
     environment.update(
         JAVA_HOME=str(jdk),
         ANDROID_HOME=str(sdk),
@@ -361,6 +426,7 @@ def build_environment(jdk: Path, sdk: Path, run: Path) -> dict[str, str]:
         ANDROID_USER_HOME=str(run / "android-user"),
         XDG_CONFIG_HOME=str(run / "flutter-config"),
         GRADLE_USER_HOME=str(run / "gradle-user-home"),
+        TMPDIR=str(compiler_root / "tmp"),
         PYTHONDONTWRITEBYTECODE="1",
         TOKENLOGUE_PACKAGING_PYTHON=str(PROJECT_ROOT / ".venv/bin/python"),
     )
@@ -374,6 +440,35 @@ def build_environment(jdk: Path, sdk: Path, run: Path) -> dict[str, str]:
         )
     )
     return environment
+
+
+def collect_build_results(
+    work: Path, run: Path, prefixes: tuple[str, ...], *, success: bool
+) -> None:
+    """Keep receipts outside the workspace and gate real final APK bytes."""
+    receipts = work / "package-preparation"
+    if receipts.is_dir():
+        shutil.copytree(receipts, run / "package-preparation")
+    source = work / "source"
+    for name in (
+        "build/flutter/pubspec.lock",
+        "build/flutter/.dart_tool/package_config.json",
+    ):
+        generated = source / name
+        if generated.is_file() and not generated.is_symlink():
+            destination = run / "generated" / Path(name).name
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(generated, destination)
+    if not success:
+        return
+    apks = sorted((source / "build/apk").glob("*.apk"))
+    if len(apks) != 1 or apks[0].is_symlink():
+        raise ValueError("Expected one regular final APK from the selected ABI build")
+    gate = runpy.run_path(str(source / "packaging/android/build_paths.py"))
+    gate["verify_apk"](apks[0], prefixes=prefixes, report=run / "build-paths.json")
+    destination = run / "artifacts"
+    destination.mkdir()
+    shutil.copy2(apks[0], destination / apks[0].name)
 
 
 def check_tools(repo: Path, jdk: Path, sdk: Path) -> None:
@@ -423,9 +518,17 @@ def run_logged(
     run: Path,
     *,
     mirror: bool = True,
+    redact_prefixes: tuple[str, ...] = (),
 ) -> int:
-    """Merge streams as raw bytes and record the child exit status without pipelines."""
-    write_json(run / "command.json", {"argv": command, "cwd": str(cwd)})
+    """Merge streams, redact builder homes, and preserve the child exit status."""
+    paths = runpy.run_path(str(PROJECT_ROOT / "packaging/android/build_paths.py"))
+    write_json(
+        run / "command.json",
+        redact_metadata(
+            {"argv": command, "cwd": str(cwd), "paths_redacted": bool(redact_prefixes)},
+            lambda value: paths["redact_text"](value, redact_prefixes),
+        ),
+    )
     with (run / "build.log").open("xb") as log:
         with subprocess.Popen(
             command,
@@ -435,7 +538,11 @@ def run_logged(
             stderr=subprocess.STDOUT,
         ) as process:
             assert process.stdout is not None
-            while chunk := os.read(process.stdout.fileno(), 65536):
+            stream = process.stdout
+            chunks = iter(lambda: os.read(stream.fileno(), 65536), b"")
+            for chunk in redact_log_chunks(
+                chunks, paths["redaction_needles"](redact_prefixes)
+            ):
                 log.write(chunk)
                 log.flush()
                 if mirror:
@@ -449,6 +556,11 @@ def run_logged(
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--run-dir", type=Path, required=True)
+    parser.add_argument(
+        "--build-root",
+        type=Path,
+        help="New physical non-personal workspace, default a private directory in /tmp",
+    )
     parser.add_argument("--jdk-home", type=Path, required=True)
     parser.add_argument("--sdk-root", type=Path, required=True)
     parser.add_argument("--arch", choices=("x86_64", "arm64-v8a"), default="x86_64")
@@ -471,20 +583,33 @@ def main() -> int:
     if run.is_relative_to(PROJECT_ROOT):
         parser.error("Run directory must stay outside the source repository")
     run.mkdir(parents=True, exist_ok=False)
+    paths: dict | None = None
+    prefixes: tuple[str, ...] = ()
+
+    def redact(value: str) -> str:
+        if paths is None:
+            return "Android packaging preparation failed"
+        return paths["redact_text"](value, prefixes)
+
     try:
+        paths = runpy.run_path(str(PROJECT_ROOT / "packaging/android/build_paths.py"))
+        prefixes = paths["personal_prefixes"]()
+        work = new_build_root(args.build_root, prefixes)
+        (work / "tmp").mkdir()
+        write_json(run / "workspace.json", {"build_root": str(work), "temporary": True})
         jdk, sdk = (
             args.jdk_home.expanduser().resolve(),
             args.sdk_root.expanduser().resolve(),
         )
-        environment = build_environment(jdk, sdk, run)
+        environment = build_environment(jdk, sdk, run, work=work)
         check_configuration(PROJECT_ROOT, environment)
         template, identity = prepare_template(
             args.template_zip.expanduser(),
-            run,
+            work,
             with_device_recovery=args.device_recovery,
             android_abi=args.arch,
         )
-        source = run / "source"
+        source = work / "source"
         inventory = snapshot(PROJECT_ROOT, source)
         command = [
             str(PROJECT_ROOT / ".venv/bin/flet"),
@@ -499,60 +624,85 @@ def main() -> int:
         if args.build_number is not None:
             command.extend(["--build-number", str(args.build_number)])
         write_json(
-            run / "preparation.json",
-            {
-                "recipe_version": RECIPE_VERSION,
-                "device_recovery": args.device_recovery,
-                "native_paths_abi": args.arch if args.device_recovery else None,
-                "package_policy": {
-                    "schema": 1,
-                    "id": "pycryptodomex-selftest",
-                    "version": 1,
-                    "sha256": sha256(source / PACKAGE_POLICY),
-                    "stage": "compiled-site-packages-before-native-packaging",
+            work / "preparation.json",
+            redact_metadata(
+                {
+                    "recipe_version": RECIPE_VERSION,
+                    "recipe_fingerprint": hashlib.sha256(
+                        json.dumps(
+                            {
+                                "recipe_version": RECIPE_VERSION,
+                                "template_identity": identity,
+                                "files": inventory,
+                            },
+                            sort_keys=True,
+                            separators=(",", ":"),
+                        ).encode()
+                    ).hexdigest(),
+                    "paths_redacted": True,
+                    "device_recovery": args.device_recovery,
+                    "native_paths_abi": args.arch if args.device_recovery else None,
+                    "package_policy": {
+                        "schema": 1,
+                        "id": "pycryptodomex-selftest",
+                        "version": 1,
+                        "sha256": sha256(source / PACKAGE_POLICY),
+                        "stage": "compiled-site-packages-before-native-packaging",
+                    },
+                    "packaged_notices": notice_recipe(source)["verify_notices"](
+                        source, "android", source / NOTICES_ASSETS
+                    ),
+                    "arch": args.arch,
+                    "build_number_override": args.build_number,
+                    "template_url": TEMPLATE_URL,
+                    "template_zip": str(args.template_zip),
+                    "template_zip_sha256": TEMPLATE_SHA256,
+                    "template_identity": identity,
+                    "template": str(template),
+                    "source": str(source),
+                    "head": subprocess.check_output(
+                        ["git", "rev-parse", "HEAD"], cwd=PROJECT_ROOT, text=True
+                    ).strip(),
+                    "files": inventory,
+                    "command": command,
+                    "signing": "default debug certificate",
+                    "removed_proxy_variable_names": removed_socks_proxy_names(
+                        os.environ
+                    ),
+                    "environment": {
+                        name: environment[name]
+                        for name in (
+                            "JAVA_HOME",
+                            "ANDROID_HOME",
+                            "ANDROID_SDK_ROOT",
+                            "ANDROID_USER_HOME",
+                            "XDG_CONFIG_HOME",
+                            "GRADLE_USER_HOME",
+                            "TMPDIR",
+                            "TOKENLOGUE_PACKAGING_PYTHON",
+                            "PATH",
+                        )
+                    },
+                    "build": "NOT_RUN" if args.prepare_only else "PENDING",
                 },
-                "packaged_notices": notice_recipe(source)["verify_notices"](
-                    source, "android", source / NOTICES_ASSETS
-                ),
-                "arch": args.arch,
-                "build_number_override": args.build_number,
-                "template_url": TEMPLATE_URL,
-                "template_zip": str(args.template_zip),
-                "template_zip_sha256": TEMPLATE_SHA256,
-                "template_identity": identity,
-                "template": str(template),
-                "source": str(source),
-                "head": subprocess.check_output(
-                    ["git", "rev-parse", "HEAD"], cwd=PROJECT_ROOT, text=True
-                ).strip(),
-                "files": inventory,
-                "command": command,
-                "signing": "default debug certificate",
-                "removed_proxy_variable_names": removed_socks_proxy_names(os.environ),
-                "environment": {
-                    name: environment[name]
-                    for name in (
-                        "JAVA_HOME",
-                        "ANDROID_HOME",
-                        "ANDROID_SDK_ROOT",
-                        "ANDROID_USER_HOME",
-                        "XDG_CONFIG_HOME",
-                        "GRADLE_USER_HOME",
-                        "TOKENLOGUE_PACKAGING_PYTHON",
-                        "PATH",
-                    )
-                },
-                "build": "NOT_RUN" if args.prepare_only else "PENDING",
-            },
+                redact,
+            ),
         )
+        shutil.copy2(work / "preparation.json", run / "preparation.json")
         if args.prepare_only:
             print(f"Prepared snapshot {source}\nTemplate {template}\nBuild NOT_RUN")
             return 0
         check_tools(PROJECT_ROOT, jdk, sdk)
-        return run_logged(command, source, environment, run)
+        code = run_logged(command, source, environment, run, redact_prefixes=prefixes)
+        collect_build_results(work, run, prefixes, success=code == 0)
+        return code
     except (OSError, ValueError, KeyError, subprocess.CalledProcessError) as error:
-        write_json(run / "error.json", {"error": str(error), "result": "BLOCKED"})
-        print(str(error), file=sys.stderr)
+        message = redact(str(error))
+        write_json(
+            run / "error.json",
+            {"error": message, "result": "BLOCKED", "paths_redacted": True},
+        )
+        print(message, file=sys.stderr)
         return 1
 
 
