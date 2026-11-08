@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/tokenlogue-logo-transparent.png" alt="Tokenlogue" width="104">
+  <img src="docs/assets/tokenlogue-banner.png" alt="Tokenlogue — OpenRouter chats on Linux and Android" width="100%">
 </p>
 
 # Tokenlogue
@@ -15,7 +15,29 @@
 
 Chat with OpenRouter models from your Linux desktop. Tokenlogue provides a compact conversation workspace with saved drafts, model selection and a live cost estimate.
 
+**[Downloads](https://github.com/Umichata/tokenlogue/releases)** · **[Linux guide](docs/linux-appimage.md#english)** · **[All documents](docs/README.md#english)**
+
 [Install](#en-install) · [First chat](#en-chat) · [Protection](docs/security.md#english)
+
+<a id="en-docs"></a>
+
+### Find your document
+
+- **Start here**
+  - [Available downloads](https://github.com/Umichata/tokenlogue/releases).
+  - [Run on Linux](docs/linux-appimage.md#en-download).
+  - [Install on Android](docs/android.md#en-install).
+- **Use and protect**
+  - [Chats, drafts and limits](docs/user-guide.md#english).
+  - [PIN, encryption and recovery](docs/security.md#english).
+  - [Help and issues](https://github.com/Umichata/tokenlogue/issues).
+- **Sources and licenses**
+  - [Source materials](docs/source-materials.md#english).
+  - [Third-party notices](THIRD_PARTY_NOTICES.md#english).
+  - [MIT license](LICENSE).
+
+[Full documentation map](docs/README.md#english) includes packaging documents and historical release records.
+
 
 <a href="docs/assets/screenshots/linux-chat.png"><img src="docs/assets/screenshots/linux-chat.png" alt="Linux chat with local demonstration messages" width="760"></a>
 
@@ -47,6 +69,8 @@ A working Secret Service in your desktop session stores protected key material. 
 
 [Protection and recovery](docs/security.md#english) · [Sources](docs/source-materials.md#english) · [AppImage licenses](packaging/linux/appimage/notices.md#english) · [MIT license](LICENSE)
 
+---
+
 <a id="russian"></a>
 <a id="lang-ru"></a>
 
@@ -54,7 +78,29 @@ A working Secret Service in your desktop session stores protected key material. 
 
 Общайтесь с моделями OpenRouter на компьютере Linux. Tokenlogue предоставляет компактное пространство для переписки с черновиками, выбором модели и оценкой затрат во время набора.
 
+**[Скачать](https://github.com/Umichata/tokenlogue/releases)** · **[Руководство Linux](docs/linux-appimage.md#russian)** · **[Все документы](docs/README.md#russian)**
+
 [Установка](#ru-install) · [Первый чат](#ru-chat) · [Защита](docs/security.md#russian)
+
+<a id="ru-docs"></a>
+
+### Найдите нужный документ
+
+- **Начало работы**
+  - [Доступные загрузки](https://github.com/Umichata/tokenlogue/releases).
+  - [Запуск на Linux](docs/linux-appimage.md#ru-download).
+  - [Установка на Android](docs/android.md#ru-install).
+- **Переписка и защита**
+  - [Чаты, черновики и лимиты](docs/user-guide.md#russian).
+  - [PIN, шифрование и восстановление](docs/security.md#russian).
+  - [Помощь и обращения](https://github.com/Umichata/tokenlogue/issues).
+- **Исходники и лицензии**
+  - [Исходные материалы](docs/source-materials.md#russian).
+  - [Сторонние уведомления](THIRD_PARTY_NOTICES.md#russian).
+  - [Лицензия MIT](LICENSE).
+
+[Полная карта документации](docs/README.md#russian) также содержит материалы упаковки и историю выпусков.
+
 
 <a href="docs/assets/screenshots/linux-chat.png"><img src="docs/assets/screenshots/linux-chat.png" alt="Чат Linux с локальными демонстрационными сообщениями" width="760"></a>
 
