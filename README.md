@@ -6,126 +6,82 @@
 
 [English](#english) · [Русский](#russian)
 
-[**Home / Главная**](https://github.com/Umichata/tokenlogue/tree/main) · [Android](https://github.com/Umichata/tokenlogue/tree/android) · [Linux](https://github.com/Umichata/tokenlogue/tree/linux)
+[Home / Главная](https://github.com/Umichata/tokenlogue/tree/main) · [**Android**](https://github.com/Umichata/tokenlogue/tree/android) · [Linux](https://github.com/Umichata/tokenlogue/tree/linux)
 
 <a id="english"></a>
 <a id="lang-en"></a>
 
 ## English
 
-Chat with OpenRouter models on **Linux and Android**. Keep conversations and drafts together, choose a model for each chat and see an estimate before sending a paid request.
+Use OpenRouter models from your Android phone or tablet. Tokenlogue keeps your chats, drafts and model choices in one mobile workspace.
 
-[Features](#en-features) · [Screenshots](#en-screenshots) · [Get started](#en-start) · [Guide](docs/user-guide.md#english)
+[Install](#en-install) · [First chat](#en-chat) · [Protection](docs/security.md#english)
 
-<a id="en-features"></a>
-### Your chat workspace
+<a href="docs/assets/screenshots/android-chat-en.png"><img src="docs/assets/screenshots/android-chat-en.png" alt="Tokenlogue chat on an Android tablet" width="320"></a>
 
-- Separate chats, model selection and drafts that stay with the conversation.
-- English and Russian interface with a compact layout for desktop and mobile.
-- Free and paid models, per-chat budgets and a live estimate while you write.
-- PIN access and local protection for supported conversation fields, with platform-specific recovery options.
+Tokenlogue chat on an Android tablet.
 
-<a id="en-screenshots"></a>
-### A look inside
+<a id="en-install"></a>
+### Install or update
 
-<table>
-<tr><th>Linux</th><th>Android</th></tr>
-<tr>
-<td><a href="docs/assets/screenshots/linux-chat.png"><img src="docs/assets/screenshots/linux-chat.png" alt="Linux chat with local demonstration messages" width="520"></a></td>
-<td><a href="docs/assets/screenshots/android-chat-en.png"><img src="docs/assets/screenshots/android-chat-en.png" alt="Tokenlogue chat on an Android tablet" width="260"></a></td>
-</tr>
-<tr><td>Linux chat with local demonstration messages</td><td>Tokenlogue chat on an Android tablet</td></tr>
-</table>
+You need **ARM64 Android 7.0 / API 24 or later**. This minimum does not mean every Android version has been tested. Static 16 KiB checks passed, while operation on a native ARM64 device with a 16 KiB kernel has not yet been checked.
 
-Screenshots show the current interface with demonstration data. Earlier downloads retain their own release notes.
+Use the APK supplied with your preview package and compare it with the accompanying SHA256SUMS. Public downloads, when available, are listed on [Releases](https://github.com/Umichata/tokenlogue/releases). There is no public Android APK there at present.
 
-<a id="en-start"></a>
-### Get started
+Allow installation from your chosen file manager or browser, open the verified APK and follow Android's prompts. For an update, install over a compatible previous version with the same signing certificate. Do not uninstall or clear application data as a routine update step.
 
-| Platform | Package and requirements | Installation |
-| --- | --- | --- |
-| Linux | x86_64 AppImage, x86-64-v2 CPU, compatible desktop libraries | [Linux guide](docs/linux-appimage.md#english) · [Published Linux preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-linux-preview.2b1f7d3) |
-| Android | ARM64 APK, Android 7.0 / API 24 or later | [Android guide](docs/android.md#english) · Use the APK supplied with your preview package |
+[Full Android installation guide](docs/android.md#english)
 
-[Releases](https://github.com/Umichata/tokenlogue/releases) lists the files currently available publicly. An Android APK is not currently published there. Check the package checksum before installation. The Linux AppImage is unsigned.
+<a id="en-chat"></a>
+### Start a conversation
 
-For Linux updates, close earlier copies before launching the new file. For Android, install a compatible APK with the same signing certificate over the existing application. Removing the application or clearing its data is not an update step.
+Add your own OpenRouter key, complete its online check and set a PIN. Create a chat and select a model. The draft and model choice remain with that conversation. Open the chat actions to rename or delete it.
 
-1. Add your own OpenRouter API key and let the application check it.
-2. Set a PIN. Read the recovery options for your platform before you need them.
-3. Create a chat, choose a model and write your first message.
+A chat budget, the key's OpenRouter limit and the account balance are separate. Token and cost estimates are approximate. Turning off paid-request confirmation applies from the first request in that chat, while limits remain active.
 
-See [first connection and chat controls](docs/user-guide.md#english) for the full walkthrough.
+[Chat guide](docs/user-guide.md#english) · [PIN, encryption and Android recovery](docs/security.md#english)
 
-### Costs and local protection
+### Know what is protected
 
-A chat budget, an OpenRouter key limit and your account balance are different amounts. The local token and price estimate is approximate. It is not the model's exact tokenizer or a promise of the final charge. Disabling paid-request confirmation applies from the first request in that chat, while the limits remain in effect.
+Selected local conversation fields are encrypted, not the whole device. System recovery needs a supported and configured Android screen lock and access to the original protected encryption key. Deleting the local profile is irreversible and does not refund or delete your OpenRouter account.
 
-PIN and encryption protect access and selected local fields. They do not encrypt your whole device. Recovery depends on the saved keys and the configured platform method. When you send a message, the selected conversation content goes to OpenRouter and the chosen model provider. Tokenlogue is independent of OpenRouter.
-
-[Using chats and estimates](docs/user-guide.md#english) · [Protecting your conversations](docs/security.md#english)
-
-### Sources and licenses
-
-Tokenlogue's code uses the [MIT license](LICENSE). [Source materials](docs/source-materials.md#english) explain the available archives and the remaining gaps in linking some native binaries to their sources. [Third-party notices](THIRD_PARTY_NOTICES.md#english) preserve the original terms for libraries and fonts.
+[Sources and provenance limits](docs/source-materials.md#english) · [Third-party licenses](THIRD_PARTY_NOTICES.md#english) · [MIT license](LICENSE)
 
 <a id="russian"></a>
 <a id="lang-ru"></a>
 
 ## Русский
 
-Общайтесь с моделями OpenRouter на **Linux и Android**. Храните чаты и черновики вместе, выбирайте модель для каждого разговора и смотрите оценку перед платным запросом.
+Общайтесь с моделями OpenRouter на телефоне или планшете Android. Tokenlogue объединяет чаты, черновики и выбор модели в одном мобильном рабочем пространстве.
 
-[Возможности](#ru-features) · [Скриншоты](#ru-screenshots) · [Начало работы](#ru-start) · [Руководство](docs/user-guide.md#russian)
+[Установка](#ru-install) · [Первый чат](#ru-chat) · [Защита](docs/security.md#russian)
 
-<a id="ru-features"></a>
-### Всё для переписки
+<a href="docs/assets/screenshots/android-chat-ru.png"><img src="docs/assets/screenshots/android-chat-ru.png" alt="Рабочий чат Tokenlogue на планшете Android" width="320"></a>
 
-- Отдельные чаты, выбор модели и черновики, которые остаются в своём разговоре.
-- Английский и русский интерфейс с компактным видом для компьютера и телефона.
-- Бесплатные и платные модели, бюджет каждого чата и оценка затрат во время набора.
-- Вход по PIN и защита поддерживаемых полей переписки с восстановлением, зависящим от платформы.
+Рабочий чат Tokenlogue на планшете Android.
 
-<a id="ru-screenshots"></a>
-### Как выглядит приложение
+<a id="ru-install"></a>
+### Установка и обновление
 
-<table>
-<tr><th>Linux</th><th>Android</th></tr>
-<tr>
-<td><a href="docs/assets/screenshots/linux-chat.png"><img src="docs/assets/screenshots/linux-chat.png" alt="Чат Linux с локальными демонстрационными сообщениями" width="520"></a></td>
-<td><a href="docs/assets/screenshots/android-chat-ru.png"><img src="docs/assets/screenshots/android-chat-ru.png" alt="Рабочий чат Tokenlogue на планшете Android" width="260"></a></td>
-</tr>
-<tr><td>Чат Linux с локальными демонстрационными сообщениями</td><td>Рабочий чат Tokenlogue на планшете Android</td></tr>
-</table>
+Нужен **Android 7.0 / API 24 или новее с ARM64**. Поддерживаемый минимум не означает проверку каждой версии Android. Статические проверки 16 КиБ пройдены, но работа на нативном ARM64-устройстве с ядром 16 КиБ пока не проверена.
 
-На снимках показан текущий интерфейс с демонстрационными данными. Прежние загрузки описаны в собственных примечаниях к выпуску.
+Используйте APK из своего комплекта предварительной версии и сравните его с прилагаемым SHA256SUMS. Публичные загрузки по мере появления перечисляются в [Releases](https://github.com/Umichata/tokenlogue/releases). Сейчас публичного APK Android там нет.
 
-<a id="ru-start"></a>
-### Начало работы
+Разрешите установку выбранному файловому менеджеру или браузеру, откройте проверенный APK и следуйте подсказкам Android. Для обновления устанавливайте его поверх совместимой прежней версии с тем же сертификатом. Не удаляйте приложение и не очищайте данные как обычный шаг обновления.
 
-| Платформа | Пакет и требования | Установка |
-| --- | --- | --- |
-| Linux | AppImage x86_64, процессор x86-64-v2, совместимые библиотеки рабочего стола | [Руководство Linux](docs/linux-appimage.md#russian) · [Опубликованная Linux-версия](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-linux-preview.2b1f7d3) |
-| Android | APK ARM64, Android 7.0 / API 24 или новее | [Руководство Android](docs/android.md#russian) · Используйте APK из своего комплекта предварительной версии |
+[Подробная установка Android](docs/android.md#russian)
 
-На странице [Releases](https://github.com/Umichata/tokenlogue/releases) перечислены файлы, доступные публично. APK Android там пока не опубликован. Перед установкой проверьте сумму пакета. AppImage Linux не подписана.
+<a id="ru-chat"></a>
+### Начало переписки
 
-Для обновления Linux закройте прежние копии перед запуском нового файла. На Android устанавливайте совместимый APK с прежним сертификатом поверх приложения. Удаление приложения и очистка его данных не являются обычным шагом обновления.
+Добавьте собственный ключ OpenRouter, дождитесь его проверки через сеть и задайте PIN. Создайте чат и выберите модель. Черновик и выбор модели сохраняются для этого разговора. Действия чата позволяют переименовать или удалить его.
 
-1. Добавьте свой API-ключ OpenRouter и дождитесь его проверки приложением.
-2. Задайте PIN. Заранее ознакомьтесь с восстановлением для вашей платформы.
-3. Создайте чат, выберите модель и напишите первое сообщение.
+Бюджет чата, лимит ключа OpenRouter и баланс аккаунта различаются. Оценка токенов и стоимости приблизительна. Отключение подтверждения платного запроса действует с первого запроса выбранного чата, а лимиты продолжают работать.
 
-Полный порядок действий описан в [руководстве по подключению и чату](docs/user-guide.md#russian).
+[Руководство по чатам](docs/user-guide.md#russian) · [PIN, шифрование и восстановление Android](docs/security.md#russian)
 
-### Затраты и локальная защита
+### Что защищено
 
-Бюджет чата, лимит ключа OpenRouter и баланс аккаунта — разные величины. Локальная оценка токенов и стоимости приблизительна. Это не точный токенизатор модели и не обещание итогового списания. Отключение подтверждения платного запроса действует с первого запроса выбранного чата, а лимиты продолжают работать.
+Шифруются отдельные локальные поля переписки, а не всё устройство. Для системного восстановления нужны поддерживаемая и настроенная блокировка Android и доступ к исходному защищённому ключу шифрования. Удаление локального профиля необратимо и не возвращает средства и не удаляет аккаунт OpenRouter.
 
-PIN и шифрование защищают доступ и отдельные локальные поля. Они не шифруют всё устройство. Восстановление зависит от сохранённых ключей и настроенного платформенного способа. При отправке сообщения выбранное содержимое разговора передаётся OpenRouter и провайдеру модели. Tokenlogue разрабатывается независимо от OpenRouter.
-
-[Чаты и оценка затрат](docs/user-guide.md#russian) · [Защита переписки](docs/security.md#russian)
-
-### Исходники и лицензии
-
-Код Tokenlogue доступен по [лицензии MIT](LICENSE). В [исходных материалах](docs/source-materials.md#russian) описаны архивы и оставшиеся пробелы в связи части нативных бинарников с исходниками. [Сторонние уведомления](THIRD_PARTY_NOTICES.md#russian) сохраняют оригинальные условия библиотек и шрифтов.
+[Исходники и ограничения происхождения](docs/source-materials.md#russian) · [Сторонние лицензии](THIRD_PARTY_NOTICES.md#russian) · [Лицензия MIT](LICENSE)
