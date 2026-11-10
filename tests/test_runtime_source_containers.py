@@ -317,11 +317,11 @@ class ContainerTests(unittest.TestCase):
 
 
 class SourceContractTests(unittest.TestCase):
-    def test_checked_in_plan_covers_only_the_fifteen_exact_retained_APKs(self) -> None:
+    def test_checked_in_plan_covers_only_the_sixteen_exact_retained_APKs(self) -> None:
         lock = inputs.load_lock(MODULE / "runtime.lock.json")
         plan = containers.load_acquisition_plan(MODULE / "acquisition.lock.json", lock)
         kinds = [entry["kind"] for entry in plan["selectors"].values()]
-        self.assertEqual(kinds.count("official_iso_member"), 12)
+        self.assertEqual(kinds.count("official_iso_member"), 13)
         self.assertEqual(kinds.count("dependency_bundle_member"), 3)
         self.assertTrue(
             {

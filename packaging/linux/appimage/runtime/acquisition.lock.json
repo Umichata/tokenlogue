@@ -127,7 +127,7 @@
     "url": "https://github.com/Umichata/tokenlogue/releases/download/runtime-build-inputs-20261110/Tokenlogue-runtime-build-inputs-20261110.tar.gz"
   },
   "iso_integrity_scope": "Selected member size/SHA-256 and strict HTTP Range identity only. The whole ISO checksum is a recorded official declaration and is not verified by range reads.",
-  "runtime_lock_sha256": "5b312af0ff01ae6985868f5a4f9790ba582295969bd56598f7bc40682f6101bf",
+  "runtime_lock_sha256": "330195b298432946bb0c4c6851e3811e73b402a438597d3ae028c3e035b1c262",
   "schema": 1,
   "scope": "Alternative containers for the same exact pinned APK bytes. Input versions, source pins and mandatory native package signature verification remain unchanged.",
   "selectors": {
@@ -200,6 +200,18 @@
       "range_required": true,
       "sha256": "bd50e1a43eba14a47f90076d99297ca01cb2ede6d70ccea27062552adc4bbeb6",
       "size": 357804,
+      "url": "https://dl-cdn.alpinelinux.org/alpine/v3.21/releases/x86_64/alpine-extended-3.21.7-x86_64.iso",
+      "whole_iso_sha256_verified": false
+    },
+    "apks/musl-1.2.5-r11.apk": {
+      "kind": "official_iso_member",
+      "member": "apks/x86_64/musl-1.2.5-r11.apk",
+      "official_iso_expected_sha256": "648b340f836877716ae9256097e6beb801d413dc8f9d4d9815c60197d3543e18",
+      "official_iso_size": 1095401472,
+      "offset": 710899712,
+      "range_required": true,
+      "sha256": "61e84757a8bfbc0d7fa8f4ce6de9cd4d791714369d78f6a08e5b03510fb2a623",
+      "size": 412204,
       "url": "https://dl-cdn.alpinelinux.org/alpine/v3.21/releases/x86_64/alpine-extended-3.21.7-x86_64.iso",
       "whole_iso_sha256_verified": false
     },

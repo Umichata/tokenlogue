@@ -45,6 +45,17 @@ class InputTests(unittest.TestCase):
             len(self.lock["installed_inventory"]), len(self.lock["packages"])
         )
 
+    def test_all_selected_packages_are_pinned_local_inputs_without_mutable_indexes(
+        self,
+    ) -> None:
+        records = self.lock["files"]
+        self.assertEqual(
+            {item["path"] for item in records if item["kind"] == "apk"},
+            {package["path"] for package in self.lock["packages"]},
+        )
+        self.assertFalse(any(item["path"].startswith("indexes/") for item in records))
+        self.assertFalse(any(item["kind"] == "apk-index-snapshot" for item in records))
+
     def test_corrupted_cached_input_is_rejected_without_replacement(self) -> None:
         path = self.root / "input.tar.gz"
         path.write_bytes(b"damaged")

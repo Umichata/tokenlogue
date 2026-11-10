@@ -2,7 +2,7 @@
   "repository": "Umichata/tokenlogue",
   "workflow": ".github/workflows/build-appimage-runtime.yml",
   "runtime_path": "runtime-x86_64",
-  "runtime_lock_sha256": "5b312af0ff01ae6985868f5a4f9790ba582295969bd56598f7bc40682f6101bf",
+  "runtime_lock_sha256": "330195b298432946bb0c4c6851e3811e73b402a438597d3ae028c3e035b1c262",
   "upstream_commit": "caf24f9f712084686bfc24a70b75e50df0aefb9c",
   "components": {
     "type2-runtime": {
