@@ -58,6 +58,23 @@ class CurrentContractTests(unittest.TestCase):
             ),
         )
 
+    def test_notice_registry_matches_current_producer_inputs_and_components(
+        self,
+    ) -> None:
+        contract = json.loads((SCRIPTS / "runtime-artifact.lock.json").read_text())
+        registry = notices.load_lock(SCRIPTS)["runtime"]
+        self.assertEqual(registry["mode"], contract["mode"])
+        for field in ("workflow", "runtime_lock_sha256"):
+            self.assertEqual(registry[field], contract[field], field)
+        self.assertEqual(registry["commit"], contract["upstream_commit"])
+        self.assertEqual(
+            {
+                name: {key: component[key] for key in ("version", "licenses")}
+                for name, component in registry["components"].items()
+            },
+            contract["components"],
+        )
+
     def test_input_lock_or_component_contract_change_is_rejected(self) -> None:
         original = json.loads((SCRIPTS / "runtime-artifact.lock.json").read_text())
         for field, value in (
