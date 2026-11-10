@@ -14,23 +14,24 @@ Tokenlogue's application code uses the [MIT License](../LICENSE). Third-party co
 <a id="-application-sources"></a>
 ## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Match the application sources
 
-Use the project source archive identified in your package's `PROVENANCE.json`. Its application commit, tree and file checksums identify the source revision used for the binaries. A later repository revision or platform README does not change that provenance.
+Choose the project archive for your platform from [`PROVENANCE.json`](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/PROVENANCE.json). The Android and Linux packages use different packaging revisions with the same application core. Each package is linked to its exact sources by its commit, tree and checksums. A later repository revision or platform README does not change that provenance.
 
-The [Releases page](https://github.com/Umichata/tokenlogue/releases) lists the files actually available for each version. For version `0.2.0`, source materials are supplied as one current dependency archive with its index, rather than a chain of downloads from earlier Tokenlogue releases.
+The [Releases page](https://github.com/Umichata/tokenlogue/releases/tag/v0.2.0-preview.52a834d) lists the files actually available for each version. For version `0.2.0`, source materials are supplied as one current dependency archive with its index, rather than a chain of downloads from earlier Tokenlogue releases.
 
 <a id="-find-the-matching-collection"></a>
 ## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Use the dependency collection
 
 | File | Purpose |
 | --- | --- |
-| Project source archive named in `PROVENANCE.json` | Exact Tokenlogue application sources, dependency locks and packaging recipes for the delivered binaries. |
-| `Tokenlogue-0.2.0-dependency-sources.tar.gz` | Identified third-party sources, original notices, modifications and recipes in a deduplicated collection. |
-| `SOURCE_MATERIALS.json` | Versions, component mappings, relative material paths, sizes and SHA-256 values. It also records the scope of source and binary-provenance evidence. |
-| `SHA256SUMS` | Checksums of the release downloads. |
+| [Android project sources](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/Tokenlogue-0.2.0-8080e6e-project-sources.tar.gz) | Exact tracked application sources, locks and packaging for the supplied APK. |
+| [Linux project sources](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/Tokenlogue-0.2.0-52a834d-project-sources.tar.gz) | Exact tracked application sources, locks and packaging for the supplied AppImage. |
+| [`Tokenlogue-0.2.0-dependency-sources.tar.gz`](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/Tokenlogue-0.2.0-dependency-sources.tar.gz) | Identified third-party sources, original notices, modifications and recipes in a deduplicated collection. |
+| [`SOURCE_MATERIALS.json`](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/SOURCE_MATERIALS.json) | Versions, component mappings, relative material paths, sizes and SHA-256 values. It also records the scope of source and binary-provenance evidence. |
+| [`SHA256SUMS`](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/SHA256SUMS) | Checksums of the release downloads. |
 
-The dependency archive has no extra outer directory. It contains a bilingual `README.md`, `SOURCE_MATERIALS.json`, `BUILD_INPUTS.json`, `SHA256SUMS` and the original files under `materials/<SHA-256>/<original filename>`. An identical file is stored once and can be mapped to several components. The index identifies the exact archive member when a component's source or notice is inside a retained archive.
+The dependency archive has no extra outer directory. It contains a bilingual `README.md`, `SOURCE_MATERIALS.json`, `BUILD_INPUTS.json`, `RECONSTRUCTION.json`, `SHA256SUMS` and the original files under `materials/<SHA-256>/<original filename>`. An identical file is stored once and can be mapped to several components. The index identifies the exact archive member when a component's source or notice is inside a retained archive.
 
-`BUILD_INPUTS.json` records the exact official URLs, sizes and checksums for separately obtained compiler, runtime and tool binaries. It distinguishes those build inputs from source archives. These pinned upstream downloads can require internet access. They do not require downloading an older Tokenlogue release or a previous Actions artifact.
+`BUILD_INPUTS.json` records pinned source locations, sizes and checksums for separately obtained compiler, runtime and tool inputs. These include official upstream downloads, selected files from official Alpine ISO images and the [current Tokenlogue dependency input container](https://github.com/Umichata/tokenlogue/releases/tag/runtime-build-inputs-20261110). The latter is not an official Alpine container. ISO checks cover the selected bytes, not the whole image checksum. The dependency container is checked in full and by member. Obtaining external build inputs can require internet access. It does not require an older Tokenlogue application release or a previous Actions artifact.
 
 Save the dependency archive and the release's `SHA256SUMS` in one directory. Verify the selected archive before extracting it. This command requires Bash and SHA-256 tools.
 

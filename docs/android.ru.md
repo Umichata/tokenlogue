@@ -30,15 +30,15 @@ Tokenlogue позволяет общаться с моделями OpenRouter н
 <a id="-получение-и-установка-apk"></a>
 ## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Получение и установка APK
 
-На странице <a href="https://github.com/Umichata/tokenlogue/releases" title="Releases">Releases&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> перечислены общедоступные загрузки. Для этой предварительной версии скачайте указанный ниже APK и `SHA256SUMS`. Выберите версию `0.2.0`. Версия доступна только после появления на этой странице.
+На странице <a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.2.0-preview.52a834d" title="Releases">Releases&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> доступна предварительная версия Tokenlogue 0.2.0. Скачайте [APK](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/Tokenlogue-0.2.0-android-arm64-v8a-v42.apk) и [`SHA256SUMS`](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/SHA256SUMS).
 
 <img src="assets/ui/frame-top.svg" width="100%" alt="">
 
 | Текущая версия Android | Значение |
 | --- | --- |
-| APK | `Tokenlogue-0.2.0-android-arm64-v8a-v42.apk` |
+| APK | [`Tokenlogue-0.2.0-android-arm64-v8a-v42.apk`](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/Tokenlogue-0.2.0-android-arm64-v8a-v42.apk) |
 | Версия | `0.2.0`, versionCode `42` |
-| SHA-256 | Смотрите `SHA256SUMS` этого выпуска. |
+| SHA-256 | `378d8fbaea3ba0faa5aff81cd564e260dece4e25dff23519647e7db3812b28ea` |
 | SHA-256 сертификата подписи | `927292ad5a76ff049059d1c5d8e9497a42c03f3e995a5d9ca935c59ad8d0b09e` |
 
 <img src="assets/ui/frame-bottom.svg" width="100%" alt="">

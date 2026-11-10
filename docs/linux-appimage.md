@@ -38,14 +38,14 @@ Screen-lock and sleep protection is designed for the supported Cinnamon/X11 desk
 <a id="-download-and-verify"></a>
 ## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Download and verify
 
-The <a href="https://github.com/Umichata/tokenlogue/releases" title="Releases page">Releases page&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> lists publicly available downloads. For this preview, download the AppImage identified below and `SHA256SUMS`. Choose version `0.2.0`. A version is available only when it appears on that page.
+The <a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.2.0-preview.52a834d" title="Releases page">Releases page&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> provides the Tokenlogue 0.2.0 preview. Download the [AppImage](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/Tokenlogue-0.2.0-linux-x86_64.AppImage) and [`SHA256SUMS`](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/SHA256SUMS).
 
 <img src="assets/ui/frame-top.svg" width="100%" alt="">
 
 | Current preview file | Value |
 | --- | --- |
-| AppImage | `Tokenlogue-0.2.0-linux-x86_64.AppImage` |
-| SHA-256 | See this release's `SHA256SUMS`. |
+| AppImage | [`Tokenlogue-0.2.0-linux-x86_64.AppImage`](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/Tokenlogue-0.2.0-linux-x86_64.AppImage) |
+| SHA-256 | `c921b62148245bc71e7a24cda80e9760cb58a9ce21348409569a0f0ccecbefc5` |
 
 <img src="assets/ui/frame-bottom.svg" width="100%" alt="">
 

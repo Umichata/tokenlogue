@@ -10,7 +10,7 @@
 
 # 🧭 Documentation
 
-<p align="left"><a href="../README.md"><img src="assets/ui/buttons/en-7a9481e952d5.svg" alt="Project overview" width="148" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/releases"><img src="assets/ui/buttons/en-dd8bbfdbdd63.svg" alt="Downloads" width="106" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/issues"><img src="assets/ui/buttons/en-90990361e68d.svg" alt="Help" width="59" height="28"></a></p>
+<p align="left"><a href="../README.md"><img src="assets/ui/buttons/en-7a9481e952d5.svg" alt="Project overview" width="148" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.2.0-preview.52a834d"><img src="assets/ui/buttons/en-dd8bbfdbdd63.svg" alt="Downloads" width="106" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/issues"><img src="assets/ui/buttons/en-90990361e68d.svg" alt="Help" width="59" height="28"></a></p>
 
 <a id="english"></a>
 
@@ -23,7 +23,7 @@ Choose a document below. Start with installation and everyday use, then read the
 <tr><th align="left">Category</th><th align="left">Documents</th></tr>
 <tr>
 <td><a id="get-tokenlogue"></a><strong>Get Tokenlogue</strong></td>
-<td><a href="https://github.com/Umichata/tokenlogue/releases" title="Downloads"><img src="assets/ui/buttons/en-0af7fc63fbbe.svg" alt="Downloads" width="106" height="28"></a> <a href="android.md#english" title="Android"><img src="assets/ui/buttons/en-46463edb13a7.svg" alt="Android" width="83" height="28"></a> <a href="linux-appimage.md#english" title="Linux"><img src="assets/ui/buttons/en-96c04f670a21.svg" alt="Linux" width="65" height="28"></a></td>
+<td><a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.2.0-preview.52a834d" title="Downloads"><img src="assets/ui/buttons/en-0af7fc63fbbe.svg" alt="Downloads" width="106" height="28"></a> <a href="android.md#english" title="Android"><img src="assets/ui/buttons/en-46463edb13a7.svg" alt="Android" width="83" height="28"></a> <a href="linux-appimage.md#english" title="Linux"><img src="assets/ui/buttons/en-96c04f670a21.svg" alt="Linux" width="65" height="28"></a></td>
 </tr>
 <tr>
 <td><a id="your-first-conversation"></a><strong>Your first conversation</strong></td>

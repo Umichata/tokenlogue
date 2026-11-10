@@ -8,7 +8,7 @@
   <img src="docs/assets/tokenlogue-banner-en-v2.png" alt="Tokenlogue" width="100%">
 </h1>
 
-<p align="left"><a href="https://github.com/Umichata/tokenlogue/releases"><img src="docs/assets/ui/buttons/en-dd8bbfdbdd63.svg" alt="Downloads" width="106" height="28"></a> <a href="docs/user-guide.md#english"><img src="docs/assets/ui/buttons/en-4a1e7eca97e9.svg" alt="User guide" width="105" height="28"></a> <a href="docs/README.md"><img src="docs/assets/ui/buttons/en-992f2873a82b.svg" alt="Documentation map" width="174" height="28"></a> <a href="#en-features"><img src="docs/assets/ui/buttons/en-f6b7b37e8509.svg" alt="Features" width="90" height="28"></a> <a href="#en-screenshots"><img src="docs/assets/ui/buttons/en-fcdfafa3f3ee.svg" alt="Screenshots" width="116" height="28"></a> <a href="#en-start"><img src="docs/assets/ui/buttons/en-ca3dbec2e101.svg" alt="Get started" width="109" height="28"></a></p>
+<p align="left"><a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.2.0-preview.52a834d"><img src="docs/assets/ui/buttons/en-dd8bbfdbdd63.svg" alt="Downloads" width="106" height="28"></a> <a href="docs/user-guide.md#english"><img src="docs/assets/ui/buttons/en-4a1e7eca97e9.svg" alt="User guide" width="105" height="28"></a> <a href="docs/README.md"><img src="docs/assets/ui/buttons/en-992f2873a82b.svg" alt="Documentation map" width="174" height="28"></a> <a href="#en-features"><img src="docs/assets/ui/buttons/en-f6b7b37e8509.svg" alt="Features" width="90" height="28"></a> <a href="#en-screenshots"><img src="docs/assets/ui/buttons/en-fcdfafa3f3ee.svg" alt="Screenshots" width="116" height="28"></a> <a href="#en-start"><img src="docs/assets/ui/buttons/en-ca3dbec2e101.svg" alt="Get started" width="109" height="28"></a></p>
 
 <a id="english"></a>
 <a id="lang-en"></a>
@@ -52,17 +52,17 @@ Screenshots illustrate the chat workspace with demonstration data. Available con
 
 | Platform | Package and requirements | Installation |
 | --- | --- | --- |
-| Linux | x86_64 AppImage, x86-64-v2 CPU, compatible desktop libraries | <a href="docs/linux-appimage.md#english" title="Linux guide">Linux guide&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> <a href="https://github.com/Umichata/tokenlogue/releases" title="Available downloads">Available downloads&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> |
-| Android | ARM64 APK, Android 7.0 / API 24 or later | <a href="docs/android.md#english" title="Android guide">Android guide&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> <a href="https://github.com/Umichata/tokenlogue/releases" title="Available downloads">Available downloads&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> |
+| Linux | x86_64 AppImage, x86-64-v2 CPU, compatible desktop libraries | <a href="docs/linux-appimage.md#english" title="Linux guide">Linux guide&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> <a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.2.0-preview.52a834d" title="Available downloads">Available downloads&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> |
+| Android | ARM64 APK, Android 7.0 / API 24 or later | <a href="docs/android.md#english" title="Android guide">Android guide&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> <a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.2.0-preview.52a834d" title="Available downloads">Available downloads&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> |
 
 <img src="docs/assets/ui/frame-bottom.svg" width="100%" alt="">
 
-Choose the package for your platform and download `SHA256SUMS` with it. The platform guide explains how to check only your selected package.
+Choose the package for your platform and download [`SHA256SUMS`](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/SHA256SUMS) with it. The platform guide explains how to check only your selected package.
 
-- Android — `Tokenlogue-0.2.0-android-arm64-v8a-v42.apk`.
-- Linux — `Tokenlogue-0.2.0-linux-x86_64.AppImage`.
+- Android — [`Tokenlogue-0.2.0-android-arm64-v8a-v42.apk`](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/Tokenlogue-0.2.0-android-arm64-v8a-v42.apk).
+- Linux — [`Tokenlogue-0.2.0-linux-x86_64.AppImage`](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/Tokenlogue-0.2.0-linux-x86_64.AppImage).
 
-<a href="https://github.com/Umichata/tokenlogue/releases" title="Releases">Releases&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> lists publicly available files. Choose version `0.2.0` and the filename for your platform. A version is available only when it appears on that page.
+<a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.2.0-preview.52a834d" title="Releases">Releases&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> provides the Tokenlogue 0.2.0 preview with the packages listed above.
 
 You do not need a separate Python or Flutter installation or the source archives to run Tokenlogue. The Linux AppImage is unsigned.
 
@@ -85,7 +85,7 @@ See <a href="docs/user-guide.md#english" title="first connection and chat contro
 <tr><th align="left">Category</th><th align="left">Documents</th></tr>
 <tr>
 <td><a id="start-here"></a><strong>Start here</strong></td>
-<td><a href="https://github.com/Umichata/tokenlogue/releases" title="Downloads"><img src="docs/assets/ui/buttons/en-0af7fc63fbbe.svg" alt="Downloads" width="106" height="28"></a> <a href="docs/android.md#en-install" title="Android install"><img src="docs/assets/ui/buttons/en-ec13da01a81e.svg" alt="Android install" width="133" height="28"></a> <a href="docs/linux-appimage.md#en-download" title="Linux launch"><img src="docs/assets/ui/buttons/en-ce1db4f66563.svg" alt="Linux launch" width="118" height="28"></a></td>
+<td><a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.2.0-preview.52a834d" title="Downloads"><img src="docs/assets/ui/buttons/en-0af7fc63fbbe.svg" alt="Downloads" width="106" height="28"></a> <a href="docs/android.md#en-install" title="Android install"><img src="docs/assets/ui/buttons/en-ec13da01a81e.svg" alt="Android install" width="133" height="28"></a> <a href="docs/linux-appimage.md#en-download" title="Linux launch"><img src="docs/assets/ui/buttons/en-ce1db4f66563.svg" alt="Linux launch" width="118" height="28"></a></td>
 </tr>
 <tr>
 <td><a id="use-and-protect"></a><strong>Use and protect</strong></td>

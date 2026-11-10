@@ -38,14 +38,14 @@
 <a id="-скачивание-и-проверка"></a>
 ## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Скачивание и проверка
 
-На странице <a href="https://github.com/Umichata/tokenlogue/releases" title="Releases">Releases&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> перечислены общедоступные загрузки. Для этой предварительной версии скачайте указанную ниже AppImage и `SHA256SUMS`. Выберите версию `0.2.0`. Версия доступна только после появления на этой странице.
+На странице <a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.2.0-preview.52a834d" title="Releases">Releases&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> доступна предварительная версия Tokenlogue 0.2.0. Скачайте [AppImage](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/Tokenlogue-0.2.0-linux-x86_64.AppImage) и [`SHA256SUMS`](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/SHA256SUMS).
 
 <img src="assets/ui/frame-top.svg" width="100%" alt="">
 
 | Файл текущей версии | Значение |
 | --- | --- |
-| AppImage | `Tokenlogue-0.2.0-linux-x86_64.AppImage` |
-| SHA-256 | Смотрите `SHA256SUMS` этого выпуска. |
+| AppImage | [`Tokenlogue-0.2.0-linux-x86_64.AppImage`](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/Tokenlogue-0.2.0-linux-x86_64.AppImage) |
+| SHA-256 | `c921b62148245bc71e7a24cda80e9760cb58a9ce21348409569a0f0ccecbefc5` |
 
 <img src="assets/ui/frame-bottom.svg" width="100%" alt="">
 

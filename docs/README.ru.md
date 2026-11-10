@@ -10,7 +10,7 @@
 
 # 🧭 Документация
 
-<p align="left"><a href="../README.ru.md"><img src="assets/ui/buttons/ru-e51081debfbf.svg" alt="Обзор проекта" width="137" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/releases"><img src="assets/ui/buttons/ru-840902d46c65.svg" alt="Загрузки" width="94" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/issues"><img src="assets/ui/buttons/ru-9079b2556a7e.svg" alt="Помощь" width="87" height="28"></a></p>
+<p align="left"><a href="../README.ru.md"><img src="assets/ui/buttons/ru-e51081debfbf.svg" alt="Обзор проекта" width="137" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.2.0-preview.52a834d"><img src="assets/ui/buttons/ru-840902d46c65.svg" alt="Загрузки" width="94" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/issues"><img src="assets/ui/buttons/ru-9079b2556a7e.svg" alt="Помощь" width="87" height="28"></a></p>
 
 <a id="russian"></a>
 
@@ -23,7 +23,7 @@
 <tr><th align="left">Раздел</th><th align="left">Документы</th></tr>
 <tr>
 <td><a id="получение-tokenlogue"></a><strong>Получение Tokenlogue</strong></td>
-<td><a href="https://github.com/Umichata/tokenlogue/releases" title="Загрузки"><img src="assets/ui/buttons/ru-f0e4eb0b92d5.svg" alt="Загрузки" width="94" height="28"></a> <a href="android.ru.md#russian" title="Android"><img src="assets/ui/buttons/ru-007800957d4f.svg" alt="Android" width="83" height="28"></a> <a href="linux-appimage.ru.md#russian" title="Linux"><img src="assets/ui/buttons/ru-66f2899ff23a.svg" alt="Linux" width="65" height="28"></a></td>
+<td><a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.2.0-preview.52a834d" title="Загрузки"><img src="assets/ui/buttons/ru-f0e4eb0b92d5.svg" alt="Загрузки" width="94" height="28"></a> <a href="android.ru.md#russian" title="Android"><img src="assets/ui/buttons/ru-007800957d4f.svg" alt="Android" width="83" height="28"></a> <a href="linux-appimage.ru.md#russian" title="Linux"><img src="assets/ui/buttons/ru-66f2899ff23a.svg" alt="Linux" width="65" height="28"></a></td>
 </tr>
 <tr>
 <td><a id="первый-разговор"></a><strong>Первый разговор</strong></td>
