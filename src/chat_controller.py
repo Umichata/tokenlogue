@@ -16,6 +16,12 @@ from auth.access import free_mode_allowed, paid_mode_allowed
 from auth.contracts import KeyValidator
 from auth.key_validation import interpret_key_validation
 from auth.models import KeyLimitInfo, KeyValidityState
+from chat.account_balance import (
+    AccountBalanceService,
+    AccountBalanceSnapshot,
+    AccountBalanceState,
+    CreditsReader,
+)
 from chat.accounting import ChatBudgetService, parse_chat_limit_input
 from chat.drafts import DRAFT_STORAGE_MESSAGE, ChatDraftService, DraftStorageError
 from chat.metrics import LastRequestState
@@ -85,6 +91,7 @@ class ChatSessionController:
         sending_service: MessageSendingService,
         drafts: ChatDraftService,
         *,
+        credits_reader: CreditsReader | None = None,
         on_lock: AsyncCallback,
         on_replace_key: AsyncCallback,
         on_storage_error: StorageErrorCallback,
@@ -130,6 +137,13 @@ class ChatSessionController:
             tuple[str, int | None, str | None, datetime | None] | None
         ) = None
         self._key_validation_task: asyncio.Task[None] | None = None
+        self._balance_task: asyncio.Task[None] | None = None
+        self._balance_expiry: asyncio.TimerHandle | None = None
+        self._balance_service = (
+            AccountBalanceService(credits_reader, self._publish_account_balance)
+            if credits_reader is not None
+            else None
+        )
         self._operation_lock = InteractionOperationLock()
         self._deletion_tasks: set[asyncio.Task[object]] = set()
         self._pending_model: CatalogModel | None = None
@@ -159,6 +173,11 @@ class ChatSessionController:
             sending_service,
             session_provider=self._session_context,
             on_key_state_changed=self._apply_interaction_key_state,
+            on_request_finished=(
+                self._model_request_finished
+                if self._balance_service is not None
+                else None
+            ),
         )
         self._workspace_controller = ChatWorkspaceController(
             page,
@@ -211,12 +230,15 @@ class ChatSessionController:
         self._session_api_key = api_key
         self._key_validity = key_validity
         self._key_limit = key_limit
+        if self._balance_service is not None:
+            self._balance_service.begin_session()
         self._interaction.activate()
         self._workspace_controller.activate()
         self._deferred_workspace = not present_workspace
         self._key_validation_in_progress = key_validity is KeyValidityState.UNKNOWN
         if present_workspace:
             await self.present_workspace()
+        self._start_balance_refresh()
 
     async def present_workspace(self) -> None:
         """Shows chats only after the separate protected first-run step is handled."""
@@ -237,6 +259,7 @@ class ChatSessionController:
         self._session_generation += 1
         self._workspace_request_id += 1
         self._session_api_key = None
+        self._cancel_balance_refresh()
         self._deferred_workspace = False
         self._cancel_estimate_metadata()
         self._key_metadata_updated_at = None
@@ -860,9 +883,70 @@ class ChatSessionController:
         ):
             return
         generation = self._session_generation
+        self._start_balance_refresh()
         if not self._start_key_validation():
             return
         await self._refresh_after_key_validation(generation)
+
+    def _start_balance_refresh(self, *, after_response: bool = False) -> None:
+        if (
+            self._disposed
+            or self._session_api_key is None
+            or self._balance_service is None
+        ):
+            return
+        if self._balance_task is not None:
+            self._balance_task.cancel()
+        generation = self._session_generation
+        key = self._session_api_key
+        service = self._balance_service
+
+        async def refresh() -> None:
+            try:
+                await service.refresh(key, after_response=after_response)
+            finally:
+                if (
+                    generation == self._session_generation
+                    and self._balance_task is asyncio.current_task()
+                ):
+                    self._balance_task = None
+
+        self._balance_task = asyncio.create_task(refresh())
+
+    def _model_request_finished(self) -> None:
+        """Account refresh belongs to the session even after chat navigation."""
+        self._start_balance_refresh(after_response=True)
+
+    def _publish_account_balance(self, snapshot: AccountBalanceSnapshot) -> None:
+        if self._disposed or self._session_api_key is None:
+            return
+        if self._balance_expiry is not None:
+            self._balance_expiry.cancel()
+            self._balance_expiry = None
+        self._workspace_controller.set_account_balance(snapshot)
+        if snapshot.state is AccountBalanceState.CURRENT:
+            generation = self._session_generation
+
+            def expire() -> None:
+                if (
+                    generation == self._session_generation
+                    and not self._disposed
+                    and self._balance_service is not None
+                    and self.session_active
+                ):
+                    self._balance_service.expire_if_needed()
+
+            self._balance_expiry = asyncio.get_running_loop().call_later(300, expire)
+
+    def _cancel_balance_refresh(self) -> None:
+        if self._balance_task is not None:
+            self._balance_task.cancel()
+            self._balance_task = None
+        if self._balance_expiry is not None:
+            self._balance_expiry.cancel()
+            self._balance_expiry = None
+        if self._balance_service is not None:
+            self._balance_service.invalidate()
 
     async def request_key_replacement(self) -> None:
         """Передаёт замену API-ключа из свободной разблокированной сессии."""

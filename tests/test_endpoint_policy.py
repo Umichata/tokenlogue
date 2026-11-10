@@ -17,16 +17,22 @@ from storage.database import AuthDatabase  # noqa: E402
 
 
 class EndpointPolicyTests(unittest.TestCase):
-    def test_credits_is_absent_and_chat_endpoint_is_confined_to_client(self) -> None:
+    def test_account_and_chat_endpoints_are_confined_to_their_clients(self) -> None:
         source_files = {
             path.relative_to(SRC_ROOT): path.read_text(encoding="utf-8")
             for path in SRC_ROOT.rglob("*.py")
         }
-        source = "\n".join(source_files.values())
         credits_endpoint = "/api/v1/" + "credits"
         completion_endpoint = "/api/v1/chat/" + "completions"
 
-        self.assertNotIn(credits_endpoint, source)
+        self.assertEqual(
+            [
+                str(path)
+                for path, content in source_files.items()
+                if credits_endpoint in content
+            ],
+            ["api/openrouter.py"],
+        )
         self.assertEqual(
             [
                 str(path)

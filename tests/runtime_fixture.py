@@ -90,8 +90,44 @@ class RuntimeFixture:
         self.lock = json.loads(
             (ROOT / "packaging/linux/appimage/runtime-artifact.lock.json").read_text()
         )
+        # Synthetic historical-archive contract exercises the strict importer.
+        # Production selects a freshly built current-source runtime instead.
+        self.lock.update(
+            schema=1,
+            producer_commit="f" * 40,
+            recipe_fingerprint="0" * 64,
+            source_run_id=123,
+            run_attempt=1,
+            artifact_id=456,
+            artifact_name="appimage-runtime-123-1",
+            archive_size=1,
+            archive_sha256="0" * 64,
+            runtime_size=1,
+            runtime_sha256="0" * 64,
+            manifest_sha256="0" * 64,
+        )
+        self.lock.pop("mode", None)
+        self.lock.pop("producer", None)
         self.notice_lock = json.loads(
             (ROOT / "packaging/linux/appimage/notices.lock.json").read_text()
+        )
+        self.notice_lock["runtime"].pop("mode", None)
+        self.notice_lock["runtime"].update(
+            {
+                key: self.lock[key]
+                for key in (
+                    "producer_commit",
+                    "recipe_fingerprint",
+                    "artifact_id",
+                    "artifact_name",
+                    "source_run_id",
+                    "run_attempt",
+                    "workflow",
+                    "archive_sha256",
+                    "manifest_sha256",
+                    "runtime_lock_sha256",
+                )
+            }
         )
         self.files: dict[str, bytes] = {"runtime-x86_64": runtime_elf()}
         self.lock["runtime_size"] = len(self.files["runtime-x86_64"])
@@ -227,6 +263,7 @@ class RuntimeFixture:
             runtime_lock_sha256=self.lock["runtime_lock_sha256"],
         )
         self.archive, self.lock = self.write_zip(self.files)
+        (self.root / "fixture-contract.json").write_bytes(encoded(self.lock))
         self.notice_lock["runtime"].update(
             archive_sha256=self.lock["archive_sha256"],
             manifest_sha256=self.lock["manifest_sha256"],

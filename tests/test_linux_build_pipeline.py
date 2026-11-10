@@ -278,7 +278,7 @@ class LinuxBuildPipelineTests(unittest.TestCase):
 
         upload = text[text.index("- name: Upload diagnostic AppImage and reports") :]
         for required in (
-            "Tokenlogue-0.1.0-x86_64.AppImage",
+            "Tokenlogue-${{ steps.application.outputs.version }}-x86_64.AppImage",
             "SHA256SUMS",
             "production-constraints.txt",
             "build/linux-release/reports/",
@@ -327,6 +327,7 @@ class LinuxBuildPipelineTests(unittest.TestCase):
             self.assertIn(f"!packaging/linux/appimage/{name}", ignore)
         self.assertNotIn("!packaging/linux/appimage/**", ignore)
 
+        self.assertTrue((APPIMAGE_DIR / "README.ru.md").is_file())
         root_readme = (PROJECT_ROOT / "README.md").read_text(encoding="utf-8")
         packaging_readme = (APPIMAGE_DIR / "README.md").read_text(encoding="utf-8")
         documentation = " ".join((root_readme + packaging_readme).split())
@@ -335,9 +336,7 @@ class LinuxBuildPipelineTests(unittest.TestCase):
             "x86-64-v2",
             "Secret Service",
             "unsigned",
-            "public prerelease",
-            "source-materials.md#lang-en",
-            "source-materials.md#lang-ru",
+            "source-materials.md#english",
         ):
             self.assertIn(phrase, documentation)
 

@@ -14,7 +14,7 @@
 
 <a id="english"></a>
 
-Choose a document below. Installation and everyday use come first. Technical materials and historical records are grouped separately.
+Choose a document below. Start with installation and everyday use, then read the source and packaging guides when needed.
 
 <a id="-start-here"></a>
 ## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Start here
@@ -88,11 +88,4 @@ Choose a document below. Installation and everyday use come first. Technical mat
 
 </details>
 
-<details>
-<summary><strong>Historical release records</strong></summary>
-
-<p align="left"><a href="releases/v0.1.0-linux-preview.1.md#english"><img src="assets/ui/buttons/en-a087d5b054c3.svg" alt="Earlier Linux preview" width="181" height="28"></a> <a href="releases/14b87ac-source-materials.md#english"><img src="assets/ui/buttons/en-30d9fac3bbd0.svg" alt="Source archive history" width="190" height="28"></a></p>
-
-These documents describe their own earlier packages. Use the installation guides above for the current preview.
-
-</details>
+Account balance and the three budget-warning actions are explained in the [account section](user-guide.md#en-balance) and [chat-budget warning](user-guide.md#en-budget-warning).

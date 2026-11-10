@@ -14,7 +14,7 @@
 
 <a id="russian"></a>
 
-Выберите нужный документ. Сначала расположены установка и повседневная работа. Технические материалы и история выпусков собраны отдельно.
+Выберите нужный документ. Начните с установки и повседневной работы, а затем при необходимости перейдите к исходникам и упаковке.
 
 <a id="-начало-работы"></a>
 ## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Начало работы
@@ -88,11 +88,4 @@
 
 </details>
 
-<details>
-<summary><strong>История выпусков</strong></summary>
-
-<p align="left"><a href="releases/v0.1.0-linux-preview.1.ru.md#russian"><img src="assets/ui/buttons/ru-4bd603c447ee.svg" alt="Прежний Linux preview" width="202" height="28"></a> <a href="releases/14b87ac-source-materials.ru.md#russian"><img src="assets/ui/buttons/ru-d4d53fed38d0.svg" alt="История исходников" width="181" height="28"></a></p>
-
-Эти документы описывают соответствующие прежние пакеты. Для текущей предварительной версии используйте руководства по установке выше.
-
-</details>
+Баланс аккаунта и три действия предупреждения описаны в разделах [об аккаунте](user-guide.ru.md#ru-balance) и [о бюджете чата](user-guide.ru.md#ru-budget-warning).

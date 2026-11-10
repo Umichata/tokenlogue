@@ -23,38 +23,37 @@ Tokenlogue brings OpenRouter chats to an ARM64 Android phone or tablet. The inte
 - An OpenRouter API key and internet access for key validation, models and messages.
 - A supported device screen lock for optional system PIN recovery on Android 11 or later.
 
-The minimum API level does not mean that every Android version or device has been tested. The current package passed static ELF and ZIP alignment checks for 4 KiB and 16 KiB pages. Running it on a native ARM64 device with a 16 KiB kernel has not been checked. An earlier package's launch through ARM translation is not such a check for this package.
+The minimum API level does not mean that every Android version or device has been tested. Consult the package provenance for its static ELF and ZIP alignment results. Static 16 KiB alignment does not prove runtime compatibility. Native ARM64 operation with a 16 KiB kernel has not been checked.
 
 <a id="en-install"></a>
 
 <a id="-obtain-and-install-the-apk"></a>
 ## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Obtain and install the APK
 
-The <a href="https://github.com/Umichata/tokenlogue/releases" title="Releases page">Releases page&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> lists publicly available downloads. For this preview, download the APK identified below and `RELEASE_SHA256SUMS`. If this preview is not listed, its downloads are not public yet. The earlier published Linux release is a separate package.
+The <a href="https://github.com/Umichata/tokenlogue/releases" title="Releases page">Releases page&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> lists publicly available downloads. For this preview, download the APK identified below and `SHA256SUMS`. Choose version `0.2.0`. A version is available only when it appears on that page.
 
 <img src="assets/ui/frame-top.svg" width="100%" alt="">
 
 | Current Android preview | Value |
 | --- | --- |
-| APK | `Tokenlogue-0.1.0-65aa62f-arm64-v8a-v41-test.apk` |
-| Version | `0.1.0`, versionCode `41` |
-| Size | 56,160,490 bytes |
-| SHA-256 | `2f7c699960e3967220f526245ca2acbf4335104a141ccf3fa2b8a04dae4709d9` |
+| APK | `Tokenlogue-0.2.0-android-arm64-v8a-v42.apk` |
+| Version | `0.2.0`, versionCode `42` |
+| SHA-256 | See this release's `SHA256SUMS`. |
 | Signing certificate SHA-256 | `927292ad5a76ff049059d1c5d8e9497a42c03f3e995a5d9ca935c59ad8d0b09e` |
 
 <img src="assets/ui/frame-bottom.svg" width="100%" alt="">
 
-Before installation, check only the selected APK against `RELEASE_SHA256SUMS`. Save both files in the same folder. On your computer, use Bash and SHA-256 tools to run this command from that folder.
+Before installation, check only the selected APK against `SHA256SUMS`. Save both files in the same folder. On your computer, use Bash and SHA-256 tools to run this command from that folder.
 ```bash
 set -o pipefail
-file='Tokenlogue-0.1.0-65aa62f-arm64-v8a-v41-test.apk'
-awk -v wanted="$file" '$2 == wanted { entry = $0; count++ } END { if (count != 1) exit 1; print entry }' RELEASE_SHA256SUMS |
+file='Tokenlogue-0.2.0-android-arm64-v8a-v42.apk'
+awk -v wanted="$file" '$2 == wanted { entry = $0; count++ } END { if (count != 1) exit 1; print entry }' SHA256SUMS |
   sha256sum --check -
 ```
 
 The selected APK must report `OK`. A missing or duplicate manifest entry, a changed file or a missing file makes the command fail. A checksum detects changed bytes and does not replace a publisher signature.
 
-The original preview bundle has an internal `SHA256SUMS` for checking the complete extracted bundle. You do not need that bundle or the source archives to install or run Tokenlogue.
+The source archives and build tools are separate downloads. You do not need them to install or run Tokenlogue.
 
 Transfer the verified APK to the device, open it and follow Android's installer. Android may ask to allow installations from the file manager or browser you used. Grant that permission only if you trust the package. You can turn it off again afterwards.
 

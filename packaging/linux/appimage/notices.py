@@ -340,14 +340,14 @@ class Collector:
 
     def collect_runtime(self, runtime: Path) -> None:
         spec = self.lock["runtime"]
-        artifact = fetch_runtime.load_lock()
-        if (
+        artifact = fetch_runtime.load_lock(root=runtime.parent)
+        if spec.get("mode") != "current-source" and (
             spec["sha256"] != artifact["runtime_sha256"]
             or spec["bytes"] != artifact["runtime_size"]
         ):
             raise NoticeError("runtime artifact lock differs from notice registry")
         fetch_runtime.verify_runtime(runtime, artifact)
-        if sha256(runtime) != spec["sha256"]:
+        if spec.get("mode") != "current-source" and sha256(runtime) != spec["sha256"]:
             raise NoticeError(
                 "AppImage runtime checksum does not match notice registry"
             )
@@ -368,7 +368,12 @@ class Collector:
             ]
             self.add("runtime:" + name, [], licenses + [origin_notice], component)
             all_notices.extend(licenses)
-        self.add("appimage-runtime", [], all_notices, spec)
+        origin = (
+            {**spec, "selected_runtime": provenance["runtime"]}
+            if spec.get("mode") == "current-source"
+            else spec
+        )
+        self.add("appimage-runtime", [], all_notices, origin)
 
     def collect(self, cache: Path, runtime: Path, pubspec: Path) -> None:
         # Validate mandatory checkout inputs before preparing any package output.
@@ -523,30 +528,61 @@ def verify_contents(root: Path) -> dict:
 def verify_runtime_notice(root: Path, manifest: dict, lock: dict) -> None:
     components = {c["id"]: c for c in manifest["components"]}
     runtime = components.get("appimage-runtime")
-    if runtime is None or runtime.get("origin") != lock["runtime"]:
+    expected = lock["runtime"]
+    current = expected.get("mode") == "current-source"
+    origin = runtime.get("origin", {}) if runtime else {}
+    registry_origin = (
+        {key: value for key, value in origin.items() if key != "selected_runtime"}
+        if current
+        else origin
+    )
+    if runtime is None or registry_origin != expected:
         raise NoticeError("missing or mismatched appimage-runtime notice")
     if manifest["source_materials"] != lock["release_source_status"]:
         raise NoticeError("runtime notices must preserve global REVIEW_REQUIRED")
     origin_path = f"{DOC}/licenses/appimage-runtime/provenance.json"
     provenance = json.loads(relative_file(root, origin_path).read_text())
-    expected = lock["runtime"]
-    if provenance.get("runtime") != {
-        "sha256": expected["sha256"],
-        "size": expected["bytes"],
-    }:
-        raise NoticeError("runtime provenance identity mismatch")
-    for key in (
-        "producer_commit",
-        "recipe_fingerprint",
-        "artifact_id",
-        "artifact_name",
-        "source_run_id",
-        "run_attempt",
-        "workflow",
-        "archive_sha256",
-        "manifest_sha256",
-        "runtime_lock_sha256",
+    identity = (
+        origin.get("selected_runtime")
+        if current
+        else {"sha256": expected["sha256"], "size": expected["bytes"]}
+    )
+    if (
+        not isinstance(identity, dict)
+        or type(identity.get("size")) is not int
+        or identity["size"] <= 0
+        or re.fullmatch(r"[a-f0-9]{64}", str(identity.get("sha256", ""))) is None
+        or provenance.get("runtime") != identity
     ):
+        raise NoticeError("runtime provenance identity mismatch")
+    if current:
+        if (
+            provenance.get("mode") != "current-source"
+            or re.fullmatch(r"[a-f0-9]{40}", str(provenance.get("producer_commit", "")))
+            is None
+            or re.fullmatch(
+                r"[a-f0-9]{64}", str(provenance.get("recipe_fingerprint", ""))
+            )
+            is None
+        ):
+            raise NoticeError("invalid current producer identity")
+    keys = (
+        ("workflow", "runtime_lock_sha256")
+        if current
+        else (
+            "producer_commit",
+            "recipe_fingerprint",
+            "artifact_id",
+            "artifact_name",
+            "source_run_id",
+            "run_attempt",
+            "workflow",
+            "archive_sha256",
+            "manifest_sha256",
+            "runtime_lock_sha256",
+        )
+    )
+    for key in keys:
         if provenance.get(key) != expected[key]:
             raise NoticeError("runtime provenance differs from notice registry")
     if provenance.get("upstream_commit") != expected["commit"]:
@@ -627,8 +663,14 @@ def verify(root: Path, runtime: Path | None = None) -> dict:
             ):
                 raise NoticeError("MaterialIcons font differs from notice source")
     if runtime is not None:
-        artifact = fetch_runtime.load_lock()
-        if artifact["runtime_sha256"] != lock["runtime"]["sha256"]:
+        artifact = fetch_runtime.load_lock(root=runtime.parent)
+        component = next(
+            c for c in manifest["components"] if c["id"] == "appimage-runtime"
+        )
+        expected = component["origin"].get(
+            "selected_runtime", {"sha256": lock["runtime"].get("sha256")}
+        )
+        if artifact["runtime_sha256"] != expected["sha256"]:
             raise NoticeError("runtime locks disagree")
         fetch_runtime.verify_runtime(runtime, artifact)
     return result

@@ -109,6 +109,13 @@ jobs:
       - name: Synchronize locked development environment
         run: UV_MANAGED_PYTHON=1 uv sync --locked
 
+      - name: Record application version
+        id: application
+        run: |
+          set -Eeuo pipefail
+          version=$(uv run --locked python -c 'import re,tomllib; value=tomllib.load(open("pyproject.toml", "rb"))["project"]["version"]; assert re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+([.+-][0-9A-Za-z.-]+)?", value); print(value)')
+          printf 'version=%s\n' "$version" >> "$GITHUB_OUTPUT"
+
       - name: Run source QA
         run: |
           set -Eeuo pipefail
@@ -165,18 +172,11 @@ jobs:
               build/appimage/tools/appimagetool-runtime-x86_64
           } > build/linux-release/reports/appimage-tools.txt 2>&1
 
-      - name: Получить закреплённый standalone runtime и проверить материалы
+      - name: Build and verify current standalone runtime
         run: |
           set -Eeuo pipefail
-          runtime_archive=build/appimage/runtime-artifact.zip
-          mkdir -p build/appimage
-          runtime_url=$(uv run --locked python -c \
-            'import json; print(json.load(open("packaging/linux/appimage/runtime-artifact.lock.json"))["archive_url"])')
-          curl --disable --fail --location --silent --show-error \
-            --proto '=https' --proto-redir '=https' \
-            --output "$runtime_archive" "$runtime_url"
           uv run --locked python packaging/linux/appimage/fetch_runtime.py \
-            --archive "$runtime_archive" \
+            --run "linux-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
             --report build/linux-release/reports/runtime-inputs.json
 
       - name: Fetch pinned notice references
@@ -194,7 +194,7 @@ jobs:
           RUNTIME_PREFIX_REPORT="$PWD/build/linux-release/reports/runtime-prefix-first.json" \
             packaging/linux/appimage/build_appimage.sh 2>&1 | \
             tee build/linux-release/reports/appimage-build-first.log
-          sha256sum build/appimage/Tokenlogue-0.1.0-x86_64.AppImage | \
+          sha256sum "build/appimage/Tokenlogue-${{ steps.application.outputs.version }}-x86_64.AppImage" | \
             awk '{print $1}' > build/linux-release/reports/appimage-first.sha256
 
       - name: Rebuild AppImage and verify reproducibility
@@ -204,7 +204,7 @@ jobs:
           RUNTIME_PREFIX_REPORT="$PWD/build/linux-release/reports/runtime-prefix-second.json" \
             packaging/linux/appimage/build_appimage.sh 2>&1 | \
             tee build/linux-release/reports/appimage-build-second.log
-          second=$(sha256sum build/appimage/Tokenlogue-0.1.0-x86_64.AppImage | \
+          second=$(sha256sum "build/appimage/Tokenlogue-${{ steps.application.outputs.version }}-x86_64.AppImage" | \
             awk '{print $1}')
           test "$first" = "$second"
           {
@@ -221,7 +221,7 @@ jobs:
           mkdir -p "$extract_root"
           (
             cd "$extract_root"
-            "$GITHUB_WORKSPACE/build/appimage/Tokenlogue-0.1.0-x86_64.AppImage" \
+            "$GITHUB_WORKSPACE/build/appimage/Tokenlogue-${{ steps.application.outputs.version }}-x86_64.AppImage" \
               --appimage-extract
           ) > build/linux-release/reports/appimage-extract.log
           test -d "$extract_root/squashfs-root"
@@ -284,7 +284,7 @@ jobs:
         run: |
           set -Eeuo pipefail
           packaging/linux/appimage/smoke_appimage.sh \
-            "$PWD/build/appimage/Tokenlogue-0.1.0-x86_64.AppImage" \
+            "$PWD/build/appimage/Tokenlogue-${{ steps.application.outputs.version }}-x86_64.AppImage" \
             "$PWD/build/linux-release/reports"
 
       - name: Create artifact checksums
@@ -292,7 +292,7 @@ jobs:
           set -Eeuo pipefail
           (
             cd build/appimage
-            sha256sum Tokenlogue-0.1.0-x86_64.AppImage
+            sha256sum "Tokenlogue-${{ steps.application.outputs.version }}-x86_64.AppImage"
           ) > build/linux-release/SHA256SUMS
 
       - name: Upload diagnostic AppImage and reports
@@ -301,7 +301,7 @@ jobs:
         with:
           name: tokenlogue-linux-diagnostic-${{ steps.metadata.outputs.short_sha }}
           path: |
-            build/appimage/Tokenlogue-0.1.0-x86_64.AppImage
+            build/appimage/Tokenlogue-${{ steps.application.outputs.version }}-x86_64.AppImage
             build/linux-release/SHA256SUMS
             build/linux-release/production-constraints.txt
             build/linux-release/reports/

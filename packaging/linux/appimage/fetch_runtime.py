@@ -82,8 +82,12 @@ def digest(path: Path) -> str:
     return value.hexdigest()
 
 
-def load_lock(path: Path = LOCK) -> dict[str, Any]:
+def load_lock(path: Path = LOCK, *, root: Path = DEFAULT_OUTPUT) -> dict[str, Any]:
     lock = json.loads(path.read_text())
+    if lock.get("schema") == 2:
+        import source_runtime
+
+        return source_runtime.selected_lock(root, lock)
     require(lock["schema"] == 1, "Неизвестный формат runtime artifact lock")
     require(lock["repository"] == "Umichata/tokenlogue", "Другой репозиторий runtime")
     require(
@@ -712,11 +716,24 @@ def compact_provenance(root: Path, lock: dict) -> dict:
         "schema": 1,
         "repository": lock["repository"],
         "workflow": lock["workflow"],
-        "source_run_id": lock["source_run_id"],
-        "run_attempt": lock["run_attempt"],
-        "artifact_id": lock["artifact_id"],
-        "artifact_name": lock["artifact_name"],
-        "archive_sha256": lock["archive_sha256"],
+        **(
+            {
+                "mode": "current-source",
+                "producer": lock["producer"],
+                "input_acquisition": lock["input_acquisition"],
+            }
+            if lock.get("mode") == "current-source"
+            else {
+                key: lock[key]
+                for key in (
+                    "source_run_id",
+                    "run_attempt",
+                    "artifact_id",
+                    "artifact_name",
+                    "archive_sha256",
+                )
+            }
+        ),
         "manifest_sha256": lock["manifest_sha256"],
         "runtime_lock_sha256": lock["runtime_lock_sha256"],
         "producer_commit": lock["producer_commit"],
@@ -760,9 +777,36 @@ def main() -> int:
     parser.add_argument("--runtime", type=Path)
     parser.add_argument("--appimage", type=Path)
     parser.add_argument("--report", type=Path)
+    parser.add_argument("--run", help="New standalone producer attempt name")
+    parser.add_argument("--engine", choices=("docker", "podman"), default="docker")
     args = parser.parse_args()
+    result: dict = {
+        "result": "FAIL",
+        "category": "input",
+        "reason": "Runtime selection did not complete",
+    }
     try:
-        lock = load_lock()
+        contract = json.loads(LOCK.read_text())
+        current = contract.get("schema") == 2
+        if current and args.action == "fetch" and args.archive is None:
+            import source_runtime
+
+            result = source_runtime.prepare(
+                args.output, contract, run_name=args.run, engine=args.engine
+            )
+            lock = load_lock(root=args.output)
+        else:
+            root = (
+                args.runtime.parent
+                if args.action == "prefix" and args.runtime is not None
+                else args.output
+            )
+            lock = load_lock(root=root)
+            current = lock.get("mode") == "current-source"
+            require(
+                not current or args.archive is None,
+                "Current source producer does not consume historical archives",
+            )
         if args.action == "prefix":
             require(
                 args.runtime is not None and args.appimage is not None,
@@ -772,7 +816,7 @@ def main() -> int:
             result = check_prefix(args.runtime, args.appimage, lock)
         elif args.action == "verify":
             result = verify_bundle(args.output, lock)
-        else:
+        elif not current:
             client = (
                 None
                 if args.archive is not None
@@ -782,6 +826,15 @@ def main() -> int:
         result["application_commit"] = subprocess.check_output(
             ["git", "rev-parse", "HEAD"], cwd=REPOSITORY_ROOT, text=True
         ).strip()
+    except subprocess.CalledProcessError as error:
+        result = {
+            "result": "FAIL",
+            "category": "producer",
+            "producer_stage": error.cmd[2]
+            if isinstance(error.cmd, list) and len(error.cmd) > 2
+            else "unknown",
+            "reason": "Current standalone runtime stage failed. See producer run logs.",
+        }
     except RuntimeArtifactError as error:
         result = {"result": "FAIL", "category": error.category, "reason": str(error)}
     except urllib.error.HTTPError as error:

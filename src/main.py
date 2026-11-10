@@ -303,6 +303,7 @@ async def main(page: ft.Page) -> None:
         budget_service,
         sending_service,
         drafts,
+        credits_reader=key_validator,
         data_access=access,
         on_profile_deleted=deleted_profile,
         on_profile_reload=reload_profile,

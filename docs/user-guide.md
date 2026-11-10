@@ -9,7 +9,7 @@
 <a id="english"></a>
 <a id="lang-en"></a>
 
-Tokenlogue lets you chat with OpenRouter models on Linux and Android. This guide describes the current preview. Earlier published previews can have fewer features. Start with the <a href="linux-appimage.md#english" title="Linux installation guide">Linux installation guide&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> or <a href="android.md#english" title="Android installation guide">Android installation guide&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a>.
+Tokenlogue lets you chat with OpenRouter models on Linux and Android. This guide describes version 0.2.0. Start with the <a href="linux-appimage.md#english" title="Linux installation guide">Linux installation guide&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> or <a href="android.md#english" title="Android installation guide">Android installation guide&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a>.
 
 <p align="left"><a href="#en-access"><img src="assets/ui/buttons/en-ca3dbec2e101.svg" alt="Get started" width="109" height="28"></a> <a href="#en-chats"><img src="assets/ui/buttons/en-474e166de580.svg" alt="Chats" width="67" height="28"></a> <a href="#en-drafts"><img src="assets/ui/buttons/en-1cd72768132b.svg" alt="Drafts" width="71" height="28"></a> <a href="#en-limits"><img src="assets/ui/buttons/en-d98731f70acd.svg" alt="Limits" width="70" height="28"></a> <a href="#en-chat-metrics"><img src="assets/ui/buttons/en-0ee613298d92.svg" alt="Costs" width="66" height="28"></a> <a href="security.md#english"><img src="assets/ui/buttons/en-9c2e33444d68.svg" alt="Protection" width="102" height="28"></a></p>
 
@@ -104,9 +104,24 @@ Configure limits before the first request. Use `Set limits` or `Edit limits` in 
 
 <img src="assets/ui/frame-bottom.svg" width="100%" alt="">
 
-Before sending, Tokenlogue reserves tokens and, in paid mode, money. The available chat budget excludes actual use and active reservations. A request can be refused when the remaining budget cannot cover its reserve. A local reservation is not an OpenRouter charge.
+Before sending, Tokenlogue reserves tokens and, in paid mode, money. The available chat budget subtracts actual use and active reservations. A local reservation is not an OpenRouter charge. Token, context, provider and API key limits still apply to every request. Unknown request accounting must be resolved before another request can use that chat's budget.
 
-The chat budget, the spending limit of your OpenRouter key and your OpenRouter account balance are separate. Tokenlogue does not fetch the total account balance. A key without its own spending limit does not imply unlimited account funds.
+The chat budget is a local setting. The API key limit belongs to that key, while the OpenRouter account balance comes from the account API. Neither account balance nor key limit changes your saved chat spending limit.
+
+<a id="en-budget-warning"></a>
+### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Review a chat-budget warning
+
+A paid request triggers a warning when its upper cost estimate is positive and its projected chat remainder is 10% of the saved spending limit or less. The calculation subtracts actual costs, active monetary reservations and the planned request's upper estimate. It includes the history sent, model prices, fixed request costs and the response limit.
+
+The risk is calculated before a chat-money cap could shorten the planned response and hide a possible overrun. Token, context, provider and API key restrictions remain in force. The warning is about the chat budget, not the account balance or API key limit. An exactly free request needs no monetary warning.
+
+| Action | Result |
+| --- | --- |
+| Cancel | Sends nothing, creates no reserve and keeps the draft. Closing the dialog, Escape and Android Back cancel too. |
+| Send | Confirms this exact request once. It can permit exceeding the local chat spending limit without raising that saved limit or disabling later warnings. |
+| Change chat limit | Opens this chat's limits and preserves the draft. Saving a limit does not send anything. Review the new estimate before sending. |
+
+A projected zero can exhaust the budget. A negative projection can exceed it, and the warning says so. After a confirmed overrun, the actual remaining chat amount can stay negative. It is not rounded up to zero or turned into a higher saved limit. Changing the draft, model, limits, prices or risk makes an earlier decision expire and can require a fresh warning.
 
 <a id="en-paid-confirmation"></a>
 
@@ -117,9 +132,20 @@ The chat budget, the spending limit of your OpenRouter key and your OpenRouter a
 
 New paid chats ask for confirmation before sending. Review the model, estimated input, response maximum and spending reserve. Cancel to leave the message unsent.
 
-`Without confirmation` above the conversation turns off that dialog for the selected chat, including its first request, retries and changed prices. Enabling it sends nothing by itself. Limits, key checks and price checks still apply. Raising the spending limit keeps its separate confirmation.
+`Without confirmation` above the conversation turns off the ordinary paid-request dialog for the selected chat, including its first request and retries. It does not turn off the chat-budget warning. Enabling it sends nothing by itself. Token limits, key checks, independent price checks and unknown-accounting protection still apply. Raising the saved spending limit keeps its separate confirmation.
 
 Turn the option off to require confirmation from the next request onward. The choice is saved per chat. Locking or changing this setting never submits a queued message automatically. Choose `Send` when ready.
+
+<a id="en-balance"></a>
+### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Read your OpenRouter account balance
+
+`OpenRouter balance` is the account amount returned for your current key by OpenRouter's credits API. Tokenlogue calculates `total_credits - total_usage` with decimal arithmetic. Positive, zero and negative results are valid. It does not estimate an account balance by subtracting local request costs.
+
+The balance appears in free and paid chats. Loading, a current snapshot, an outdated snapshot and `Balance unavailable` are distinct states. A saved session snapshot includes its receipt time. If a refresh fails, a previous value is explicitly marked outdated. Without a successful snapshot, no artificial zero is shown.
+
+The app refreshes after sign-in or unlock and after a sent request finishes, including a retry or an interrupted request that might have been charged. The reply is saved and shown without waiting for this read. A short delayed refresh allows for billing updates on the server. Switching chats does not cancel the account refresh. Locking, signing out or replacing the key discards the old session's balance.
+
+Choose `Refresh key and balance` in `⋮` for a manual update. A denied balance read, including HTTP 403, does not by itself mean that the key cannot send model requests. Account access can vary between keys. Tokenlogue shows the read failure without deleting chats or changing your PIN.
 
 <a id="en-chat-metrics"></a>
 
@@ -136,14 +162,15 @@ Turn the option off to require confirmation from the next request onward. The ch
 | Tokens remaining | Free-chat token budget remaining after use and active reservations. This is not OpenRouter's global free quota. |
 | Last request | Confirmed cost for a paid chat or total input-and-response tokens for a free chat. Retries count as new attempts. |
 | Key remaining | The current API key's known remaining spending limit, separate from the chat budget and account balance. |
+| OpenRouter balance | The account snapshot received from OpenRouter, with its refresh state. |
 
 <img src="assets/ui/frame-bottom.svg" width="100%" alt="">
 
-`Key limit not set` means that the key has no separate cap. `Key data unavailable` means its remainder is unknown. An exhausted limit is shown explicitly. Hover or long-press a metric for details and the key-data receipt time when available. Use `Refresh key status` in `⋮` to request fresh data. Typing or reopening the display does not make old data fresh.
+`Key limit not set` means that the key has no separate cap. `Key data unavailable` means its remainder is unknown. An exhausted limit is shown explicitly. Hover or long-press a metric for details and the key-data receipt time when available. Use `Refresh key and balance` in `⋮` to request fresh data. Typing or reopening the display does not make old data fresh.
 
 `No requests`, `In progress`, `Reconciling` and `Unknown` describe different states. An unknown result is not treated as zero cost.
 
-The estimate under the editor changes as you type. It includes eligible history and the effective response maximum. It is a conservative local estimate based on UTF-8 text, not exact model tokenization or a prediction of reply length. The possible cost is an upper estimate for known prices. Missing or expired pricing produces `Cost unknown`. Actual usage and cost are determined after sending.
+The estimate under the editor changes as you type. It includes eligible history and the effective response maximum. It is a conservative local estimate based on UTF-8 text, not exact model tokenization or a prediction of reply length. The possible cost is an upper estimate for known prices before any chat-money cap could hide a budget risk. Missing or expired pricing produces `Cost unknown`. Actual usage and cost are determined after sending.
 
 Calculating an estimate makes no network request and reserves no budget. The normal checks still run when you send.
 

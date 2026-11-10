@@ -156,16 +156,81 @@ class PublicRedirect(urllib.request.HTTPRedirectHandler):
         return result
 
 
-def fetch_inputs(lock: Record, root: Path) -> None:
+class OfficialInputGuard(urllib.request.BaseHandler):
+    """Deny old application assets on both initial requests and redirects."""
+
+    def __init__(self, events: list[Record]):
+        self.events = events
+
+    def https_request(self, request: urllib.request.Request) -> urllib.request.Request:
+        url = urllib.parse.urlsplit(request.full_url)
+        host = (url.hostname or "").lower()
+        official = host in {
+            "codeload.github.com",
+            "distfiles.alpinelinux.org",
+            "dl-cdn.alpinelinux.org",
+            "gcc.gnu.org",
+            "github.com",
+            "musl.libc.org",
+            "raw.githubusercontent.com",
+            "registry-1.docker.io",
+            "auth.docker.io",
+            "release-assets.githubusercontent.com",
+            "objects.githubusercontent.com",
+            "production.cloudflare.docker.com",
+            "production.cloudfront.docker.com",
+        } or host.endswith(".r2.cloudflarestorage.com")
+        allowed = (
+            url.scheme == "https"
+            and official
+            and not url.username
+            and not url.password
+            and "/umichata/tokenlogue/" not in url.path.lower()
+        )
+        self.events.append({"host": host, "path": url.path, "allowed": allowed})
+        if not allowed:
+            raise Failure("Runtime request rejected by official-source guard")
+        return request
+
+    http_request = https_request
+
+
+def fetch_inputs(lock: Record, root: Path, audit_path: Path | None = None) -> None:
+    audit: Record = {
+        "result": "FAIL",
+        "scope": "producer Python HTTPS inputs and redirects",
+        "old_tokenlogue_endpoints": "DENIED",
+        "network": [],
+        "inputs": [],
+    }
+    try:
+        _fetch_inputs(lock, root, audit)
+        audit["result"] = "PASS"
+    finally:
+        if audit_path is not None:
+            write_json(audit_path, audit)
+
+
+def _fetch_inputs(lock: Record, root: Path, audit: Record) -> None:
     # Proxies and ambient auth handlers are intentionally not inherited.
     opener = urllib.request.build_opener(
-        urllib.request.ProxyHandler({}), PublicRedirect()
+        urllib.request.ProxyHandler({}),
+        PublicRedirect(),
+        OfficialInputGuard(audit["network"]),
     )
     registry_token: str | None = None
     for item in lock["files"]:
         path = input_path(root, item["path"])
         if path.exists() or path.is_symlink():
             verify_file(path, item)
+            audit["inputs"].append(
+                {
+                    "path": item["path"],
+                    "sha256": item["sha256"],
+                    "size": item["size"],
+                    "mode": "verified-cache",
+                }
+            )
             continue
         path.parent.mkdir(parents=True, exist_ok=True)
         headers = {"User-Agent": "tokenlogue-runtime-inputs/1"}
@@ -194,6 +259,14 @@ def fetch_inputs(lock: Record, root: Path) -> None:
                         remaining -= len(chunk)
             verify_file(temporary, item)
             temporary.replace(path)
+            audit["inputs"].append(
+                {
+                    "path": item["path"],
+                    "sha256": item["sha256"],
+                    "size": item["size"],
+                    "mode": "downloaded-and-verified",
+                }
+            )
         except urllib.error.HTTPError as error:
             raise Failure(
                 f"Download failed: {item['path']} (HTTP {error.code})"

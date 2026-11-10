@@ -22,6 +22,7 @@
 - Separate chats, model selection and drafts that stay with the conversation.
 - English and Russian interface with a compact layout for desktop and mobile.
 - Free and paid models, per-chat budgets and a live estimate while you write.
+- OpenRouter account balance with explicit refresh status and a warning before a paid request approaches the chat spending limit.
 - PIN access and local protection for supported conversation fields, with platform-specific recovery options.
 
 <a id="en-screenshots"></a>
@@ -41,7 +42,7 @@
 <tr><td>Linux chat with local demonstration messages</td><td>Tokenlogue chat on an Android tablet</td></tr>
 </table>
 
-Screenshots show the current interface with demonstration data. Earlier downloads retain their own release notes.
+Screenshots illustrate the chat workspace with demonstration data. Available controls can vary with the application version.
 
 <a id="en-start"></a>
 <a id="-get-started"></a>
@@ -56,12 +57,12 @@ Screenshots show the current interface with demonstration data. Earlier download
 
 <img src="docs/assets/ui/frame-bottom.svg" width="100%" alt="">
 
-Choose the package for your platform and download `RELEASE_SHA256SUMS` with it. The platform guide explains how to check only your selected package.
+Choose the package for your platform and download `SHA256SUMS` with it. The platform guide explains how to check only your selected package.
 
-- Android — `Tokenlogue-0.1.0-65aa62f-arm64-v8a-v41-test.apk`.
-- Linux — `Tokenlogue-0.1.0-65aa62f-linux-x86_64.AppImage`.
+- Android — `Tokenlogue-0.2.0-android-arm64-v8a-v42.apk`.
+- Linux — `Tokenlogue-0.2.0-linux-x86_64.AppImage`.
 
-<a href="https://github.com/Umichata/tokenlogue/releases" title="Releases">Releases&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> lists publicly available files. If this preview is not listed, its downloads are not public yet. The [earlier Linux preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-linux-preview.2b1f7d3) remains a historical package with its own release notes.
+<a href="https://github.com/Umichata/tokenlogue/releases" title="Releases">Releases&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> lists publicly available files. Choose version `0.2.0` and the filename for your platform. A version is available only when it appears on that page.
 
 You do not need a separate Python or Flutter installation or the source archives to run Tokenlogue. The Linux AppImage is unsigned.
 
@@ -96,12 +97,14 @@ See <a href="docs/user-guide.md#english" title="first connection and chat contro
 </tr>
 </table>
 
-The full documentation map also includes packaging documents and historical release records.
+The full documentation map also includes packaging documents and the current source-materials guide.
 
 <a id="-costs-and-local-protection"></a>
 ## <img src="docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Costs and local protection
 
-A chat budget, an OpenRouter key limit and your account balance are different amounts. The local token and price estimate is approximate. It is not the model's exact tokenizer or a promise of the final charge. Disabling paid-request confirmation applies from the first request in that chat, while the limits remain in effect.
+OpenRouter account balance comes from the account API. The API key spending limit and the local chat budget remain separate. A balance that could not be refreshed is shown as stale or unavailable, rather than replaced with a local calculation.
+
+Before a paid request could leave 10% or less of its chat spending limit, Tokenlogue asks whether to cancel, send once or edit that chat's limit. This warning remains active when ordinary paid confirmations are disabled. A confirmed one-off overrun does not change the saved limit. Cost and token estimates remain approximate.
 
 PIN and encryption protect access and selected local fields. They do not encrypt your whole device. Recovery depends on the saved keys and the configured platform method. When you send a message, the selected conversation content goes to OpenRouter and the chosen model provider. Tokenlogue is independent of OpenRouter.
 
