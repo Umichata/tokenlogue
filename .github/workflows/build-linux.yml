@@ -177,6 +177,7 @@ jobs:
           set -Eeuo pipefail
           uv run --locked python packaging/linux/appimage/fetch_runtime.py \
             --run "linux-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
+            --producer-reports build/linux-release/reports/runtime-producer \
             --report build/linux-release/reports/runtime-inputs.json
 
       - name: Fetch pinned notice references

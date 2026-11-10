@@ -1,0 +1,297 @@
+{
+  "dependency_bundle": {
+    "members": {
+      "PROVENANCE.json": {
+        "sha256": "bdca9e07fbd7269eb98810f640711082a40dbddb22ddf41e2b8d054fa2e06c81",
+        "size": 5462
+      },
+      "README.md": {
+        "sha256": "b0ec3e4a75592ce6e8f7f1c9aeed0314150506d2794d51ebd00ccfdb19509eb2",
+        "size": 4124
+      },
+      "SHA256SUMS": {
+        "sha256": "4579ca49f0bd55a0a58698c34a968a083739fb06781cbe760ebf8604e541906c",
+        "size": 2898
+      },
+      "SOURCE_MATERIALS.json": {
+        "sha256": "40a57ea305d082603ffd335f667c3d37ad493afc1e95d659372fe769196b07f0",
+        "size": 20575
+      },
+      "apks/musl-dev-1.2.5-r11.apk": {
+        "sha256": "d3b5ab01046a92b9a168b790f516606e320f015cbd4deeb584c5e115a02124ba",
+        "size": 3428687
+      },
+      "apks/zlib-dev-1.3.2-r0.apk": {
+        "sha256": "3569be1b98225e97a2cff5c1377553c26d2e643873186ea20117fa094a698447",
+        "size": 34380
+      },
+      "apks/zlib-static-1.3.2-r0.apk": {
+        "sha256": "25ddc9ad82e822afda4cb90cf1081e7530f38ec2c8d53dcc2898f08dae82cb88",
+        "size": 60906
+      },
+      "licenses/GPL-2.0.txt": {
+        "sha256": "231f7edcc7352d7734a96eef0b8030f77982678c516876fcb81e25b32d68564c",
+        "size": 18002
+      },
+      "licenses/musl/COPYRIGHT": {
+        "sha256": "f9bc4423732350eb0b3f7ed7e91d530298476f8fec0c6c427a1c04ade22655af",
+        "size": 6204
+      },
+      "licenses/zlib/LICENSE": {
+        "sha256": "e32ff4e00d9d94930537635291da39e7e612703334bf6fde8c7f1686fe8a45a2",
+        "size": 1002
+      },
+      "recipes/musl/APKBUILD": {
+        "sha256": "366ce96968b1923e4df867b24b434cac635f3013723231107feb0217d7430bb2",
+        "size": 7039
+      },
+      "recipes/musl/CVE-2025-26519.patch": {
+        "sha256": "ab382da2bb5e1cc32d8904be28fb13f8ad3ce813967bd4bf7f5b1c6baee33e17",
+        "size": 2832
+      },
+      "recipes/musl/CVE-2026-40200.patch": {
+        "sha256": "1ee29f64f9ca8e8ad7c349779d661ff6b52126a27575d3586981357a52c406fb",
+        "size": 5594
+      },
+      "recipes/musl/__stack_chk_fail_local.c": {
+        "sha256": "299a7d75a09de3e2e11e7fb4acc3182e4a14e868093d2f30938fce9bfcff13da",
+        "size": 133
+      },
+      "recipes/musl/getconf.c": {
+        "sha256": "d87d0cbb3690ae2c5d8cc218349fd8278b93855dd625deaf7ae50e320aad247c",
+        "size": 11614
+      },
+      "recipes/musl/getent.c": {
+        "sha256": "b25f32d306d542246e9358ef65cd67c12b3e3a77656bc467853d3b0c76b5fbbd",
+        "size": 11656
+      },
+      "recipes/musl/handle-aux-at_base.patch": {
+        "sha256": "2a65e03b94217063d72fe998e5fb2e25cd01716078a3ba1b0ab574ab205111e6",
+        "size": 1214
+      },
+      "recipes/musl/iconv-gb18030-fix.patch": {
+        "sha256": "1d0be2e72b9d5bd16546b923aa8af861d271322f01644716a81823bec4065c99",
+        "size": 7506
+      },
+      "recipes/musl/iconv.c": {
+        "sha256": "f79a2930a2e5bb0624321589edf8b889d1e9b603e01e6b7ae214616605b3fdd7",
+        "size": 2577
+      },
+      "recipes/musl/isatty-glibc-align.patch": {
+        "sha256": "1321d542b40921a4c248bb2d15dbd03fcbbf008c8725eb2043d3cab62faeba48",
+        "size": 456
+      },
+      "recipes/musl/ldconfig": {
+        "sha256": "b4a2c06db38742e8c42c3c9838b285a7d8cdac6c091ff3df5ff9a15f1e41b9c7",
+        "size": 393
+      },
+      "recipes/musl/ldso-fix-non-functional-fix-to-early-dynamic-PAGE_SI.patch": {
+        "sha256": "7f5806124d4a89536e53a07bfe95fcd0a8f1b7a27fc0dfc89c78c724dea1c924",
+        "size": 1486
+      },
+      "recipes/musl/loongarch64-Add-lsx-and-lasx-vector-structure-defini.patch": {
+        "sha256": "28efacd507c01b89e1725ed33723f3f9fdfe6cb83eb78ffea1e2acb7fda8a52c",
+        "size": 907
+      },
+      "recipes/musl/loongarch64-add-TLSDESC-support.patch": {
+        "sha256": "1efb4604e0b28b84e10faf37d17bad448510e73f6a3db89c8be47d38b9e85138",
+        "size": 2527
+      },
+      "recipes/musl/loongarch64-add-bits-hwcap.h.patch": {
+        "sha256": "8849080b49dff046b1f29db24e54ffe6262b5884078091994db77efdafca2505",
+        "size": 1406
+      },
+      "recipes/musl/loongarch64-add-fpu-and-simd-context-to-signal.h.patch": {
+        "sha256": "d73f85a90fe52930dd8b5d16cb7f3369a994918c0e41ae3c3dc9a25df4b45099",
+        "size": 2142
+      },
+      "recipes/zlib/APKBUILD": {
+        "sha256": "e9ad3aa7ecf048f4bfa26b946275bee347f75254385320e90eecd3fd6651bcf4",
+        "size": 901
+      },
+      "sources/musl-1.2.5.tar.gz": {
+        "sha256": "a9a118bbe84d8764da0ea0d28b3ab3fae8477fc7e4085d90102b8596fc7c75e4",
+        "size": 1080786
+      },
+      "sources/zlib-1.3.2.tar.gz": {
+        "sha256": "bb329a0a2cd0274d05519d61c667c062e06990d72e125ee2dfa8de64f0119d16",
+        "size": 1502830
+      },
+      "verification/keys/alpine-devel@lists.alpinelinux.org-6165ee59.rsa.pub": {
+        "sha256": "207e4696d3c05f7cb05966aee557307151f1f00217af4143c1bcaf33b8df733f",
+        "size": 800
+      }
+    },
+    "sha256": "ddd591d597da38aec25d1130ac009751c911d78d79951302e02d22b6cc8c5a57",
+    "size": 6143933,
+    "url": "https://github.com/Umichata/tokenlogue/releases/download/runtime-build-inputs-20261110/Tokenlogue-runtime-build-inputs-20261110.tar.gz"
+  },
+  "iso_integrity_scope": "Selected member size/SHA-256 and strict HTTP Range identity only. The whole ISO checksum is a recorded official declaration and is not verified by range reads.",
+  "runtime_lock_sha256": "5b312af0ff01ae6985868f5a4f9790ba582295969bd56598f7bc40682f6101bf",
+  "schema": 1,
+  "scope": "Alternative containers for the same exact pinned APK bytes. Input versions, source pins and mandatory native package signature verification remain unchanged.",
+  "selectors": {
+    "apks/alpine-release-3.21.7-r0.apk": {
+      "kind": "official_iso_member",
+      "member": "apks/x86_64/alpine-release-3.21.7-r0.apk",
+      "official_iso_expected_sha256": "648b340f836877716ae9256097e6beb801d413dc8f9d4d9815c60197d3543e18",
+      "official_iso_size": 1095401472,
+      "offset": 1847296,
+      "range_required": true,
+      "sha256": "69d2a99ff3e5100044aa30754226090dcd45bd491b32a1c161439a47eec6e76b",
+      "size": 2038,
+      "url": "https://dl-cdn.alpinelinux.org/alpine/v3.21/releases/x86_64/alpine-extended-3.21.7-x86_64.iso",
+      "whole_iso_sha256_verified": false
+    },
+    "apks/apk-tools-2.14.6-r3.apk": {
+      "kind": "official_iso_member",
+      "member": "apks/x86_64/apk-tools-2.14.6-r3.apk",
+      "official_iso_expected_sha256": "648b340f836877716ae9256097e6beb801d413dc8f9d4d9815c60197d3543e18",
+      "official_iso_size": 1095401472,
+      "offset": 1966080,
+      "range_required": true,
+      "sha256": "8d402d6298373b7cf122fc12ba3c5bcd2e20a6b671028bef529e1dbec7413f4d",
+      "size": 122059,
+      "url": "https://dl-cdn.alpinelinux.org/alpine/v3.21/releases/x86_64/alpine-extended-3.21.7-x86_64.iso",
+      "whole_iso_sha256_verified": false
+    },
+    "apks/ca-certificates-bundle-20260413-r0.apk": {
+      "kind": "official_iso_member",
+      "member": "apks/x86_64/ca-certificates-bundle-20260413-r0.apk",
+      "official_iso_expected_sha256": "648b340f836877716ae9256097e6beb801d413dc8f9d4d9815c60197d3543e18",
+      "official_iso_size": 1095401472,
+      "offset": 4632576,
+      "range_required": true,
+      "sha256": "79bcf4fd3818e37cb7760033abb82387042c15cd7675f814d4c25e95d6ff24aa",
+      "size": 128625,
+      "url": "https://dl-cdn.alpinelinux.org/alpine/v3.21/releases/x86_64/alpine-extended-3.21.7-x86_64.iso",
+      "whole_iso_sha256_verified": false
+    },
+    "apks/libcrypto3-3.3.7-r0.apk": {
+      "kind": "official_iso_member",
+      "member": "apks/x86_64/libcrypto3-3.3.7-r0.apk",
+      "official_iso_expected_sha256": "648b340f836877716ae9256097e6beb801d413dc8f9d4d9815c60197d3543e18",
+      "official_iso_size": 1095401472,
+      "offset": 31459328,
+      "range_required": true,
+      "sha256": "e2b420a2f7a6e810c58e7ed7242a177e68148b47399018d13e5d5768ca6832b4",
+      "size": 1830639,
+      "url": "https://dl-cdn.alpinelinux.org/alpine/v3.21/releases/x86_64/alpine-extended-3.21.7-x86_64.iso",
+      "whole_iso_sha256_verified": false
+    },
+    "apks/libexpat-2.8.4-r0.apk": {
+      "kind": "official_iso_member",
+      "member": "apks/x86_64/libexpat-2.8.4-r0.apk",
+      "official_iso_expected_sha256": "960343fc296622b288ee4abe231dee60f212407987fbd03c75b1dfc831eed661",
+      "official_iso_size": 1096482816,
+      "offset": 34312192,
+      "range_required": true,
+      "sha256": "065af3b201fbfd91f2d747c1f7a3fea39f1bff9bf664c911ed94ac86fd4b0c56",
+      "size": 61247,
+      "url": "https://dl-cdn.alpinelinux.org/alpine/v3.21/releases/x86_64/alpine-extended-3.21.8-x86_64.iso",
+      "whole_iso_sha256_verified": false
+    },
+    "apks/libssl3-3.3.7-r0.apk": {
+      "kind": "official_iso_member",
+      "member": "apks/x86_64/libssl3-3.3.7-r0.apk",
+      "official_iso_expected_sha256": "648b340f836877716ae9256097e6beb801d413dc8f9d4d9815c60197d3543e18",
+      "official_iso_size": 1095401472,
+      "offset": 36208640,
+      "range_required": true,
+      "sha256": "bd50e1a43eba14a47f90076d99297ca01cb2ede6d70ccea27062552adc4bbeb6",
+      "size": 357804,
+      "url": "https://dl-cdn.alpinelinux.org/alpine/v3.21/releases/x86_64/alpine-extended-3.21.7-x86_64.iso",
+      "whole_iso_sha256_verified": false
+    },
+    "apks/musl-dev-1.2.5-r11.apk": {
+      "kind": "dependency_bundle_member",
+      "member": "apks/musl-dev-1.2.5-r11.apk",
+      "sha256": "d3b5ab01046a92b9a168b790f516606e320f015cbd4deeb584c5e115a02124ba",
+      "size": 3428687
+    },
+    "apks/musl-utils-1.2.5-r11.apk": {
+      "kind": "official_iso_member",
+      "member": "apks/x86_64/musl-utils-1.2.5-r11.apk",
+      "official_iso_expected_sha256": "648b340f836877716ae9256097e6beb801d413dc8f9d4d9815c60197d3543e18",
+      "official_iso_size": 1095401472,
+      "offset": 711321600,
+      "range_required": true,
+      "sha256": "62d69d2e06d0a6a2c3873cc67268d5b20f0c3713141e66a1d49044f2e388478a",
+      "size": 36052,
+      "url": "https://dl-cdn.alpinelinux.org/alpine/v3.21/releases/x86_64/alpine-extended-3.21.7-x86_64.iso",
+      "whole_iso_sha256_verified": false
+    },
+    "apks/pyc-3.12.14-r0.apk": {
+      "kind": "official_iso_member",
+      "member": "apks/x86_64/pyc-3.12.14-r0.apk",
+      "official_iso_expected_sha256": "960343fc296622b288ee4abe231dee60f212407987fbd03c75b1dfc831eed661",
+      "official_iso_size": 1096482816,
+      "offset": 721190912,
+      "range_required": true,
+      "sha256": "a8dfd1599ca1a75e51bc02b8dadd56390c4bca4e42bdb63a37f4bdebab7835e4",
+      "size": 1214,
+      "url": "https://dl-cdn.alpinelinux.org/alpine/v3.21/releases/x86_64/alpine-extended-3.21.8-x86_64.iso",
+      "whole_iso_sha256_verified": false
+    },
+    "apks/python3-3.12.14-r0.apk": {
+      "kind": "official_iso_member",
+      "member": "apks/x86_64/python3-3.12.14-r0.apk",
+      "official_iso_expected_sha256": "960343fc296622b288ee4abe231dee60f212407987fbd03c75b1dfc831eed661",
+      "official_iso_size": 1096482816,
+      "offset": 721192960,
+      "range_required": true,
+      "sha256": "fd3c107796c723259caa3ccf9c684875a77f2e57fa19a631e2d755c3cf21b0d4",
+      "size": 8125602,
+      "url": "https://dl-cdn.alpinelinux.org/alpine/v3.21/releases/x86_64/alpine-extended-3.21.8-x86_64.iso",
+      "whole_iso_sha256_verified": false
+    },
+    "apks/python3-pyc-3.12.14-r0.apk": {
+      "kind": "official_iso_member",
+      "member": "apks/x86_64/python3-pyc-3.12.14-r0.apk",
+      "official_iso_expected_sha256": "960343fc296622b288ee4abe231dee60f212407987fbd03c75b1dfc831eed661",
+      "official_iso_size": 1096482816,
+      "offset": 733491200,
+      "range_required": true,
+      "sha256": "1f058f0cd678f8d7865dc9492b106f6103a6afe435ff303eea7de36c2c0738ef",
+      "size": 1258,
+      "url": "https://dl-cdn.alpinelinux.org/alpine/v3.21/releases/x86_64/alpine-extended-3.21.8-x86_64.iso",
+      "whole_iso_sha256_verified": false
+    },
+    "apks/python3-pycache-pyc0-3.12.14-r0.apk": {
+      "kind": "official_iso_member",
+      "member": "apks/x86_64/python3-pycache-pyc0-3.12.14-r0.apk",
+      "official_iso_expected_sha256": "960343fc296622b288ee4abe231dee60f212407987fbd03c75b1dfc831eed661",
+      "official_iso_size": 1096482816,
+      "offset": 729319424,
+      "range_required": true,
+      "sha256": "2e8f919ef24ca2320ce13f86b0d1184d17d30b4d8e114671ea96b1822cda8d81",
+      "size": 4171078,
+      "url": "https://dl-cdn.alpinelinux.org/alpine/v3.21/releases/x86_64/alpine-extended-3.21.8-x86_64.iso",
+      "whole_iso_sha256_verified": false
+    },
+    "apks/zlib-1.3.2-r0.apk": {
+      "kind": "official_iso_member",
+      "member": "apks/x86_64/zlib-1.3.2-r0.apk",
+      "official_iso_expected_sha256": "648b340f836877716ae9256097e6beb801d413dc8f9d4d9815c60197d3543e18",
+      "official_iso_size": 1095401472,
+      "offset": 792672256,
+      "range_required": true,
+      "sha256": "b224a975eb04ec3ec9bce7db2fce91c9e9d669996f79a9a750d4a3cd9324a404",
+      "size": 55393,
+      "url": "https://dl-cdn.alpinelinux.org/alpine/v3.21/releases/x86_64/alpine-extended-3.21.7-x86_64.iso",
+      "whole_iso_sha256_verified": false
+    },
+    "apks/zlib-dev-1.3.2-r0.apk": {
+      "kind": "dependency_bundle_member",
+      "member": "apks/zlib-dev-1.3.2-r0.apk",
+      "sha256": "3569be1b98225e97a2cff5c1377553c26d2e643873186ea20117fa094a698447",
+      "size": 34380
+    },
+    "apks/zlib-static-1.3.2-r0.apk": {
+      "kind": "dependency_bundle_member",
+      "member": "apks/zlib-static-1.3.2-r0.apk",
+      "sha256": "25ddc9ad82e822afda4cb90cf1081e7530f38ec2c8d53dcc2898f08dae82cb88",
+      "size": 60906
+    }
+  }
+}

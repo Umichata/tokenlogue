@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import importlib
 import json
 import os
@@ -46,6 +47,7 @@ def check_contract(contract: dict[str, Any]) -> None:
         inputs["upstream"]["commit"] == contract.get("upstream_commit"),
         "Current runtime upstream commit differs from the source contract",
     )
+    producer.load_acquisition_plan(DIRECTORY / "runtime/acquisition.lock.json", inputs)
     # The producer may fetch exact upstream inputs, never old application releases.
     for item in inputs["files"]:
         url = item["url"].lower()
@@ -74,6 +76,18 @@ def check_contract(contract: dict[str, Any]) -> None:
 def input_acquisition(root: Path) -> dict[str, Any]:
     lock = fetch_runtime.read_json(root, "runtime.lock.json")
     audit = fetch_runtime.read_json(root, "reports/reports/input-network-audit.json")
+    manifest = fetch_runtime.read_json(root, "manifest.json")
+    acquisition_pins = [
+        entry["sha256"]
+        for entry in manifest.get("tokenlogue_recipe", {}).get("files", [])
+        if entry["path"] == "packaging/linux/appimage/runtime/acquisition.lock.json"
+    ]
+    if acquisition_pins:
+        fetch_runtime.require(
+            len(acquisition_pins) == 1
+            and audit.get("acquisition_plan_sha256") == acquisition_pins[0],
+            "Runtime input audit differs from the committed acquisition plan",
+        )
     records = audit.get("inputs", [])
     expected = {entry["path"]: entry for entry in lock["files"]}
     actual = {entry.get("path"): entry for entry in records}
@@ -105,6 +119,18 @@ def input_acquisition(root: Path) -> dict[str, Any]:
             entry["mode"] == "verified-cache" for entry in records
         ),
         "input_count": len(expected),
+        "source_kinds": {
+            kind: sum(
+                entry.get("source_kind", "unspecified") == kind for entry in records
+            )
+            for kind in sorted(
+                {entry.get("source_kind", "unspecified") for entry in records}
+            )
+        },
+        "existing_container_cache_inputs": sum(
+            entry.get("container_cache") == "reverified-existing-container-cache"
+            for entry in records
+        ),
         "audit_sha256": fetch_runtime.digest(
             root / "reports/reports/input-network-audit.json"
         ),
@@ -141,6 +167,86 @@ def selected_lock(root: Path, contract: dict[str, Any]) -> dict[str, Any]:
         "runtime_size": runtime["size"],
         "manifest_sha256": fetch_runtime.digest(root / "manifest.json"),
         "input_acquisition": input_acquisition(root),
+    }
+
+
+def export_receipts(
+    root: Path, destination: Path, lock: dict[str, Any]
+) -> dict[str, Any]:
+    """Export an explicit small proof set, without source/toolchain payloads."""
+    fetch_runtime.require(
+        lock.get("mode") == "current-source", "Current producer receipts required"
+    )
+    fetch_runtime.verify_bundle(root, lock)
+    input_acquisition(root)
+    sources = {
+        "manifest.json": "manifest.json",
+        "runtime.lock.json": "runtime.lock.json",
+        "input-network-audit.json": "reports/reports/input-network-audit.json",
+        **{
+            stage + ".json": "reports/reports/" + stage + ".json"
+            for stage in fetch_runtime.STAGES
+        },
+    }
+    payload = {}
+    total = 0
+    for name, source in sources.items():
+        path = fetch_runtime.checked_file(root, source)
+        total += path.stat().st_size
+        fetch_runtime.require(
+            total <= 8 * 1024**2, "Runtime proof metadata exceeds small receipt limit"
+        )
+        payload[name] = path.read_bytes()
+    identity = {
+        "source": "manifest.json#tokenlogue_recipe",
+        "scope": "Extracted identity from the verified producer manifest",
+        "identity": json.loads(payload["manifest.json"])["tokenlogue_recipe"],
+    }
+    payload["recipe-identity.json"] = (
+        json.dumps(identity, indent=2, sort_keys=True) + "\n"
+    ).encode()
+    payload["SHA256SUMS"] = "".join(
+        f"{hashlib.sha256(data).hexdigest()}  {name}\n"
+        for name, data in sorted(payload.items())
+    ).encode()
+    fetch_runtime.require(
+        not destination.resolve().is_relative_to(root.resolve()),
+        "Receipt export must stay outside the verified producer bundle",
+    )
+    if destination.exists() or destination.is_symlink():
+        fetch_runtime.require(
+            destination.is_dir() and not destination.is_symlink(),
+            "Invalid receipt destination",
+        )
+        fetch_runtime.require(
+            {path.name for path in destination.iterdir()} == set(payload),
+            "Existing receipt inventory differs",
+        )
+        for name, data in payload.items():
+            fetch_runtime.require(
+                fetch_runtime.checked_file(destination, name).read_bytes() == data,
+                "Existing runtime receipts differ",
+            )
+        state = "REVERIFIED"
+    else:
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(
+            prefix="runtime-proof-", dir=destination.parent
+        ) as temporary:
+            staged = Path(temporary) / "receipts"
+            staged.mkdir()
+            for name, data in payload.items():
+                (staged / name).write_bytes(data)
+            staged.rename(destination)
+        state = "EXPORTED"
+    return {
+        "result": "PASS",
+        "directory": destination.name,
+        "state": state,
+        "files": len(payload),
+        "bytes": sum(map(len, payload.values())),
+        "checksums_sha256": hashlib.sha256(payload["SHA256SUMS"]).hexdigest(),
+        "runtime_binary_or_build_inputs_copied": False,
     }
 
 

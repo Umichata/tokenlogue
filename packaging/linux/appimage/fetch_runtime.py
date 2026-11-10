@@ -777,6 +777,7 @@ def main() -> int:
     parser.add_argument("--runtime", type=Path)
     parser.add_argument("--appimage", type=Path)
     parser.add_argument("--report", type=Path)
+    parser.add_argument("--producer-reports", type=Path)
     parser.add_argument("--run", help="New standalone producer attempt name")
     parser.add_argument("--engine", choices=("docker", "podman"), default="docker")
     args = parser.parse_args()
@@ -823,6 +824,16 @@ def main() -> int:
                 else RuntimeGitHub(os.environ.get("GH_TOKEN", ""), lock["archive_size"])
             )
             result = obtain(lock, args.output, archive=args.archive, client=client)
+        if args.producer_reports is not None:
+            require(
+                current and args.action in {"fetch", "verify"},
+                "Producer report export requires the current source bundle",
+            )
+            import source_runtime
+
+            result["producer_receipts"] = source_runtime.export_receipts(
+                args.output, args.producer_reports, lock
+            )
         result["application_commit"] = subprocess.check_output(
             ["git", "rev-parse", "HEAD"], cwd=REPOSITORY_ROOT, text=True
         ).strip()

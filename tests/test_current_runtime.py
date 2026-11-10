@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import copy
 import hashlib
+import io
 import json
 import subprocess
 import sys
 import tempfile
 import unittest
+from contextlib import redirect_stdout
 from pathlib import Path
 from unittest.mock import patch
 
@@ -43,6 +45,10 @@ class CurrentContractTests(unittest.TestCase):
         self.assertIn("packaging/linux/appimage/fetch_runtime.py", step["run"])
         self.assertNotIn("curl", step["run"])
         self.assertNotIn("archive", step["run"])
+        self.assertIn(
+            "--producer-reports build/linux-release/reports/runtime-producer",
+            step["run"],
+        )
         self.assertLess(
             steps.index(step),
             next(
@@ -167,6 +173,119 @@ class CurrentProducerTests(unittest.TestCase):
         (self.output / "materials/licenses/libfuse/LICENSE").write_bytes(b"altered")
         with self.assertRaises(fetch_runtime.RuntimeArtifactError):
             source_runtime.prepare(self.output, self.contract)
+
+    def test_receipt_export_has_exact_raw_checks_and_no_source_or_binary_payloads(
+        self,
+    ) -> None:
+        self.run_producer(["python", "producer", "bundle"])
+        lock = source_runtime.selected_lock(self.artifact, self.contract)
+        destination = self.root / "diagnostic/reports/runtime-producer"
+        result = source_runtime.export_receipts(self.artifact, destination, lock)
+        expected = {
+            "manifest.json",
+            "runtime.lock.json",
+            "input-network-audit.json",
+            "recipe-identity.json",
+            "SHA256SUMS",
+            *(stage + ".json" for stage in fetch_runtime.STAGES),
+        }
+        self.assertEqual({path.name for path in destination.iterdir()}, expected)
+        self.assertEqual(result["state"], "EXPORTED")
+        self.assertFalse(result["runtime_binary_or_build_inputs_copied"])
+        for name in ("manifest.json", "runtime.lock.json"):
+            self.assertEqual(
+                (destination / name).read_bytes(), (self.artifact / name).read_bytes()
+            )
+        for name in ("input-network-audit", *fetch_runtime.STAGES):
+            self.assertEqual(
+                (destination / (name + ".json")).read_bytes(),
+                (self.artifact / "reports/reports" / (name + ".json")).read_bytes(),
+            )
+        identity = json.loads((destination / "recipe-identity.json").read_text())
+        self.assertEqual(
+            identity["identity"], self.fixture.manifest["tokenlogue_recipe"]
+        )
+        self.assertEqual(identity["source"], "manifest.json#tokenlogue_recipe")
+        records = fetch_runtime.checksum_records(
+            (destination / "SHA256SUMS").read_text()
+        )
+        self.assertEqual(set(records), expected - {"SHA256SUMS"})
+        for name, digest in records.items():
+            self.assertEqual(fetch_runtime.digest(destination / name), digest)
+        before = {
+            path.name: (path.stat().st_mtime_ns, path.read_bytes())
+            for path in destination.iterdir()
+        }
+        repeated = source_runtime.export_receipts(self.artifact, destination, lock)
+        self.assertEqual(repeated["state"], "REVERIFIED")
+        self.assertEqual(
+            before,
+            {
+                path.name: (path.stat().st_mtime_ns, path.read_bytes())
+                for path in destination.iterdir()
+            },
+        )
+        (destination / "smoke.json").write_bytes(b"altered saved proof")
+        with self.assertRaisesRegex(
+            fetch_runtime.RuntimeArtifactError, "Existing runtime receipts differ"
+        ):
+            source_runtime.export_receipts(self.artifact, destination, lock)
+        self.assertEqual(
+            (destination / "smoke.json").read_bytes(), b"altered saved proof"
+        )
+
+    def test_corrupt_or_missing_raw_receipt_blocks_export_before_destination_creation(
+        self,
+    ) -> None:
+        self.run_producer(["python", "producer", "bundle"])
+        lock = source_runtime.selected_lock(self.artifact, self.contract)
+        destination = self.root / "not-exported"
+        audit = self.artifact / "reports/reports/input-network-audit.json"
+        audit.unlink()
+        with self.assertRaises(fetch_runtime.RuntimeArtifactError):
+            source_runtime.export_receipts(self.artifact, destination, lock)
+        self.assertFalse(destination.exists())
+
+    def test_real_cli_exports_proof_to_the_diagnostic_artifact_location(self) -> None:
+        self.run_producer(["python", "producer", "bundle"])
+        lock = source_runtime.selected_lock(self.artifact, self.contract)
+        destination = self.root / "linux-release/reports/runtime-producer"
+        report = self.root / "linux-release/reports/runtime-inputs.json"
+        output = io.StringIO()
+        with (
+            patch.object(
+                sys,
+                "argv",
+                [
+                    "fetch_runtime.py",
+                    "--output",
+                    str(self.artifact),
+                    "--producer-reports",
+                    str(destination),
+                    "--report",
+                    str(report),
+                ],
+            ),
+            patch.object(
+                source_runtime,
+                "prepare",
+                return_value={"result": "PASS", "mode": "current-source"},
+            ),
+            patch.object(fetch_runtime, "load_lock", return_value=lock),
+            patch.object(
+                fetch_runtime.subprocess,
+                "check_output",
+                return_value=self.state["commit"] + "\n",
+            ),
+            redirect_stdout(output),
+        ):
+            self.assertEqual(fetch_runtime.main(), 0)
+        result = json.loads(report.read_text())
+        self.assertEqual(result["producer_receipts"]["result"], "PASS")
+        self.assertEqual(
+            (destination / "manifest.json").read_bytes(),
+            (self.artifact / "manifest.json").read_bytes(),
+        )
 
     def test_missing_container_engine_stops_before_download(self) -> None:
         with (

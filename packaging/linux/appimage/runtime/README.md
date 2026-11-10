@@ -44,7 +44,9 @@ uv run --locked python packaging/linux/appimage/fetch_runtime.py \
   --report build/linux-release/reports/runtime-inputs.json
 ```
 
-The attempt name must be new. Inputs are fetched from pinned official upstream URLs and rechecked when cached. Original sources, patches and licenses are kept separately from the application package.
+The attempt name must be new. Inputs are fetched from pinned sources and rechecked when cached. The [acquisition map](acquisition.lock.json) identifies exact package bytes retained in official Alpine installation images and a small dependency-only archive. The archive contains three Alpine development-package inputs with their original sources, recipes and licenses. It contains no older Tokenlogue application or runtime.
+
+Alpine package archives also use the `.apk` suffix. They are Linux build inputs, not Android application downloads. Image ranges are accepted only with exact HTTP range headers and the selected package checksums. Reading those ranges does not verify the entire installation image. The archive's complete checksum and every member are verified before use. Package signatures, installed inventory and both independent compilations remain mandatory.
 
 <a id="-components-and-scope"></a>
 ## <img src="../../../../docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Components and scope
