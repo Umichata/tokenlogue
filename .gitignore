@@ -69,8 +69,6 @@ export/
 !packaging/icons/android/**
 !packaging/icons/linux/
 !packaging/icons/linux/**
-!packaging/icons/windows/
-!packaging/icons/windows/**
 
 # Versioned Linux integration metadata
 !packaging/linux/

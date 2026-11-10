@@ -4,14 +4,40 @@ from __future__ import annotations
 
 import json
 import ssl
-from dataclasses import dataclass
-from decimal import Decimal, InvalidOperation
+from dataclasses import dataclass, field
+from decimal import Decimal, DecimalException, InvalidOperation, localcontext
 from enum import Enum
 from typing import Any
 
 import httpx
 
 OPENROUTER_KEY_URL = "https://openrouter.ai/api/v1/key"
+OPENROUTER_CREDITS_URL = "https://openrouter.ai/api/v1/credits"
+
+
+class CreditsStatus(str, Enum):
+    """Account-read outcomes which never change inference-key validity."""
+
+    SUCCESS = "success"
+    UNAUTHORIZED = "unauthorized"
+    RESTRICTED = "restricted"
+    RATE_LIMITED = "rate_limited"
+    TIMEOUT = "timeout"
+    NETWORK_ERROR = "network_error"
+    TLS_ERROR = "tls_error"
+    SERVER_ERROR = "server_error"
+    INVALID_RESPONSE = "invalid_response"
+    UNEXPECTED_STATUS = "unexpected_status"
+
+
+@dataclass(frozen=True)
+class CreditsResult:
+    """Only validated amounts, without response bodies or credentials."""
+
+    status: CreditsStatus
+    total_credits: Decimal | None = field(default=None, repr=False)
+    total_usage: Decimal | None = field(default=None, repr=False)
+    balance_usd: Decimal | None = field(default=None, repr=False)
 
 
 class KeyValidationStatus(str, Enum):
@@ -60,6 +86,46 @@ class OpenRouterClient:
         self._transport = transport
         self._timeout = timeout
 
+    async def get_credits(self, api_key: str) -> CreditsResult:
+        """Read real account totals using the current key and existing policy."""
+        normalized_key = api_key.strip()
+        if not normalized_key:
+            return CreditsResult(CreditsStatus.UNAUTHORIZED)
+        try:
+            async with httpx.AsyncClient(
+                transport=self._transport,
+                timeout=self._timeout,
+                follow_redirects=False,
+                trust_env=False,
+            ) as client:
+                response = await client.get(
+                    OPENROUTER_CREDITS_URL,
+                    headers={"Authorization": f"Bearer {normalized_key}"},
+                )
+        except httpx.TimeoutException:
+            return CreditsResult(CreditsStatus.TIMEOUT)
+        except httpx.ConnectError as error:
+            return CreditsResult(
+                CreditsStatus.TLS_ERROR
+                if _contains_tls_error(error)
+                else CreditsStatus.NETWORK_ERROR
+            )
+        except (httpx.HTTPError, ImportError, ValueError):
+            return CreditsResult(CreditsStatus.NETWORK_ERROR)
+
+        status = {
+            401: CreditsStatus.UNAUTHORIZED,
+            403: CreditsStatus.RESTRICTED,
+            429: CreditsStatus.RATE_LIMITED,
+        }.get(response.status_code)
+        if status is not None:
+            return CreditsResult(status)
+        if 500 <= response.status_code <= 599:
+            return CreditsResult(CreditsStatus.SERVER_ERROR)
+        if response.status_code != 200:
+            return CreditsResult(CreditsStatus.UNEXPECTED_STATUS)
+        return _parse_credits_response(response.content)
+
     async def validate_key(self, api_key: str) -> KeyValidationResult:
         """Проверяет ключ без сохранения и без раскрытия сетевых исключений."""
         normalized_key = api_key.strip()
@@ -105,6 +171,45 @@ class OpenRouterClient:
             return KeyValidationResult(KeyValidationStatus.UNEXPECTED_STATUS)
 
         return _parse_key_response(response.content)
+
+
+def _reject_json_constant(_value: str) -> None:
+    raise ValueError("non_finite_json_number")
+
+
+def _parse_credits_response(content: bytes) -> CreditsResult:
+    try:
+        payload = json.loads(
+            content,
+            parse_float=Decimal,
+            parse_int=Decimal,
+            parse_constant=_reject_json_constant,
+        )
+    except (ValueError, UnicodeDecodeError, DecimalException, RecursionError):
+        return CreditsResult(CreditsStatus.INVALID_RESPONSE)
+    if not isinstance(payload, dict) or not isinstance(payload.get("data"), dict):
+        return CreditsResult(CreditsStatus.INVALID_RESPONSE)
+    data = payload["data"]
+    credits = _as_decimal(data.get("total_credits"))
+    usage = _as_decimal(data.get("total_usage"))
+    if credits is None or usage is None:
+        return CreditsResult(CreditsStatus.INVALID_RESPONSE)
+    try:
+        # Subtraction must also preserve precision beyond the default context.
+        minimum_exponent = min(
+            int(credits.as_tuple().exponent), int(usage.as_tuple().exponent)
+        )
+        with localcontext() as context:
+            context.prec = max(
+                context.prec,
+                max(credits.adjusted(), usage.adjusted()) - minimum_exponent + 2,
+            )
+            balance = credits - usage
+    except (DecimalException, ValueError, OverflowError):
+        return CreditsResult(CreditsStatus.INVALID_RESPONSE)
+    if not balance.is_finite():
+        return CreditsResult(CreditsStatus.INVALID_RESPONSE)
+    return CreditsResult(CreditsStatus.SUCCESS, credits, usage, balance)
 
 
 def _parse_key_response(content: bytes) -> KeyValidationResult:

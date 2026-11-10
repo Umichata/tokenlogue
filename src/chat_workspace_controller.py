@@ -3,18 +3,20 @@
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime
 
 import flet as ft
 
 from auth.models import KeyLimitInfo
+from chat.account_balance import AccountBalanceSnapshot
 from chat.accounting import (
     ChatLimitConfiguration,
     ModelPriceChange,
     TurnStatus,
     parse_chat_limit_input,
 )
+from chat.budget_consent import BudgetConsent
 from chat.context import PreparedHistory, prepare_history
 from chat.drafts import (
     DRAFT_STORAGE_MESSAGE,
@@ -39,6 +41,7 @@ from service_errors import localized_error_text
 from ui import (
     ChatLimitsDialog,
     ChatWorkspaceView,
+    build_budget_warning_dialog,
     build_cost_increase_dialog,
     build_paid_request_dialog,
     build_price_reconfirmation_dialog,
@@ -56,6 +59,7 @@ class _PendingSend:
     turn_id: str | None = None
     draft: ChatDraft | None = None
     paid_consent: PaidConsent | None = None
+    budget_consent: BudgetConsent | None = None
 
 
 @dataclass(frozen=True)
@@ -95,6 +99,7 @@ class ChatWorkspaceController:
         self._active = False
         self._paid_setting_writes: dict[tuple[int, str], int] = {}
         self._estimate_model: CatalogModel | None = None
+        self._account_balance = AccountBalanceSnapshot()
         self._estimate_key_limit = KeyLimitInfo.unknown()
         self._metadata_updated_at: datetime | None = None
         self._estimate_history_messages: tuple[Message, ...] | None = None
@@ -132,6 +137,7 @@ class ChatWorkspaceController:
         self._generation += 1
         self._session_generation += 1
         self._active = False
+        self._account_balance = AccountBalanceSnapshot()
         self.dismiss_dialogs()
         self._pending_send = None
         self._view = None
@@ -219,6 +225,28 @@ class ChatWorkspaceController:
         self._metadata_updated_at = metadata_updated_at
         self._refresh_local_estimate()
 
+    def set_account_balance(self, snapshot: AccountBalanceSnapshot) -> None:
+        """Publish an account read without invalidating the draft estimate."""
+        self._account_balance = snapshot
+        self._refresh_metrics()
+
+    def _refresh_metrics(self) -> None:
+        state, view = self._state, self._view
+        if not self._active or state is None or view is None:
+            return
+        view.set_metrics(
+            build_chat_metrics(
+                state.chat,
+                state.budget,
+                state.last_request,
+                pending=state.sending
+                or any(turn.status is TurnStatus.PENDING for turn in state.turns),
+                key_limit=self._estimate_key_limit,
+                metadata_updated_at=self._metadata_updated_at,
+                account_balance=self._account_balance,
+            )
+        )
+
     async def wait_estimate_idle(self) -> None:
         """Drain the bounded pure worker without opening storage or transport."""
         await self._estimate_worker.wait_idle()
@@ -238,17 +266,7 @@ class ChatWorkspaceController:
         if not self._active or state is None or view is None:
             self._clear_estimate_context()
             return
-        view.set_metrics(
-            build_chat_metrics(
-                state.chat,
-                state.budget,
-                state.last_request,
-                pending=state.sending
-                or any(turn.status is TurnStatus.PENDING for turn in state.turns),
-                key_limit=self._estimate_key_limit,
-                metadata_updated_at=self._metadata_updated_at,
-            )
-        )
+        self._refresh_metrics()
         if (
             self._estimate_history is None
             or state.messages != self._estimate_history_messages
@@ -595,9 +613,14 @@ class ChatWorkspaceController:
             return
         if not await self._pending_operation_is_current(pending, operation):
             return
-        if state.chat.mode is ChatMode.PAID and pending.paid_consent is None:
+        if state.chat.mode is ChatMode.PAID:
             try:
-                preview = await self._interaction.preview_message(state.chat.id, text)
+                preview = await self._interaction.preview_message(
+                    state.chat.id,
+                    text,
+                    pending.paid_consent,
+                    draft_revision=snapshot.revision,
+                )
             except Exception as error:
                 if await self._pending_operation_is_current(pending, operation):
                     self._finish_pending_with_message(_safe_local_error(error))
@@ -607,9 +630,10 @@ class ChatWorkspaceController:
             if not preview.allowed:
                 await self._handle_preview_failure(preview, operation)
                 return
-            self._pending_preview = preview
-            self._show_paid_dialog(preview, pending, operation)
-            return
+            if preview.budget_warning is not None or pending.paid_consent is None:
+                self._pending_preview = preview
+                self._show_paid_dialog(preview, pending, operation)
+                return
         await self._execute_send(pending, paid_confirmed=False)
 
     async def request_retry_turn(self, turn_id: str) -> None:
@@ -654,7 +678,9 @@ class ChatWorkspaceController:
         if not preview.allowed:
             await self._handle_preview_failure(preview, operation)
             return
-        if state.chat.mode is ChatMode.PAID and pending.paid_consent is None:
+        if state.chat.mode is ChatMode.PAID and (
+            preview.budget_warning is not None or pending.paid_consent is None
+        ):
             self._pending_preview = preview
             self._show_paid_dialog(preview, pending, operation)
             return
@@ -665,6 +691,25 @@ class ChatWorkspaceController:
         preview = self._pending_preview
         if pending is None or preview is None or not preview.allowed:
             return
+        operation = self._capture_operation(pending.chat_id)
+        if operation is None:
+            return
+        if (
+            pending.draft is not None
+            and self._drafts.current(pending.chat_id) != pending.draft
+        ):
+            self.cancel_pending_send()
+            self._show_message(tr("budget_warning.draft_changed"))
+            return
+        if preview.budget_warning is not None:
+            try:
+                consent = self._interaction.confirm_budget_warning(preview)
+            except Exception as error:
+                self.cancel_pending_send()
+                self._show_message(_safe_local_error(error))
+                return
+            pending = replace(pending, budget_consent=consent)
+            self._pending_send = pending
         self._pending_preview = None
         self._page.pop_dialog()
         if pending.turn_id is None:
@@ -704,7 +749,23 @@ class ChatWorkspaceController:
         operation: _WorkspaceOperation,
     ) -> None:
         confirm, cancel = self._dialog_callbacks(pending, operation, price=False)
-        self._page.show_dialog(build_paid_request_dialog(preview, confirm, cancel))
+        if preview.budget_warning is not None:
+
+            async def edit_limit() -> None:
+                if (
+                    self._pending_send is pending
+                    and self._pending_preview is preview
+                    and self._operation_matches(operation)
+                ):
+                    self.capture_editor()
+                    self.cancel_pending_send()
+                    await self.request_edit_limits(pending.chat_id)
+
+            self._page.show_dialog(
+                build_budget_warning_dialog(preview, confirm, cancel, edit_limit)
+            )
+        else:
+            self._page.show_dialog(build_paid_request_dialog(preview, confirm, cancel))
 
     def _show_price_dialog(
         self,
@@ -763,7 +824,14 @@ class ChatWorkspaceController:
             if not await self._pending_operation_is_current(pending, operation):
                 return
             preview = (
-                await self._interaction.preview_message(pending.chat_id, pending.text)
+                await self._interaction.preview_message(
+                    pending.chat_id,
+                    pending.text,
+                    pending.paid_consent,
+                    draft_revision=(
+                        pending.draft.revision if pending.draft is not None else None
+                    ),
+                )
                 if pending.turn_id is None
                 else await self._interaction.preview_retry(pending.turn_id)
             )
@@ -816,6 +884,7 @@ class ChatWorkspaceController:
             draft_revision=pending.draft.revision
             if pending.draft is not None
             else None,
+            budget_consent=pending.budget_consent,
         )
         if session != self._session_generation:
             return
@@ -846,6 +915,7 @@ class ChatWorkspaceController:
             paid_confirmed=paid_confirmed,
             paid_consent=pending.paid_consent,
             on_reserved=on_reserved,
+            budget_consent=pending.budget_consent,
         )
         if session != self._session_generation:
             return
@@ -873,6 +943,16 @@ class ChatWorkspaceController:
                 self._pending_send = None
                 self._pending_preview = None
             await self._refresh_workspace(False)
+            return
+        if outcome.result.budget_preview is not None:
+            self._set_state(outcome.state)
+            pending = replace(pending, budget_consent=None)
+            self._pending_send = pending
+            self._pending_preview = outcome.result.budget_preview
+            if self._pending_preview.allowed:
+                self._show_paid_dialog(self._pending_preview, pending, operation)
+            else:
+                await self._handle_preview_failure(self._pending_preview, operation)
             return
         if (
             outcome.result.error_type is ChatErrorType.PRICE_RECONFIRMATION_REQUIRED

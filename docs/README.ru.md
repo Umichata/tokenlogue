@@ -10,11 +10,11 @@
 
 # 🧭 Документация
 
-<p align="left"><a href="../README.ru.md"><img src="assets/ui/buttons/ru-e51081debfbf.svg" alt="Обзор проекта" width="137" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/releases"><img src="assets/ui/buttons/ru-840902d46c65.svg" alt="Загрузки" width="94" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/issues"><img src="assets/ui/buttons/ru-9079b2556a7e.svg" alt="Помощь" width="87" height="28"></a></p>
+<p align="left"><a href="../README.ru.md"><img src="assets/ui/buttons/ru-e51081debfbf.svg" alt="Обзор проекта" width="137" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.2.0-preview.52a834d"><img src="assets/ui/buttons/ru-840902d46c65.svg" alt="Загрузки" width="94" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/issues"><img src="assets/ui/buttons/ru-9079b2556a7e.svg" alt="Помощь" width="87" height="28"></a></p>
 
 <a id="russian"></a>
 
-Выберите нужный документ. Сначала расположены установка и повседневная работа. Технические материалы и история выпусков собраны отдельно.
+Выберите нужный документ. Начните с установки и повседневной работы, а затем при необходимости перейдите к исходникам и упаковке.
 
 <a id="-начало-работы"></a>
 ## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Начало работы
@@ -23,7 +23,7 @@
 <tr><th align="left">Раздел</th><th align="left">Документы</th></tr>
 <tr>
 <td><a id="получение-tokenlogue"></a><strong>Получение Tokenlogue</strong></td>
-<td><a href="https://github.com/Umichata/tokenlogue/releases" title="Загрузки"><img src="assets/ui/buttons/ru-f0e4eb0b92d5.svg" alt="Загрузки" width="94" height="28"></a> <a href="android.ru.md#russian" title="Android"><img src="assets/ui/buttons/ru-007800957d4f.svg" alt="Android" width="83" height="28"></a> <a href="linux-appimage.ru.md#russian" title="Linux"><img src="assets/ui/buttons/ru-66f2899ff23a.svg" alt="Linux" width="65" height="28"></a></td>
+<td><a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.2.0-preview.52a834d" title="Загрузки"><img src="assets/ui/buttons/ru-f0e4eb0b92d5.svg" alt="Загрузки" width="94" height="28"></a> <a href="android.ru.md#russian" title="Android"><img src="assets/ui/buttons/ru-007800957d4f.svg" alt="Android" width="83" height="28"></a> <a href="linux-appimage.ru.md#russian" title="Linux"><img src="assets/ui/buttons/ru-66f2899ff23a.svg" alt="Linux" width="65" height="28"></a></td>
 </tr>
 <tr>
 <td><a id="первый-разговор"></a><strong>Первый разговор</strong></td>
@@ -88,11 +88,4 @@
 
 </details>
 
-<details>
-<summary><strong>История выпусков</strong></summary>
-
-<p align="left"><a href="releases/v0.1.0-linux-preview.1.ru.md#russian"><img src="assets/ui/buttons/ru-4bd603c447ee.svg" alt="Прежний Linux preview" width="202" height="28"></a> <a href="releases/14b87ac-source-materials.ru.md#russian"><img src="assets/ui/buttons/ru-d4d53fed38d0.svg" alt="История исходников" width="181" height="28"></a></p>
-
-Эти документы описывают соответствующие прежние пакеты. Для текущей предварительной версии используйте руководства по установке выше.
-
-</details>
+Баланс аккаунта и три действия предупреждения описаны в разделах [об аккаунте](user-guide.ru.md#ru-balance) и [о бюджете чата](user-guide.ru.md#ru-budget-warning).

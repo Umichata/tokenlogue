@@ -8,6 +8,7 @@ from decimal import Decimal
 from enum import Enum
 
 from auth.models import KeyLimitInfo
+from chat.account_balance import AccountBalanceSnapshot
 from chat.accounting import ChatBudget, RemainingBudget, calculate_remaining_budget
 from chat.models import Chat, ChatMode
 
@@ -42,6 +43,9 @@ class ChatMetricsSnapshot:
     key_limit: KeyLimitInfo = field(default_factory=KeyLimitInfo.unknown)
     metadata_updated_at: datetime | None = None
     account_balance_usd: Decimal | None = None
+    account_balance: AccountBalanceSnapshot = field(
+        default_factory=AccountBalanceSnapshot
+    )
 
 
 def build_chat_metrics(
@@ -52,12 +56,9 @@ def build_chat_metrics(
     pending: bool = False,
     key_limit: KeyLimitInfo | None = None,
     metadata_updated_at: datetime | None = None,
+    account_balance: AccountBalanceSnapshot | None = None,
 ) -> ChatMetricsSnapshot:
-    """Keep chat budgets and key limits separate from unavailable credits.
-
-    The normal inference key does not authorize the management-key credits
-    endpoint. No account balance is inferred from these local values.
-    """
+    """Keep account API snapshots separate from chat and key budgets."""
     if chat.id != budget.chat_id:
         raise ValueError("chat_metrics_snapshot_mismatch")
     return ChatMetricsSnapshot(
@@ -68,4 +69,8 @@ def build_chat_metrics(
         pending=pending,
         key_limit=key_limit or KeyLimitInfo.unknown(),
         metadata_updated_at=metadata_updated_at,
+        account_balance_usd=(
+            account_balance.balance_usd if account_balance is not None else None
+        ),
+        account_balance=account_balance or AccountBalanceSnapshot(),
     )

@@ -135,7 +135,7 @@
   "reserve.release_unknown": "Освободить неизвестный резерв",
   "key.available_limit": "Доступный лимит ключа",
   "key.checking": "Проверка ключа OpenRouter…",
-  "key.refresh": "Обновить статус ключа",
+  "key.refresh": "Обновить ключ и баланс",
   "key.replace": "Заменить ключ OpenRouter",
   "key.replace_wait_check": "Дождитесь завершения проверки ключа.",
   "key.replace_wait_send": "Сначала завершите или отмените текущую операцию.",

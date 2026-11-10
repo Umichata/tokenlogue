@@ -244,7 +244,7 @@ class LiveEstimateTests(unittest.TestCase):
             expected, override.request + override.prompt * result.prompt_tokens
         )
 
-    def test_cost_and_key_limit_reduce_the_same_completion_cap(self) -> None:
+    def test_chat_money_does_not_hide_risk_and_key_limit_still_caps(self) -> None:
         snapshot = _snapshot(paid=True)
         assert snapshot.budget is not None and snapshot.model is not None
         price = PriceComponents(completion=Decimal("0.001"))
@@ -260,7 +260,8 @@ class LiveEstimateTests(unittest.TestCase):
             model=model,
             budget=replace(snapshot.budget, cost_limit_usd=Decimal("0.050")),
         )
-        self.assertEqual(estimate_draft(snapshot, "x").max_completion_tokens, 50)
+        self.assertEqual(estimate_draft(snapshot, "x").max_completion_tokens, 128)
+        self.assertEqual(estimate_draft(snapshot, "x").cost_upper_usd, Decimal("0.128"))
         snapshot = replace(
             snapshot, key_limit=KeyLimitInfo.from_validated_remaining(Decimal("0.025"))
         )

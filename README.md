@@ -8,7 +8,7 @@
   <img src="docs/assets/tokenlogue-banner-en-v2.png" alt="Tokenlogue" width="100%">
 </h1>
 
-<p align="left"><a href="https://github.com/Umichata/tokenlogue/releases"><img src="docs/assets/ui/buttons/en-dd8bbfdbdd63.svg" alt="Downloads" width="106" height="28"></a> <a href="docs/android.md#english"><img src="docs/assets/ui/buttons/en-455f22ec11f5.svg" alt="Guide" width="68" height="28"></a> <a href="docs/README.md"><img src="docs/assets/ui/buttons/en-992f2873a82b.svg" alt="Documentation map" width="174" height="28"></a> <a href="#en-install"><img src="docs/assets/ui/buttons/en-c1a92da25825.svg" alt="Install" width="71" height="28"></a> <a href="#en-chat"><img src="docs/assets/ui/buttons/en-6147e3abd016.svg" alt="First chat" width="96" height="28"></a> <a href="docs/security.md#english"><img src="docs/assets/ui/buttons/en-9c2e33444d68.svg" alt="Protection" width="102" height="28"></a></p>
+<p align="left"><a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.2.0-preview.52a834d"><img src="docs/assets/ui/buttons/en-dd8bbfdbdd63.svg" alt="Downloads" width="106" height="28"></a> <a href="docs/android.md#english"><img src="docs/assets/ui/buttons/en-455f22ec11f5.svg" alt="Guide" width="68" height="28"></a> <a href="docs/README.md"><img src="docs/assets/ui/buttons/en-992f2873a82b.svg" alt="Documentation map" width="174" height="28"></a> <a href="#en-install"><img src="docs/assets/ui/buttons/en-c1a92da25825.svg" alt="Install" width="71" height="28"></a> <a href="#en-chat"><img src="docs/assets/ui/buttons/en-6147e3abd016.svg" alt="First chat" width="96" height="28"></a> <a href="docs/security.md#english"><img src="docs/assets/ui/buttons/en-9c2e33444d68.svg" alt="Protection" width="102" height="28"></a></p>
 
 <a id="english"></a>
 <a id="lang-en"></a>
@@ -32,7 +32,7 @@
 </tr>
 </table>
 
-Tokenlogue chat on an Android tablet.
+Tokenlogue chat on an Android tablet. Screenshots illustrate the chat workspace. Available controls can vary with the application version.
 
 <a id="en-install"></a>
 <a id="-install-or-update"></a>
@@ -40,7 +40,7 @@ Tokenlogue chat on an Android tablet.
 
 You need **ARM64 Android 7.0 / API 24 or later**. This minimum does not mean every Android version has been tested. Static 16 KiB checks passed, while operation on a native ARM64 device with a 16 KiB kernel has not yet been checked.
 
-For this preview, choose `Tokenlogue-0.1.0-65aa62f-arm64-v8a-v41-test.apk` and `RELEASE_SHA256SUMS` from <a href="https://github.com/Umichata/tokenlogue/releases" title="Releases">Releases&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a>. If this preview is not listed, its downloads are not public yet. Check only the APK against its manifest entry as explained in the Android guide below. You do not need a separate Python or Flutter installation or the source archives to run Tokenlogue.
+For Tokenlogue 0.2.0, download [`Tokenlogue-0.2.0-android-arm64-v8a-v42.apk`](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/Tokenlogue-0.2.0-android-arm64-v8a-v42.apk) and [`SHA256SUMS`](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/SHA256SUMS) from <a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.2.0-preview.52a834d" title="Releases">Releases&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a>. Check only the APK against its manifest entry as explained in the Android guide below. You do not need a separate Python or Flutter installation or the source archives to run Tokenlogue.
 
 Allow installation from your chosen file manager or browser, open the verified APK and follow Android's prompts. For an update, install over a compatible previous version with the same signing certificate. Do not uninstall or clear application data as a routine update step.
 
@@ -56,7 +56,9 @@ Allow installation from your chosen file manager or browser, open the verified A
 
 The draft and model choice remain with that conversation. Open the chat actions to rename or delete it.
 
-A chat budget, the key's OpenRouter limit and the account balance are separate. Token and cost estimates are approximate. Turning off paid-request confirmation applies from the first request in that chat, while limits remain active.
+OpenRouter balance comes from the account API and appears in free and paid chats. Its refresh state shows whether the value is current. A failed refresh leaves it explicitly stale or unavailable, rather than replacing it with a local calculation. Choose `Refresh key and balance` in `⋮` for a manual update. The API key limit and the saved chat budget remain separate values.
+
+Before a paid request could leave 10% or less of its chat spending limit according to the upper estimate, Tokenlogue asks whether to cancel, send this request once or change the chat limit. Cancel keeps the draft, and saving a new limit sends nothing. A one-off overrun does not raise the saved limit. Ordinary paid confirmations can be disabled from the first request in the selected chat, while the budget warning and other restrictions remain active. Cost and token estimates remain approximate.
 
 <p align="left"><a href="docs/user-guide.md#english"><img src="docs/assets/ui/buttons/en-8f1e54380ecd.svg" alt="Chat guide" width="105" height="28"></a> <a href="docs/security.md#english"><img src="docs/assets/ui/buttons/en-a8359f9bf2b5.svg" alt="PIN, encryption and Android recovery" width="302" height="28"></a></p>
 
@@ -64,6 +66,8 @@ A chat budget, the key's OpenRouter limit and the account balance are separate. 
 ## <img src="docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Know what is protected
 
 Selected local conversation fields are encrypted, not the whole device. System recovery needs a supported and configured Android screen lock and access to the original protected encryption key. Deleting the local profile is irreversible and does not refund or delete your OpenRouter account.
+
+Ready-to-use packages are separate downloads from sources. The project archive identified in `PROVENANCE.json` matches the delivered build, while `Tokenlogue-0.2.0-dependency-sources.tar.gz` collects identified third-party materials without a chain of older releases. The source guide explains its contents and the remaining gaps in linking some native binaries to their sources. An archive or license alone does not establish a wheel's build provenance.
 
 <p align="left"><a href="docs/source-materials.md#english"><img src="docs/assets/ui/buttons/en-81e7eddd2b57.svg" alt="Sources and provenance limits" width="251" height="28"></a> <a href="THIRD_PARTY_NOTICES.md#english"><img src="docs/assets/ui/buttons/en-2ac361b561de.svg" alt="Third-party licenses" width="172" height="28"></a> <a href="LICENSE"><img src="docs/assets/ui/buttons/en-35273ad53d41.svg" alt="MIT license" width="108" height="28"></a></p>
 
@@ -78,7 +82,7 @@ Selected local conversation fields are encrypted, not the whole device. System r
 <tr><th align="left">Category</th><th align="left">Documents</th></tr>
 <tr>
 <td><a id="start-here"></a><strong>Start here</strong></td>
-<td><a href="https://github.com/Umichata/tokenlogue/releases" title="Downloads"><img src="docs/assets/ui/buttons/en-0af7fc63fbbe.svg" alt="Downloads" width="106" height="28"></a> <a href="docs/android.md#en-install" title="Android install"><img src="docs/assets/ui/buttons/en-ec13da01a81e.svg" alt="Android install" width="133" height="28"></a> <a href="docs/linux-appimage.md#en-download" title="Linux launch"><img src="docs/assets/ui/buttons/en-ce1db4f66563.svg" alt="Linux launch" width="118" height="28"></a></td>
+<td><a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.2.0-preview.52a834d" title="Downloads"><img src="docs/assets/ui/buttons/en-0af7fc63fbbe.svg" alt="Downloads" width="106" height="28"></a> <a href="docs/android.md#en-install" title="Android install"><img src="docs/assets/ui/buttons/en-ec13da01a81e.svg" alt="Android install" width="133" height="28"></a> <a href="docs/linux-appimage.md#en-download" title="Linux launch"><img src="docs/assets/ui/buttons/en-ce1db4f66563.svg" alt="Linux launch" width="118" height="28"></a></td>
 </tr>
 <tr>
 <td><a id="use-and-protect"></a><strong>Use and protect</strong></td>
@@ -90,4 +94,4 @@ Selected local conversation fields are encrypted, not the whole device. System r
 </tr>
 </table>
 
-The full documentation map also includes packaging documents and historical release records.
+The full documentation map also includes packaging documents and the current source-materials guide.

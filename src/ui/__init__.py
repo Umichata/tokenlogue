@@ -11,6 +11,7 @@ from .auth_view import (
 from .chat_limits_view import (
     ChatLimitsDialog,
     NewChatLimitsView,
+    build_budget_warning_dialog,
     build_cost_increase_dialog,
     build_paid_request_dialog,
     build_price_reconfirmation_dialog,
@@ -49,6 +50,7 @@ __all__ = [
     "RecoveryCodeEntryView",
     "RecoveryCodePinView",
     "StorageErrorView",
+    "build_budget_warning_dialog",
     "build_delete_chat_dialog",
     "build_cost_increase_dialog",
     "build_paid_request_dialog",

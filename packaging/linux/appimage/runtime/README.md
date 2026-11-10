@@ -14,7 +14,7 @@ The runtime mounts or extracts the filesystem inside an AppImage and starts the 
 <a id="-inspect-the-source-bundle"></a>
 ## <img src="../../../../docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Inspect the source bundle
 
-The [published runtime ZIP](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/appimage-runtime-34749438406-1.zip) contains the startup binary and its source materials. This stable filename identifies the existing bundle. It is not an Android package or a newer Tokenlogue application release.
+The current [standalone recipe](build_runtime.py) builds this component from the exact upstream sources and packages in [runtime.lock.json](runtime.lock.json). The Linux workflow builds and verifies it before packaging Tokenlogue. It does not download a runtime from an earlier Tokenlogue release or an expiring Actions artifact. The resulting bundle contains the new startup binary, its source materials and the build receipts.
 
 <img src="../../../../docs/assets/ui/frame-top.svg" width="100%" alt="">
 
@@ -35,6 +35,18 @@ sha256sum --check SHA256SUMS
 ```
 
 Checksums establish file integrity, not a digital signature.
+
+To build only the current runtime from a clean checkout, use the existing Python environment and Docker or Podman. The helper verifies package signatures, performs two independent compilations without network access and compares the results before its smoke check.
+
+```bash
+uv run --locked python packaging/linux/appimage/fetch_runtime.py \
+  --run standalone-local \
+  --report build/linux-release/reports/runtime-inputs.json
+```
+
+The attempt name must be new. Inputs are fetched from pinned sources and rechecked when cached. The [acquisition map](acquisition.lock.json) identifies exact package bytes retained in official Alpine installation images and a small dependency-only archive. The archive contains three Alpine development-package inputs with their original sources, recipes and licenses. It contains no older Tokenlogue application or runtime.
+
+Alpine package archives also use the `.apk` suffix. They are Linux build inputs, not Android application downloads. Image ranges are accepted only with exact HTTP range headers and the selected package checksums. Reading those ranges does not verify the entire installation image. The archive's complete checksum and every member are verified before use. Package signatures, installed inventory and both independent compilations remain mandatory. All selected packages are installed from exact local APK files with networking disabled. Mutable repository indexes do not participate in dependency resolution and are not required build inputs.
 
 <a id="-components-and-scope"></a>
 ## <img src="../../../../docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Components and scope

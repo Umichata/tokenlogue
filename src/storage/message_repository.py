@@ -17,6 +17,15 @@ from chat.accounting import (
     TurnRecord,
     TurnStatus,
 )
+from chat.budget_consent import (
+    BudgetConsent,
+    BudgetConsentBasis,
+    BudgetConsentRevoked,
+    budget_version,
+    budget_warning,
+    chat_prices,
+    text_digest,
+)
 from chat.drafts import ChatDraft
 from chat.errors import ChatErrorType
 from chat.metrics import LastRequestMetrics, LastRequestState
@@ -24,6 +33,7 @@ from chat.models import ChatMode, Message, MessageRole, MessageStatus
 from chat.paid_consent import PaidConsentRevoked
 from i18n import tr
 from storage.chat_preferences import policy_from_read, with_new_prices
+from storage.chat_repository import _chat_from_row
 from storage.database_connections import (
     ContentAccess,
     encrypt_value,
@@ -157,6 +167,8 @@ class SqliteMessageRepository:
         retry: bool,
         draft_revision: int | None = None,
         paid_policy_revision: str | None = None,
+        budget_basis: BudgetConsentBasis | None = None,
+        budget_consent: BudgetConsent | None = None,
     ) -> ChatDraft | None:
         if not isinstance(reservation, BudgetReservation):
             raise ValueError(tr("service.reserve_object_invalid"))
@@ -214,7 +226,56 @@ class SqliteMessageRepository:
             if mode is ChatMode.PAID:
                 if budget.cost_limit_usd is None:
                     raise BudgetConflictError(tr("service.money_budget_missing"))
-                if budget.cost_used_usd + new_cost_reserved > budget.cost_limit_usd:
+                current_warning = budget_warning(budget, reservation.reserved_cost_usd)
+                if budget_basis is not None:
+                    chat_row = connection.execute(
+                        "SELECT * FROM chats WHERE id = ?", (reservation.chat_id,)
+                    ).fetchone()
+                    assert chat_row is not None
+                    current_chat = _chat_from_row(chat_row)
+                    if (
+                        budget_basis.chat_id != reservation.chat_id
+                        or budget_basis.model_id != requested_model_id
+                        or current_chat.requested_model_id != requested_model_id
+                        or not current_chat.pricing_snapshot_complete
+                        or budget_basis.text_sha256 != text_digest(content)
+                        or budget_basis.draft_revision != draft_revision
+                        or budget_basis.retry_turn_id
+                        != (reservation.turn_id if retry else None)
+                        or budget_basis.limits_version != budget_version(budget)
+                        or budget_basis.pricing != chat_prices(current_chat)
+                        or budget_basis.estimated_cost_usd
+                        != reservation.reserved_cost_usd
+                        or budget_basis.reserved_tokens != reservation.reserved_tokens
+                        or budget_basis.projected_remaining_usd
+                        != budget.cost_limit_usd
+                        - budget.cost_used_usd
+                        - new_cost_reserved
+                    ):
+                        raise BudgetConsentRevoked()
+                    if draft_revision is not None:
+                        draft_row = connection.execute(
+                            "SELECT revision FROM chat_drafts WHERE chat_id = ?",
+                            (reservation.chat_id,),
+                        ).fetchone()
+                        stored_revision = (
+                            0 if draft_row is None else draft_row["revision"]
+                        )
+                        if stored_revision != draft_revision:
+                            raise BudgetConsentRevoked()
+                if budget_consent is not None:
+                    if (
+                        not isinstance(budget_consent, BudgetConsent)
+                        or budget_basis is None
+                    ):
+                        raise BudgetConsentRevoked()
+                    budget_consent.consume(budget_basis)
+                elif current_warning is not None:
+                    raise BudgetConsentRevoked()
+                if (
+                    budget.cost_used_usd + new_cost_reserved > budget.cost_limit_usd
+                    and budget_consent is None
+                ):
                     raise BudgetConflictError(tr("service.money_budget_insufficient"))
             elif reservation.reserved_cost_usd != 0:
                 raise BudgetConflictError(tr("service.free_cannot_reserve_money"))

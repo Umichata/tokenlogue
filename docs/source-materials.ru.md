@@ -9,92 +9,75 @@
 <a id="russian"></a>
 <a id="lang-ru"></a>
 
-Tokenlogue распространяется по <a href="../LICENSE" title="лицензии MIT">лицензии MIT&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a>. Репозиторий содержит приложение, закреплённые зависимости и рецепты упаковки. Для сторонних компонентов действуют собственные лицензии.
+Код приложения Tokenlogue доступен по [лицензии MIT](../LICENSE). Сторонние компоненты сохраняют собственные условия. Готовые APK и AppImage скачиваются отдельно. Для запуска приложения исходники и средства сборки не нужны.
 
 <a id="-исходники-приложения"></a>
-## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Исходники приложения
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Исходники поставленного приложения
 
-Используйте версию исходников, указанную в `PROVENANCE.json` вашего пакета. Более поздняя версия репозитория может содержать другой код или документацию. Архив исходников приложения и наборы зависимостей ниже выполняют разные задачи.
+Выберите архив проекта для своей платформы из [`PROVENANCE.json`](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/PROVENANCE.json). Пакеты Android и Linux собраны из разных ревизий упаковки с одинаковым общим ядром приложения. Commit, дерево и контрольные суммы связывают каждый пакет с его точными исходниками. Более поздняя версия репозитория или README платформенной ветки не меняют это происхождение.
+
+На странице [Releases](https://github.com/Umichata/tokenlogue/releases/tag/v0.2.0-preview.52a834d) перечислены действительно доступные файлы каждой версии. Для версии `0.2.0` сторонние исходные материалы поставляются одним актуальным архивом с реестром. Цепочка загрузок прежних выпусков Tokenlogue не нужна.
+
+<a id="-выбор-подходящего-комплекта"></a>
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Использование комплекта зависимостей
+
+| Файл | Назначение |
+| --- | --- |
+| [Исходники проекта для Android](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/Tokenlogue-0.2.0-8080e6e-project-sources.tar.gz) | Точные отслеживаемые исходники приложения, lock-файлы и упаковка поставленного APK. |
+| [Исходники проекта для Linux](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/Tokenlogue-0.2.0-52a834d-project-sources.tar.gz) | Точные отслеживаемые исходники приложения, lock-файлы и упаковка поставленной AppImage. |
+| [`Tokenlogue-0.2.0-dependency-sources.tar.gz`](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/Tokenlogue-0.2.0-dependency-sources.tar.gz) | Идентифицированные сторонние исходники, оригинальные уведомления, изменения и рецепты без повторных копий одинаковых файлов. |
+| [`SOURCE_MATERIALS.json`](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/SOURCE_MATERIALS.json) | Версии, связи компонентов, относительные пути, размеры и SHA-256 материалов. Также описывает границы подтверждения исходников и происхождения бинарников. |
+| [`SHA256SUMS`](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/SHA256SUMS) | Контрольные суммы загрузок выпуска. |
+
+В архиве зависимостей нет дополнительной внешней папки. Он содержит двуязычный `README.md`, `SOURCE_MATERIALS.json`, `BUILD_INPUTS.json`, `RECONSTRUCTION.json`, `SHA256SUMS` и оригинальные файлы в `materials/<SHA-256>/<исходное имя>`. Одинаковый файл хранится один раз и может относиться к нескольким компонентам. Если исходники или уведомление находятся внутри сохранённого архива, реестр указывает точный внутренний путь.
+
+В `BUILD_INPUTS.json` сохранены закреплённые источники, размеры и суммы отдельно получаемых компиляторов, runtime и инструментов. Среди них официальные upstream-загрузки, выбранные файлы официальных ISO Alpine и [текущий контейнер сборочных входов Tokenlogue](https://github.com/Umichata/tokenlogue/releases/tag/runtime-build-inputs-20261110). Последний не является официальным контейнером Alpine. Для ISO проверяются выбранные байты, а не сумма всего образа. Контейнер зависимостей проверяется целиком и по членам. Получение внешних сборочных входов может потребовать интернет. Прежний выпуск приложения Tokenlogue или старый Actions-артефакт для этого не нужен.
+
+Сохраните архив зависимостей и `SHA256SUMS` выпуска в одной папке. Проверьте выбранный архив до распаковки. Для команды нужны Bash и средства SHA-256.
+
+```bash
+set -o pipefail
+file='Tokenlogue-0.2.0-dependency-sources.tar.gz'
+awk -v wanted="$file" '$2 == wanted { entry = $0; count++ } END { if (count != 1) exit 1; print entry }' SHA256SUMS |
+  sha256sum --check -
+```
+
+Выбранный файл должен получить `OK`. Отсутствующая или повторная запись в манифесте, отсутствующий файл и несовпадение суммы вызывают ошибку. Затем распакуйте материалы в новую пустую папку и проверьте их собственный манифест.
+
+```bash
+mkdir tokenlogue-dependency-sources &&
+tar --extract --gzip --file Tokenlogue-0.2.0-dependency-sources.tar.gz \
+  --directory tokenlogue-dependency-sources --no-same-owner --no-same-permissions &&
+(cd tokenlogue-dependency-sources && sha256sum --check SHA256SUMS)
+```
+
+Манифест выпуска проверяет скачанный архив. Внутренний манифест проверяет распакованные файлы. Сохраняйте исходные архивы и оригинальные юридические тексты без изменений.
 
 <a id="ru-run-from-source"></a>
-
 <a id="-запуск-из-исходников-в-linux"></a>
 ## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Запуск из исходников в Linux
 
-Установите Python 3.12 и [uv](https://docs.astral.sh/uv/). Получите исходники проекта и откройте терминал в папке с `pyproject.toml` и `uv.lock`. Также действуют <a href="linux-appimage.ru.md#russian" title="требования Linux к рабочему столу и хранилищу ключей">требования Linux к рабочему столу и хранилищу ключей&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a>.
+Установите Python 3.12 и [uv](https://docs.astral.sh/uv/). Откройте терминал в распакованном каталоге проекта с `pyproject.toml` и `uv.lock`. Также действуют [требования Linux к рабочему столу и хранилищу ключей](linux-appimage.ru.md#russian).
+
 ```bash
 uv sync --locked
 uv run --locked flet run
 ```
 
-Команды запускают приложение из исходников. Они не создают AppImage или APK. Для подготовки окружения и загрузки настольных компонентов Flet может понадобиться интернет. Для запуска готовых пакетов отдельно устанавливать Python и Flutter не нужно.
+Эти команды запускают приложение из исходников и не создают APK или AppImage. Подготовка окружения и получение desktop-компонентов Flet могут потребовать интернет. Для упаковки используйте рецепты и точные lock-файлы подходящего архива проекта. [Руководство по упаковке Linux](../packaging/linux/appimage/README.ru.md#russian), [рецепт стартового runtime Linux](../packaging/linux/appimage/runtime/README.ru.md#russian) и [руководство по нативным зависимостям Android](../packaging/android/crypto/README.ru.md#russian) описывают соответствующие компоненты.
 
-<a id="-как-выбрать-соответствующий-комплект"></a>
-## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Как выбрать соответствующий комплект
+<a id="-что-подтверждают-материалы"></a>
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Границы подтверждения происхождения
 
-Начните с `SOURCE_MATERIALS.md` и `SOURCE_MATERIALS.json`, которые поставляются с вашим пакетом. JSON связывает каждый идентифицированный компонент с точным файлом внутри архива, версией, размером и SHA-256. Сохраняйте указанные архивы без изменений. Общий набор зависимостей может подходить новой сборке, но это не делает старый снимок приложения актуальным.
+Наличие целого исходного архива отличается от доказательства, что из него получен конкретный бинарник. Совпадение версии и контрольной суммы загрузки подтверждает идентичность архива, а не полную связь исходников с wheel.
 
-На <a href="https://github.com/Umichata/tokenlogue/releases" title="странице Releases">странице Releases&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> находятся опубликованные файлы. Ниже перечислены существующие комплекты исходников.
+Эта связь остаётся неполной для Android CFFI 2.0.0, PyCryptodomex 3.23.0 и msgpack 1.1.2, а также для Linux CFFI 2.0.0 и PyCryptodomex 3.23.0. Точная ревизия libffi и патчи внутри выбранных wheel CFFI определены не полностью. Библиотека libffi среды Python является отдельным компонентом и не определяет библиотеку CFFI.
 
-<img src="assets/ui/frame-top.svg" width="100%" alt="">
-
-| Комплект | Содержимое |
-| --- | --- |
-| [Опубликованный базовый набор](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-linux-preview.986c6ad) | Семь упорядоченных частей с общими зависимостями прежних версий, рецептами и комплектом runtime |
-| [Опубликованное дополнение](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.2b1f7d3/Tokenlogue-2b1f7d3-source-supplement.tar.gz) | Шесть обновлённых архивов Dart-зависимостей и снимок приложения того прежнего Linux-выпуска |
-| Дополнения конкретного пакета | Дополнительные исходники, патчи и рецепты из индекса, приложенного к более новой сборке |
-
-<img src="assets/ui/frame-bottom.svg" width="100%" alt="">
-
-Дополнение имеет размер 745 485 байт и SHA-256 `66b6f130c47f4a58d7708fc7c528574040c6c27d5511b8bbe1865d1412abc29e`. Включённый снимок приложения относится к собственному выпуску дополнения. Он не заменяет исходную ревизию более нового пакета.
-
-<a id="-восстановление-опубликованного-базового-набора"></a>
-## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Восстановление опубликованного базового набора
-
-Скачайте все семь частей в одну папку. Сохраните точные имена. Общий размер частей составляет 12 338 636 800 байт. Предусмотрите не менее 30 ГБ для скачанных частей и распакованных материалов.
-
-<img src="assets/ui/frame-top.svg" width="100%" alt="">
-
-| Часть | Байты |
-| --- | --- |
-| [1 · Tokenlogue-986c6ad-source-materials.tar.part001](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/Tokenlogue-986c6ad-source-materials.tar.part001) | 2,000,000,000 |
-| [2 · Tokenlogue-986c6ad-source-materials.tar.part002](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/Tokenlogue-986c6ad-source-materials.tar.part002) | 2,000,000,000 |
-| [3 · Tokenlogue-986c6ad-source-materials.tar.part003](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/Tokenlogue-986c6ad-source-materials.tar.part003) | 2,000,000,000 |
-| [4 · Tokenlogue-986c6ad-source-materials.tar.part004](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/Tokenlogue-986c6ad-source-materials.tar.part004) | 2,000,000,000 |
-| [5 · Tokenlogue-986c6ad-source-materials.tar.part005](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/Tokenlogue-986c6ad-source-materials.tar.part005) | 2,000,000,000 |
-| [6 · Tokenlogue-986c6ad-source-materials.tar.part006](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/Tokenlogue-986c6ad-source-materials.tar.part006) | 2,000,000,000 |
-| [7 · Tokenlogue-986c6ad-source-materials.tar.part007](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/Tokenlogue-986c6ad-source-materials.tar.part007) | 338,636,800 |
-
-<img src="assets/ui/frame-bottom.svg" width="100%" alt="">
-
-Сохраните [SOURCE_PARTS.SHA256SUMS](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/SOURCE_PARTS.SHA256SUMS) и [SOURCE_PARTS.json](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/SOURCE_PARTS.json) рядом с частями. До распаковки проверьте отдельные файлы и объединённый поток.
-```bash
-sha256sum --check SOURCE_PARTS.SHA256SUMS
-cat Tokenlogue-986c6ad-source-materials.tar.part00{1..7} | sha256sum
-```
-
-Вторая команда требует Bash. Её результат должен равняться `d66c43a31d810431af18defdc1642f235d072bdec9c9c281b3ed3dc3a72d4cf2`. После успешной проверки обеими командами распакуйте материалы в новую папку без создания ещё одного полного tar.
-```bash
-cat Tokenlogue-986c6ad-source-materials.tar.part00{1..7} | tar --extract --file - --no-same-owner --no-same-permissions
-```
-
-Базовый набор уже содержит исторический ZIP исходников и `appimage-runtime-34749438406-1.zip`. [Отдельный runtime ZIP](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/appimage-runtime-34749438406-1.zip) является альтернативной загрузкой того же файла. Его размер составляет 391 916 671 байт, SHA-256 равен `a9869ba745218ea8b0e2dec0c3da6af15b4d28fbd6e1ec1170afcadb758b06c9`. Повторная загрузка не нужна.
-
-<a id="-что-подтверждают-имеющиеся-материалы"></a>
-## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Что подтверждают имеющиеся материалы
-
-Наличие целого исходного архива и связь конкретного бинарника с исходниками проверяются отдельно. Для следующих компонентов в текущих комплектах Android и Linux есть исходники и рецепты, но выбранные wheels не полностью связаны со всеми фактическими ревизиями исходников, патчами и входами сборки.
-
-- Android CFFI 2.0.0, PyCryptodomex 3.23.0 и msgpack 1.1.2.
-- Linux CFFI 2.0.0 и PyCryptodomex 3.23.0.
-
-Точные исходники и патчи libffi в выбранных wheels CFFI установлены не полностью. Libffi 3.4.4 из Android runtime и libffi 3.4.8 из Linux Python runtime относятся к другим компонентам. В рецепте Linux CFFI указана libffi 3.4.6, но один рецепт не доказывает состав библиотеки внутри wheel.
-
-Сохранённые бинарные компиляторы являются входами сборки, а не исходниками компилятора. Комплект не подтверждает полную пересборку без сети и независимое воспроизведение каждой нативной зависимости. Одинаковый номер версии исходного архива и совпадение его контрольной суммы сами по себе не устанавливают такую связь. Эти технические ограничения рассматриваются отдельно от работы приложения на конкретном устройстве.
+Комплект сохраняет все идентифицированные материалы и указывает границы проверки в реестре. Он не подтверждает полностью автономную офлайн-сборку и независимое воспроизведение каждой нативной зависимости. Отсутствие подтверждения издателя само по себе не доказывает отсутствие исходников. Эти ограничения происхождения отделены от работы на конкретном устройстве, включая настоящий ARM64 с ядром 16 КиБ.
 
 <a id="-лицензии-и-прежние-комплекты"></a>
-## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Лицензии и прежние комплекты
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Оригинальные уведомления
 
-<a href="../packaging/linux/appimage/notices.ru.md#russian" title="Руководство по лицензиям">Руководство по лицензиям&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> объясняет, где находятся оригинальные уведомления в пакетах. <a href="releases/14b87ac-source-materials.ru.md#russian" title="Исторический комплект исходников">Исторический комплект исходников&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> и <a href="releases/v0.1.0-linux-preview.1.ru.md#russian" title="описание прежней Linux-сборки">описание прежней Linux-сборки&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> относятся к собственным файлам. Их прежние версии и ограничения не переносятся автоматически на новые пакеты.
+[Руководство по лицензиям пакета](../packaging/linux/appimage/notices.ru.md#russian) и раздел [о библиотеках и шрифтах](../packaging/notices/README.ru.md#russian) объясняют уведомления, поставляемые с приложением. Оригинальные лицензии и сведения об авторских правах сохранены полностью и без изменений. Наличие исходников, текст лицензии и связь бинарника со сборочными входами проверяются отдельно.
 
-<p align="left"><a href="../README.ru.md#russian"><img src="assets/ui/buttons/ru-6382944424ac.svg" alt="К Tokenlogue" width="124" height="28"></a></p>
+<p align="left"><a href="../README.ru.md#russian"><img src="assets/ui/buttons/ru-b038324b5bbd.svg" alt="Tokenlogue" width="109" height="28"></a></p>

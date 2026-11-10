@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import inspect
 import json
 import uuid
@@ -31,6 +32,16 @@ from chat.accounting import (
     confirmed_provider_price_limit,
     model_price_change,
     model_price_increased,
+)
+from chat.budget_consent import (
+    BudgetConsent,
+    BudgetConsentBasis,
+    BudgetConsentRevoked,
+    BudgetWarning,
+    budget_version,
+    budget_warning,
+    chat_prices,
+    text_digest,
 )
 from chat.context import (
     ContextMessage,
@@ -91,6 +102,8 @@ class MessageRepository(Protocol):
         retry: bool,
         draft_revision: int | None = None,
         paid_policy_revision: str | None = None,
+        budget_basis: BudgetConsentBasis | None = None,
+        budget_consent: BudgetConsent | None = None,
     ) -> ChatDraft | None: ...
 
     def restore_unsent_draft(self, turn_id: str, draft: ChatDraft) -> None: ...
@@ -185,6 +198,8 @@ class ChatPreflight:
     fresh_key_limit: KeyLimitInfo
     remaining_tokens_after_reservation: int
     remaining_cost_after_reservation: Decimal | None
+    budget_warning: BudgetWarning | None = None
+    budget_consent_basis: BudgetConsentBasis | None = field(default=None, repr=False)
 
 
 @dataclass(frozen=True)
@@ -205,6 +220,9 @@ class MessageSendPreview:
     key_validity_update: KeyValidityState | None = None
     key_limit_update: KeyLimitInfo | None = None
 
+    budget_warning: BudgetWarning | None = None
+    budget_consent_basis: BudgetConsentBasis | None = field(default=None, repr=False)
+
     @property
     def allowed(self) -> bool:
         return self.error_type is None
@@ -223,6 +241,9 @@ class SendMessageResult:
     key_validity_update: KeyValidityState | None = None
     key_limit_update: KeyLimitInfo | None = None
     price_change: ModelPriceChange | None = None
+
+    budget_warning: BudgetWarning | None = None
+    budget_preview: MessageSendPreview | None = None
 
 
 class _PreflightFailure(Exception):
@@ -270,6 +291,7 @@ class MessageSendingService:
         self._now = now or (lambda: datetime.now(UTC))
         self._uuid_factory = uuid_factory
         self._chat_locks: dict[str, asyncio.Lock] = {}
+        self._budget_consent_scope = object()
 
     @repository_session("_messages")
     async def preview_message(
@@ -281,6 +303,7 @@ class MessageSendingService:
         key_validity: KeyValidityState,
         key_limit: KeyLimitInfo,
         paid_consent: PaidConsent | None = None,
+        draft_revision: int | None = None,
     ) -> MessageSendPreview:
         if not _valid_identifier(chat_id) or not isinstance(text, str):
             return _preview_failure(
@@ -306,6 +329,7 @@ class MessageSendingService:
                 key_limit=key_limit,
                 paid_confirmed=True,
                 paid_consent=paid_consent,
+                draft_revision=draft_revision,
             )
         except _PreflightFailure as error:
             return _preview_failure(
@@ -357,25 +381,27 @@ class MessageSendingService:
             key_limit=key_limit,
             paid_consent=paid_consent,
         )
-        return MessageSendPreview(
-            chat_id=preview.chat_id,
+        return replace(
+            preview,
             turn_id=turn_id,
-            model_id=preview.model_id,
-            model_name=preview.model_name,
-            estimated_prompt_tokens=preview.estimated_prompt_tokens,
-            max_completion_tokens=preview.max_completion_tokens,
-            reserved_tokens=preview.reserved_tokens,
-            reserved_cost_usd=preview.reserved_cost_usd,
-            remaining_tokens_after_reservation=(
-                preview.remaining_tokens_after_reservation
+            budget_consent_basis=(
+                replace(preview.budget_consent_basis, retry_turn_id=turn_id)
+                if preview.budget_consent_basis is not None
+                else None
             ),
-            remaining_cost_after_reservation=preview.remaining_cost_after_reservation,
-            error_type=preview.error_type,
-            safe_message=preview.safe_message,
-            price_change=preview.price_change,
-            key_validity_update=preview.key_validity_update,
-            key_limit_update=preview.key_limit_update,
         )
+
+    def confirm_budget_warning(self, preview: MessageSendPreview) -> BudgetConsent:
+        """Mint one use of this service's exact, still unreserved request preview."""
+        basis = preview.budget_consent_basis
+        if (
+            not preview.allowed
+            or preview.budget_warning is None
+            or basis is None
+            or basis.scope is not self._budget_consent_scope
+        ):
+            raise BudgetConsentRevoked()
+        return BudgetConsent(basis)
 
     @repository_session("_messages")
     async def send_message(
@@ -388,6 +414,8 @@ class MessageSendingService:
         key_limit: KeyLimitInfo,
         paid_confirmed: bool = False,
         paid_consent: PaidConsent | None = None,
+        budget_consent: BudgetConsent | None = None,
+        on_request_finished: Callable[[], None] | None = None,
         dispatch_guard: DispatchGuard | None = None,
         on_reserved: ReservationCallback | None = None,
         draft_revision: int | None = None,
@@ -396,6 +424,10 @@ class MessageSendingService:
             not _valid_identifier(chat_id)
             or not isinstance(text, str)
             or not isinstance(paid_confirmed, bool)
+            or (
+                budget_consent is not None
+                and not isinstance(budget_consent, BudgetConsent)
+            )
             or (
                 draft_revision is not None
                 and (
@@ -428,6 +460,8 @@ class MessageSendingService:
                 retry=False,
                 paid_confirmed=paid_confirmed,
                 paid_consent=paid_consent,
+                budget_consent=budget_consent,
+                on_request_finished=on_request_finished,
                 dispatch_guard=dispatch_guard,
                 on_reserved=on_reserved,
                 draft_revision=draft_revision,
@@ -443,10 +477,19 @@ class MessageSendingService:
         key_limit: KeyLimitInfo,
         paid_confirmed: bool = False,
         paid_consent: PaidConsent | None = None,
+        budget_consent: BudgetConsent | None = None,
+        on_request_finished: Callable[[], None] | None = None,
         dispatch_guard: DispatchGuard | None = None,
         on_reserved: ReservationCallback | None = None,
     ) -> SendMessageResult:
-        if not _valid_identifier(turn_id) or not isinstance(paid_confirmed, bool):
+        if (
+            not _valid_identifier(turn_id)
+            or not isinstance(paid_confirmed, bool)
+            or (
+                budget_consent is not None
+                and not isinstance(budget_consent, BudgetConsent)
+            )
+        ):
             return _local_failure(ChatErrorType.TURN_NOT_RETRYABLE)
         if not isinstance(api_key, str):
             return _local_failure(ChatErrorType.KEY_NOT_VALID, turn_id=turn_id)
@@ -482,6 +525,8 @@ class MessageSendingService:
                 retry=True,
                 paid_confirmed=paid_confirmed,
                 paid_consent=paid_consent,
+                budget_consent=budget_consent,
+                on_request_finished=on_request_finished,
                 dispatch_guard=dispatch_guard,
                 on_reserved=on_reserved,
             )
@@ -535,6 +580,8 @@ class MessageSendingService:
         retry: bool,
         paid_confirmed: bool,
         paid_consent: PaidConsent | None,
+        budget_consent: BudgetConsent | None = None,
+        on_request_finished: Callable[[], None] | None = None,
         dispatch_guard: DispatchGuard | None,
         on_reserved: ReservationCallback | None,
         draft_revision: int | None = None,
@@ -558,6 +605,8 @@ class MessageSendingService:
                 retry=retry,
                 paid_confirmed=paid_confirmed,
                 paid_consent=paid_consent,
+                budget_consent=budget_consent,
+                on_request_finished=on_request_finished,
                 dispatch_guard=dispatch_guard,
                 on_reserved=on_reserved,
                 draft_revision=draft_revision,
@@ -581,6 +630,8 @@ class MessageSendingService:
         retry: bool,
         paid_confirmed: bool,
         paid_consent: PaidConsent | None,
+        budget_consent: BudgetConsent | None = None,
+        on_request_finished: Callable[[], None] | None = None,
         dispatch_guard: DispatchGuard | None,
         on_reserved: ReservationCallback | None,
         draft_revision: int | None = None,
@@ -594,6 +645,8 @@ class MessageSendingService:
                 key_limit=key_limit,
                 paid_confirmed=paid_confirmed,
                 paid_consent=paid_consent,
+                draft_revision=draft_revision,
+                retry_turn_id=turn_id if retry else None,
             )
             self._assert_dispatch_current(paid_consent, dispatch_guard)
         except _PreflightFailure as error:
@@ -604,6 +657,14 @@ class MessageSendingService:
                 key_validity=error.key_validity,
                 key_limit=error.key_limit,
             )
+
+        basis = preflight.budget_consent_basis
+        if budget_consent is not None and (
+            basis is None or not budget_consent.matches(basis)
+        ):
+            return _budget_confirmation_failure(preflight, turn_id if retry else None)
+        if preflight.budget_warning is not None and budget_consent is None:
+            return _budget_confirmation_failure(preflight, turn_id if retry else None)
 
         timestamp = _as_utc(self._now())
         reservation = BudgetReservation(
@@ -625,6 +686,8 @@ class MessageSendingService:
                 paid_policy_revision=paid_consent.revision
                 if paid_consent is not None
                 else None,
+                budget_basis=basis,
+                budget_consent=budget_consent,
             )
         )
         try:
@@ -639,6 +702,28 @@ class MessageSendingService:
             if reserved:
                 await self._release_before_send(turn_id, ChatErrorType.INTERRUPTED)
             raise
+        except BudgetConsentRevoked:
+            try:
+                fresh = await self._preflight(
+                    chat_id,
+                    text,
+                    api_key=api_key,
+                    key_validity=key_validity,
+                    key_limit=key_limit,
+                    paid_confirmed=paid_confirmed,
+                    paid_consent=paid_consent,
+                    draft_revision=draft_revision,
+                    retry_turn_id=turn_id if retry else None,
+                )
+            except _PreflightFailure as error:
+                return _local_failure(
+                    error.error_type,
+                    turn_id=turn_id if retry else None,
+                    price_change=error.price_change,
+                    key_validity=error.key_validity,
+                    key_limit=error.key_limit,
+                )
+            return _budget_confirmation_failure(fresh, turn_id if retry else None)
         except PaidConsentRevoked:
             return _local_failure(ChatErrorType.PAID_CONFIRMATION_REQUIRED)
         except Exception:
@@ -711,43 +796,51 @@ class MessageSendingService:
                 )
                 return _local_failure(ChatErrorType.INTERRUPTED, turn_id=turn_id)
         try:
-            result = await self._completion_client.complete(
-                api_key,
-                preflight.chat.requested_model_id,
-                preflight.messages,
-                preflight.effective_max_completion_tokens,
-                preflight.provider_price_limit,
-            )
-        except asyncio.CancelledError:
-            await self._mark_cancelled_unknown(turn_id, preflight)
-            raise
-        except Exception:
-            result = ChatCompletionResult(
-                content=None,
-                generation_id=None,
-                requested_model_id=preflight.chat.requested_model_id,
-                actual_model_id=None,
-                finish_reason=None,
-                prompt_tokens=None,
-                completion_tokens=None,
-                total_tokens=None,
-                cost_usd=None,
-                error_type=ChatErrorType.NETWORK_ERROR,
-                accounting_unknown=True,
-            )
-        try:
-            return await self._record_result(turn_id, text, preflight, result)
-        except Exception:
-            await self._mark_cancelled_unknown(turn_id, preflight)
-            return SendMessageResult(
-                turn_id=turn_id,
-                successful=False,
-                truncated=False,
-                content=None,
-                error_type=ChatErrorType.ACCOUNTING_UNKNOWN,
-                safe_message=safe_error_message(ChatErrorType.ACCOUNTING_UNKNOWN),
-                accounting_unknown=True,
-            )
+            try:
+                result = await self._completion_client.complete(
+                    api_key,
+                    preflight.chat.requested_model_id,
+                    preflight.messages,
+                    preflight.effective_max_completion_tokens,
+                    preflight.provider_price_limit,
+                )
+            except asyncio.CancelledError:
+                await self._mark_cancelled_unknown(turn_id, preflight)
+                raise
+            except Exception:
+                result = ChatCompletionResult(
+                    content=None,
+                    generation_id=None,
+                    requested_model_id=preflight.chat.requested_model_id,
+                    actual_model_id=None,
+                    finish_reason=None,
+                    prompt_tokens=None,
+                    completion_tokens=None,
+                    total_tokens=None,
+                    cost_usd=None,
+                    error_type=ChatErrorType.NETWORK_ERROR,
+                    accounting_unknown=True,
+                )
+            try:
+                return await self._record_result(turn_id, text, preflight, result)
+            except Exception:
+                await self._mark_cancelled_unknown(turn_id, preflight)
+                return SendMessageResult(
+                    turn_id=turn_id,
+                    successful=False,
+                    truncated=False,
+                    content=None,
+                    error_type=ChatErrorType.ACCOUNTING_UNKNOWN,
+                    safe_message=safe_error_message(ChatErrorType.ACCOUNTING_UNKNOWN),
+                    accounting_unknown=True,
+                )
+
+        finally:
+            if on_request_finished is not None:
+                try:
+                    on_request_finished()
+                except Exception:
+                    pass
 
     async def _preflight(
         self,
@@ -759,6 +852,8 @@ class MessageSendingService:
         key_limit: KeyLimitInfo,
         paid_confirmed: bool,
         paid_consent: PaidConsent | None = None,
+        draft_revision: int | None = None,
+        retry_turn_id: str | None = None,
     ) -> ChatPreflight:
         chat = await self._chat_service.get_chat(chat_id)
         if chat is None:
@@ -773,7 +868,6 @@ class MessageSendingService:
         if budget.state is BudgetState.EXHAUSTED:
             if budget.total_tokens_used + budget.reserved_tokens >= budget.token_limit:
                 raise _PreflightFailure(ChatErrorType.TOKEN_LIMIT_EXCEEDED)
-            raise _PreflightFailure(ChatErrorType.COST_LIMIT_EXCEEDED)
 
         automatic = (
             paid_consent is not None
@@ -847,12 +941,52 @@ class MessageSendingService:
                 text=text,
                 pricing=pricing,
                 key_limit=current_key_limit,
+                apply_chat_cost_limit=False,
             )
         except RequestPlanError as error:
             raise _PreflightFailure(error.error_type) from None
         context = plan.context.materialize()
         # Complete pricing was checked before the pure planning step.
         assert plan.reserved_cost_usd is not None
+        basis = None
+        warning = None
+        if chat.mode is ChatMode.PAID:
+            warning = budget_warning(budget, plan.reserved_cost_usd)
+            request_payload = json.dumps(
+                {
+                    "messages": [
+                        (message.role, message.content) for message in context.messages
+                    ],
+                    "completion": plan.effective_max_completion_tokens,
+                    "provider": [
+                        str(price_limit.prompt_per_token),
+                        str(price_limit.completion_per_token),
+                        str(price_limit.request),
+                    ],
+                    "key_limit": [
+                        str(current_key_limit.state),
+                        str(current_key_limit.remaining),
+                    ],
+                },
+                ensure_ascii=False,
+                separators=(",", ":"),
+            )
+            basis = BudgetConsentBasis(
+                chat.id,
+                chat.requested_model_id,
+                text_digest(text),
+                draft_revision,
+                budget_version(budget),
+                chat_prices(chat),
+                hashlib.sha256(request_payload.encode("utf-8")).hexdigest(),
+                plan.reserved_cost_usd,
+                plan.remaining_cost_after_reservation
+                if plan.remaining_cost_after_reservation is not None
+                else Decimal("0"),
+                plan.reserved_tokens,
+                self._budget_consent_scope,
+                retry_turn_id,
+            )
         return ChatPreflight(
             chat=chat,
             model=model,
@@ -866,6 +1000,8 @@ class MessageSendingService:
             fresh_key_limit=current_key_limit,
             remaining_tokens_after_reservation=plan.remaining_tokens_after_reservation,
             remaining_cost_after_reservation=plan.remaining_cost_after_reservation,
+            budget_warning=warning,
+            budget_consent_basis=basis,
         )
 
     async def _resolve_current_model(
@@ -1196,6 +1332,8 @@ def _preview_from_preflight(preflight: ChatPreflight) -> MessageSendPreview:
         remaining_cost_after_reservation=(preflight.remaining_cost_after_reservation),
         error_type=None,
         safe_message=None,
+        budget_warning=preflight.budget_warning,
+        budget_consent_basis=preflight.budget_consent_basis,
         key_validity_update=preflight.fresh_key_validity,
         key_limit_update=preflight.fresh_key_limit,
     )
@@ -1237,3 +1375,14 @@ def _as_utc(value: datetime) -> datetime:
 
 def _valid_identifier(value: object) -> bool:
     return isinstance(value, str) and bool(value.strip())
+
+
+def _budget_confirmation_failure(
+    preflight: ChatPreflight, turn_id: str | None
+) -> SendMessageResult:
+    preview = replace(_preview_from_preflight(preflight), turn_id=turn_id)
+    return replace(
+        _local_failure(ChatErrorType.COST_LIMIT_EXCEEDED, turn_id=turn_id),
+        budget_warning=preflight.budget_warning,
+        budget_preview=preview,
+    )

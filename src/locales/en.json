@@ -135,7 +135,7 @@
   "reserve.release_unknown": "Release unknown reservation",
   "key.available_limit": "Available key limit",
   "key.checking": "Checking OpenRouter key…",
-  "key.refresh": "Refresh key status",
+  "key.refresh": "Refresh key and balance",
   "key.replace": "Replace OpenRouter key",
   "key.replace_wait_check": "Wait for the key check to finish.",
   "key.replace_wait_send": "Finish or cancel the current operation first.",

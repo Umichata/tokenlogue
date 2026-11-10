@@ -45,6 +45,17 @@ class InputTests(unittest.TestCase):
             len(self.lock["installed_inventory"]), len(self.lock["packages"])
         )
 
+    def test_all_selected_packages_are_pinned_local_inputs_without_mutable_indexes(
+        self,
+    ) -> None:
+        records = self.lock["files"]
+        self.assertEqual(
+            {item["path"] for item in records if item["kind"] == "apk"},
+            {package["path"] for package in self.lock["packages"]},
+        )
+        self.assertFalse(any(item["path"].startswith("indexes/") for item in records))
+        self.assertFalse(any(item["kind"] == "apk-index-snapshot" for item in records))
+
     def test_corrupted_cached_input_is_rejected_without_replacement(self) -> None:
         path = self.root / "input.tar.gz"
         path.write_bytes(b"damaged")
@@ -73,6 +84,62 @@ class InputTests(unittest.TestCase):
         with patch.object(inputs.urllib.request, "build_opener") as opener:
             inputs.fetch_inputs(lock, self.root)
             opener.return_value.open.assert_not_called()
+
+    def test_official_guard_blocks_old_application_release_even_after_redirect(
+        self,
+    ) -> None:
+        import socket
+        import urllib.request
+        from http.client import HTTPResponse
+
+        events = []
+        transports = []
+
+        class UpstreamRedirect(urllib.request.HTTPSHandler):
+            def https_open(self, req: urllib.request.Request) -> HTTPResponse:
+                transports.append(req.full_url)
+                sender, receiver = socket.socketpair()
+                try:
+                    sender.sendall(
+                        b"HTTP/1.1 302 Found\r\n"
+                        b"Location: https://github.com/Umichata/tokenlogue/releases/download/old/runtime.zip\r\n"
+                        b"Content-Length: 0\r\n\r\n"
+                    )
+                    response = HTTPResponse(receiver)
+                    response.begin()
+                    return response
+                finally:
+                    sender.close()
+                    receiver.close()
+
+        opener = urllib.request.build_opener(
+            urllib.request.ProxyHandler({}),
+            inputs.PublicRedirect(),
+            inputs.OfficialInputGuard(events),
+            UpstreamRedirect(),
+        )
+        with self.assertRaisesRegex(inputs.Failure, "official-source guard"):
+            opener.open(
+                "https://github.com/AppImage/type2-runtime/archive/source.tar.gz"
+            )
+        self.assertEqual(len(transports), 1)
+        self.assertEqual([event["allowed"] for event in events], [True, False])
+
+    def test_cache_audit_records_integrity_without_claiming_network_independence(
+        self,
+    ) -> None:
+        path = self.root / "verified-source"
+        path.write_bytes(b"source")
+        audit = self.root / "audit.json"
+        inputs.fetch_inputs(
+            {"files": [{"path": path.name, "size": 6, "sha256": inputs.digest(path)}]},
+            self.root,
+            audit,
+        )
+        result = json.loads(audit.read_text())
+        self.assertEqual(result["result"], "PASS")
+        self.assertEqual(result["network"], [])
+        self.assertEqual(result["inputs"][0]["mode"], "verified-cache")
 
     def test_missing_package_in_lock_fails(self) -> None:
         self.lock["packages"].pop()

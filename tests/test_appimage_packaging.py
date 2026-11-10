@@ -465,26 +465,21 @@ class AppImagePackagingTests(unittest.TestCase):
             self.assertNotIn(b"/tmp/serious_python_temp", sanitized)
             self.assertNotIn(b"build/flutter", sanitized)
 
-    def test_documentation_describes_preview_requirements(self) -> None:
-        text = " ".join(
-            (APPIMAGE_DIR / "README.md").read_text(encoding="utf-8").lower().split()
-        )
-        for statement in (
-            "preview",
-            "unsigned",
-            "x86-64-v2",
-            "system gtk3",
-            "secret service",
-            "wayland",
-            "fuse",
-            "public prerelease",
-            "check its checksum before running",
-            "неподписанная",
-            'name="lang-en"',
-            'name="lang-ru"',
-        ):
-            self.assertIn(statement, text)
-        self.assertIn("no signature or automatic updater", text)
+    def test_documentation_describes_platform_requirements_and_links_both_languages(
+        self,
+    ) -> None:
+        english = (APPIMAGE_DIR / "README.md").read_text(encoding="utf-8").lower()
+        russian = (APPIMAGE_DIR / "README.ru.md").read_text(encoding="utf-8").lower()
+        for requirement in ("x86-64-v2", "ubuntu 22.04", "secret service", "fuse"):
+            with self.subTest(requirement=requirement):
+                self.assertIn(requirement, english)
+                self.assertIn(requirement, russian)
+        self.assertIn("not digitally signed", english)
+        self.assertIn("no automatic updater", english)
+        self.assertIn("linux-appimage.md#english", english)
+        self.assertIn("linux-appimage.ru.md#russian", russian)
+        self.assertIn('href="readme.ru.md"', english)
+        self.assertIn('href="readme.md"', russian)
 
 
 class CryptoSelfTestStagingTests(unittest.TestCase):
