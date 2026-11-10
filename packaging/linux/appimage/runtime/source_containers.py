@@ -28,6 +28,34 @@ MAX_EXPANDED = 128 * 1024**2
 MAX_ENTRIES = 2048
 
 
+class ShortReadFailure(Failure):
+    """Unexpected EOF before the pinned transfer size, never an integrity waiver."""
+
+    def __init__(
+        self,
+        expected_size: int,
+        received_size: int,
+        *,
+        item_path: str | None = None,
+        source_kind: str | None = None,
+        download_attempts: int = 1,
+        prior_short_read_counts: list[Record] | None = None,
+    ) -> None:
+        self.expected_size = expected_size
+        self.received_size = received_size
+        self.download_attempts = download_attempts
+        self.prior_short_read_counts = prior_short_read_counts or []
+        context = (
+            f" for {item_path} ({source_kind}, attempts {download_attempts})"
+            if item_path is not None
+            else ""
+        )
+        super().__init__(
+            f"Truncated container response{context}: "
+            f"expected {expected_size} bytes, received {received_size}"
+        )
+
+
 def valid_sha(value: object) -> bool:
     return isinstance(value, str) and re.fullmatch(r"[a-f0-9]{64}", value) is not None
 
@@ -125,7 +153,7 @@ def copy_bounded(response: Any, path: Path, expected_size: int) -> None:
                 raise Failure("Container response exceeded the exact pinned size")
             output.write(block)
     if total != expected_size:
-        raise Failure("Truncated container response")
+        raise ShortReadFailure(expected_size, total)
 
 
 def fetch_iso_member(
@@ -293,18 +321,52 @@ def fetch_container_input(
     opener: Any,
     cache_states: dict[str, str],
 ) -> Record:
-    if selector["kind"] == "official_iso_member":
-        return fetch_iso_member(item, selector, destination, opener)
-    bundle = plan["dependency_bundle"]
-    archive, state = checked_container(root, bundle, opener, cache_states)
-    extract_bundle_member(archive, bundle, selector, item, destination)
-    return {
-        "source_kind": "pinned-dependency-container-member",
-        "url": bundle["url"],
-        "member": selector["member"],
-        "container_size": bundle["size"],
-        "container_sha256": bundle["sha256"],
-        "whole_container_sha256_verified": True,
-        "container_cache": state,
-        "selected_member_sha256_verified": True,
-    }
+    iso = selector["kind"] == "official_iso_member"
+    source_kind = "official-iso-member" if iso else "pinned-dependency-container-member"
+    cached_container = (
+        not iso
+        and input_path(
+            root, "containers/" + plan["dependency_bundle"]["sha256"] + ".tar.gz"
+        ).exists()
+    )
+    prior_short_reads: list[Record] = []
+    for attempt in (1, 2):
+        try:
+            if iso:
+                origin = fetch_iso_member(item, selector, destination, opener)
+            else:
+                bundle = plan["dependency_bundle"]
+                archive, state = checked_container(root, bundle, opener, cache_states)
+                extract_bundle_member(archive, bundle, selector, item, destination)
+                origin = {
+                    "source_kind": source_kind,
+                    "url": bundle["url"],
+                    "member": selector["member"],
+                    "container_size": bundle["size"],
+                    "container_sha256": bundle["sha256"],
+                    "whole_container_sha256_verified": True,
+                    "container_cache": state,
+                    "selected_member_sha256_verified": True,
+                }
+            return {
+                **origin,
+                "download_attempts": 0 if cached_container else attempt,
+                "prior_short_read_counts": prior_short_reads,
+            }
+        except ShortReadFailure as error:
+            if attempt == 2:
+                raise ShortReadFailure(
+                    error.expected_size,
+                    error.received_size,
+                    item_path=item["path"],
+                    source_kind=source_kind,
+                    download_attempts=attempt,
+                    prior_short_read_counts=prior_short_reads,
+                ) from None
+            prior_short_reads.append(
+                {
+                    "expected_bytes": error.expected_size,
+                    "received_bytes": error.received_size,
+                }
+            )
+    raise AssertionError("The bounded container download must return or fail")

@@ -285,8 +285,13 @@ def _fetch_inputs(
             else None
         )
         if selector is not None and acquisition is not None:
-            from source_containers import fetch_container_input
+            from source_containers import ShortReadFailure, fetch_container_input
 
+            source_kind = (
+                "official-iso-member"
+                if selector["kind"] == "official_iso_member"
+                else "pinned-dependency-container-member"
+            )
             try:
                 origin = fetch_container_input(
                     item,
@@ -297,13 +302,31 @@ def _fetch_inputs(
                     opener,
                     container_cache_states,
                 )
-            except urllib.error.HTTPError as error:
+            except (urllib.error.URLError, TimeoutError, Failure) as error:
+                failed: Record = {
+                    "path": item["path"],
+                    "source_kind": source_kind,
+                    "category": type(error).__name__,
+                }
+                if isinstance(error, ShortReadFailure):
+                    failed.update(
+                        expected_bytes=error.expected_size,
+                        received_bytes=error.received_size,
+                        download_attempts=error.download_attempts,
+                        prior_short_read_counts=error.prior_short_read_counts,
+                    )
+                audit["failed_input"] = failed
+                if isinstance(error, urllib.error.HTTPError):
+                    failed["http_status"] = error.code
+                    detail = f"HTTP {error.code}"
+                elif isinstance(error, (urllib.error.URLError, TimeoutError)):
+                    # Avoid signed redirects, credentials and ambient proxy details.
+                    detail = type(error).__name__
+                else:
+                    detail = str(error)
                 raise Failure(
-                    f"Container input download failed: {item['path']} (HTTP {error.code})"
-                ) from None
-            except (urllib.error.URLError, TimeoutError) as error:
-                raise Failure(
-                    f"Container input download failed: {item['path']} ({type(error).__name__})"
+                    f"Container input download failed: {item['path']} "
+                    f"({source_kind}): {detail}"
                 ) from None
             audit["inputs"].append(
                 {

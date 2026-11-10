@@ -48,6 +48,40 @@ class Opener:
         return Response(self.body, status=self.status, headers=self.headers)
 
 
+class SequenceOpener(Opener):
+    def __init__(
+        self,
+        responses: list[tuple[bytes, int, dict[str, str] | None]],
+        *,
+        observed_directory: Path,
+        publication_paths: list[Path],
+    ):
+        super().__init__(b"")
+        self.responses = responses
+        self.observed_directory = observed_directory
+        self.publication_paths = publication_paths
+        self.files_at_request: list[list[tuple[Path, int]]] = []
+        self.published_at_request: list[bool] = []
+
+    def open(self, request: urllib.request.Request, **kwargs: object) -> Response:
+        position = len(self.requests)
+        if position >= len(self.responses):
+            raise AssertionError("Unexpected extra container request")
+        self.files_at_request.append(
+            [
+                (path, path.stat().st_size)
+                for path in self.observed_directory.iterdir()
+                if path.is_file()
+            ]
+        )
+        self.published_at_request.append(
+            any(path.exists() for path in self.publication_paths)
+        )
+        self.requests.append(request)
+        body, status, headers = self.responses[position]
+        return Response(body, status=status, headers=headers)
+
+
 class ContainerTests(unittest.TestCase):
     def setUp(self) -> None:
         temporary = tempfile.TemporaryDirectory(prefix="runtime-containers-")
@@ -173,6 +207,206 @@ class ContainerTests(unittest.TestCase):
         ]
         return body, bundle, items
 
+    def transfer_case(
+        self, kind: str
+    ) -> tuple[dict, dict, dict, bytes, int, dict[str, str] | None]:
+        if kind == "iso":
+            return self.item, self.selector, {}, self.data, 206, self.headers
+        body, bundle, items = self.bundle()
+        item = items[0]
+        selector = {"kind": "dependency_bundle_member", "member": item["path"]}
+        return item, selector, {"dependency_bundle": bundle}, body, 200, None
+
+    def test_short_transfer_retries_once_with_fresh_temporary_and_no_partial_publication(
+        self,
+    ) -> None:
+        for kind in ("iso", "bundle"):
+            with self.subTest(kind=kind):
+                root = self.root / kind
+                root.mkdir()
+                item, selector, plan, body, status, headers = self.transfer_case(kind)
+                target = root / "input.apk"
+                archive = root / "containers" / (sha(body) + ".tar.gz")
+                opener = SequenceOpener(
+                    [(body[:-1], status, headers), (body, status, headers)],
+                    observed_directory=root if kind == "iso" else archive.parent,
+                    publication_paths=[target, archive],
+                )
+                result = containers.fetch_container_input(
+                    item, selector, target, root, plan, opener, {}
+                )
+                self.assertEqual(len(opener.requests), 2)
+                self.assertEqual(result["download_attempts"], 2)
+                self.assertEqual(
+                    result["prior_short_read_counts"],
+                    [{"expected_bytes": len(body), "received_bytes": len(body) - 1}],
+                )
+                self.assertEqual(sha(target.read_bytes()), item["sha256"])
+                self.assertEqual(opener.published_at_request, [False, False])
+                first, second = opener.files_at_request
+                self.assertEqual([size for _, size in first], [0])
+                self.assertEqual([size for _, size in second], [0])
+                self.assertNotEqual(first[0][0], second[0][0])
+                self.assertFalse(first[0][0].exists())
+                self.assertFalse(second[0][0].exists())
+
+    def test_two_short_transfers_fail_with_component_and_counts_without_third_request(
+        self,
+    ) -> None:
+        for kind in ("iso", "bundle"):
+            with self.subTest(kind=kind):
+                root = self.root / kind
+                root.mkdir()
+                item, selector, plan, body, status, headers = self.transfer_case(kind)
+                target = root / "input.apk"
+                archive = root / "containers" / (sha(body) + ".tar.gz")
+                opener = SequenceOpener(
+                    [
+                        (body[:-1], status, headers),
+                        (body[:-2], status, headers),
+                        (body, status, headers),
+                    ],
+                    observed_directory=root if kind == "iso" else archive.parent,
+                    publication_paths=[target, archive],
+                )
+                with self.assertRaises(containers.ShortReadFailure) as caught:
+                    containers.fetch_container_input(
+                        item, selector, target, root, plan, opener, {}
+                    )
+                error = caught.exception
+                self.assertEqual(len(opener.requests), 2)
+                self.assertEqual(error.download_attempts, 2)
+                self.assertEqual(error.expected_size, len(body))
+                self.assertEqual(error.received_size, len(body) - 2)
+                self.assertEqual(
+                    error.prior_short_read_counts,
+                    [{"expected_bytes": len(body), "received_bytes": len(body) - 1}],
+                )
+                self.assertIn(item["path"], str(error))
+                self.assertIn(
+                    "official-iso-member"
+                    if kind == "iso"
+                    else "pinned-dependency-container-member",
+                    str(error),
+                )
+                self.assertFalse(target.exists())
+                self.assertFalse(archive.exists())
+                self.assertTrue(
+                    all(
+                        not path.exists()
+                        for attempt in opener.files_at_request
+                        for path, _ in attempt
+                    )
+                )
+
+    def test_hash_header_and_archive_failures_are_final_without_retry(self) -> None:
+        for kind, failure in (
+            ("iso", "hash"),
+            ("iso", "header"),
+            ("bundle", "hash"),
+            ("bundle", "archive"),
+        ):
+            with self.subTest(kind=kind, failure=failure):
+                root = self.root / (kind + "-" + failure)
+                root.mkdir()
+                item, selector, plan, body, status, headers = self.transfer_case(kind)
+                received = body
+                if failure == "hash":
+                    received = bytes([body[0] ^ 1]) + body[1:]
+                elif failure == "header":
+                    headers = {**self.headers, "Content-Range": "bytes 0-1/8192"}
+                else:
+                    body, bundle, items = self.bundle(special="symlink")
+                    item = items[0]
+                    selector = {
+                        "kind": "dependency_bundle_member",
+                        "member": item["path"],
+                    }
+                    plan = {"dependency_bundle": bundle}
+                    received = body
+                target = root / "input.apk"
+                archive = root / "containers" / (sha(body) + ".tar.gz")
+                opener = SequenceOpener(
+                    [(received, status, headers), (body, status, headers)],
+                    observed_directory=root if kind == "iso" else archive.parent,
+                    publication_paths=[target, archive],
+                )
+                with self.assertRaises(inputs.Failure) as caught:
+                    containers.fetch_container_input(
+                        item, selector, target, root, plan, opener, {}
+                    )
+                self.assertNotIsInstance(caught.exception, containers.ShortReadFailure)
+                self.assertEqual(len(opener.requests), 1)
+                self.assertFalse(target.exists())
+
+    def test_partial_audit_identifies_any_component_and_preserves_prior_verified_inputs(
+        self,
+    ) -> None:
+        cached = self.root / "apks/already.apk"
+        cached.parent.mkdir()
+        cached.write_bytes(b"verified cached APK")
+        item = {**self.item, "path": "apks/other-component-7.apk"}
+        selector = {**self.selector, "member": "apks/x86_64/other-component-7.apk"}
+        lock = {
+            "files": [
+                {
+                    "path": "apks/already.apk",
+                    "size": cached.stat().st_size,
+                    "sha256": sha(cached.read_bytes()),
+                },
+                item,
+            ]
+        }
+        plan = {
+            "dependency_bundle": {
+                "url": inputs.CURRENT_DEPENDENCY_URL,
+                "size": 1,
+                "sha256": "a" * 64,
+            },
+            "selectors": {item["path"]: selector},
+        }
+        target = self.root / item["path"]
+        opener = SequenceOpener(
+            [
+                (self.data[:-1], 206, self.headers),
+                (self.data[:-2], 206, self.headers),
+                (self.data, 206, self.headers),
+            ],
+            observed_directory=target.parent,
+            publication_paths=[target],
+        )
+        audit = self.root / "audit.json"
+        with patch.object(inputs.urllib.request, "build_opener", return_value=opener):
+            with self.assertRaises(inputs.Failure) as caught:
+                inputs.fetch_inputs(lock, self.root, audit, acquisition=plan)
+        self.assertIn(item["path"], str(caught.exception))
+        self.assertIn("official-iso-member", str(caught.exception))
+        result = json.loads(audit.read_text())
+        self.assertEqual(result["result"], "FAIL")
+        self.assertEqual(
+            [entry["path"] for entry in result["inputs"]], ["apks/already.apk"]
+        )
+        self.assertEqual(
+            result["failed_input"],
+            {
+                "path": item["path"],
+                "source_kind": "official-iso-member",
+                "category": "ShortReadFailure",
+                "expected_bytes": len(self.data),
+                "received_bytes": len(self.data) - 2,
+                "download_attempts": 2,
+                "prior_short_read_counts": [
+                    {
+                        "expected_bytes": len(self.data),
+                        "received_bytes": len(self.data) - 1,
+                    }
+                ],
+            },
+        )
+        self.assertEqual(len(opener.requests), 2)
+        self.assertFalse(target.exists())
+        self.assertEqual(cached.read_bytes(), b"verified cached APK")
+
     def test_pinned_small_container_downloaded_once_and_only_selected_APKs_published(
         self,
     ) -> None:
@@ -180,7 +414,7 @@ class ContainerTests(unittest.TestCase):
         opener = Opener(body)
         states = {}
         plan = {"dependency_bundle": bundle}
-        for item in items:
+        for index, item in enumerate(items):
             selected = {"kind": "dependency_bundle_member", "member": item["path"]}
             target = self.root / Path(item["path"]).name
             result = containers.fetch_container_input(
@@ -189,6 +423,8 @@ class ContainerTests(unittest.TestCase):
             self.assertEqual(sha(target.read_bytes()), item["sha256"])
             self.assertTrue(result["whole_container_sha256_verified"])
             self.assertEqual(result["container_cache"], "downloaded-current-session")
+            self.assertEqual(result["download_attempts"], 1 if index == 0 else 0)
+            self.assertEqual(result["prior_short_read_counts"], [])
         self.assertEqual(len(opener.requests), 1)
         self.assertFalse((self.root / "licenses").exists())
         archive = self.root / "containers" / (bundle["sha256"] + ".tar.gz")
