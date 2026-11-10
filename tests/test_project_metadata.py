@@ -52,7 +52,7 @@ class ProjectMetadataTests(unittest.TestCase):
     def test_project_identity_and_pep639_metadata(self) -> None:
         project = self.metadata["project"]
         self.assertEqual(project["name"], "tokenlogue")
-        self.assertEqual(project["version"], "0.1.0")
+        self.assertEqual(project["version"], "0.2.0")
         self.assertEqual(project["license"], "MIT")
         self.assertEqual(set(project["license-files"]), {"LICENSE"})
         self.assertEqual(

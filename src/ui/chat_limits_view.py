@@ -25,6 +25,7 @@ from chat.models import (
 from chat.sending import MessageSendPreview
 from i18n import display_model_name, fresh_text, money, number, tr
 from ui.branding import BrandHeader, BrandLoader
+from ui.chat_metrics import display_usd
 from ui.styles import (
     ERROR_COLOR,
     MUTED_COLOR,
@@ -357,6 +358,92 @@ def build_price_reconfirmation_dialog(
             ),
         ],
         actions_alignment=ft.MainAxisAlignment.END,
+    )
+
+
+def build_budget_warning_dialog(
+    preview: MessageSendPreview,
+    on_confirm: AsyncCallback,
+    on_cancel: Callable[[], None],
+    on_edit_limit: AsyncCallback,
+) -> ft.AlertDialog:
+    warning = preview.budget_warning
+    if warning is None:
+        raise ValueError("budget_warning_missing")
+
+    async def confirm(_event: ft.Event) -> None:
+        await on_confirm()
+
+    async def edit(_event: ft.Event) -> None:
+        await on_edit_limit()
+
+    def cancel(_event: ft.Event) -> None:
+        on_cancel()
+
+    secondary = secondary_button_style()
+    secondary.padding = ft.Padding.symmetric(horizontal=16, vertical=12)
+    primary = primary_button_style()
+    primary.padding = ft.Padding.symmetric(horizontal=16, vertical=12)
+    content: list[ft.Control] = [
+        ft.Text(preview.model_name or tr("paid.model"), weight=ft.FontWeight.BOLD),
+        detail_row(tr("budget_warning.remaining"), display_usd(warning.remaining_usd)),
+        detail_row(
+            tr("budget_warning.estimate"),
+            display_usd(warning.estimated_cost_usd, upper_bound=True),
+        ),
+        detail_row(
+            tr("budget_warning.projected"), display_usd(warning.projected_remaining_usd)
+        ),
+        ft.Text(tr("budget_warning.help"), color=MUTED_COLOR),
+    ]
+    if warning.projected_remaining_usd <= 0:
+        content.append(
+            ft.Text(
+                tr(
+                    "budget_warning.exceed"
+                    if warning.exceeds_limit
+                    else "budget_warning.empty"
+                ),
+                color=WARNING_COLOR,
+            )
+        )
+    return ft.AlertDialog(
+        modal=False,
+        scrollable=True,
+        bgcolor=PANEL_BACKGROUND,
+        shape=ft.RoundedRectangleBorder(radius=16),
+        title=ft.Text(tr("budget_warning.title")),
+        content=ft.Column(tight=True, spacing=12, controls=content),
+        actions=[
+            ft.Column(
+                tight=True,
+                spacing=8,
+                horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
+                controls=[
+                    ft.TextButton(
+                        ft.Text(tr("common.cancel"), text_align=ft.TextAlign.CENTER),
+                        autofocus=True,
+                        style=secondary,
+                        on_click=cancel,
+                    ),
+                    ft.Button(
+                        ft.Text(
+                            tr("budget_warning.send"), text_align=ft.TextAlign.CENTER
+                        ),
+                        style=primary,
+                        on_click=confirm,
+                    ),
+                    ft.TextButton(
+                        ft.Text(
+                            tr("budget_warning.edit"), text_align=ft.TextAlign.CENTER
+                        ),
+                        style=secondary,
+                        on_click=edit,
+                    ),
+                ],
+            )
+        ],
+        on_dismiss=cancel,
     )
 
 

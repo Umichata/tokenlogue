@@ -6,6 +6,7 @@ import asyncio
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from types import TracebackType
+from typing import TypedDict
 
 from auth.models import KeyLimitInfo, KeyValidityState
 from chat.accounting import (
@@ -16,6 +17,7 @@ from chat.accounting import (
     TurnRecord,
     calculate_remaining_budget,
 )
+from chat.budget_consent import BudgetConsent
 from chat.errors import ChatErrorType, safe_error_message
 from chat.metrics import LastRequestMetrics, LastRequestState
 from chat.models import Chat, Message
@@ -58,6 +60,11 @@ KeyStateCallback = Callable[[KeyValidityState, KeyLimitInfo], None]
 ReservationCallback = Callable[[str], Awaitable[None]]
 
 
+class _SendOptions(TypedDict, total=False):
+    budget_consent: BudgetConsent
+    on_request_finished: Callable[[], None]
+
+
 class InteractionOperationLock(asyncio.Lock):
     """Позволяет завершить именно собственную операцию при удалении профиля."""
 
@@ -90,12 +97,14 @@ class ChatInteractionController:
         *,
         session_provider: SessionProvider,
         on_key_state_changed: KeyStateCallback,
+        on_request_finished: Callable[[], None] | None = None,
     ) -> None:
         self._chat_service = chat_service
         self._budget_service = budget_service
         self._sending_service = sending_service
         self._session_provider = session_provider
         self._on_key_state_changed = on_key_state_changed
+        self._on_request_finished = on_request_finished
         self._operation_lock = InteractionOperationLock()
         self._active_chat_id: str | None = None
         self._generation = 0
@@ -160,7 +169,12 @@ class ChatInteractionController:
         )
 
     async def preview_message(
-        self, chat_id: str, text: str, paid_consent: PaidConsent | None = None
+        self,
+        chat_id: str,
+        text: str,
+        paid_consent: PaidConsent | None = None,
+        *,
+        draft_revision: int | None = None,
     ) -> MessageSendPreview:
         if not _is_identifier(chat_id) or not isinstance(text, str):
             return _invalid_preview(chat_id if isinstance(chat_id, str) else "")
@@ -178,6 +192,11 @@ class ChatInteractionController:
                 key_validity=session.key_validity,
                 key_limit=session.key_limit,
                 paid_consent=paid_consent,
+                **(
+                    {"draft_revision": draft_revision}
+                    if draft_revision is not None
+                    else {}
+                ),
             )
         if not self._matches(chat_id, generation):
             return _stale_preview(chat_id)
@@ -214,6 +233,15 @@ class ChatInteractionController:
             return None
         return self._chat_service.paid_consent(chat)
 
+    def confirm_budget_warning(self, preview: MessageSendPreview) -> BudgetConsent:
+        if (
+            not self._active
+            or self._session_provider() is None
+            or self._active_chat_id != preview.chat_id
+        ):
+            raise RuntimeError(tr("service.session_inactive"))
+        return self._sending_service.confirm_budget_warning(preview)
+
     async def save_paid_without_confirmation(
         self, chat_id: str, enabled: bool
     ) -> ActiveChatState:
@@ -241,6 +269,7 @@ class ChatInteractionController:
         paid_consent: PaidConsent | None = None,
         on_reserved: ReservationCallback | None = None,
         draft_revision: int | None = None,
+        budget_consent: BudgetConsent | None = None,
     ) -> InteractionOutcome:
         if (
             not _is_identifier(chat_id)
@@ -255,6 +284,21 @@ class ChatInteractionController:
             return InteractionOutcome(False, _missing_session_result(), None)
         generation = self._generation
         session_generation = self._session_generation
+
+        def request_finished() -> None:
+            if (
+                self._active
+                and self._session_generation == session_generation
+                and self._session_provider() is not None
+                and self._on_request_finished is not None
+            ):
+                self._on_request_finished()
+
+        options: _SendOptions = {}
+        if budget_consent is not None:
+            options["budget_consent"] = budget_consent
+        if self._on_request_finished is not None:
+            options["on_request_finished"] = request_finished
 
         def current_dispatch() -> bool:
             return (
@@ -287,6 +331,7 @@ class ChatInteractionController:
                     dispatch_guard=current_dispatch,
                     on_reserved=reserved,
                     draft_revision=draft_revision,
+                    **options,
                 )
             except DataAccessError:
                 if not current_dispatch():
@@ -305,6 +350,7 @@ class ChatInteractionController:
         paid_confirmed: bool,
         paid_consent: PaidConsent | None = None,
         on_reserved: ReservationCallback | None = None,
+        budget_consent: BudgetConsent | None = None,
     ) -> InteractionOutcome:
         if (
             not _is_identifier(chat_id)
@@ -318,6 +364,22 @@ class ChatInteractionController:
         if session is None:
             return InteractionOutcome(False, _missing_session_result(turn_id), None)
         generation = self._generation
+        session_generation = self._session_generation
+
+        def request_finished() -> None:
+            if (
+                self._active
+                and self._session_generation == session_generation
+                and self._session_provider() is not None
+                and self._on_request_finished is not None
+            ):
+                self._on_request_finished()
+
+        options: _SendOptions = {}
+        if budget_consent is not None:
+            options["budget_consent"] = budget_consent
+        if self._on_request_finished is not None:
+            options["on_request_finished"] = request_finished
 
         async def reserved(reserved_turn_id: str) -> None:
             if on_reserved is not None and self._matches(chat_id, generation):
@@ -340,6 +402,7 @@ class ChatInteractionController:
                     paid_consent=paid_consent,
                     dispatch_guard=current_dispatch,
                     on_reserved=reserved,
+                    **options,
                 )
             except DataAccessError:
                 if not current_dispatch():

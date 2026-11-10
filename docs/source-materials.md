@@ -9,92 +9,75 @@
 <a id="english"></a>
 <a id="lang-en"></a>
 
-Tokenlogue is available under the <a href="../LICENSE" title="MIT License">MIT License&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a>. The repository contains the application, its dependency locks and packaging recipes. Third-party components retain their own licenses.
+Tokenlogue's application code uses the [MIT License](../LICENSE). Third-party components keep their original terms. Ready-to-use APK and AppImage packages are separate downloads. You do not need source archives or build tools to run the application.
 
 <a id="-application-sources"></a>
-## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Application sources
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Match the application sources
 
-Use the source revision identified in your package's `PROVENANCE.json`. A later repository revision may include different code or documentation. The application source archive is distinct from the dependency collections below.
+Choose the project archive for your platform from [`PROVENANCE.json`](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/PROVENANCE.json). The Android and Linux packages use different packaging revisions with the same application core. Each package is linked to its exact sources by its commit, tree and checksums. A later repository revision or platform README does not change that provenance.
+
+The [Releases page](https://github.com/Umichata/tokenlogue/releases/tag/v0.2.0-preview.52a834d) lists the files actually available for each version. For version `0.2.0`, source materials are supplied as one current dependency archive with its index, rather than a chain of downloads from earlier Tokenlogue releases.
+
+<a id="-find-the-matching-collection"></a>
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Use the dependency collection
+
+| File | Purpose |
+| --- | --- |
+| [Android project sources](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/Tokenlogue-0.2.0-8080e6e-project-sources.tar.gz) | Exact tracked application sources, locks and packaging for the supplied APK. |
+| [Linux project sources](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/Tokenlogue-0.2.0-52a834d-project-sources.tar.gz) | Exact tracked application sources, locks and packaging for the supplied AppImage. |
+| [`Tokenlogue-0.2.0-dependency-sources.tar.gz`](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/Tokenlogue-0.2.0-dependency-sources.tar.gz) | Identified third-party sources, original notices, modifications and recipes in a deduplicated collection. |
+| [`SOURCE_MATERIALS.json`](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/SOURCE_MATERIALS.json) | Versions, component mappings, relative material paths, sizes and SHA-256 values. It also records the scope of source and binary-provenance evidence. |
+| [`SHA256SUMS`](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/SHA256SUMS) | Checksums of the release downloads. |
+
+The dependency archive has no extra outer directory. It contains a bilingual `README.md`, `SOURCE_MATERIALS.json`, `BUILD_INPUTS.json`, `RECONSTRUCTION.json`, `SHA256SUMS` and the original files under `materials/<SHA-256>/<original filename>`. An identical file is stored once and can be mapped to several components. The index identifies the exact archive member when a component's source or notice is inside a retained archive.
+
+`BUILD_INPUTS.json` records pinned source locations, sizes and checksums for separately obtained compiler, runtime and tool inputs. These include official upstream downloads, selected files from official Alpine ISO images and the [current Tokenlogue dependency input container](https://github.com/Umichata/tokenlogue/releases/tag/runtime-build-inputs-20261110). The latter is not an official Alpine container. ISO checks cover the selected bytes, not the whole image checksum. The dependency container is checked in full and by member. Obtaining external build inputs can require internet access. It does not require an older Tokenlogue application release or a previous Actions artifact.
+
+Save the dependency archive and the release's `SHA256SUMS` in one directory. Verify the selected archive before extracting it. This command requires Bash and SHA-256 tools.
+
+```bash
+set -o pipefail
+file='Tokenlogue-0.2.0-dependency-sources.tar.gz'
+awk -v wanted="$file" '$2 == wanted { entry = $0; count++ } END { if (count != 1) exit 1; print entry }' SHA256SUMS |
+  sha256sum --check -
+```
+
+The selected file must report `OK`. A missing or duplicate manifest entry, missing file or checksum mismatch fails the check. Then extract into a new empty directory and verify the collection's own manifest.
+
+```bash
+mkdir tokenlogue-dependency-sources &&
+tar --extract --gzip --file Tokenlogue-0.2.0-dependency-sources.tar.gz \
+  --directory tokenlogue-dependency-sources --no-same-owner --no-same-permissions &&
+(cd tokenlogue-dependency-sources && sha256sum --check SHA256SUMS)
+```
+
+The release manifest checks the downloaded archive. The inner manifest checks its extracted members. Keep original source archives and legal texts unchanged.
 
 <a id="en-run-from-source"></a>
-
 <a id="-run-from-source-on-linux"></a>
 ## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Run from source on Linux
 
-Install Python 3.12 and [uv](https://docs.astral.sh/uv/). Download the project sources and open a terminal in the directory containing `pyproject.toml` and `uv.lock`. The <a href="linux-appimage.md#english" title="Linux desktop and key-store requirements">Linux desktop and key-store requirements&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> also apply.
+Install Python 3.12 and [uv](https://docs.astral.sh/uv/). Open a terminal in the extracted project directory containing `pyproject.toml` and `uv.lock`. The [Linux desktop and key-store requirements](linux-appimage.md#english) also apply.
+
 ```bash
 uv sync --locked
 uv run --locked flet run
 ```
 
-These commands run the source application. They do not create an AppImage or APK. Preparing the environment and downloading Flet desktop components may require internet access. Ready-to-use packages do not require a separate Python or Flutter installation.
-
-<a id="-find-the-matching-collection"></a>
-## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Find the matching collection
-
-Start with the `SOURCE_MATERIALS.md` and `SOURCE_MATERIALS.json` supplied with your package. The JSON index maps each identified component to an exact archive member, version, size and SHA-256. Keep the named archives unchanged. A shared dependency collection can remain useful for a newer package without making its old application snapshot current.
-
-The <a href="https://github.com/Umichata/tokenlogue/releases" title="Releases page">Releases page&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> contains published downloads. The established source collections are listed below.
-
-<img src="assets/ui/frame-top.svg" width="100%" alt="">
-
-| Collection | What it provides |
-| --- | --- |
-| [Published baseline](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-linux-preview.986c6ad) | Seven ordered parts with earlier shared dependencies, source recipes and the runtime bundle |
-| [Published supplement](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.2b1f7d3/Tokenlogue-2b1f7d3-source-supplement.tar.gz) | Six updated Dart dependency archives and the application snapshot of that historical Linux release |
-| Package-specific additions | The additional source archives, patches and recipes identified by the index supplied with a newer package |
-
-<img src="assets/ui/frame-bottom.svg" width="100%" alt="">
-
-The supplement is 745,485 bytes. Its SHA-256 is `66b6f130c47f4a58d7708fc7c528574040c6c27d5511b8bbe1865d1412abc29e`. Its application snapshot describes its own release. It does not replace the source revision named by a newer package.
-
-<a id="-restore-the-published-baseline"></a>
-## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Restore the published baseline
-
-Download all seven parts into the same directory. Keep their exact names. Their total size is 12,338,636,800 bytes. Allow at least 30 GB for the downloaded parts and extracted materials.
-
-<img src="assets/ui/frame-top.svg" width="100%" alt="">
-
-| Part | Bytes |
-| --- | --- |
-| [1 · Tokenlogue-986c6ad-source-materials.tar.part001](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/Tokenlogue-986c6ad-source-materials.tar.part001) | 2,000,000,000 |
-| [2 · Tokenlogue-986c6ad-source-materials.tar.part002](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/Tokenlogue-986c6ad-source-materials.tar.part002) | 2,000,000,000 |
-| [3 · Tokenlogue-986c6ad-source-materials.tar.part003](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/Tokenlogue-986c6ad-source-materials.tar.part003) | 2,000,000,000 |
-| [4 · Tokenlogue-986c6ad-source-materials.tar.part004](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/Tokenlogue-986c6ad-source-materials.tar.part004) | 2,000,000,000 |
-| [5 · Tokenlogue-986c6ad-source-materials.tar.part005](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/Tokenlogue-986c6ad-source-materials.tar.part005) | 2,000,000,000 |
-| [6 · Tokenlogue-986c6ad-source-materials.tar.part006](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/Tokenlogue-986c6ad-source-materials.tar.part006) | 2,000,000,000 |
-| [7 · Tokenlogue-986c6ad-source-materials.tar.part007](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/Tokenlogue-986c6ad-source-materials.tar.part007) | 338,636,800 |
-
-<img src="assets/ui/frame-bottom.svg" width="100%" alt="">
-
-Save [SOURCE_PARTS.SHA256SUMS](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/SOURCE_PARTS.SHA256SUMS) and [SOURCE_PARTS.json](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/SOURCE_PARTS.json) beside the parts. Check the individual files and the combined stream before extracting.
-```bash
-sha256sum --check SOURCE_PARTS.SHA256SUMS
-cat Tokenlogue-986c6ad-source-materials.tar.part00{1..7} | sha256sum
-```
-
-The second command requires Bash. Its result must be `d66c43a31d810431af18defdc1642f235d072bdec9c9c281b3ed3dc3a72d4cf2`. After both checks succeed, extract into a new directory without creating another complete tar file.
-```bash
-cat Tokenlogue-986c6ad-source-materials.tar.part00{1..7} | tar --extract --file - --no-same-owner --no-same-permissions
-```
-
-The baseline already contains the historical source ZIP and `appimage-runtime-34749438406-1.zip`. The [separate runtime ZIP](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.986c6ad/appimage-runtime-34749438406-1.zip) is an alternative download of the same member. It is 391,916,671 bytes with SHA-256 `a9869ba745218ea8b0e2dec0c3da6af15b4d28fbd6e1ec1170afcadb758b06c9`. You do not need to download it twice.
+These commands run the source application and do not create an APK or AppImage. Preparing the environment and downloading Flet desktop components may require internet access. For packaging, use the project recipes and exact locks from the matching project archive. The [Linux packaging guide](../packaging/linux/appimage/README.md#english), [Linux startup runtime recipe](../packaging/linux/appimage/runtime/README.md#english) and [Android native dependency guide](../packaging/android/crypto/README.md#english) describe the corresponding components.
 
 <a id="-what-the-available-materials-establish"></a>
-## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> What the available materials establish
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Understand the provenance limits
 
-Identifying an intact source archive is different from establishing which sources produced a particular binary. The current Android and Linux collections include source archives and recipes for the following components, but their exact selected wheel bytes are not fully linked to all actual source revisions, patches and build inputs.
+Finding an intact source archive is different from proving that it produced a particular binary. Matching an archive's version and download checksum establishes that archive's identity, not the complete source-to-wheel relationship.
 
-- Android CFFI 2.0.0, PyCryptodomex 3.23.0 and msgpack 1.1.2.
-- Linux CFFI 2.0.0 and PyCryptodomex 3.23.0.
+That relationship remains incomplete for Android CFFI 2.0.0, PyCryptodomex 3.23.0 and msgpack 1.1.2, and for Linux CFFI 2.0.0 and PyCryptodomex 3.23.0. The exact libffi revision and patches inside the selected CFFI wheels have not been fully identified. The libffi supplied by a Python runtime is a separate component and does not identify CFFI's library.
 
-The exact libffi source and patches inside the selected CFFI wheels are not fully identified. Android runtime libffi 3.4.4 and Linux Python runtime libffi 3.4.8 are separate components. The Linux CFFI recipe names libffi 3.4.6, which alone does not prove the library in the wheel.
-
-Retained compiler binaries are build inputs rather than compiler source. The collection does not establish a complete offline rebuild or independent reproduction of every native dependency. An archive with the same version number and matching download checksum does not establish that connection by itself. These technical limits are separate from whether the application runs on a particular device.
+The collection preserves all identified materials and describes their verification scope in its index. It does not establish a fully offline rebuild or independent reproduction of every native dependency. Missing publisher evidence is not by itself evidence that sources do not exist. These provenance limits are separate from runtime support on a device, including native ARM64 with 16 KiB pages.
 
 <a id="-licenses-and-older-collections"></a>
-## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Licenses and older collections
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Find the original notices
 
-The <a href="../packaging/linux/appimage/notices.md#english" title="license guide">license guide&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> explains where to find the original notices included in the packages. The <a href="releases/14b87ac-source-materials.md#english" title="historical source collection">historical source collection&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> and <a href="releases/v0.1.0-linux-preview.1.md#english" title="older Linux preview record">older Linux preview record&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> describe their own files. Their earlier versions and limitations do not automatically describe newer packages.
+The [package license guide](../packaging/linux/appimage/notices.md#english) and [libraries and fonts](../packaging/notices/README.md#english) explain the notices included with the application. Original licenses and copyright statements remain complete and unchanged. Source availability, a license text and evidence linking a binary to its build inputs are distinct checks.
 
 <p align="left"><a href="../README.md#english"><img src="assets/ui/buttons/en-e3d813162a8e.svg" alt="Back to Tokenlogue" width="168" height="28"></a></p>

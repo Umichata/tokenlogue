@@ -3063,20 +3063,6 @@
       "kind": "builder-manifest"
     },
     {
-      "path": "indexes/community-APKINDEX.tar.gz",
-      "url": "https://dl-cdn.alpinelinux.org/alpine/v3.21/community/x86_64/APKINDEX.tar.gz",
-      "size": 1993497,
-      "sha256": "a022e6a99d77d583b7cb24d54572ef845ac84efd713be6de2f0ba4680f0f5062",
-      "kind": "apk-index-snapshot"
-    },
-    {
-      "path": "indexes/main-APKINDEX.tar.gz",
-      "url": "https://dl-cdn.alpinelinux.org/alpine/v3.21/main/x86_64/APKINDEX.tar.gz",
-      "size": 487361,
-      "sha256": "86387db6775d67cafb1bd2a6eb708482ec77638ba5610ef414eaf5082e286dff",
-      "kind": "apk-index-snapshot"
-    },
-    {
       "path": "recipes/gcc/0001-posix_memalign.patch",
       "url": "https://raw.githubusercontent.com/alpinelinux/aports/1a03a2a9c9e77f1a07d48b6f6805e72c8c63c03f/main/gcc/0001-posix_memalign.patch",
       "size": 1441,

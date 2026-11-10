@@ -21,6 +21,7 @@ from auth.models import (
     KeyValidityState,
 )
 from auth.service import AuthService, deletion_error_message
+from chat.account_balance import CreditsReader
 from chat.accounting import ChatBudgetService
 from chat.drafts import ChatDraftService
 from chat.sending import MessageSendingService
@@ -125,6 +126,7 @@ class AppController:
         sending_service: MessageSendingService,
         drafts: ChatDraftService,
         *,
+        credits_reader: CreditsReader | None = None,
         data_access: DataAccess | None = None,
         on_profile_deleted: Callable[[], Awaitable[None]] | None = None,
         on_profile_reload: Callable[[], Awaitable[None]] | None = None,
@@ -148,6 +150,7 @@ class AppController:
             budget_service,
             sending_service,
             drafts,
+            credits_reader=credits_reader,
             on_lock=self._handle_chat_lock,
             on_replace_key=self.request_reset,
             on_delete_profile=self._request_workspace_profile_deletion,

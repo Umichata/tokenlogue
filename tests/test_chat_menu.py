@@ -412,7 +412,7 @@ class ChatMenuTests(unittest.IsolatedAsyncioTestCase):
                 await view.open_menu()
                 self.assertIsNotNone(view.retry_key_button)
                 assert view.retry_key_button is not None
-                self.assertEqual(view.retry_key_button.content, "Обновить статус ключа")
+                self.assertEqual(view.retry_key_button.content, tr("key.refresh"))
                 self.assertFalse(view.retry_key_button.disabled)
                 await self.click(view.retry_key_button)
                 self.assertTrue(view.menu_open)

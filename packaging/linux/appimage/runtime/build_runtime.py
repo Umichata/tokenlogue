@@ -36,24 +36,30 @@ from runtime_inputs import (
     verify_file,
     write_json,
 )
+from source_containers import load_acquisition_plan
 
 MODULE = Path(__file__).resolve().parent
 STAGES = ("fetch", "prepare", "build-one", "build-two", "compare", "verify", "smoke")
 RECIPE_NAMES = (
     "Containerfile",
     "README.md",
+    "README.ru.md",
     "build_runtime.py",
     "runtime_inputs.py",
     "runtime_checks.py",
     "runtime.lock.json",
+    "acquisition.lock.json",
+    "source_containers.py",
     "compile.sh",
     "install.sh",
     "patches/runtime-makefile.patch",
+    "../source_runtime.py",
+    "../runtime-artifact.lock.json",
 )
 
 
 def recipe_state(repo: Path) -> Record:
-    paths = [MODULE / name for name in RECIPE_NAMES]
+    paths = [(MODULE / name).resolve() for name in RECIPE_NAMES]
     paths.append(repo / ".github/workflows/build-appimage-runtime.yml")
     files = []
     dirty = False
@@ -544,7 +550,14 @@ def main() -> int:
                     "Stage already attempted; initialize a new run to preserve evidence"
                 )
             if stage == "fetch":
-                fetch_inputs(lock, inputs)
+                fetch_inputs(
+                    lock,
+                    inputs,
+                    run / "reports/input-network-audit.json",
+                    acquisition=load_acquisition_plan(
+                        MODULE / "acquisition.lock.json", lock
+                    ),
+                )
             result = (
                 check_inputs(lock, inputs, run / "input-materials")
                 if stage in {"fetch", "verify-inputs"}

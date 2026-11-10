@@ -94,6 +94,7 @@ def calculate_request_plan(
     text: str,
     pricing: tuple[PriceComponents, ...] | None,
     key_limit: KeyLimitInfo,
+    apply_chat_cost_limit: bool = True,
 ) -> RequestPlan:
     """Plan the exact local context and caps without authorizing a send.
 
@@ -113,7 +114,8 @@ def calculate_request_plan(
     if budget.state is BudgetState.EXHAUSTED:
         if budget.total_tokens_used + budget.reserved_tokens >= budget.token_limit:
             raise RequestPlanError(ChatErrorType.TOKEN_LIMIT_EXCEEDED)
-        raise RequestPlanError(ChatErrorType.COST_LIMIT_EXCEEDED)
+        if apply_chat_cost_limit:
+            raise RequestPlanError(ChatErrorType.COST_LIMIT_EXCEEDED)
     context_length = (
         FREE_ROUTER_CONTEXT_LENGTH
         if chat.requested_model_id == FREE_ROUTER_MODEL.id
@@ -155,13 +157,14 @@ def calculate_request_plan(
             cost_remaining = (
                 budget.cost_limit_usd - budget.cost_used_usd - budget.cost_reserved_usd
             )
-            effective_completion = _cap_completion_by_cost(
-                effective_completion,
-                pricing,
-                context.estimated_prompt_tokens,
-                cost_remaining,
-                ChatErrorType.COST_LIMIT_EXCEEDED,
-            )
+            if apply_chat_cost_limit:
+                effective_completion = _cap_completion_by_cost(
+                    effective_completion,
+                    pricing,
+                    context.estimated_prompt_tokens,
+                    cost_remaining,
+                    ChatErrorType.COST_LIMIT_EXCEEDED,
+                )
             if (
                 key_limit.state is KeyLimitState.AVAILABLE
                 and key_limit.remaining is not None
@@ -247,6 +250,7 @@ def estimate_draft(snapshot: PreparedEstimateSnapshot, text: str) -> DraftEstima
             text=text,
             pricing=pricing,
             key_limit=snapshot.key_limit,
+            apply_chat_cost_limit=False,
         )
     except RequestPlanError as error:
         unavailable = error.error_type in {

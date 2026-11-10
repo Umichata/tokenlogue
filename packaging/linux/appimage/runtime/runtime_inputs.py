@@ -20,6 +20,12 @@ from typing import Any
 Record = dict[str, Any]
 
 
+CURRENT_DEPENDENCY_URL = (
+    "https://github.com/Umichata/tokenlogue/releases/download/"
+    "runtime-build-inputs-20261110/Tokenlogue-runtime-build-inputs-20261110.tar.gz"
+)
+
+
 class Failure(RuntimeError):
     """A failed mandatory check, with a message safe to put in a report."""
 
@@ -156,18 +162,182 @@ class PublicRedirect(urllib.request.HTTPRedirectHandler):
         return result
 
 
-def fetch_inputs(lock: Record, root: Path) -> None:
+class OfficialInputGuard(urllib.request.BaseHandler):
+    """Deny old application assets on both initial requests and redirects."""
+
+    def __init__(self, events: list[Record], dependency_bundle: Record | None = None):
+        self.events = events
+        self.dependency_bundle = dependency_bundle
+        if dependency_bundle is not None and (
+            dependency_bundle.get("url") != CURRENT_DEPENDENCY_URL
+            or type(dependency_bundle.get("size")) is not int
+            or not 0 < dependency_bundle["size"] <= 64 * 1024**2
+            or re.fullmatch(r"[a-f0-9]{64}", str(dependency_bundle.get("sha256", "")))
+            is None
+        ):
+            raise Failure("Invalid narrowly pinned dependency-container exception")
+
+    def https_request(self, request: urllib.request.Request) -> urllib.request.Request:
+        url = urllib.parse.urlsplit(request.full_url)
+        host = (url.hostname or "").lower()
+        official = host in {
+            "codeload.github.com",
+            "distfiles.alpinelinux.org",
+            "dl-cdn.alpinelinux.org",
+            "gcc.gnu.org",
+            "github.com",
+            "musl.libc.org",
+            "raw.githubusercontent.com",
+            "registry-1.docker.io",
+            "auth.docker.io",
+            "release-assets.githubusercontent.com",
+            "objects.githubusercontent.com",
+            "production.cloudflare.docker.com",
+            "production.cloudfront.docker.com",
+        } or host.endswith(".r2.cloudflarestorage.com")
+        decoded_path = url.path
+        for _ in range(3):
+            decoded_path = urllib.parse.unquote(decoded_path)
+        decoded_path = posixpath.normpath(decoded_path).lower()
+        is_application = (
+            re.match(r"^/(?:repos/)?umichata/tokenlogue(?:/|$)", decoded_path)
+            is not None
+        )
+        pinned_container = (
+            self.dependency_bundle is not None
+            and request.full_url == CURRENT_DEPENDENCY_URL
+        )
+        allowed = (
+            url.scheme == "https"
+            and official
+            and not url.username
+            and not url.password
+            and (not is_application or pinned_container)
+        )
+        self.events.append({"host": host, "path": url.path, "allowed": allowed})
+        if not allowed:
+            raise Failure("Runtime request rejected by official-source guard")
+        return request
+
+    http_request = https_request
+
+
+def fetch_inputs(
+    lock: Record,
+    root: Path,
+    audit_path: Path | None = None,
+    *,
+    acquisition: Record | None = None,
+) -> None:
+    audit: Record = {
+        "result": "FAIL",
+        "scope": "producer Python HTTPS inputs and redirects",
+        "old_tokenlogue_endpoints": "DENIED",
+        "network": [],
+        "inputs": [],
+    }
+    if acquisition is not None:
+        audit["acquisition_plan_sha256"] = acquisition.get("_lock_sha256")
+        audit["dependency_container_exception"] = {
+            key: acquisition["dependency_bundle"][key]
+            for key in ("url", "size", "sha256")
+        }
+    try:
+        _fetch_inputs(lock, root, audit, acquisition)
+        audit["result"] = "PASS"
+    finally:
+        if audit_path is not None:
+            write_json(audit_path, audit)
+
+
+def _fetch_inputs(
+    lock: Record, root: Path, audit: Record, acquisition: Record | None = None
+) -> None:
     # Proxies and ambient auth handlers are intentionally not inherited.
     opener = urllib.request.build_opener(
-        urllib.request.ProxyHandler({}), PublicRedirect()
+        urllib.request.ProxyHandler({}),
+        PublicRedirect(),
+        OfficialInputGuard(
+            audit["network"],
+            acquisition["dependency_bundle"] if acquisition is not None else None,
+        ),
     )
     registry_token: str | None = None
+    container_cache_states: dict[str, str] = {}
     for item in lock["files"]:
         path = input_path(root, item["path"])
         if path.exists() or path.is_symlink():
             verify_file(path, item)
+            audit["inputs"].append(
+                {
+                    "path": item["path"],
+                    "sha256": item["sha256"],
+                    "size": item["size"],
+                    "mode": "verified-cache",
+                    "source_kind": "verified-input-cache",
+                }
+            )
             continue
         path.parent.mkdir(parents=True, exist_ok=True)
+        selector = (
+            acquisition["selectors"].get(item["path"])
+            if acquisition is not None
+            else None
+        )
+        if selector is not None and acquisition is not None:
+            from source_containers import ShortReadFailure, fetch_container_input
+
+            source_kind = (
+                "official-iso-member"
+                if selector["kind"] == "official_iso_member"
+                else "pinned-dependency-container-member"
+            )
+            try:
+                origin = fetch_container_input(
+                    item,
+                    selector,
+                    path,
+                    root,
+                    acquisition,
+                    opener,
+                    container_cache_states,
+                )
+            except (urllib.error.URLError, TimeoutError, Failure) as error:
+                failed: Record = {
+                    "path": item["path"],
+                    "source_kind": source_kind,
+                    "category": type(error).__name__,
+                }
+                if isinstance(error, ShortReadFailure):
+                    failed.update(
+                        expected_bytes=error.expected_size,
+                        received_bytes=error.received_size,
+                        download_attempts=error.download_attempts,
+                        prior_short_read_counts=error.prior_short_read_counts,
+                    )
+                audit["failed_input"] = failed
+                if isinstance(error, urllib.error.HTTPError):
+                    failed["http_status"] = error.code
+                    detail = f"HTTP {error.code}"
+                elif isinstance(error, (urllib.error.URLError, TimeoutError)):
+                    # Avoid signed redirects, credentials and ambient proxy details.
+                    detail = type(error).__name__
+                else:
+                    detail = str(error)
+                raise Failure(
+                    f"Container input download failed: {item['path']} "
+                    f"({source_kind}): {detail}"
+                ) from None
+            audit["inputs"].append(
+                {
+                    "path": item["path"],
+                    "sha256": item["sha256"],
+                    "size": item["size"],
+                    "mode": "downloaded-and-verified",
+                    **origin,
+                }
+            )
+            continue
         headers = {"User-Agent": "tokenlogue-runtime-inputs/1"}
         if item["url"].startswith("https://registry-1.docker.io/v2/library/alpine/"):
             if registry_token is None:
@@ -194,6 +364,15 @@ def fetch_inputs(lock: Record, root: Path) -> None:
                         remaining -= len(chunk)
             verify_file(temporary, item)
             temporary.replace(path)
+            audit["inputs"].append(
+                {
+                    "path": item["path"],
+                    "sha256": item["sha256"],
+                    "size": item["size"],
+                    "mode": "downloaded-and-verified",
+                    "source_kind": "official-direct-url",
+                }
+            )
         except urllib.error.HTTPError as error:
             raise Failure(
                 f"Download failed: {item['path']} (HTTP {error.code})"

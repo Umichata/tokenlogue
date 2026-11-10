@@ -23,38 +23,37 @@ Tokenlogue позволяет общаться с моделями OpenRouter н
 - API-ключ OpenRouter и интернет для проверки ключа, моделей и сообщений.
 - Поддерживаемая блокировка устройства для необязательного системного восстановления PIN в Android 11 и новее.
 
-Минимальный API не означает проверку каждой версии Android или каждого устройства. Текущий пакет прошёл статические проверки выравнивания ELF и ZIP для страниц 4 КиБ и 16 КиБ. Работа на настоящем ARM64-устройстве с ядром 16 КиБ ещё не проверена. Прежний запуск другого пакета через ARM-трансляцию не подтверждает такую работу этого пакета.
+Минимальный API не означает проверку каждой версии Android или каждого устройства. Результаты статических проверок выравнивания ELF и ZIP указаны в происхождении пакета. Статическое выравнивание 16 КиБ не подтверждает совместимость во время работы. Запуск на настоящем ARM64-устройстве с ядром 16 КиБ ещё не проверен.
 
 <a id="ru-install"></a>
 
 <a id="-получение-и-установка-apk"></a>
 ## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Получение и установка APK
 
-На странице <a href="https://github.com/Umichata/tokenlogue/releases" title="Releases">Releases&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> перечислены общедоступные загрузки. Для этой предварительной версии скачайте указанный ниже APK и `RELEASE_SHA256SUMS`. Если этой версии нет в списке, её загрузки ещё не опубликованы. Прежний опубликованный выпуск Linux является отдельным пакетом.
+На странице <a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.2.0-preview.52a834d" title="Releases">Releases&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> доступна предварительная версия Tokenlogue 0.2.0. Скачайте [APK](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/Tokenlogue-0.2.0-android-arm64-v8a-v42.apk) и [`SHA256SUMS`](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/SHA256SUMS).
 
 <img src="assets/ui/frame-top.svg" width="100%" alt="">
 
 | Текущая версия Android | Значение |
 | --- | --- |
-| APK | `Tokenlogue-0.1.0-65aa62f-arm64-v8a-v41-test.apk` |
-| Версия | `0.1.0`, versionCode `41` |
-| Размер | 56 160 490 байт |
-| SHA-256 | `2f7c699960e3967220f526245ca2acbf4335104a141ccf3fa2b8a04dae4709d9` |
+| APK | [`Tokenlogue-0.2.0-android-arm64-v8a-v42.apk`](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/Tokenlogue-0.2.0-android-arm64-v8a-v42.apk) |
+| Версия | `0.2.0`, versionCode `42` |
+| SHA-256 | `378d8fbaea3ba0faa5aff81cd564e260dece4e25dff23519647e7db3812b28ea` |
 | SHA-256 сертификата подписи | `927292ad5a76ff049059d1c5d8e9497a42c03f3e995a5d9ca935c59ad8d0b09e` |
 
 <img src="assets/ui/frame-bottom.svg" width="100%" alt="">
 
-Перед установкой сверьте только выбранный APK с `RELEASE_SHA256SUMS`. Сохраните оба файла в одной папке. На компьютере используйте Bash и средства SHA-256, чтобы выполнить из этой папки следующую команду.
+Перед установкой сверьте только выбранный APK с `SHA256SUMS`. Сохраните оба файла в одной папке. На компьютере используйте Bash и средства SHA-256, чтобы выполнить из этой папки следующую команду.
 ```bash
 set -o pipefail
-file='Tokenlogue-0.1.0-65aa62f-arm64-v8a-v41-test.apk'
-awk -v wanted="$file" '$2 == wanted { entry = $0; count++ } END { if (count != 1) exit 1; print entry }' RELEASE_SHA256SUMS |
+file='Tokenlogue-0.2.0-android-arm64-v8a-v42.apk'
+awk -v wanted="$file" '$2 == wanted { entry = $0; count++ } END { if (count != 1) exit 1; print entry }' SHA256SUMS |
   sha256sum --check -
 ```
 
 Выбранный APK должен получить `OK`. Отсутствующая или повторная запись в манифесте, изменённый или отсутствующий файл вызывают ошибку команды. Контрольная сумма обнаруживает изменение байтов и не заменяет подпись издателя.
 
-Исходный комплект предварительной версии содержит внутренний `SHA256SUMS` для проверки полного распакованного комплекта. Для установки и запуска Tokenlogue этот комплект и архивы исходников не нужны.
+Архивы исходников и средства сборки скачиваются отдельно. Для установки и запуска Tokenlogue они не нужны.
 
 Передайте проверенный APK на устройство, откройте его и следуйте установщику Android. Система может попросить разрешить установку из использованного файлового менеджера или браузера. Давайте разрешение только для пакета, которому доверяете. После установки его можно отключить.
 

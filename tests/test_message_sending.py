@@ -1243,7 +1243,7 @@ class MessageSendingTests(unittest.IsolatedAsyncioTestCase):
                     assert state is not None
                     self.assertEqual(state.reserved_tokens, 0)
 
-    async def test_paid_cost_and_key_budget_reduce_cap_consistently(self) -> None:
+    async def test_chat_cost_warns_before_cap_while_key_budget_still_caps(self) -> None:
         pricing_override = PriceComponents(
             prompt=Decimal("0.000003"),
             completion=Decimal("0.000005"),
@@ -1291,9 +1291,17 @@ class MessageSendingTests(unittest.IsolatedAsyncioTestCase):
                     key_limit=KeyLimitInfo.from_validated_remaining(Decimal("10")),
                 )
                 self.assertTrue(preview.allowed, preview.error_type)
-                self.assertEqual(preview.max_completion_tokens, 37)
-                self.assertEqual(preview.reserved_tokens, 89)
-                self.assertEqual(preview.reserved_cost_usd, allowed_cost)
+                if ceiling_name == "chat":
+                    self.assertIsNotNone(preview.budget_warning)
+                    assert preview.max_completion_tokens is not None
+                    assert preview.reserved_cost_usd is not None
+                    self.assertGreater(preview.max_completion_tokens, 37)
+                    self.assertGreater(preview.reserved_cost_usd, allowed_cost)
+                else:
+                    self.assertIsNone(preview.budget_warning)
+                    self.assertEqual(preview.max_completion_tokens, 37)
+                    self.assertEqual(preview.reserved_tokens, 89)
+                    self.assertEqual(preview.reserved_cost_usd, allowed_cost)
                 self.assertGreater(
                     estimate_max_cost(self.paid_model.all_pricing, 52, 38), allowed_cost
                 )
@@ -1312,15 +1320,25 @@ class MessageSendingTests(unittest.IsolatedAsyncioTestCase):
                     key_limit=KeyLimitInfo.from_validated_remaining(Decimal("10")),
                     paid_confirmed=True,
                     on_reserved=capture_reservation,
+                    budget_consent=(
+                        service.confirm_budget_warning(preview)
+                        if ceiling_name == "chat"
+                        else None
+                    ),
                 )
                 self.assertTrue(sent.successful, sent.error_type)
                 self.assertEqual(self.validator.calls, validator_calls + 1)
                 self.assertEqual(self.catalog.calls, catalog_calls + 1)
-                self.assertEqual(client.calls[0]["max_completion_tokens"], 37)
+                self.assertEqual(
+                    client.calls[0]["max_completion_tokens"],
+                    preview.max_completion_tokens,
+                )
                 reservation = reservations[0]
                 assert reservation is not None
                 self.assertEqual(reservation.reserved_tokens, preview.reserved_tokens)
-                self.assertEqual(reservation.reserved_cost_usd, allowed_cost)
+                self.assertEqual(
+                    reservation.reserved_cost_usd, preview.reserved_cost_usd
+                )
 
     async def test_persisted_large_maximum_survives_restart_and_send_rechecks_it(
         self,
@@ -1494,7 +1512,17 @@ class MessageSendingTests(unittest.IsolatedAsyncioTestCase):
                         key_limit=KeyLimitInfo.from_validated_remaining(Decimal("10")),
                         paid_confirmed=True,
                     )
-                    if tokens == 16:
+                    if ceiling == "chat":
+                        self.assertTrue(preview.allowed, preview.error_type)
+                        self.assertIsNotNone(preview.budget_warning)
+                        self.assertEqual(
+                            sent.error_type, ChatErrorType.COST_LIMIT_EXCEEDED
+                        )
+                        self.assertEqual(client.calls, [])
+                        self.assertEqual(
+                            self.message_repository.list_turns(chat_id), []
+                        )
+                    elif tokens == 16:
                         self.assertTrue(preview.allowed, preview.error_type)
                         self.assertTrue(sent.successful, sent.error_type)
                         self.assertEqual(preview.max_completion_tokens, 16)

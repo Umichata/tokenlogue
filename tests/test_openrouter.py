@@ -14,6 +14,8 @@ import httpx
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from api.openrouter import (  # noqa: E402
+    CreditsResult,
+    CreditsStatus,
     KeyValidationResult,
     KeyValidationStatus,
     OpenRouterClient,
@@ -258,6 +260,219 @@ class OpenRouterClientTests(unittest.IsolatedAsyncioTestCase):
             timeout=0.1,
         )
         return await client.validate_key(TEST_CREDENTIAL)
+
+
+class OpenRouterCreditsTests(unittest.IsolatedAsyncioTestCase):
+    async def test_uses_current_user_key_for_account_endpoint(self) -> None:
+        observed: list[bool] = []
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            observed.append(
+                str(request.url) == "https://openrouter.ai/api/v1/credits"
+                and request.headers.get("Authorization") == f"Bearer {TEST_CREDENTIAL}"
+            )
+            return httpx.Response(
+                200, content=b'{"data":{"total_credits":100.50,"total_usage":25.75}}'
+            )
+
+        result = await self._credits(handler)
+
+        self.assertEqual(observed, [True])
+        self.assertEqual(result.status, CreditsStatus.SUCCESS)
+        self.assertEqual(result.balance_usd, Decimal("74.75"))
+        self.assertEqual(result.total_credits, Decimal("100.50"))
+        self.assertEqual(result.total_usage, Decimal("25.75"))
+
+    async def test_positive_zero_and_small_negative_balances_are_real_values(
+        self,
+    ) -> None:
+        for credits, usage, expected in (
+            (b"2.50", b"1.25", "1.25"),
+            (b"1", b"1", "0"),
+            (b"1", b"1.000123", "-0.000123"),
+            (b"0", b"0.000000000000000000000000000001", "-1E-30"),
+            (
+                b"123456789012345678901234567890.12",
+                b"0.01",
+                "123456789012345678901234567890.11",
+            ),
+        ):
+            with self.subTest(expected=expected):
+                content = (
+                    b'{"data":{"total_credits":'
+                    + credits
+                    + b',"total_usage":'
+                    + usage
+                    + b"}}"
+                )
+                result = await self._credits(
+                    lambda _, body=content: httpx.Response(200, content=body)
+                )
+                self.assertEqual(result.status, CreditsStatus.SUCCESS)
+                self.assertEqual(result.balance_usd, Decimal(expected))
+
+    async def test_invalid_amount_in_either_field_never_becomes_zero(self) -> None:
+        for field in ("total_credits", "total_usage"):
+            for raw in (
+                b"null",
+                b"true",
+                b"false",
+                b'""',
+                b'"bad"',
+                b"[]",
+                b"{}",
+                b"NaN",
+                b"Infinity",
+                b"-Infinity",
+                b'"NaN"',
+                b'"sNaN"',
+                b'"Infinity"',
+            ):
+                with self.subTest(field=field, raw=raw):
+                    other = (
+                        "total_usage" if field == "total_credits" else "total_credits"
+                    )
+                    content = (
+                        b'{"data":{"'
+                        + field.encode()
+                        + b'":'
+                        + raw
+                        + b',"'
+                        + other.encode()
+                        + b'":1}}'
+                    )
+                    result = await self._credits(
+                        lambda _, body=content: httpx.Response(200, content=body)
+                    )
+                    self.assertEqual(result.status, CreditsStatus.INVALID_RESPONSE)
+                    self.assertIsNone(result.balance_usd)
+                    self.assertIsNone(result.total_credits)
+                    self.assertIsNone(result.total_usage)
+
+    async def test_missing_fields_bad_json_and_wrong_shapes_are_unavailable(
+        self,
+    ) -> None:
+        for content in (
+            b"",
+            b"not-json",
+            b"\xff",
+            b"[]",
+            b'{"data":[]}',
+            b'{"data":{}}',
+            b'{"data":{"total_credits":1}}',
+            b'{"data":{"total_usage":1}}',
+        ):
+            with self.subTest(content=content):
+                result = await self._credits(
+                    lambda _, body=content: httpx.Response(200, content=body)
+                )
+                self.assertEqual(result.status, CreditsStatus.INVALID_RESPONSE)
+                self.assertIsNone(result.balance_usd)
+
+    async def test_statuses_do_not_expose_response_body_or_invalidate_inference(
+        self,
+    ) -> None:
+        for code, expected in (
+            (401, CreditsStatus.UNAUTHORIZED),
+            (403, CreditsStatus.RESTRICTED),
+            (429, CreditsStatus.RATE_LIMITED),
+            (500, CreditsStatus.SERVER_ERROR),
+            (503, CreditsStatus.SERVER_ERROR),
+            (302, CreditsStatus.UNEXPECTED_STATUS),
+        ):
+            with self.subTest(code=code):
+                result = await self._credits(
+                    lambda _, status=code: httpx.Response(
+                        status, content=b"private-response-marker"
+                    )
+                )
+                self.assertEqual(result.status, expected)
+                self.assertIsNone(result.balance_usd)
+                self.assertNotIn("private-response-marker", repr(result))
+                self.assertNotIn(TEST_CREDENTIAL, repr(result))
+        client = OpenRouterClient(
+            transport=httpx.MockTransport(
+                lambda request: httpx.Response(
+                    403 if request.url.path.endswith("credits") else 200,
+                    json={"data": {"limit_remaining": 10}},
+                )
+            )
+        )
+        self.assertEqual(
+            (await client.get_credits(TEST_CREDENTIAL)).status, CreditsStatus.RESTRICTED
+        )
+        self.assertTrue((await client.validate_key(TEST_CREDENTIAL)).accepted)
+
+    async def test_transport_errors_are_safe_unavailable_results(self) -> None:
+        for error, status in (
+            (httpx.ReadTimeout("private-timeout-marker"), CreditsStatus.TIMEOUT),
+            (httpx.ConnectError("private-network-marker"), CreditsStatus.NETWORK_ERROR),
+            (
+                httpx.RemoteProtocolError("private-protocol-marker"),
+                CreditsStatus.NETWORK_ERROR,
+            ),
+            (ImportError("private-import-marker"), CreditsStatus.NETWORK_ERROR),
+        ):
+            with self.subTest(status=status):
+
+                def handler(_request: httpx.Request) -> httpx.Response:
+                    raise error
+
+                result = await self._credits(handler)
+                self.assertEqual(result.status, status)
+                self.assertIsNone(result.balance_usd)
+                self.assertNotIn("private", repr(result))
+
+    async def test_tls_failure_is_reported_without_exception_text(self) -> None:
+        def handler(_request: httpx.Request) -> httpx.Response:
+            try:
+                raise ssl.SSLError("private-tls-marker")
+            except ssl.SSLError as cause:
+                raise httpx.ConnectError("private-connection-marker") from cause
+
+        result = await self._credits(handler)
+
+        self.assertEqual(result.status, CreditsStatus.TLS_ERROR)
+        self.assertNotIn("private", repr(result))
+
+    async def test_preserves_http_client_policy_and_timeout(self) -> None:
+        captured: dict[str, object] = {}
+
+        class CapturingClient:
+            def __init__(self, **kwargs) -> None:
+                captured.update(kwargs)
+
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *_args) -> None:
+                return None
+
+            async def get(self, *_args, **_kwargs) -> httpx.Response:
+                return httpx.Response(403)
+
+        timeout = httpx.Timeout(2.0)
+        with patch("api.openrouter.httpx.AsyncClient", CapturingClient):
+            result = await OpenRouterClient(timeout=timeout).get_credits(
+                TEST_CREDENTIAL
+            )
+        self.assertEqual(result.status, CreditsStatus.RESTRICTED)
+        self.assertIs(captured.get("trust_env"), False)
+        self.assertIs(captured.get("follow_redirects"), False)
+        self.assertIs(captured.get("timeout"), timeout)
+
+    async def test_empty_key_does_not_send_a_request(self) -> None:
+        def handler(_request: httpx.Request) -> httpx.Response:
+            self.fail("empty key must not reach transport")
+
+        result = await self._credits(handler, key="  ")
+        self.assertEqual(result.status, CreditsStatus.UNAUTHORIZED)
+
+    async def _credits(self, handler, *, key=TEST_CREDENTIAL) -> CreditsResult:
+        return await OpenRouterClient(
+            transport=httpx.MockTransport(handler),
+            timeout=0.1,
+        ).get_credits(key)
 
 
 if __name__ == "__main__":

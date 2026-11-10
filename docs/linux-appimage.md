@@ -38,31 +38,29 @@ Screen-lock and sleep protection is designed for the supported Cinnamon/X11 desk
 <a id="-download-and-verify"></a>
 ## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Download and verify
 
-The <a href="https://github.com/Umichata/tokenlogue/releases" title="Releases page">Releases page&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> lists publicly available downloads. For this preview, download the AppImage identified below and `RELEASE_SHA256SUMS`. If this preview is not listed, its downloads are not public yet.
+The <a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.2.0-preview.52a834d" title="Releases page">Releases page&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> provides the Tokenlogue 0.2.0 preview. Download the [AppImage](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/Tokenlogue-0.2.0-linux-x86_64.AppImage) and [`SHA256SUMS`](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/SHA256SUMS).
 
 <img src="assets/ui/frame-top.svg" width="100%" alt="">
 
 | Current preview file | Value |
 | --- | --- |
-| AppImage | `Tokenlogue-0.1.0-65aa62f-linux-x86_64.AppImage` |
-| Size | 35,350,920 bytes |
-| SHA-256 | `227ad9991dc0b00dfd160003967de6b9a321078b89f6129d0fdd2a620cf8c1ae` |
+| AppImage | [`Tokenlogue-0.2.0-linux-x86_64.AppImage`](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/Tokenlogue-0.2.0-linux-x86_64.AppImage) |
+| SHA-256 | `c921b62148245bc71e7a24cda80e9760cb58a9ce21348409569a0f0ccecbefc5` |
 
 <img src="assets/ui/frame-bottom.svg" width="100%" alt="">
 
-Save the AppImage and `RELEASE_SHA256SUMS` in the same folder. Use Bash and SHA-256 tools to check only the selected package from that folder.
+Save the AppImage and `SHA256SUMS` in the same folder. Use Bash and SHA-256 tools to check only the selected package from that folder.
 ```bash
 set -o pipefail
-file='Tokenlogue-0.1.0-65aa62f-linux-x86_64.AppImage'
-awk -v wanted="$file" '$2 == wanted { entry = $0; count++ } END { if (count != 1) exit 1; print entry }' RELEASE_SHA256SUMS |
+file='Tokenlogue-0.2.0-linux-x86_64.AppImage'
+awk -v wanted="$file" '$2 == wanted { entry = $0; count++ } END { if (count != 1) exit 1; print entry }' SHA256SUMS |
   sha256sum --check -
 ```
 
 The selected AppImage must report `OK`. A missing or duplicate manifest entry, a changed file or a missing file makes the command fail. A checksum detects changed bytes but does not replace a publisher's signature. This AppImage is unsigned. Do not replace an expected checksum with the hash of a file that failed verification.
 
-The original preview bundle has an internal `SHA256SUMS` for checking the complete extracted bundle. You do not need that bundle or the source archives to run Tokenlogue.
+The source archives and build tools are separate downloads. You do not need them to install or run Tokenlogue.
 
-The [earlier published Linux preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-linux-preview.2b1f7d3) remains a separate version. It uses `Tokenlogue-0.1.0-2b1f7d3-x86_64.AppImage`, with SHA-256 `0852f9432cb089e31fef2722d84ce7124714588afb65d6f25cd64d0616a4779d`. Its Russian-only interface and older data-protection behavior differ from this guide. Use its own checksum file and <a href="https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-linux-preview.2b1f7d3/RELEASE_NOTES.md" title="release notes">release notes&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> when identifying older packages.
 
 <a id="en-run"></a>
 
@@ -71,8 +69,8 @@ The [earlier published Linux preview](https://github.com/Umichata/tokenlogue/rel
 
 Grant execute permission once, then start the verified AppImage as your normal user.
 ```bash
-chmod u+x ./Tokenlogue-0.1.0-65aa62f-linux-x86_64.AppImage
-./Tokenlogue-0.1.0-65aa62f-linux-x86_64.AppImage
+chmod u+x ./Tokenlogue-0.2.0-linux-x86_64.AppImage
+./Tokenlogue-0.2.0-linux-x86_64.AppImage
 ```
 
 You can keep the file in a convenient folder. A file manager that supports program launching can open it after execute permission is set. The AppImage does not automatically add a menu entry. Do not run it with `sudo` or `pkexec`.
@@ -84,7 +82,7 @@ You can keep the file in a convenient folder. A file manager that supports progr
 
 If your system cannot mount AppImages through FUSE, use extract-and-run.
 ```bash
-./Tokenlogue-0.1.0-65aa62f-linux-x86_64.AppImage --appimage-extract-and-run
+./Tokenlogue-0.2.0-linux-x86_64.AppImage --appimage-extract-and-run
 ```
 
 This unpacks files to a temporary directory and starts the app without FUSE. Ensure that the temporary filesystem has enough space for the extracted files.

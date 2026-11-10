@@ -8,6 +8,7 @@ from typing import cast
 import flet as ft
 
 from auth.models import KeyLimitState
+from chat.account_balance import AccountBalanceState
 from chat.estimates import DraftEstimate, EstimateState
 from chat.metrics import ChatMetricsSnapshot, LastRequestState
 from chat.models import ChatMode
@@ -24,7 +25,9 @@ _MINIMUM_DISPLAY_USD = Decimal("0.0001")
 
 
 def display_usd(value: Decimal, *, upper_bound: bool = False) -> str:
-    """Round display only, keeping every small positive amount distinct from zero."""
+    """Round display only while preserving the sign of every nonzero amount."""
+    if -_MINIMUM_DISPLAY_USD < value < Decimal(0):
+        return money(value)
     if Decimal(0) < value < _MINIMUM_DISPLAY_USD:
         return tr("metrics.less_than", amount=money(_MINIMUM_DISPLAY_USD))
     with localcontext() as context:
@@ -66,6 +69,9 @@ class ChatMetricsStrip:
         self.metadata = ft.Text(
             size=12, color=MUTED_COLOR, selectable=False, visible=False
         )
+        self.account = ft.Text(
+            tr("metrics.account_unavailable"), size=12, color=MUTED_COLOR
+        )
         self.pending = ft.Text(
             tr("metrics.preparing"), size=12, color=WARNING_COLOR, visible=False
         )
@@ -87,6 +93,7 @@ class ChatMetricsStrip:
                 self.checkbox_row,
                 self.values,
                 self.metadata,
+                self.account,
                 self.pending,
             ],
         )
@@ -119,13 +126,14 @@ class ChatMetricsStrip:
             self.compact_header.visible = (
                 self._checkbox is not None or self.metadata.visible
             )
-            self.compact_values.controls = [self.values, self.pending]
+            self.compact_values.controls = [self.values, self.account, self.pending]
             self.control.content = self.compact_column
         else:
             self.row.controls = [
                 self.checkbox_row,
                 self.values,
                 self.metadata,
+                self.account,
                 self.pending,
             ]
             self.control.content = self.row
@@ -145,6 +153,8 @@ class ChatMetricsStrip:
         self.metadata.value = ""
         self.metadata.tooltip = None
         self.metadata.visible = False
+        self.account.value = ""
+        self.account.tooltip = None
         self.pending.visible = False
 
     def sync_language(self) -> None:
@@ -152,6 +162,35 @@ class ChatMetricsStrip:
         self.pending.value = tr("metrics.preparing")
         if snapshot is None:
             return
+        account = snapshot.account_balance
+        amount = (
+            display_usd(account.balance_usd)
+            if account.balance_usd is not None
+            else None
+        )
+        if account.state is AccountBalanceState.LOADING:
+            self.account.value = (
+                tr("metrics.account_updating", amount=amount)
+                if amount is not None
+                else tr("metrics.account_loading")
+            )
+        elif amount is None:
+            self.account.value = tr("metrics.account_unavailable")
+        else:
+            self.account.value = tr(
+                "metrics.account_stale"
+                if account.state is AccountBalanceState.STALE
+                else "metrics.account_current",
+                amount=amount,
+            )
+        account_help = tr("metrics.account_help")
+        if account.fetched_at is not None:
+            account_help = tr(
+                "metrics.account_time",
+                description=account_help,
+                time=account.fetched_at.isoformat(timespec="seconds"),
+            )
+        self.account.tooltip = explanatory_tooltip(account_help)
         last = snapshot.last_request
         if last.state is LastRequestState.NONE:
             previous = tr("metrics.no_requests")

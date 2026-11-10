@@ -10,11 +10,11 @@
 
 # 🧭 Documentation
 
-<p align="left"><a href="../README.md"><img src="assets/ui/buttons/en-7a9481e952d5.svg" alt="Project overview" width="148" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/releases"><img src="assets/ui/buttons/en-dd8bbfdbdd63.svg" alt="Downloads" width="106" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/issues"><img src="assets/ui/buttons/en-90990361e68d.svg" alt="Help" width="59" height="28"></a></p>
+<p align="left"><a href="../README.md"><img src="assets/ui/buttons/en-7a9481e952d5.svg" alt="Project overview" width="148" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.2.0-preview.52a834d"><img src="assets/ui/buttons/en-dd8bbfdbdd63.svg" alt="Downloads" width="106" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/issues"><img src="assets/ui/buttons/en-90990361e68d.svg" alt="Help" width="59" height="28"></a></p>
 
 <a id="english"></a>
 
-Choose a document below. Installation and everyday use come first. Technical materials and historical records are grouped separately.
+Choose a document below. Start with installation and everyday use, then read the source and packaging guides when needed.
 
 <a id="-start-here"></a>
 ## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Start here
@@ -23,7 +23,7 @@ Choose a document below. Installation and everyday use come first. Technical mat
 <tr><th align="left">Category</th><th align="left">Documents</th></tr>
 <tr>
 <td><a id="get-tokenlogue"></a><strong>Get Tokenlogue</strong></td>
-<td><a href="https://github.com/Umichata/tokenlogue/releases" title="Downloads"><img src="assets/ui/buttons/en-0af7fc63fbbe.svg" alt="Downloads" width="106" height="28"></a> <a href="android.md#english" title="Android"><img src="assets/ui/buttons/en-46463edb13a7.svg" alt="Android" width="83" height="28"></a> <a href="linux-appimage.md#english" title="Linux"><img src="assets/ui/buttons/en-96c04f670a21.svg" alt="Linux" width="65" height="28"></a></td>
+<td><a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.2.0-preview.52a834d" title="Downloads"><img src="assets/ui/buttons/en-0af7fc63fbbe.svg" alt="Downloads" width="106" height="28"></a> <a href="android.md#english" title="Android"><img src="assets/ui/buttons/en-46463edb13a7.svg" alt="Android" width="83" height="28"></a> <a href="linux-appimage.md#english" title="Linux"><img src="assets/ui/buttons/en-96c04f670a21.svg" alt="Linux" width="65" height="28"></a></td>
 </tr>
 <tr>
 <td><a id="your-first-conversation"></a><strong>Your first conversation</strong></td>
@@ -88,11 +88,4 @@ Choose a document below. Installation and everyday use come first. Technical mat
 
 </details>
 
-<details>
-<summary><strong>Historical release records</strong></summary>
-
-<p align="left"><a href="releases/v0.1.0-linux-preview.1.md#english"><img src="assets/ui/buttons/en-a087d5b054c3.svg" alt="Earlier Linux preview" width="181" height="28"></a> <a href="releases/14b87ac-source-materials.md#english"><img src="assets/ui/buttons/en-30d9fac3bbd0.svg" alt="Source archive history" width="190" height="28"></a></p>
-
-These documents describe their own earlier packages. Use the installation guides above for the current preview.
-
-</details>
+Account balance and the three budget-warning actions are explained in the [account section](user-guide.md#en-balance) and [chat-budget warning](user-guide.md#en-budget-warning).

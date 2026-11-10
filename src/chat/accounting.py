@@ -208,10 +208,7 @@ def calculate_remaining_budget(budget: ChatBudget) -> RemainingBudget:
     cost_remaining = (
         None
         if budget.cost_limit_usd is None
-        else max(
-            ZERO,
-            budget.cost_limit_usd - budget.cost_used_usd - budget.cost_reserved_usd,
-        )
+        else budget.cost_limit_usd - budget.cost_used_usd - budget.cost_reserved_usd
     )
     return RemainingBudget(
         tokens=token_remaining,
