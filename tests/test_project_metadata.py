@@ -107,6 +107,11 @@ class ProjectMetadataTests(unittest.TestCase):
             },
         )
 
+    def test_flutter_pubspec_version_matches_project_and_build(self) -> None:
+        flet = self.metadata["tool"]["flet"]
+        expected = f"{self.metadata['project']['version']}+{flet['build_number']}"
+        self.assertEqual(flet["flutter"]["pubspec"]["version"], expected)
+
     def test_third_party_registry_exists(self) -> None:
         self.assertTrue((PROJECT_ROOT / "THIRD_PARTY_NOTICES.md").is_file())
 

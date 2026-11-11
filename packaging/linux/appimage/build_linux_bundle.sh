@@ -90,6 +90,10 @@ build_flet_bundle() {
         tee "$reports_dir/flet-build.log"
     [[ -x "$repo_root/build/linux/tokenlogue" ]] || \
         die "Flet did not create build/linux/tokenlogue"
+    uv run --locked python "$verify_script" version \
+        --root "bundle=$repo_root/build/linux" \
+        --project "$repo_root/pyproject.toml" \
+        --reports-dir "$reports_dir"
 }
 
 verify_package_inventory() {

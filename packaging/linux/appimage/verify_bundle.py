@@ -4,11 +4,13 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import re
 import subprocess
 import sys
+import tomllib
 from email.parser import BytesParser
 from pathlib import Path
 from typing import Sequence
@@ -63,6 +65,89 @@ _JAVA_RUNTIME_PATH = re.compile(
 
 class VerificationError(RuntimeError):
     """A safe, expected verification failure."""
+
+
+def application_version(project: Path) -> dict[str, str]:
+    """Require one effective version across Flet input and project metadata."""
+    metadata = tomllib.loads(project.read_text(encoding="utf-8"))
+    version = metadata.get("project", {}).get("version")
+    flet = metadata.get("tool", {}).get("flet", {})
+    build = flet.get("build_number")
+    if (
+        not isinstance(version, str)
+        or re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", version) is None
+        or type(build) is not int
+        or build <= 0
+    ):
+        raise VerificationError("project application version metadata is invalid")
+    pubspec = flet.get("flutter", {}).get("pubspec", {})
+    if pubspec.get("version") != f"{version}+{build}":
+        raise VerificationError(
+            "Flet pubspec version differs from project version/build"
+        )
+    return {
+        "version": version,
+        "build_number": str(build),
+    }
+
+
+def verify_application_versions(
+    roots: Sequence[tuple[str, Path]], project: Path, reports_dir: Path
+) -> dict[str, object]:
+    """Read the actual package_info_plus Linux payload before accepting an artifact."""
+    if not roots:
+        raise VerificationError("application version roots are missing")
+    expected = application_version(project)
+    rows: list[dict[str, object]] = []
+    errors: list[str] = []
+    for label, root in roots:
+        relative = Path("data/flutter_assets/version.json")
+        if label in {"appdir", "appimage"}:
+            relative = Path("usr/lib/tokenlogue") / relative
+        elif label != "bundle":
+            raise VerificationError(f"unsupported application version root: {label}")
+        path = root / relative
+        components = [
+            root.joinpath(*relative.parts[:stop])
+            for stop in range(1, len(relative.parts) + 1)
+        ]
+        row: dict[str, object] = {"root": label, "path": relative.as_posix()}
+        try:
+            if (
+                root.is_symlink()
+                or not path.is_file()
+                or any(part.is_symlink() for part in components)
+                or not path.resolve().is_relative_to(root.resolve())
+                or path.stat().st_size > 1024 * 1024
+            ):
+                raise VerificationError("version.json must be a regular contained file")
+            raw = path.read_bytes()
+            observed = json.loads(raw)
+            if not isinstance(observed, dict) or any(
+                observed.get(key) != value for key, value in expected.items()
+            ):
+                raise VerificationError(
+                    "packaged version.json differs from project version/build"
+                )
+            row.update(
+                status="PASS", metadata=observed, sha256=hashlib.sha256(raw).hexdigest()
+            )
+        except (OSError, ValueError, VerificationError) as error:
+            row.update(status="FAIL", error=str(error))
+            errors.append(label)
+        rows.append(row)
+    result: dict[str, object] = {
+        "status": "FAIL" if errors else "PASS",
+        "expected": expected,
+        "artifacts": rows,
+    }
+    reports_dir.mkdir(parents=True, exist_ok=True)
+    _write_json(reports_dir / "application-version.json", result)
+    if errors:
+        raise VerificationError(
+            "application version verification failed: " + ", ".join(errors)
+        )
+    return result
 
 
 def normalize_distribution_name(name: str) -> str:
@@ -560,6 +645,13 @@ def build_parser() -> argparse.ArgumentParser:
     inventory_parser.add_argument("--bundle", type=Path, required=True)
     inventory_parser.add_argument("--reports-dir", type=Path, required=True)
 
+    version_parser = subparsers.add_parser("version")
+    version_parser.add_argument(
+        "--root", type=_labeled_root, action="append", required=True
+    )
+    version_parser.add_argument("--project", type=Path, required=True)
+    version_parser.add_argument("--reports-dir", type=Path, required=True)
+
     abi_parser = subparsers.add_parser("abi")
     abi_parser.add_argument(
         "--root", type=_labeled_root, action="append", required=True
@@ -583,7 +675,13 @@ def main(argv: Sequence[str] | None = None) -> int:
                 args.reports_dir,
             )
             print("bundle package inventory: PASS")
+        elif args.command == "version":
+            verify_application_versions(args.root, args.project, args.reports_dir)
+            print("application version verification: PASS")
         else:
+            verify_application_versions(
+                args.root, args.workspace / "pyproject.toml", args.reports_dir
+            )
             verify_abi(args.root, args.reports_dir, args.workspace.resolve())
             print("ELF/ABI verification: PASS")
     except (OSError, ValueError, json.JSONDecodeError, VerificationError) as error:
