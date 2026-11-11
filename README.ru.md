@@ -8,7 +8,7 @@
   <img src="docs/assets/tokenlogue-banner-ru-v2.png" alt="Tokenlogue" width="100%">
 </h1>
 
-<p align="left"><a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.2.0-preview.52a834d"><img src="docs/assets/ui/buttons/ru-f3b0f21094a4.svg" alt="Скачать" width="86" height="28"></a> <a href="docs/linux-appimage.ru.md#russian"><img src="docs/assets/ui/buttons/ru-7c519bac3145.svg" alt="Руководство" width="121" height="28"></a> <a href="docs/README.ru.md"><img src="docs/assets/ui/buttons/ru-b4e89d854289.svg" alt="Карта документации" width="184" height="28"></a> <a href="#ru-install"><img src="docs/assets/ui/buttons/ru-e282b6fdb500.svg" alt="Установка" width="103" height="28"></a> <a href="#ru-chat"><img src="docs/assets/ui/buttons/ru-76bdbff64e0d.svg" alt="Первый чат" width="113" height="28"></a> <a href="docs/security.ru.md#russian"><img src="docs/assets/ui/buttons/ru-287972bc31ba.svg" alt="Защита" width="83" height="28"></a></p>
+<p align="left"><a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9"><img src="docs/assets/ui/buttons/ru-f3b0f21094a4.svg" alt="Скачать" width="86" height="28"></a> <a href="docs/linux-appimage.ru.md#russian"><img src="docs/assets/ui/buttons/ru-7c519bac3145.svg" alt="Руководство" width="121" height="28"></a> <a href="docs/README.ru.md"><img src="docs/assets/ui/buttons/ru-b4e89d854289.svg" alt="Карта документации" width="184" height="28"></a> <a href="#ru-install"><img src="docs/assets/ui/buttons/ru-e282b6fdb500.svg" alt="Установка" width="103" height="28"></a> <a href="#ru-chat"><img src="docs/assets/ui/buttons/ru-76bdbff64e0d.svg" alt="Первый чат" width="113" height="28"></a> <a href="docs/security.ru.md#russian"><img src="docs/assets/ui/buttons/ru-287972bc31ba.svg" alt="Защита" width="83" height="28"></a></p>
 
 <a id="russian"></a>
 <a id="lang-ru"></a>
@@ -32,7 +32,9 @@
 
 Пакет поставляется как **неподписанная AppImage x86_64**. Нужны процессор x86-64-v2, совместимые библиотеки рабочего стола и видеодрайверы. Базовая версия системных библиотек соответствует Ubuntu 22.04. Обычный запуск использует FUSE, при его отсутствии можно запустить с распаковкой.
 
-Для Tokenlogue 0.2.0 скачайте [`Tokenlogue-0.2.0-linux-x86_64.AppImage`](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/Tokenlogue-0.2.0-linux-x86_64.AppImage) и [`SHA256SUMS`](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/SHA256SUMS) на странице <a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.2.0-preview.52a834d" title="Releases">Releases&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a>. Снимок выше показывает рабочее пространство чата с демонстрационными данными. Доступные элементы могут отличаться в зависимости от версии приложения.
+Для Tokenlogue 0.1.0 скачайте [`Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage) и [`SHA256SUMS`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SHA256SUMS) на странице <a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9" title="Releases">Releases&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a>. Иллюстрация выше показывает рабочее пространство более ранней предварительной версии с демонстрационными данными. Доступные элементы в новых сборках могут отличаться.
+
+Новые предварительные выпуски сохраняют отображаемую версию приложения `0.1.0` до отдельно объявленного официального релиза. Отдельные теги и возрастающие номера сборок различают эти выпуски.
 
 Проверьте только выбранную AppImage по её записи в `SHA256SUMS`, как описано в руководстве Linux ниже. Разрешите выполнение и запустите её от обычного пользователя. При обновлении закройте прежние копии перед открытием нового файла. Отдельная установка Python, Flutter или Java и архивы исходников не нужны.
 
@@ -59,7 +61,7 @@
 
 Работающий Secret Service в сеансе рабочего стола хранит защищённые материалы ключей. Сохраните переносимый резервный код, когда приложение предложит его, и храните отдельно от компьютера. PIN и шифрование отдельных полей не шифруют всё устройство. Без необходимых ключей или материалов восстановления нельзя обещать восстановление зашифрованной переписки.
 
-Готовый пакет скачивается отдельно от исходников. Архив проекта из `PROVENANCE.json` соответствует поставленной сборке, а `Tokenlogue-0.2.0-dependency-sources.tar.gz` объединяет идентифицированные сторонние материалы без цепочки прежних выпусков. Руководство по исходникам объясняет состав и оставшиеся ограничения связи некоторых нативных бинарников с исходниками. Наличие архива или лицензии само по себе не доказывает происхождение wheel.
+Готовый пакет скачивается отдельно от исходников. Архив проекта из `PROVENANCE.json` соответствует поставленной сборке, а `Tokenlogue-0.1.0-dependency-sources.tar.gz` объединяет идентифицированные сторонние материалы без цепочки прежних выпусков. Руководство по исходникам объясняет состав и оставшиеся ограничения связи некоторых нативных бинарников с исходниками. Наличие архива или лицензии само по себе не доказывает происхождение wheel.
 
 <p align="left"><a href="docs/security.ru.md#russian"><img src="docs/assets/ui/buttons/ru-28527b1f2b04.svg" alt="Защита и восстановление" width="222" height="28"></a> <a href="docs/source-materials.ru.md#russian"><img src="docs/assets/ui/buttons/ru-2d110f2e4021.svg" alt="Исходники" width="108" height="28"></a> <a href="packaging/linux/appimage/notices.ru.md#russian"><img src="docs/assets/ui/buttons/ru-85ece10d5cbe.svg" alt="Лицензии AppImage" width="177" height="28"></a> <a href="LICENSE"><img src="docs/assets/ui/buttons/ru-b92966969a04.svg" alt="Лицензия MIT" width="129" height="28"></a></p>
 
@@ -74,7 +76,7 @@
 <tr><th align="left">Раздел</th><th align="left">Документы</th></tr>
 <tr>
 <td><a id="начало-работы"></a><strong>Начало работы</strong></td>
-<td><a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.2.0-preview.52a834d" title="Загрузки"><img src="docs/assets/ui/buttons/ru-f0e4eb0b92d5.svg" alt="Загрузки" width="94" height="28"></a> <a href="docs/linux-appimage.ru.md#ru-download" title="Запуск Linux"><img src="docs/assets/ui/buttons/ru-4b91e607dca0.svg" alt="Запуск Linux" width="122" height="28"></a> <a href="docs/android.ru.md#ru-install" title="Установка Android"><img src="docs/assets/ui/buttons/ru-0abdbebf204e.svg" alt="Установка Android" width="166" height="28"></a></td>
+<td><a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9" title="Загрузки"><img src="docs/assets/ui/buttons/ru-f0e4eb0b92d5.svg" alt="Загрузки" width="94" height="28"></a> <a href="docs/linux-appimage.ru.md#ru-download" title="Запуск Linux"><img src="docs/assets/ui/buttons/ru-4b91e607dca0.svg" alt="Запуск Linux" width="122" height="28"></a> <a href="docs/android.ru.md#ru-install" title="Установка Android"><img src="docs/assets/ui/buttons/ru-0abdbebf204e.svg" alt="Установка Android" width="166" height="28"></a></td>
 </tr>
 <tr>
 <td><a id="переписка-и-защита"></a><strong>Переписка и защита</strong></td>

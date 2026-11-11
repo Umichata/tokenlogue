@@ -14,20 +14,20 @@ Tokenlogue's application code uses the [MIT License](../LICENSE). Third-party co
 <a id="-application-sources"></a>
 ## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Match the application sources
 
-Choose the project archive for your platform from [`PROVENANCE.json`](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/PROVENANCE.json). The Android and Linux packages use different packaging revisions with the same application core. Each package is linked to its exact sources by its commit, tree and checksums. A later repository revision or platform README does not change that provenance.
+Choose the project archive for your platform from [`PROVENANCE.json`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/PROVENANCE.json). The Android and Linux packages use different packaging revisions with the same application core. Each package is linked to its exact sources by its commit, tree and checksums. A later repository revision or platform README does not change that provenance.
 
-The [Releases page](https://github.com/Umichata/tokenlogue/releases/tag/v0.2.0-preview.52a834d) lists the files actually available for each version. For version `0.2.0`, source materials are supplied as one current dependency archive with its index, rather than a chain of downloads from earlier Tokenlogue releases.
+The [Releases page](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9) lists the files actually available for each version. For version `0.1.0`, source materials are supplied as one current dependency archive with its index, rather than a chain of downloads from earlier Tokenlogue releases.
 
 <a id="-find-the-matching-collection"></a>
 ## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Use the dependency collection
 
 | File | Purpose |
 | --- | --- |
-| [Android project sources](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/Tokenlogue-0.2.0-8080e6e-project-sources.tar.gz) | Exact tracked application sources, locks and packaging for the supplied APK. |
-| [Linux project sources](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/Tokenlogue-0.2.0-52a834d-project-sources.tar.gz) | Exact tracked application sources, locks and packaging for the supplied AppImage. |
-| [`Tokenlogue-0.2.0-dependency-sources.tar.gz`](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/Tokenlogue-0.2.0-dependency-sources.tar.gz) | Identified third-party sources, original notices, modifications and recipes in a deduplicated collection. |
-| [`SOURCE_MATERIALS.json`](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/SOURCE_MATERIALS.json) | Versions, component mappings, relative material paths, sizes and SHA-256 values. It also records the scope of source and binary-provenance evidence. |
-| [`SHA256SUMS`](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/SHA256SUMS) | Checksums of the release downloads. |
+| [Android project sources](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-eafb093-android-project-sources.tar.gz) | Exact tracked application sources, locks and packaging for the supplied APK. |
+| [Linux project sources](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-a981db9-linux-project-sources.tar.gz) | Exact tracked application sources, locks and packaging for the supplied AppImage. |
+| [`Tokenlogue-0.1.0-dependency-sources.tar.gz`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-dependency-sources.tar.gz) | Identified third-party sources, original notices, modifications and recipes in a deduplicated collection. |
+| [`SOURCE_MATERIALS.json`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SOURCE_MATERIALS.json) | Versions, component mappings, relative material paths, sizes and SHA-256 values. It also records the scope of source and binary-provenance evidence. |
+| [`SHA256SUMS`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SHA256SUMS) | Checksums of the release downloads. |
 
 The dependency archive has no extra outer directory. It contains a bilingual `README.md`, `SOURCE_MATERIALS.json`, `BUILD_INPUTS.json`, `RECONSTRUCTION.json`, `SHA256SUMS` and the original files under `materials/<SHA-256>/<original filename>`. An identical file is stored once and can be mapped to several components. The index identifies the exact archive member when a component's source or notice is inside a retained archive.
 
@@ -37,7 +37,7 @@ Save the dependency archive and the release's `SHA256SUMS` in one directory. Ver
 
 ```bash
 set -o pipefail
-file='Tokenlogue-0.2.0-dependency-sources.tar.gz'
+file='Tokenlogue-0.1.0-dependency-sources.tar.gz'
 awk -v wanted="$file" '$2 == wanted { entry = $0; count++ } END { if (count != 1) exit 1; print entry }' SHA256SUMS |
   sha256sum --check -
 ```
@@ -46,7 +46,7 @@ The selected file must report `OK`. A missing or duplicate manifest entry, missi
 
 ```bash
 mkdir tokenlogue-dependency-sources &&
-tar --extract --gzip --file Tokenlogue-0.2.0-dependency-sources.tar.gz \
+tar --extract --gzip --file Tokenlogue-0.1.0-dependency-sources.tar.gz \
   --directory tokenlogue-dependency-sources --no-same-owner --no-same-permissions &&
 (cd tokenlogue-dependency-sources && sha256sum --check SHA256SUMS)
 ```

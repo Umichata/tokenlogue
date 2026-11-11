@@ -32,7 +32,7 @@ Tokenlogue lets you chat with OpenRouter models on Linux and Android. This guide
 <img src="assets/screenshots/android-start.png" alt="First-launch setup on Android" width="320"><br>
 <img src="assets/ui/frame-bottom.svg" width="320" alt="">
 
-*First-launch setup on Android. The instructions above apply to both platforms.*
+*First-launch Android illustration from an earlier preview. The instructions above apply to both platforms.*
 
 At later launches, enter your app PIN and choose `Sign in`. Updating a compatible installation preserves that PIN. Three incorrect checks temporarily block PIN entry for five minutes. Restarting does not clear the countdown. See <a href="security.md#en-pin" title="access and recovery">access and recovery&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a>.
 
@@ -64,7 +64,7 @@ The top-left button hides or shows the chat list in a wide Linux window. Tokenlo
 <img src="assets/screenshots/linux-chat.png" alt="Linux conversation workspace with demonstration data" width="760"><br>
 <img src="assets/ui/frame-bottom.svg" width="760" alt="">
 
-*The Linux workspace with demonstration data. Your chat list, conversation and editor remain together.*
+*An earlier Linux preview workspace with demonstration data. Your chat list, conversation and editor remain together.*
 
 Choose `Interface language` in `⋮` to switch between English and Russian. The choice is remembered. Chat titles, your messages and model replies are not translated. Changing language preserves ordinary editor input and drafts. For safety, an unfinished recovery-code or profile-deletion confirmation must be started again in the selected language.
 
@@ -132,7 +132,7 @@ A projected zero can exhaust the budget. A negative projection can exceed it, an
 
 New paid chats ask for confirmation before sending. Review the model, estimated input, response maximum and spending reserve. Cancel to leave the message unsent.
 
-`Without confirmation` above the conversation turns off the ordinary paid-request dialog for the selected chat, including its first request and retries. It does not turn off the chat-budget warning. Enabling it sends nothing by itself. Token limits, key checks, independent price checks and unknown-accounting protection still apply. Raising the saved spending limit keeps its separate confirmation.
+`Without confirmation` above the conversation turns off the ordinary paid-request dialog for the selected chat, including its first request and retries. It also accepts known current model prices for each send, including increases, without a separate new-price confirmation. Turn it off if you want to review price changes before sending. Chat-budget warnings, token limits, key checks, rejection of unknown or unsafe prices and unknown-accounting protection still apply. Enabling it sends nothing by itself. Raising the saved spending limit keeps its separate confirmation.
 
 Turn the option off to require confirmation from the next request onward. The choice is saved per chat. Locking or changing this setting never submits a queued message automatically. Choose `Send` when ready.
 

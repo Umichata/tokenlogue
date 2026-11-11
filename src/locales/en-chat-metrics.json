@@ -22,7 +22,7 @@
   "metrics.key_details": "{value}. {description}",
   "metrics.metadata_time": "{description} Key data received {time}.",
   "metrics.without_confirmation": "Without confirmation",
-  "metrics.without_confirmation_help": "Skip the ordinary paid-request confirmation for this chat, including its first request and retries. Budget-risk warnings and independent price checks still apply. Changing this setting does not send a request.",
+  "metrics.without_confirmation_help": "Skip the ordinary paid-request confirmation for this chat, including its first request and retries. You accept the current known model prices, including price increases. Requests with unknown prices remain blocked. Budget-risk warnings and other limits still apply. Changing this setting does not send a request.",
   "estimate.empty": "Enter a message for an estimate",
   "estimate.calculating": "Calculating locally…",
   "estimate.input": "≈ {count} input tokens",

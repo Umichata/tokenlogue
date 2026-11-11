@@ -30,15 +30,15 @@ The minimum API level does not mean that every Android version or device has bee
 <a id="-obtain-and-install-the-apk"></a>
 ## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Obtain and install the APK
 
-The <a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.2.0-preview.52a834d" title="Releases page">Releases page&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> provides the Tokenlogue 0.2.0 preview. Download the [APK](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/Tokenlogue-0.2.0-android-arm64-v8a-v42.apk) and [`SHA256SUMS`](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/SHA256SUMS).
+The <a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9" title="Releases page">Releases page&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> provides the Tokenlogue 0.1.0 preview. Download the [APK](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-android-arm64-v8a-v43.apk) and [`SHA256SUMS`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SHA256SUMS).
 
 <img src="assets/ui/frame-top.svg" width="100%" alt="">
 
 | Current Android preview | Value |
 | --- | --- |
-| APK | [`Tokenlogue-0.2.0-android-arm64-v8a-v42.apk`](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/Tokenlogue-0.2.0-android-arm64-v8a-v42.apk) |
-| Version | `0.2.0`, versionCode `42` |
-| SHA-256 | `378d8fbaea3ba0faa5aff81cd564e260dece4e25dff23519647e7db3812b28ea` |
+| APK | [`Tokenlogue-0.1.0-android-arm64-v8a-v43.apk`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-android-arm64-v8a-v43.apk) |
+| Version | `0.1.0`, versionCode `43` |
+| SHA-256 | `1e3ec65aaf1863eb50257aa4c090ca5fdf0b6b2c637c415d5b02056a2cf941f5` |
 | Signing certificate SHA-256 | `927292ad5a76ff049059d1c5d8e9497a42c03f3e995a5d9ca935c59ad8d0b09e` |
 
 <img src="assets/ui/frame-bottom.svg" width="100%" alt="">
@@ -46,7 +46,7 @@ The <a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.2.0-preview.
 Before installation, check only the selected APK against `SHA256SUMS`. Save both files in the same folder. On your computer, use Bash and SHA-256 tools to run this command from that folder.
 ```bash
 set -o pipefail
-file='Tokenlogue-0.2.0-android-arm64-v8a-v42.apk'
+file='Tokenlogue-0.1.0-android-arm64-v8a-v43.apk'
 awk -v wanted="$file" '$2 == wanted { entry = $0; count++ } END { if (count != 1) exit 1; print entry }' SHA256SUMS |
   sha256sum --check -
 ```
@@ -62,7 +62,7 @@ Transfer the verified APK to the device, open it and follow Android's installer.
 <a id="-update-a-compatible-installation"></a>
 ## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Update a compatible installation
 
-Install the new APK over the compatible existing installation with the same application identity and signing certificate. Keep the existing application data. Uninstalling or clearing data is not an ordinary update step and can make encrypted conversations unrecoverable.
+Install the new APK over the compatible existing installation with the same application identity and signing certificate. Keep the existing application data. Preview builds keep the displayed version `0.1.0`. Build 43 can update the earlier build 42 because its versionCode is higher, even though the earlier package displayed `0.2.0`. Uninstalling or clearing data is not an ordinary update step and can make encrypted conversations unrecoverable.
 
 If Android refuses the update, check the package version, architecture and signing identity. Do not remove the old app just to bypass a signature error. Keep the existing data and <a href="https://github.com/Umichata/tokenlogue/issues" title="ask for help">ask for help&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a>. Include the package filename, Android version and relevant error. Remove API keys, private messages and personal paths before sharing.
 
