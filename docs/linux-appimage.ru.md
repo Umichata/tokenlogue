@@ -12,10 +12,10 @@
 Запускайте Tokenlogue на рабочем столе Linux в формате AppImage. Для обычного использования не нужно отдельно устанавливать Python, Flutter или инструменты сборки. В текущей предварительной версии есть русский и английский интерфейс.
 
 <img src="assets/ui/frame-top.svg" width="880" alt=""><br>
-<img src="assets/screenshots/linux-chat.png" alt="Текущий интерфейс чата Linux на английском языке" width="880"><br>
+<img src="assets/screenshots/linux-chat.png" alt="Интерфейс чата Linux в более ранней предварительной версии на английском языке" width="880"><br>
 <img src="assets/ui/frame-bottom.svg" width="880" alt="">
 
-Текущий интерфейс Linux. На снимке показан английский язык.
+Иллюстрация интерфейса Linux из более ранней предварительной версии. На снимке показан английский язык.
 
 <p align="left"><a href="#ru-requirements"><img src="assets/ui/buttons/ru-c8c1bdfd645d.svg" alt="Требования" width="114" height="28"></a> <a href="#ru-download"><img src="assets/ui/buttons/ru-a51ebf3766a4.svg" alt="Скачивание" width="115" height="28"></a> <a href="#ru-run"><img src="assets/ui/buttons/ru-dbadd61442d5.svg" alt="Запуск" width="77" height="28"></a> <a href="#ru-updates"><img src="assets/ui/buttons/ru-fee57eb0b9e5.svg" alt="Обновление" width="117" height="28"></a> <a href="#ru-help"><img src="assets/ui/buttons/ru-9079b2556a7e.svg" alt="Помощь" width="87" height="28"></a></p>
 
