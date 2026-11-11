@@ -30,15 +30,15 @@ Tokenlogue позволяет общаться с моделями OpenRouter н
 <a id="-получение-и-установка-apk"></a>
 ## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Получение и установка APK
 
-На странице <a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.2.0-preview.52a834d" title="Releases">Releases&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> доступна предварительная версия Tokenlogue 0.2.0. Скачайте [APK](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/Tokenlogue-0.2.0-android-arm64-v8a-v42.apk) и [`SHA256SUMS`](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/SHA256SUMS).
+На странице <a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9" title="Releases">Releases&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> доступна предварительная версия Tokenlogue 0.1.0. Скачайте [APK](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-android-arm64-v8a-v43.apk) и [`SHA256SUMS`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SHA256SUMS).
 
 <img src="assets/ui/frame-top.svg" width="100%" alt="">
 
 | Текущая версия Android | Значение |
 | --- | --- |
-| APK | [`Tokenlogue-0.2.0-android-arm64-v8a-v42.apk`](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/Tokenlogue-0.2.0-android-arm64-v8a-v42.apk) |
-| Версия | `0.2.0`, versionCode `42` |
-| SHA-256 | `378d8fbaea3ba0faa5aff81cd564e260dece4e25dff23519647e7db3812b28ea` |
+| APK | [`Tokenlogue-0.1.0-android-arm64-v8a-v43.apk`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-android-arm64-v8a-v43.apk) |
+| Версия | `0.1.0`, versionCode `43` |
+| SHA-256 | `1e3ec65aaf1863eb50257aa4c090ca5fdf0b6b2c637c415d5b02056a2cf941f5` |
 | SHA-256 сертификата подписи | `927292ad5a76ff049059d1c5d8e9497a42c03f3e995a5d9ca935c59ad8d0b09e` |
 
 <img src="assets/ui/frame-bottom.svg" width="100%" alt="">
@@ -46,7 +46,7 @@ Tokenlogue позволяет общаться с моделями OpenRouter н
 Перед установкой сверьте только выбранный APK с `SHA256SUMS`. Сохраните оба файла в одной папке. На компьютере используйте Bash и средства SHA-256, чтобы выполнить из этой папки следующую команду.
 ```bash
 set -o pipefail
-file='Tokenlogue-0.2.0-android-arm64-v8a-v42.apk'
+file='Tokenlogue-0.1.0-android-arm64-v8a-v43.apk'
 awk -v wanted="$file" '$2 == wanted { entry = $0; count++ } END { if (count != 1) exit 1; print entry }' SHA256SUMS |
   sha256sum --check -
 ```
@@ -62,7 +62,7 @@ awk -v wanted="$file" '$2 == wanted { entry = $0; count++ } END { if (count != 1
 <a id="-обновление-совместимой-установки"></a>
 ## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Обновление совместимой установки
 
-Установите новый APK поверх совместимой прежней версии с тем же идентификатором приложения и сертификатом подписи. Сохраните данные приложения. Удаление приложения и очистка данных не являются обычным шагом обновления и могут сделать зашифрованную переписку невосстановимой.
+Установите новый APK поверх совместимой прежней версии с тем же идентификатором приложения и сертификатом подписи. Сохраните данные приложения. Предварительные сборки сохраняют отображаемую версию `0.1.0`. Сборка 43 обновляет прежнюю сборку 42 благодаря большему versionCode, хотя прежний пакет показывал `0.2.0`. Удаление приложения и очистка данных не являются обычным шагом обновления и могут сделать зашифрованную переписку невосстановимой.
 
 Если Android отказывает в обновлении, проверьте версию, архитектуру и подпись пакета. Не удаляйте прежнее приложение только для обхода ошибки подписи. Сохраните данные и <a href="https://github.com/Umichata/tokenlogue/issues" title="обратитесь за помощью">обратитесь за помощью&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a>. Укажите имя пакета, версию Android и существенную ошибку. Перед отправкой уберите API-ключи, личную переписку и персональные пути.
 

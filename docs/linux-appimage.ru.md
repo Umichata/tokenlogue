@@ -38,21 +38,21 @@
 <a id="-скачивание-и-проверка"></a>
 ## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Скачивание и проверка
 
-На странице <a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.2.0-preview.52a834d" title="Releases">Releases&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> доступна предварительная версия Tokenlogue 0.2.0. Скачайте [AppImage](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/Tokenlogue-0.2.0-linux-x86_64.AppImage) и [`SHA256SUMS`](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/SHA256SUMS).
+На странице <a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9" title="Releases">Releases&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> доступна предварительная версия Tokenlogue 0.1.0. Скачайте [AppImage](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage) и [`SHA256SUMS`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SHA256SUMS).
 
 <img src="assets/ui/frame-top.svg" width="100%" alt="">
 
 | Файл текущей версии | Значение |
 | --- | --- |
-| AppImage | [`Tokenlogue-0.2.0-linux-x86_64.AppImage`](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/Tokenlogue-0.2.0-linux-x86_64.AppImage) |
-| SHA-256 | `c921b62148245bc71e7a24cda80e9760cb58a9ce21348409569a0f0ccecbefc5` |
+| AppImage | [`Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage) |
+| SHA-256 | `247497d8f97aae0c16cab282edc1c6cbf47747c7b3597e3ba23b388558e40646` |
 
 <img src="assets/ui/frame-bottom.svg" width="100%" alt="">
 
 Сохраните AppImage и `SHA256SUMS` в одной папке. Используйте Bash и средства SHA-256, чтобы проверить из этой папки только выбранный пакет.
 ```bash
 set -o pipefail
-file='Tokenlogue-0.2.0-linux-x86_64.AppImage'
+file='Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage'
 awk -v wanted="$file" '$2 == wanted { entry = $0; count++ } END { if (count != 1) exit 1; print entry }' SHA256SUMS |
   sha256sum --check -
 ```
@@ -69,8 +69,8 @@ awk -v wanted="$file" '$2 == wanted { entry = $0; count++ } END { if (count != 1
 
 Один раз разрешите исполнение и запустите проверенную AppImage от своего обычного пользователя.
 ```bash
-chmod u+x ./Tokenlogue-0.2.0-linux-x86_64.AppImage
-./Tokenlogue-0.2.0-linux-x86_64.AppImage
+chmod u+x ./Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage
+./Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage
 ```
 
 Хранить файл можно в удобной папке. После выдачи прав его можно открыть через файловый менеджер, поддерживающий запуск программ. AppImage не добавляет пункт меню автоматически. Не запускайте её через `sudo` или `pkexec`.
@@ -82,7 +82,7 @@ chmod u+x ./Tokenlogue-0.2.0-linux-x86_64.AppImage
 
 Если система не может монтировать AppImage через FUSE, используйте extract-and-run.
 ```bash
-./Tokenlogue-0.2.0-linux-x86_64.AppImage --appimage-extract-and-run
+./Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage --appimage-extract-and-run
 ```
 
 Программа распакует файлы во временный каталог и запустится без FUSE. Убедитесь, что во временной файловой системе хватает места для распакованных файлов.
