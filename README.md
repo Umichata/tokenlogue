@@ -42,7 +42,9 @@
 <tr><td>Linux chat with local demonstration messages</td><td>Tokenlogue chat on an Android tablet</td></tr>
 </table>
 
-Screenshots illustrate the chat workspace with demonstration data. Available controls can vary with the application version.
+Illustrations from an earlier preview show the chat workspace with demonstration data. Controls in newer builds can look different.
+
+New previews keep the displayed application version `0.1.0` until a separately designated official release. Unique tags and increasing build numbers distinguish individual previews.
 
 <a id="en-start"></a>
 <a id="-get-started"></a>

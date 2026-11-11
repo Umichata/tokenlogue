@@ -12,10 +12,10 @@
 Run Tokenlogue as an AppImage on a Linux desktop. Python, Flutter and build tools are included or unnecessary for normal use. The current preview has an English and Russian interface.
 
 <img src="assets/ui/frame-top.svg" width="880" alt=""><br>
-<img src="assets/screenshots/linux-chat.png" alt="Current Linux chat interface in English" width="880"><br>
+<img src="assets/screenshots/linux-chat.png" alt="Earlier Linux preview chat interface in English" width="880"><br>
 <img src="assets/ui/frame-bottom.svg" width="880" alt="">
 
-Current Linux interface. This screenshot uses English.
+Linux interface from an earlier preview. This illustration uses English.
 
 <p align="left"><a href="#en-requirements"><img src="assets/ui/buttons/en-54cd239b749b.svg" alt="Requirements" width="128" height="28"></a> <a href="#en-download"><img src="assets/ui/buttons/en-eb7306e41747.svg" alt="Download" width="98" height="28"></a> <a href="#en-run"><img src="assets/ui/buttons/en-ae7b8814a827.svg" alt="Run" width="54" height="28"></a> <a href="#en-updates"><img src="assets/ui/buttons/en-c94624d60136.svg" alt="Update" width="78" height="28"></a> <a href="#en-help"><img src="assets/ui/buttons/en-f0fa42aa9ee2.svg" alt="Troubleshooting" width="144" height="28"></a></p>
 
