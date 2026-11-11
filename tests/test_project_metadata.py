@@ -52,7 +52,7 @@ class ProjectMetadataTests(unittest.TestCase):
     def test_project_identity_and_pep639_metadata(self) -> None:
         project = self.metadata["project"]
         self.assertEqual(project["name"], "tokenlogue")
-        self.assertEqual(project["version"], "0.2.0")
+        self.assertEqual(project["version"], "0.1.0")
         self.assertEqual(project["license"], "MIT")
         self.assertEqual(set(project["license-files"]), {"LICENSE"})
         self.assertEqual(
@@ -67,7 +67,7 @@ class ProjectMetadataTests(unittest.TestCase):
         self.assertEqual(flet["artifact"], "tokenlogue")
         self.assertEqual(flet["org"], "io.github.umichata")
         self.assertEqual(flet["bundle_id"], "io.github.umichata.tokenlogue")
-        self.assertEqual(flet["build_number"], 1)
+        self.assertEqual(flet["build_number"], 43)
         self.assertEqual(flet["company"], "Umichata")
         self.assertEqual(flet["copyright"], "Copyright © 2026 Viktor Zemkov")
 

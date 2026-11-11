@@ -98,6 +98,8 @@ class ChatMetricsStrip:
             ],
         )
         self.control = ft.Container(
+            # Fill the chat column horizontally without taking its vertical flex.
+            width=float("inf"),
             bgcolor=PANEL_BACKGROUND,
             border=ft.Border(bottom=ft.BorderSide(1, BORDER_COLOR)),
             padding=ft.Padding.symmetric(horizontal=12, vertical=4),
