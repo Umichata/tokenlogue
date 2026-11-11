@@ -58,6 +58,109 @@ REQUIRED_APT_PACKAGES = {
 }
 
 
+class ApplicationVersionTests(unittest.TestCase):
+    @staticmethod
+    def project(root: Path, *, pubspec: str = "2.4.6+9") -> Path:
+        path = root / "pyproject.toml"
+        path.write_text(
+            '[project]\nversion = "2.4.6"\n'
+            '[tool.flet]\nartifact = "synthetic_app"\nbuild_number = 9\n'
+            f'[tool.flet.flutter.pubspec]\nversion = "{pubspec}"\n',
+            encoding="utf-8",
+        )
+        return path
+
+    @staticmethod
+    def packaged(root: Path, label: str, **changes: str) -> Path:
+        relative = Path("data/flutter_assets/version.json")
+        if label != "bundle":
+            relative = Path("usr/lib/tokenlogue") / relative
+        path = root / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(
+            json.dumps(
+                {
+                    "app_name": "synthetic_app",
+                    "package_name": "synthetic_app",
+                    "version": "2.4.6",
+                    "build_number": "9",
+                    **changes,
+                }
+            ),
+            encoding="utf-8",
+        )
+        return path
+
+    def test_project_contract_compares_the_effective_pubspec_version(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            project = self.project(root)
+            self.assertEqual(
+                verify_bundle.application_version(project)["build_number"], "9"
+            )
+            self.project(root, pubspec="2.4.6+1")
+            with self.assertRaisesRegex(verify_bundle.VerificationError, "pubspec"):
+                verify_bundle.application_version(project)
+
+    def test_all_carriers_report_their_actual_version_metadata(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            project = self.project(root)
+            roots = [
+                (label, root / label) for label in ("bundle", "appdir", "appimage")
+            ]
+            for label, carrier in roots:
+                self.packaged(carrier, label)
+            report = verify_bundle.verify_application_versions(
+                roots, project, root / "reports"
+            )
+            self.assertEqual(report["status"], "PASS")
+            saved = json.loads((root / "reports/application-version.json").read_text())
+            self.assertEqual(
+                {row["root"] for row in saved["artifacts"]},
+                {"bundle", "appdir", "appimage"},
+            )
+            self.assertTrue(all(row["sha256"] for row in saved["artifacts"]))
+
+    def test_wrong_or_missing_metadata_stops_before_abi_tools(self) -> None:
+        for scenario in ("version", "build", "missing", "malformed", "symlink"):
+            with self.subTest(scenario=scenario), tempfile.TemporaryDirectory() as temp:
+                root = Path(temp)
+                self.project(root)
+                carrier = root / "bundle"
+                metadata = self.packaged(carrier, "bundle")
+                if scenario == "version":
+                    self.packaged(carrier, "bundle", version="1.0.0")
+                elif scenario == "build":
+                    self.packaged(carrier, "bundle", build_number="1")
+                elif scenario == "missing":
+                    metadata.unlink()
+                elif scenario == "malformed":
+                    metadata.write_text("{", encoding="utf-8")
+                else:
+                    external = root / "external-version.json"
+                    metadata.replace(external)
+                    metadata.symlink_to(external)
+                with patch.object(verify_bundle, "verify_abi") as abi:
+                    code = verify_bundle.main(
+                        [
+                            "abi",
+                            "--root",
+                            f"bundle={carrier}",
+                            "--workspace",
+                            str(root),
+                            "--reports-dir",
+                            str(root / "reports"),
+                        ]
+                    )
+                self.assertEqual(code, 1)
+                abi.assert_not_called()
+                report = json.loads(
+                    (root / "reports/application-version.json").read_text()
+                )
+                self.assertEqual(report["status"], "FAIL")
+
+
 class LinuxBuildPipelineTests(unittest.TestCase):
     def test_pipeline_files_exist_and_scripts_are_executable(self) -> None:
         for name in (

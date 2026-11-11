@@ -14,20 +14,20 @@
 <a id="-исходники-приложения"></a>
 ## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Исходники поставленного приложения
 
-Выберите архив проекта для своей платформы из [`PROVENANCE.json`](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/PROVENANCE.json). Пакеты Android и Linux собраны из разных ревизий упаковки с одинаковым общим ядром приложения. Commit, дерево и контрольные суммы связывают каждый пакет с его точными исходниками. Более поздняя версия репозитория или README платформенной ветки не меняют это происхождение.
+Выберите архив проекта для своей платформы из [`PROVENANCE.json`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/PROVENANCE.json). Пакеты Android и Linux собраны из разных ревизий упаковки с одинаковым общим ядром приложения. Commit, дерево и контрольные суммы связывают каждый пакет с его точными исходниками. Более поздняя версия репозитория или README платформенной ветки не меняют это происхождение.
 
-На странице [Releases](https://github.com/Umichata/tokenlogue/releases/tag/v0.2.0-preview.52a834d) перечислены действительно доступные файлы каждой версии. Для версии `0.2.0` сторонние исходные материалы поставляются одним актуальным архивом с реестром. Цепочка загрузок прежних выпусков Tokenlogue не нужна.
+На странице [Releases](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9) перечислены действительно доступные файлы каждой версии. Для версии `0.1.0` сторонние исходные материалы поставляются одним актуальным архивом с реестром. Цепочка загрузок прежних выпусков Tokenlogue не нужна.
 
 <a id="-выбор-подходящего-комплекта"></a>
 ## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Использование комплекта зависимостей
 
 | Файл | Назначение |
 | --- | --- |
-| [Исходники проекта для Android](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/Tokenlogue-0.2.0-8080e6e-project-sources.tar.gz) | Точные отслеживаемые исходники приложения, lock-файлы и упаковка поставленного APK. |
-| [Исходники проекта для Linux](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/Tokenlogue-0.2.0-52a834d-project-sources.tar.gz) | Точные отслеживаемые исходники приложения, lock-файлы и упаковка поставленной AppImage. |
-| [`Tokenlogue-0.2.0-dependency-sources.tar.gz`](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/Tokenlogue-0.2.0-dependency-sources.tar.gz) | Идентифицированные сторонние исходники, оригинальные уведомления, изменения и рецепты без повторных копий одинаковых файлов. |
-| [`SOURCE_MATERIALS.json`](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/SOURCE_MATERIALS.json) | Версии, связи компонентов, относительные пути, размеры и SHA-256 материалов. Также описывает границы подтверждения исходников и происхождения бинарников. |
-| [`SHA256SUMS`](https://github.com/Umichata/tokenlogue/releases/download/v0.2.0-preview.52a834d/SHA256SUMS) | Контрольные суммы загрузок выпуска. |
+| [Исходники проекта для Android](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-eafb093-android-project-sources.tar.gz) | Точные отслеживаемые исходники приложения, lock-файлы и упаковка поставленного APK. |
+| [Исходники проекта для Linux](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-a981db9-linux-project-sources.tar.gz) | Точные отслеживаемые исходники приложения, lock-файлы и упаковка поставленной AppImage. |
+| [`Tokenlogue-0.1.0-dependency-sources.tar.gz`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-dependency-sources.tar.gz) | Идентифицированные сторонние исходники, оригинальные уведомления, изменения и рецепты без повторных копий одинаковых файлов. |
+| [`SOURCE_MATERIALS.json`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SOURCE_MATERIALS.json) | Версии, связи компонентов, относительные пути, размеры и SHA-256 материалов. Также описывает границы подтверждения исходников и происхождения бинарников. |
+| [`SHA256SUMS`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SHA256SUMS) | Контрольные суммы загрузок выпуска. |
 
 В архиве зависимостей нет дополнительной внешней папки. Он содержит двуязычный `README.md`, `SOURCE_MATERIALS.json`, `BUILD_INPUTS.json`, `RECONSTRUCTION.json`, `SHA256SUMS` и оригинальные файлы в `materials/<SHA-256>/<исходное имя>`. Одинаковый файл хранится один раз и может относиться к нескольким компонентам. Если исходники или уведомление находятся внутри сохранённого архива, реестр указывает точный внутренний путь.
 
@@ -37,7 +37,7 @@
 
 ```bash
 set -o pipefail
-file='Tokenlogue-0.2.0-dependency-sources.tar.gz'
+file='Tokenlogue-0.1.0-dependency-sources.tar.gz'
 awk -v wanted="$file" '$2 == wanted { entry = $0; count++ } END { if (count != 1) exit 1; print entry }' SHA256SUMS |
   sha256sum --check -
 ```
@@ -46,7 +46,7 @@ awk -v wanted="$file" '$2 == wanted { entry = $0; count++ } END { if (count != 1
 
 ```bash
 mkdir tokenlogue-dependency-sources &&
-tar --extract --gzip --file Tokenlogue-0.2.0-dependency-sources.tar.gz \
+tar --extract --gzip --file Tokenlogue-0.1.0-dependency-sources.tar.gz \
   --directory tokenlogue-dependency-sources --no-same-owner --no-same-permissions &&
 (cd tokenlogue-dependency-sources && sha256sum --check SHA256SUMS)
 ```
