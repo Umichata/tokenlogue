@@ -9,6 +9,9 @@
 <a id="english"></a>
 <a id="lang-en"></a>
 
+<a id="en-preview-status"></a>
+> **Initial preview 0.1.0 — draft.** Application packages and their source archives are not public downloads while the release is a draft. The filenames and checksums below describe the prepared package set.
+
 Tokenlogue's application code uses the [MIT License](../LICENSE). Third-party components keep their original terms. Ready-to-use APK and AppImage packages are separate downloads. You do not need source archives or build tools to run the application.
 
 <a id="-application-sources"></a>
@@ -16,7 +19,7 @@ Tokenlogue's application code uses the [MIT License](../LICENSE). Third-party co
 
 Choose the project archive for your platform from [`PROVENANCE.json`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/PROVENANCE.json). The Android and Linux packages use different packaging revisions with the same application core. Each package is linked to its exact sources by its commit, tree and checksums. A later repository revision or platform README does not change that provenance.
 
-The [Releases page](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9) lists the files actually available for each version. For version `0.1.0`, source materials are supplied as one current dependency archive with its index, rather than a chain of downloads from earlier Tokenlogue releases.
+The [initial release draft](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9) identifies the prepared files for version `0.1.0`. Third-party source materials are collected in one dependency archive with its index. These draft files become public only when the release is published.
 
 <a id="-find-the-matching-collection"></a>
 ## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Use the dependency collection
@@ -31,7 +34,7 @@ The [Releases page](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-p
 
 The dependency archive has no extra outer directory. It contains a bilingual `README.md`, `SOURCE_MATERIALS.json`, `BUILD_INPUTS.json`, `RECONSTRUCTION.json`, `SHA256SUMS` and the original files under `materials/<SHA-256>/<original filename>`. An identical file is stored once and can be mapped to several components. The index identifies the exact archive member when a component's source or notice is inside a retained archive.
 
-`BUILD_INPUTS.json` records pinned source locations, sizes and checksums for separately obtained compiler, runtime and tool inputs. These include official upstream downloads, selected files from official Alpine ISO images and the [current Tokenlogue dependency input container](https://github.com/Umichata/tokenlogue/releases/tag/runtime-build-inputs-20261110). The latter is not an official Alpine container. ISO checks cover the selected bytes, not the whole image checksum. The dependency container is checked in full and by member. Obtaining external build inputs can require internet access. It does not require an older Tokenlogue application release or a previous Actions artifact.
+`BUILD_INPUTS.json` records pinned source locations, sizes and checksums for separately obtained compiler, runtime and tool inputs. These include official upstream downloads, selected files from official Alpine ISO images and the [current Tokenlogue dependency input container](https://github.com/Umichata/tokenlogue/releases/tag/runtime-build-inputs-20261110). The latter is not an official Alpine container. ISO checks cover the selected bytes, not the whole image checksum. The dependency container is checked in full and by member. Obtaining external build inputs can require internet access. The build inputs are identified independently of the application package archives.
 
 Save the dependency archive and the release's `SHA256SUMS` in one directory. Verify the selected archive before extracting it. This command requires Bash and SHA-256 tools.
 

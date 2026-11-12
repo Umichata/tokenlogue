@@ -9,13 +9,16 @@
 <a id="english"></a>
 <a id="lang-en"></a>
 
+<a id="en-preview-status"></a>
+> **Initial preview 0.1.0 — draft.** Application packages and their source archives are not public downloads while the release is a draft. The filenames and checksums below describe the prepared package set.
+
 Run Tokenlogue as an AppImage on a Linux desktop. Python, Flutter and build tools are included or unnecessary for normal use. The current preview has an English and Russian interface.
 
 <img src="assets/ui/frame-top.svg" width="880" alt=""><br>
-<img src="assets/screenshots/linux-chat.png" alt="Earlier Linux preview chat interface in English" width="880"><br>
+<img src="assets/screenshots/linux-chat.png" alt="Illustrative Linux chat workspace in English" width="880"><br>
 <img src="assets/ui/frame-bottom.svg" width="880" alt="">
 
-Linux interface from an earlier preview. This illustration uses English.
+Illustrative Linux workspace with demonstration data in English. The exact controls depend on the selected chat and available space.
 
 <p align="left"><a href="#en-requirements"><img src="assets/ui/buttons/en-54cd239b749b.svg" alt="Requirements" width="128" height="28"></a> <a href="#en-download"><img src="assets/ui/buttons/en-eb7306e41747.svg" alt="Download" width="98" height="28"></a> <a href="#en-run"><img src="assets/ui/buttons/en-ae7b8814a827.svg" alt="Run" width="54" height="28"></a> <a href="#en-updates"><img src="assets/ui/buttons/en-c94624d60136.svg" alt="Update" width="78" height="28"></a> <a href="#en-help"><img src="assets/ui/buttons/en-f0fa42aa9ee2.svg" alt="Troubleshooting" width="144" height="28"></a></p>
 
@@ -38,11 +41,11 @@ Screen-lock and sleep protection is designed for the supported Cinnamon/X11 desk
 <a id="-download-and-verify"></a>
 ## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Download and verify
 
-The <a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9" title="Releases page">Releases page&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> provides the Tokenlogue 0.1.0 preview. Download the [AppImage](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage) and [`SHA256SUMS`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SHA256SUMS).
+The <a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9" title="Release draft">release draft&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> contains the prepared Tokenlogue 0.1.0 [AppImage](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage) and [`SHA256SUMS`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SHA256SUMS). Draft-package links are available to repository maintainers for review. They become public only when the release is published.
 
 <img src="assets/ui/frame-top.svg" width="100%" alt="">
 
-| Current preview file | Value |
+| Prepared preview file | Value |
 | --- | --- |
 | AppImage | [`Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage) |
 | SHA-256 | `247497d8f97aae0c16cab282edc1c6cbf47747c7b3597e3ba23b388558e40646` |
@@ -94,7 +97,7 @@ This unpacks files to a temporary directory and starts the app without FUSE. Ens
 
 Close every older Tokenlogue copy before opening the replacement. Verify the new file and run it under the same OS account. There is no automatic updater. Replacing the AppImage does not remove the separately stored application data.
 
-At the first successful sign-in, older unprotected conversation content is converted before chats open. Keep older copies closed throughout. Do not downgrade a profile without a compatible backup. Earlier versions may not understand the updated database or its protection.
+If a local profile contains unprotected conversation fields, the first successful sign-in protects them before chats open. Keep other application instances closed while the profile is in use. Do not open a protected profile with incompatible software or change its database without a compatible backup.
 
 The database alone is not a complete portable backup. Its encryption key stays in the system key store. Losing that key can make history unrecoverable. Read <a href="security.md#en-encryption" title="conversation protection">conversation protection&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> before moving data or changing keyring settings.
 

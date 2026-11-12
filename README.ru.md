@@ -8,10 +8,13 @@
   <img src="docs/assets/tokenlogue-banner-ru-v2.png" alt="Tokenlogue" width="100%">
 </h1>
 
-<p align="left"><a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9"><img src="docs/assets/ui/buttons/ru-f3b0f21094a4.svg" alt="Скачать" width="86" height="28"></a> <a href="docs/user-guide.ru.md#russian"><img src="docs/assets/ui/buttons/ru-7c519bac3145.svg" alt="Руководство" width="121" height="28"></a> <a href="docs/README.ru.md"><img src="docs/assets/ui/buttons/ru-b4e89d854289.svg" alt="Карта документации" width="184" height="28"></a> <a href="#ru-features"><img src="docs/assets/ui/buttons/ru-c233223e41f1.svg" alt="Функции" width="93" height="28"></a> <a href="#ru-screenshots"><img src="docs/assets/ui/buttons/ru-2ac04551ccc4.svg" alt="Скриншоты" width="113" height="28"></a> <a href="#ru-start"><img src="docs/assets/ui/buttons/ru-f1eadb913310.svg" alt="Начать" width="79" height="28"></a></p>
+<p align="left"><a href="docs/README.ru.md#ru-preview-status"><img src="docs/assets/ui/buttons/ru-f3b0f21094a4.svg" alt="Скачать" width="86" height="28"></a> <a href="docs/user-guide.ru.md#russian"><img src="docs/assets/ui/buttons/ru-7c519bac3145.svg" alt="Руководство" width="121" height="28"></a> <a href="docs/README.ru.md"><img src="docs/assets/ui/buttons/ru-b4e89d854289.svg" alt="Карта документации" width="184" height="28"></a> <a href="#ru-features"><img src="docs/assets/ui/buttons/ru-c233223e41f1.svg" alt="Функции" width="93" height="28"></a> <a href="#ru-screenshots"><img src="docs/assets/ui/buttons/ru-2ac04551ccc4.svg" alt="Скриншоты" width="113" height="28"></a> <a href="#ru-start"><img src="docs/assets/ui/buttons/ru-f1eadb913310.svg" alt="Начать" width="79" height="28"></a></p>
 
 <a id="russian"></a>
 <a id="lang-ru"></a>
+
+<a id="ru-preview-status"></a>
+> **Начальная предварительная версия 0.1.0 — черновик.** Пока выпуск находится в черновике, пакеты приложения недоступны для публичного скачивания. Публикация выполняется только по прямому указанию владельца проекта.
 
 <h3 align="left">Общайтесь с моделями OpenRouter на <strong>Linux и Android</strong>. Храните чаты и черновики вместе, выбирайте модель для каждого разговора и смотрите оценку перед платным запросом.</h3>
 
@@ -43,9 +46,9 @@
 <tr><td>Чат Linux с локальными демонстрационными сообщениями</td><td>Рабочий чат Tokenlogue на планшете Android</td></tr>
 </table>
 
-Иллюстрации из более ранней предварительной версии показывают рабочее пространство чата с демонстрационными данными. Внешний вид элементов в новых сборках может отличаться.
+Иллюстрация рабочего пространства чата с демонстрационными данными. Точный набор элементов зависит от выбранного чата и доступного места.
 
-Новые предварительные выпуски сохраняют отображаемую версию приложения `0.1.0` до отдельно объявленного официального релиза. Отдельные теги и возрастающие номера сборок различают эти выпуски.
+Начальная серия предварительных выпусков использует отображаемую версию приложения `0.1.0` до отдельно объявленного официального релиза. Отдельные теги и возрастающие номера сборок идентифицируют подготовленные пакеты.
 
 <a id="ru-start"></a>
 <a id="-начало-работы"></a>
@@ -55,17 +58,17 @@
 
 | Платформа | Пакет и требования | Установка |
 | --- | --- | --- |
-| Linux | AppImage x86_64, процессор x86-64-v2, совместимые библиотеки рабочего стола | <a href="docs/linux-appimage.ru.md#russian" title="Руководство Linux">Руководство Linux&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> <a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9" title="Доступные загрузки">Доступные загрузки&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> |
-| Android | APK ARM64, Android 7.0 / API 24 или новее | <a href="docs/android.ru.md#russian" title="Руководство Android">Руководство Android&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> <a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9" title="Доступные загрузки">Доступные загрузки&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> |
+| Linux | AppImage x86_64, процессор x86-64-v2, совместимые библиотеки рабочего стола | <a href="docs/linux-appimage.ru.md#russian" title="Руководство Linux">Руководство Linux&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> <a href="docs/README.ru.md#ru-preview-status" title="Состояние черновика">Состояние черновика&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> |
+| Android | APK ARM64, Android 7.0 / API 24 или новее | <a href="docs/android.ru.md#russian" title="Руководство Android">Руководство Android&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> <a href="docs/README.ru.md#ru-preview-status" title="Состояние черновика">Состояние черновика&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> |
 
 <img src="docs/assets/ui/frame-bottom.svg" width="100%" alt="">
 
-Выберите пакет для своей платформы и скачайте вместе с ним [`SHA256SUMS`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SHA256SUMS). Руководство платформы объясняет, как проверить только выбранный пакет.
+В черновике подготовлены пакеты, перечисленные ниже, и [`SHA256SUMS`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SHA256SUMS). Руководства платформ описывают требования и проверку сумм. Файлы станут публичными загрузками только после публикации.
 
 - Android — [`Tokenlogue-0.1.0-android-arm64-v8a-v43.apk`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-android-arm64-v8a-v43.apk).
 - Linux — [`Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage).
 
-На странице <a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9" title="Releases">Releases&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> доступна предварительная версия Tokenlogue 0.1.0 с пакетами, указанными выше.
+Список пакетов описывает черновик начальной версии Tokenlogue 0.1.0. Доступность указана в [состоянии черновика](docs/README.ru.md#ru-preview-status).
 
 Для запуска Tokenlogue не нужны отдельная установка Python или Flutter и архивы исходников. AppImage Linux не подписана.
 
@@ -88,7 +91,7 @@
 <tr><th align="left">Раздел</th><th align="left">Документы</th></tr>
 <tr>
 <td><a id="начало-работы"></a><a id="начало-работы-1"></a><strong>Начало работы</strong></td>
-<td><a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9" title="Загрузки"><img src="docs/assets/ui/buttons/ru-f0e4eb0b92d5.svg" alt="Загрузки" width="94" height="28"></a> <a href="docs/android.ru.md#ru-install" title="Установка Android"><img src="docs/assets/ui/buttons/ru-0abdbebf204e.svg" alt="Установка Android" width="166" height="28"></a> <a href="docs/linux-appimage.ru.md#ru-download" title="Запуск Linux"><img src="docs/assets/ui/buttons/ru-4b91e607dca0.svg" alt="Запуск Linux" width="122" height="28"></a></td>
+<td><a href="docs/README.ru.md#ru-preview-status" title="Загрузки"><img src="docs/assets/ui/buttons/ru-f0e4eb0b92d5.svg" alt="Загрузки" width="94" height="28"></a> <a href="docs/android.ru.md#ru-install" title="Установка Android"><img src="docs/assets/ui/buttons/ru-0abdbebf204e.svg" alt="Установка Android" width="166" height="28"></a> <a href="docs/linux-appimage.ru.md#ru-download" title="Запуск Linux"><img src="docs/assets/ui/buttons/ru-4b91e607dca0.svg" alt="Запуск Linux" width="122" height="28"></a></td>
 </tr>
 <tr>
 <td><a id="переписка-и-защита"></a><strong>Переписка и защита</strong></td>

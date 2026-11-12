@@ -9,7 +9,7 @@
 <a id="english"></a>
 <a id="lang-en"></a>
 
-Tokenlogue lets you chat with OpenRouter models on Linux and Android. This guide describes version 0.2.0. Start with the <a href="linux-appimage.md#english" title="Linux installation guide">Linux installation guide&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> or <a href="android.md#english" title="Android installation guide">Android installation guide&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a>.
+Tokenlogue lets you chat with OpenRouter models on Linux and Android. This guide describes the initial 0.1.0 preview draft. Start with the <a href="linux-appimage.md#english" title="Linux installation guide">Linux installation guide&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> or <a href="android.md#english" title="Android installation guide">Android installation guide&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a>.
 
 <p align="left"><a href="#en-access"><img src="assets/ui/buttons/en-ca3dbec2e101.svg" alt="Get started" width="109" height="28"></a> <a href="#en-chats"><img src="assets/ui/buttons/en-474e166de580.svg" alt="Chats" width="67" height="28"></a> <a href="#en-drafts"><img src="assets/ui/buttons/en-1cd72768132b.svg" alt="Drafts" width="71" height="28"></a> <a href="#en-limits"><img src="assets/ui/buttons/en-d98731f70acd.svg" alt="Limits" width="70" height="28"></a> <a href="#en-chat-metrics"><img src="assets/ui/buttons/en-0ee613298d92.svg" alt="Costs" width="66" height="28"></a> <a href="security.md#english"><img src="assets/ui/buttons/en-9c2e33444d68.svg" alt="Protection" width="102" height="28"></a></p>
 
@@ -32,7 +32,7 @@ Tokenlogue lets you chat with OpenRouter models on Linux and Android. This guide
 <img src="assets/screenshots/android-start.png" alt="First-launch setup on Android" width="320"><br>
 <img src="assets/ui/frame-bottom.svg" width="320" alt="">
 
-*First-launch Android illustration from an earlier preview. The instructions above apply to both platforms.*
+*Android first-launch illustration. The instructions above apply to both platforms.*
 
 At later launches, enter your app PIN and choose `Sign in`. Updating a compatible installation preserves that PIN. Three incorrect checks temporarily block PIN entry for five minutes. Restarting does not clear the countdown. See <a href="security.md#en-pin" title="access and recovery">access and recovery&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a>.
 
@@ -64,7 +64,7 @@ The top-left button hides or shows the chat list in a wide Linux window. Tokenlo
 <img src="assets/screenshots/linux-chat.png" alt="Linux conversation workspace with demonstration data" width="760"><br>
 <img src="assets/ui/frame-bottom.svg" width="760" alt="">
 
-*An earlier Linux preview workspace with demonstration data. Your chat list, conversation and editor remain together.*
+*Illustrative Linux workspace with demonstration data. Your chat list, conversation and editor remain together. The exact controls depend on the selected chat and available space.*
 
 Choose `Interface language` in `⋮` to switch between English and Russian. The choice is remembered. Chat titles, your messages and model replies are not translated. Changing language preserves ordinary editor input and drafts. For safety, an unfinished recovery-code or profile-deletion confirmation must be started again in the selected language.
 
