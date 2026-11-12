@@ -9,6 +9,9 @@
 <a id="english"></a>
 <a id="lang-en"></a>
 
+<a id="en-preview-status"></a>
+> **Initial preview 0.1.0 — draft.** Application packages and their source archives are not public downloads while the release is a draft. The filenames and checksums below describe the prepared package set.
+
 Tokenlogue brings OpenRouter chats to an ARM64 Android phone or tablet. The interface supports English and Russian, saved per-chat drafts and layouts that adapt to the available space.
 
 <p align="left"><a href="#en-requirements"><img src="assets/ui/buttons/en-54cd239b749b.svg" alt="Requirements" width="128" height="28"></a> <a href="#en-install"><img src="assets/ui/buttons/en-c1a92da25825.svg" alt="Install" width="71" height="28"></a> <a href="#en-update"><img src="assets/ui/buttons/en-c94624d60136.svg" alt="Update" width="78" height="28"></a> <a href="#en-first-launch"><img src="assets/ui/buttons/en-1de6f9fc48e6.svg" alt="First launch" width="112" height="28"></a> <a href="security.md#english"><img src="assets/ui/buttons/en-9c2e33444d68.svg" alt="Protection" width="102" height="28"></a></p>
@@ -30,11 +33,11 @@ The minimum API level does not mean that every Android version or device has bee
 <a id="-obtain-and-install-the-apk"></a>
 ## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Obtain and install the APK
 
-The <a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9" title="Releases page">Releases page&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> provides the Tokenlogue 0.1.0 preview. Download the [APK](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-android-arm64-v8a-v43.apk) and [`SHA256SUMS`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SHA256SUMS).
+The <a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9" title="Release draft">release draft&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> contains the prepared Tokenlogue 0.1.0 [APK](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-android-arm64-v8a-v43.apk) and [`SHA256SUMS`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SHA256SUMS). Draft-package links are available to repository maintainers for review. They become public only when the release is published.
 
 <img src="assets/ui/frame-top.svg" width="100%" alt="">
 
-| Current Android preview | Value |
+| Prepared Android preview | Value |
 | --- | --- |
 | APK | [`Tokenlogue-0.1.0-android-arm64-v8a-v43.apk`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-android-arm64-v8a-v43.apk) |
 | Version | `0.1.0`, versionCode `43` |
@@ -57,12 +60,22 @@ The source archives and build tools are separate downloads. You do not need them
 
 Transfer the verified APK to the device, open it and follow Android's installer. Android may ask to allow installations from the file manager or browser you used. Grant that permission only if you trust the package. You can turn it off again afterwards.
 
+<a id="en-install-warning"></a>
+### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Google Play Protect during installation
+
+Google Play Protect can suggest scanning an unfamiliar APK. This differs from identifying an app as harmful. Check the download source and checksum, then follow Google's scan prompt if shown. If Play Protect blocks the APK as harmful, stop and report the exact warning. Do not disable protection. An APK signature does not establish Google approval. See [Google's warning guide](https://developers.google.com/android/play-protect/warning-dev-guidance).
+
+<a id="en-home-screen"></a>
+### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Put Tokenlogue on the Home screen
+
+Automatic placement on the Home screen depends on your launcher and its settings. Open the app list, find Tokenlogue, then hold its icon and drag it to the Home screen if your launcher permits. Programmatic pinning also depends on launcher support and user confirmation. If Tokenlogue is absent from the app list too, report the device model, Android version and launcher. See [Android's shortcut guide](https://developer.android.com/develop/ui/compose/system/shortcuts/creating-shortcuts).
+
 <a id="en-update"></a>
 
 <a id="-update-a-compatible-installation"></a>
 ## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Update a compatible installation
 
-Install the new APK over the compatible existing installation with the same application identity and signing certificate. Keep the existing application data. Preview builds keep the displayed version `0.1.0`. Build 43 can update the earlier build 42 because its versionCode is higher, even though the earlier package displayed `0.2.0`. Uninstalling or clearing data is not an ordinary update step and can make encrypted conversations unrecoverable.
+Install the new APK over the compatible existing installation with the same application identity and signing certificate. Keep the existing application data. Preview builds use the displayed version `0.1.0`. A compatible update requires a higher versionCode and the same signing certificate. Uninstalling or clearing data is not an ordinary update step and can make encrypted conversations unrecoverable.
 
 If Android refuses the update, check the package version, architecture and signing identity. Do not remove the old app just to bypass a signature error. Keep the existing data and <a href="https://github.com/Umichata/tokenlogue/issues" title="ask for help">ask for help&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a>. Include the package filename, Android version and relevant error. Remove API keys, private messages and personal paths before sharing.
 

@@ -10,9 +10,12 @@
 
 # 🧭 Documentation
 
-<p align="left"><a href="../README.md"><img src="assets/ui/buttons/en-7a9481e952d5.svg" alt="Project overview" width="148" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9"><img src="assets/ui/buttons/en-dd8bbfdbdd63.svg" alt="Downloads" width="106" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/issues"><img src="assets/ui/buttons/en-90990361e68d.svg" alt="Help" width="59" height="28"></a></p>
+<p align="left"><a href="../README.md"><img src="assets/ui/buttons/en-7a9481e952d5.svg" alt="Project overview" width="148" height="28"></a> <a href="#en-preview-status"><img src="assets/ui/buttons/en-dd8bbfdbdd63.svg" alt="Downloads" width="106" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/issues"><img src="assets/ui/buttons/en-90990361e68d.svg" alt="Help" width="59" height="28"></a></p>
 
 <a id="english"></a>
+
+<a id="en-preview-status"></a>
+> **Initial preview 0.1.0 — draft.** Application packages and their source archives are not public downloads while the release is a draft. The filenames and checksums in the platform guides describe the prepared package set. Publication requires the project owner's explicit instruction.
 
 Choose a document below. Start with installation and everyday use, then read the source and packaging guides when needed.
 
@@ -23,7 +26,7 @@ Choose a document below. Start with installation and everyday use, then read the
 <tr><th align="left">Category</th><th align="left">Documents</th></tr>
 <tr>
 <td><a id="get-tokenlogue"></a><strong>Get Tokenlogue</strong></td>
-<td><a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9" title="Downloads"><img src="assets/ui/buttons/en-0af7fc63fbbe.svg" alt="Downloads" width="106" height="28"></a> <a href="android.md#english" title="Android"><img src="assets/ui/buttons/en-46463edb13a7.svg" alt="Android" width="83" height="28"></a> <a href="linux-appimage.md#english" title="Linux"><img src="assets/ui/buttons/en-96c04f670a21.svg" alt="Linux" width="65" height="28"></a></td>
+<td><a href="#en-preview-status" title="Downloads"><img src="assets/ui/buttons/en-0af7fc63fbbe.svg" alt="Downloads" width="106" height="28"></a> <a href="android.md#english" title="Android"><img src="assets/ui/buttons/en-46463edb13a7.svg" alt="Android" width="83" height="28"></a> <a href="linux-appimage.md#english" title="Linux"><img src="assets/ui/buttons/en-96c04f670a21.svg" alt="Linux" width="65" height="28"></a></td>
 </tr>
 <tr>
 <td><a id="your-first-conversation"></a><strong>Your first conversation</strong></td>
