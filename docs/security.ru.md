@@ -1,7 +1,7 @@
 <p align="left">
-<a href="security.ru.md" title="Русский"><img align="right" src="assets/ui/buttons/ru-1e800a389462.svg" alt="Русский" width="46" height="28"></a>
-<a href="security.md" title="English"><img align="right" src="assets/ui/buttons/ru-ccbd7ff610ca.svg" alt="English" width="45" height="28"></a>
-<a href="../README.ru.md" title="Главная"><img src="assets/ui/buttons/ru-461b9280bad5.svg" alt="Главная" width="34" height="28"></a> <a href="README.ru.md" title="Карта документации"><img src="assets/ui/buttons/ru-b4e89d854289.svg" alt="Карта документации" width="184" height="28"></a>
+<a href="https://github.com/Umichata/tokenlogue/blob/main/docs/security.ru.md" title="Русский"><img align="right" src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/buttons/ru-1e800a389462.svg" alt="Русский" width="46" height="28"></a>
+<a href="https://github.com/Umichata/tokenlogue/blob/main/docs/security.md" title="English"><img align="right" src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/buttons/ru-ccbd7ff610ca.svg" alt="English" width="45" height="28"></a>
+<a href="https://github.com/Umichata/tokenlogue/blob/main/README.ru.md" title="Главная"><img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/buttons/ru-461b9280bad5.svg" alt="Главная" width="34" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/blob/main/docs/README.ru.md" title="Карта документации"><img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/buttons/ru-b4e89d854289.svg" alt="Карта документации" width="184" height="28"></a>
 </p>
 
 <a id="-защита-переписки"></a>
@@ -13,7 +13,7 @@
 
 Tokenlogue защищает доступ к локальной переписке PIN приложения и отдельным ключом шифрования. Основные принципы защиты одинаковы для Linux и Android.
 
-<img src="assets/ui/frame-top.svg" width="100%" alt="">
+<img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/frame-top.svg" width="100%" alt="">
 
 | Элемент защиты | Для чего нужен |
 | --- | --- |
@@ -21,16 +21,16 @@ Tokenlogue защищает доступ к локальной переписк�
 | Ключ шифрования | Хранится отдельно и нужен для расшифровки защищённых полей переписки. |
 | Способ восстановления | Позволяет заменить забытый PIN, когда исходный защищённый ключ шифрования остаётся доступен. |
 
-<img src="assets/ui/frame-bottom.svg" width="100%" alt="">
+<img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/frame-bottom.svg" width="100%" alt="">
 
-<p align="left"><a href="#ru-pin"><img src="assets/ui/buttons/ru-8713cbed185a.svg" alt="PIN" width="51" height="28"></a> <a href="#ru-locking"><img src="assets/ui/buttons/ru-b0976986eac0.svg" alt="Блокировка" width="116" height="28"></a> <a href="#ru-recovery"><img src="assets/ui/buttons/ru-4ac5eacc0684.svg" alt="Восстановление" width="147" height="28"></a> <a href="#ru-encryption"><img src="assets/ui/buttons/ru-15b26e512b34.svg" alt="Шифрование" width="126" height="28"></a> <a href="#ru-delete"><img src="assets/ui/buttons/ru-cd67830fbad0.svg" alt="Удаление профиля" width="172" height="28"></a></p>
+<p align="left"><a href="#ru-pin"><img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/buttons/ru-8713cbed185a.svg" alt="PIN" width="51" height="28"></a> <a href="#ru-locking"><img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/buttons/ru-b0976986eac0.svg" alt="Блокировка" width="116" height="28"></a> <a href="#ru-recovery"><img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/buttons/ru-4ac5eacc0684.svg" alt="Восстановление" width="147" height="28"></a> <a href="#ru-encryption"><img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/buttons/ru-15b26e512b34.svg" alt="Шифрование" width="126" height="28"></a> <a href="#ru-delete"><img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/buttons/ru-cd67830fbad0.svg" alt="Удаление профиля" width="172" height="28"></a></p>
 
 <a id="ru-pin"></a>
 
 <a id="pin-приложения"></a>
 
 <a id="-pin-приложения"></a>
-## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> PIN приложения
+## <img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> PIN приложения
 
 При настройке выберите четыре цифры `0`–`9` и повторите их. Ноль в начале допустим. Сохраните PIN отдельно. Кнопка с глазом позволяет увидеть его, но Tokenlogue никогда не копирует его автоматически.
 
@@ -43,7 +43,7 @@ PIN приложения отличается от пароля Linux и PIN б�
 <a id="блокировка-перед-уходом"></a>
 
 <a id="-блокировка-перед-уходом"></a>
-## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Блокировка приложения
+## <img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Блокировка приложения
 
 Нажмите кнопку блокировки в шапке, чтобы закрыть доступ к чатам. Для возврата нужен PIN приложения. Последний черновик сохраняется. Уже отправленный запрос может завершиться и сохранить ответ и расходы. При возвращении приложение не отправляет черновик автоматически.
 
@@ -54,7 +54,7 @@ PIN приложения отличается от пароля Linux и PIN б�
 <a id="проверка-блокировки-экрана-и-сна-в-linux"></a>
 
 <a id="-проверка-блокировки-экрана-и-сна-в-linux"></a>
-## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Автоматическая блокировка в Linux
+## <img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Автоматическая блокировка в Linux
 
 После сохранения нового защищённого профиля Linux экран `Проверка локальной защиты` объясняет проверку до открытия чатов. Ваш PIN уже сохранён. Только кнопка `Начать проверку` запрашивает системную блокировку экрана. Разблокируйте Linux обычным способом и введите PIN приложения. После просмотра результата выберите `Перейти к чатам`. Если шаг прервался, войдите с сохранённым PIN, чтобы продолжить. Можно выбрать `Продолжить с ручной блокировкой` и проверить позднее.
 
@@ -71,7 +71,7 @@ Android использует блокировку при уходе в фон. �
 <a id="восстановление-забытого-pin"></a>
 
 <a id="-восстановление-забытого-pin"></a>
-## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Восстановление PIN
+## <img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Восстановление PIN
 
 Восстановление позволяет выбрать и сохранить новый PIN приложения. Для него нужны ранее доступный действующий способ подтверждения и исходный защищённый ключ шифрования. Оно не воссоздаёт потерянный ключ и не восстанавливает базу по одному коду.
 
@@ -80,7 +80,7 @@ Android использует блокировку при уходе в фон. �
 <a id="резервный-код-linux"></a>
 
 <a id="-резервный-код-linux"></a>
-### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Резервный код Linux
+### <img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Резервный код Linux
 
 Сохраните код заранее. После входа откройте `⋮` и выберите `Резервный код`. Ещё раз подтвердите PIN приложения. Новый профиль также предлагает это после начального шага локальной защиты.
 
@@ -97,16 +97,16 @@ Android использует блокировку при уходе в фон. �
 <a id="дополнительное-системное-восстановление-linux"></a>
 
 <a id="-дополнительное-системное-восстановление-linux"></a>
-### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Системное восстановление Linux
+### <img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Системное восстановление Linux
 
 `Системное восстановление Linux` выбирается отдельно. Оно запрашивает новое подтверждение вашей учётной записи Linux через системное окно. Вводите пароль Linux только в нём, никогда в Tokenlogue. Другой администратор или уже открытая связка ключей не заменяют проверку.
 
-Для этого способа нужны отдельно установленная policy Tokenlogue и работающий системный агент аутентификации. Без них переписка остаётся закрытой. Необязательная настройка описана в <a href="linux-appimage.ru.md#ru-system-recovery" title="руководстве Linux">руководстве Linux&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a>. Резервный код работает без неё.
+Для этого способа нужны отдельно установленная policy Tokenlogue и работающий системный агент аутентификации. Без них переписка остаётся закрытой. Необязательная настройка описана в <a href="https://github.com/Umichata/tokenlogue/blob/main/docs/linux-appimage.ru.md#ru-system-recovery" title="руководстве Linux">руководстве Linux&nbsp;<img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a>. Резервный код работает без неё.
 
 <a id="системное-восстановление-android"></a>
 
 <a id="-системное-восстановление-android"></a>
-### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Системное восстановление Android
+### <img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Системное восстановление Android
 
 В Android 11 и новее `Забыли PIN?` может запросить отдельную системную проверку PIN, графического ключа или пароля устройства. Также могут предлагаться поддерживаемые биометрические способы. Отпечаток пальца не обязателен. Должна быть настроена поддерживаемая блокировка экрана. Обычная разблокировка устройства не заменяет эту новую проверку.
 
@@ -117,7 +117,7 @@ Android использует блокировку при уходе в фон. �
 <a id="что-шифруется"></a>
 
 <a id="-что-шифруется"></a>
-## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Шифрование и хранение
+## <img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Шифрование и хранение
 
 Tokenlogue шифрует сохранённые названия чатов, сообщения пользователя и модели, а также черновики. Случайный ключ шифрования находится отдельно в платформенном защищённом хранилище. Он не выводится из четырёхзначного PIN или ключа OpenRouter. В Linux нужен доступный и разблокированный Secret Service, например GNOME Keyring.
 
@@ -136,7 +136,7 @@ Tokenlogue шифрует сохранённые названия чатов, с
 <a id="удаление-локального-профиля"></a>
 
 <a id="-удаление-локального-профиля"></a>
-## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Удаление профиля
+## <img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Удаление профиля
 
 **Удаление необратимо средствами Tokenlogue.** Для сохранения переписки используйте действующий способ восстановления.
 
@@ -152,4 +152,4 @@ Tokenlogue шифрует сохранённые названия чатов, с
 
 Локальное удаление не отзывает ключ OpenRouter, не удаляет аккаунт, не отменяет отправленные запросы и не возвращает списания. Если нужно сменить ключ с сохранением переписки, после входа используйте `Заменить ключ OpenRouter`.
 
-<p align="left"><a href="user-guide.ru.md#russian"><img src="assets/ui/buttons/ru-e485e94805d4.svg" alt="Руководство пользователя" width="229" height="28"></a> <a href="linux-appimage.ru.md#russian"><img src="assets/ui/buttons/ru-66f2899ff23a.svg" alt="Linux" width="65" height="28"></a> <a href="android.ru.md#russian"><img src="assets/ui/buttons/ru-007800957d4f.svg" alt="Android" width="83" height="28"></a> <a href="../README.ru.md#russian"><img src="assets/ui/buttons/ru-b038324b5bbd.svg" alt="Tokenlogue" width="109" height="28"></a></p>
+<p align="left"><a href="https://github.com/Umichata/tokenlogue/blob/main/docs/user-guide.ru.md#russian"><img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/buttons/ru-e485e94805d4.svg" alt="Руководство пользователя" width="229" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/blob/main/docs/linux-appimage.ru.md#russian"><img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/buttons/ru-66f2899ff23a.svg" alt="Linux" width="65" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/blob/main/docs/android.ru.md#russian"><img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/buttons/ru-007800957d4f.svg" alt="Android" width="83" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/blob/main/README.ru.md#russian"><img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/buttons/ru-b038324b5bbd.svg" alt="Tokenlogue" width="109" height="28"></a></p>
