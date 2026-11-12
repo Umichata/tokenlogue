@@ -54,7 +54,7 @@ class CurrentContractTests(unittest.TestCase):
             next(
                 i
                 for i, step in enumerate(steps)
-                if step["name"] == "Build first diagnostic AppImage"
+                if step["name"] == "Build AppImage"
             ),
         )
 

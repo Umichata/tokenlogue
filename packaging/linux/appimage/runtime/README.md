@@ -4,7 +4,7 @@
 <a href="../../../../README.md" title="Home"><img src="../../../../docs/assets/ui/buttons/en-2c296d10dfa5.svg" alt="Home" width="34" height="28"></a> <a href="../../../../docs/README.md" title="Documentation map"><img src="../../../../docs/assets/ui/buttons/en-992f2873a82b.svg" alt="Documentation map" width="174" height="28"></a>
 </p>
 
-# The AppImage runtime
+# AppImage runtime
 
 <a id="english"></a>
 <a id="lang-en"></a>
@@ -12,9 +12,9 @@
 The runtime mounts or extracts the filesystem inside an AppImage and starts the application. It is already included in Tokenlogue for Linux. You do not need to install or launch it separately.
 
 <a id="-inspect-the-source-bundle"></a>
-## <img src="../../../../docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Inspect the source bundle
+## <img src="../../../../docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Source bundle
 
-The current [standalone recipe](build_runtime.py) builds this component from the exact upstream sources and packages in [runtime.lock.json](runtime.lock.json). The Linux workflow builds and verifies it before packaging Tokenlogue. The resulting bundle contains the startup binary, its source materials and the build receipts.
+The [build recipe](build_runtime.py) uses the upstream sources and packages pinned in [runtime.lock.json](runtime.lock.json). The Linux workflow builds the runtime before packaging Tokenlogue. Its bundle contains the startup binary, source materials and build metadata.
 
 <img src="../../../../docs/assets/ui/frame-top.svg" width="100%" alt="">
 
@@ -36,7 +36,9 @@ sha256sum --check SHA256SUMS
 
 Checksums establish file integrity, not a digital signature.
 
-To build only the current runtime from a clean checkout, use the existing Python environment and Docker or Podman. The helper verifies package signatures, performs two independent compilations without network access and compares the results before its smoke check.
+## <img src="../../../../docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Build the runtime
+
+Use the project Python environment and Docker or Podman to build the runtime from a clean checkout. The helper obtains pinned inputs and builds with networking disabled.
 
 ```bash
 uv run --locked python packaging/linux/appimage/fetch_runtime.py \
@@ -44,13 +46,13 @@ uv run --locked python packaging/linux/appimage/fetch_runtime.py \
   --report build/linux-release/reports/runtime-inputs.json
 ```
 
-The attempt name must be new. Inputs are fetched from pinned sources and rechecked when cached. The [acquisition map](acquisition.lock.json) identifies exact package bytes retained in official Alpine installation images and a small dependency-only archive. The archive contains three Alpine development-package inputs with their original sources, recipes and licenses. It contains dependency inputs only.
+Use a new build name. The [acquisition map](acquisition.lock.json) identifies the pinned packages in official Alpine installation images and a separate dependency archive. The archive supplies three Alpine development packages with their original sources, recipes and licenses.
 
-Alpine package archives also use the `.apk` suffix. They are Linux build inputs, not Android application downloads. Image ranges are accepted only with exact HTTP range headers and the selected package checksums. Reading those ranges does not verify the entire installation image. The archive's complete checksum and every member are verified before use. Package signatures, installed inventory and both independent compilations remain mandatory. All selected packages are installed from exact local APK files with networking disabled. Mutable repository indexes do not participate in dependency resolution and are not required build inputs.
+Alpine packages also use the `.apk` suffix; these files are Linux build inputs and cannot be installed as Android applications. Package signatures and checksums are verified before use. The build installs exact local packages without using mutable repository indexes.
 
 <a id="-components-and-scope"></a>
-## <img src="../../../../docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Components and scope
+## <img src="../../../../docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Dependencies
 
 This Tokenlogue runtime is based on [AppImage type2-runtime](https://github.com/AppImage/type2-runtime/tree/caf24f9f712084686bfc24a70b75e50df0aefb9c). Its saved inputs include libfuse 3.15.0, squashfuse 0.5.2, musl 1.2.5-r11, GCC 14.2.0-r4, zlib 1.3.2-r0, zstd 1.5.6-r2 and mimalloc2 2.1.7-r0. The bundle preserves original recipes, patches and license texts.
 
-Runtime materials do not cover every dependency of the full application. A complete offline rebuild of Tokenlogue is not established. See the <a href="../../../../docs/source-materials.md#english" title="source guide">source guide&nbsp;<img src="../../../../docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a>, <a href="../../../../docs/linux-appimage.md#english" title="Linux installation">Linux installation&nbsp;<img src="../../../../docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> and <a href="../notices.md#english" title="license collection">license collection&nbsp;<img src="../../../../docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a>.
+This runtime bundle covers the startup component; it does not provide the complete offline build environment for Tokenlogue. See the <a href="../../../../docs/source-materials.md#english" title="source guide">source guide&nbsp;<img src="../../../../docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a>, <a href="../../../../docs/linux-appimage.md#english" title="Linux installation">Linux installation&nbsp;<img src="../../../../docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> and <a href="../notices.md#english" title="license collection">license collection&nbsp;<img src="../../../../docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a>.

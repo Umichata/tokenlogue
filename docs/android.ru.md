@@ -10,7 +10,7 @@
 <a id="lang-ru"></a>
 
 <a id="ru-preview-status"></a>
-> **Начальная предварительная версия 0.1.0 — черновик.** Пока выпуск находится в черновике, пакеты приложения и их исходные архивы недоступны для публичного скачивания. Имена файлов и суммы ниже описывают подготовленный комплект.
+> **0.1.0 Preview · черновик.** Файлы станут доступны для скачивания после публикации.
 
 Tokenlogue позволяет общаться с моделями OpenRouter на телефоне или планшете Android ARM64. Есть русский и английский интерфейс, отдельные черновики чатов и компоновка, которая учитывает доступное место.
 
@@ -19,30 +19,31 @@ Tokenlogue позволяет общаться с моделями OpenRouter н
 <a id="ru-requirements"></a>
 
 <a id="-требования-и-совместимость"></a>
-## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Требования и совместимость
+<a id="требования-и-совместимость"></a>
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Требования
 
 - Android 7.0 или новее, API 24 и выше.
 - Устройство ARM64 с поддержкой ABI `arm64-v8a`.
 - API-ключ OpenRouter и интернет для проверки ключа, моделей и сообщений.
 - Поддерживаемая блокировка устройства для необязательного системного восстановления PIN в Android 11 и новее.
 
-Минимальный API не означает проверку каждой версии Android или каждого устройства. Результаты статических проверок выравнивания ELF и ZIP указаны в происхождении пакета. Статическое выравнивание 16 КиБ не подтверждает совместимость во время работы. Запуск на настоящем ARM64-устройстве с ядром 16 КиБ ещё не проверен.
+Совместимость с устройствами, использующими страницы памяти 16 КиБ, пока не подтверждена.
 
 <a id="ru-install"></a>
 
 <a id="-получение-и-установка-apk"></a>
-## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Получение и установка APK
+<a id="получение-и-установка-apk"></a>
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Установка
 
-В <a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9" title="Черновик выпуска">черновике выпуска&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> подготовлены [APK](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-android-arm64-v8a-v43.apk) Tokenlogue 0.1.0 и [`SHA256SUMS`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SHA256SUMS). Ссылки на файлы черновика доступны сопровождающим репозитория для проверки. Публичными они станут только после публикации выпуска.
+В <a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9" title="Выпуски">разделе выпусков&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> указаны [APK](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-android-arm64-v8a-v43.apk) Tokenlogue 0.1.0 и [`SHA256SUMS`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SHA256SUMS).
 
 <img src="assets/ui/frame-top.svg" width="100%" alt="">
 
-| Подготовленная версия Android | Значение |
+| Пакет Android | Сведения |
 | --- | --- |
 | APK | [`Tokenlogue-0.1.0-android-arm64-v8a-v43.apk`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-android-arm64-v8a-v43.apk) |
 | Версия | `0.1.0`, versionCode `43` |
 | SHA-256 | `1e3ec65aaf1863eb50257aa4c090ca5fdf0b6b2c637c415d5b02056a2cf941f5` |
-| SHA-256 сертификата подписи | `927292ad5a76ff049059d1c5d8e9497a42c03f3e995a5d9ca935c59ad8d0b09e` |
 
 <img src="assets/ui/frame-bottom.svg" width="100%" alt="">
 
@@ -54,26 +55,29 @@ awk -v wanted="$file" '$2 == wanted { entry = $0; count++ } END { if (count != 1
   sha256sum --check -
 ```
 
-Выбранный APK должен получить `OK`. Отсутствующая или повторная запись в манифесте, изменённый или отсутствующий файл вызывают ошибку команды. Контрольная сумма обнаруживает изменение байтов и не заменяет подпись издателя.
+Продолжайте установку, только если проверка завершилась с `OK`. При несовпадении скачайте пакет заново. Контрольная сумма подтверждает целостность файла, но не заменяет подпись издателя.
 
 Архивы исходников и средства сборки скачиваются отдельно. Для установки и запуска Tokenlogue они не нужны.
 
 Передайте проверенный APK на устройство, откройте его и следуйте установщику Android. Система может попросить разрешить установку из использованного файлового менеджера или браузера. Давайте разрешение только для пакета, которому доверяете. После установки его можно отключить.
 
 <a id="ru-install-warning"></a>
-### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Google Play Protect при установке
+<a id="google-play-protect-при-установке"></a>
+### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Проверка Google Play
 
-Google Play Protect может предложить проверить незнакомый APK. Это отличается от обнаружения вредоносного приложения. Проверьте источник загрузки и контрольную сумму, затем выполните предложенное Google сканирование. Если Play Protect блокирует APK как вредоносный, остановитесь и сообщите точный текст предупреждения. Не отключайте защиту. Подпись APK не означает одобрения Google. Подробнее в [руководстве Google по предупреждениям](https://developers.google.com/android/play-protect/warning-dev-guidance).
+Google Play Защита может предложить сканирование незнакомого APK. Нажмите `Проверить` и следуйте результату. Если обнаружено вредоносное приложение, остановите установку и [сообщите о предупреждении](https://github.com/Umichata/tokenlogue/issues). Подпись APK не означает одобрения Google. Подробнее в [руководстве Google по предупреждениям](https://developers.google.com/android/play-protect/warning-dev-guidance).
 
 <a id="ru-home-screen"></a>
-### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Разместить Tokenlogue на главном экране
+<a id="разместить-tokenlogue-на-главном-экране"></a>
+### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Значок на главном экране
 
-Автоматическое размещение на главном экране зависит от лаунчера и его настроек. Откройте список приложений, найдите Tokenlogue, затем удерживайте значок и перетащите его на главный экран, если лаунчер это позволяет. Программное закрепление также требует поддержки лаунчера и подтверждения пользователя. Если Tokenlogue отсутствует и в списке приложений, сообщите модель устройства, версию Android и лаунчер. Подробнее в [руководстве Android по ярлыкам](https://developer.android.com/develop/ui/compose/system/shortcuts/creating-shortcuts).
+Откройте список приложений, найдите Tokenlogue, удерживайте его значок и перетащите на главный экран. Автоматическое размещение зависит от лаунчера и его настроек. Если приложения нет и в общем списке, [сообщите о проблеме](https://github.com/Umichata/tokenlogue/issues), указав модель устройства, версию Android и лаунчер.
 
 <a id="ru-update"></a>
 
 <a id="-обновление-совместимой-установки"></a>
-## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Обновление совместимой установки
+<a id="обновление-совместимой-установки"></a>
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Обновление
 
 Установите новый APK поверх совместимой прежней версии с тем же идентификатором приложения и сертификатом подписи. Сохраните данные приложения. Предварительные сборки используют отображаемую версию `0.1.0`. Для совместимого обновления нужен больший versionCode и тот же сертификат подписи. Удаление приложения и очистка данных не являются обычным шагом обновления и могут сделать зашифрованную переписку невосстановимой.
 
@@ -82,7 +86,8 @@ Google Play Protect может предложить проверить незн�
 <a id="ru-first-launch"></a>
 
 <a id="-подключение-и-первый-чат"></a>
-## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Подключение и первый чат
+<a id="подключение-и-первый-чат"></a>
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Первый запуск
 
 <img src="assets/ui/frame-top.svg" width="320" alt=""><br>
 <img src="assets/screenshots/android-start-ru.png" alt="Первый запуск на Android" width="320"><br>
@@ -94,14 +99,9 @@ Google Play Protect может предложить проверить незн�
 
 Верхняя левая кнопка открывает панель чатов. Для закрытия выберите чат, нажмите вне панели или используйте Back. Клавиатура может уменьшить место для действий в шапке. Закройте её, чтобы снова показать кнопки переименования и удаления.
 
-<img src="assets/ui/frame-top.svg" width="360" alt=""><br>
-<img src="assets/screenshots/android-chat-ru.png" alt="Рабочее пространство чата Android" width="360"><br>
-<img src="assets/ui/frame-bottom.svg" width="360" alt="">
-
-Рабочее пространство чата Android.
-
 <a id="-защита-локального-профиля"></a>
-## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Защита локального профиля
+<a id="защита-локального-профиля"></a>
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Доступ и данные
 
 Уход Tokenlogue в фон закрывает доступ. При возвращении введите PIN приложения. Сохранённый черновик восстановится. Разблокировка Android не открывает Tokenlogue автоматически.
 

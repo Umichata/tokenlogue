@@ -10,7 +10,7 @@
 <a id="lang-en"></a>
 
 <a id="en-preview-status"></a>
-> **Initial preview 0.1.0 — draft.** Application packages and their source archives are not public downloads while the release is a draft. The filenames and checksums below describe the prepared package set.
+> **0.1.0 Preview · draft.** Downloads will be available after publication.
 
 Tokenlogue brings OpenRouter chats to an ARM64 Android phone or tablet. The interface supports English and Russian, saved per-chat drafts and layouts that adapt to the available space.
 
@@ -19,30 +19,31 @@ Tokenlogue brings OpenRouter chats to an ARM64 Android phone or tablet. The inte
 <a id="en-requirements"></a>
 
 <a id="-requirements-and-compatibility"></a>
-## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Requirements and compatibility
+<a id="requirements-and-compatibility"></a>
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Requirements
 
 - Android 7.0 or later, API 24 or newer.
 - An ARM64 device that supports the `arm64-v8a` ABI.
 - An OpenRouter API key and internet access for key validation, models and messages.
 - A supported device screen lock for optional system PIN recovery on Android 11 or later.
 
-The minimum API level does not mean that every Android version or device has been tested. Consult the package provenance for its static ELF and ZIP alignment results. Static 16 KiB alignment does not prove runtime compatibility. Native ARM64 operation with a 16 KiB kernel has not been checked.
+Compatibility with devices that use 16 KiB memory pages is not yet confirmed.
 
 <a id="en-install"></a>
 
 <a id="-obtain-and-install-the-apk"></a>
-## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Obtain and install the APK
+<a id="obtain-and-install-the-apk"></a>
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Installation
 
-The <a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9" title="Release draft">release draft&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> contains the prepared Tokenlogue 0.1.0 [APK](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-android-arm64-v8a-v43.apk) and [`SHA256SUMS`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SHA256SUMS). Draft-package links are available to repository maintainers for review. They become public only when the release is published.
+The <a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9" title="Releases">Releases page&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> lists the Tokenlogue 0.1.0 [APK](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-android-arm64-v8a-v43.apk) and [`SHA256SUMS`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SHA256SUMS).
 
 <img src="assets/ui/frame-top.svg" width="100%" alt="">
 
-| Prepared Android preview | Value |
+| Android package | Details |
 | --- | --- |
 | APK | [`Tokenlogue-0.1.0-android-arm64-v8a-v43.apk`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-android-arm64-v8a-v43.apk) |
 | Version | `0.1.0`, versionCode `43` |
 | SHA-256 | `1e3ec65aaf1863eb50257aa4c090ca5fdf0b6b2c637c415d5b02056a2cf941f5` |
-| Signing certificate SHA-256 | `927292ad5a76ff049059d1c5d8e9497a42c03f3e995a5d9ca935c59ad8d0b09e` |
 
 <img src="assets/ui/frame-bottom.svg" width="100%" alt="">
 
@@ -54,26 +55,29 @@ awk -v wanted="$file" '$2 == wanted { entry = $0; count++ } END { if (count != 1
   sha256sum --check -
 ```
 
-The selected APK must report `OK`. A missing or duplicate manifest entry, a changed file or a missing file makes the command fail. A checksum detects changed bytes and does not replace a publisher signature.
+Continue only when verification reports `OK`. Download the package again if verification fails. Checksums confirm file integrity; they do not replace a publisher signature.
 
 The source archives and build tools are separate downloads. You do not need them to install or run Tokenlogue.
 
 Transfer the verified APK to the device, open it and follow Android's installer. Android may ask to allow installations from the file manager or browser you used. Grant that permission only if you trust the package. You can turn it off again afterwards.
 
 <a id="en-install-warning"></a>
-### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Google Play Protect during installation
+<a id="google-play-protect-during-installation"></a>
+### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Google Play Protect
 
-Google Play Protect can suggest scanning an unfamiliar APK. This differs from identifying an app as harmful. Check the download source and checksum, then follow Google's scan prompt if shown. If Play Protect blocks the APK as harmful, stop and report the exact warning. Do not disable protection. An APK signature does not establish Google approval. See [Google's warning guide](https://developers.google.com/android/play-protect/warning-dev-guidance).
+Google Play Protect may offer to scan an unfamiliar APK. Select `Scan app` and follow the result. If it reports a harmful application, stop the installation and [report the warning](https://github.com/Umichata/tokenlogue/issues). Signing an APK does not mean that Google has approved it. See [Google's warning guide](https://developers.google.com/android/play-protect/warning-dev-guidance).
 
 <a id="en-home-screen"></a>
-### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Put Tokenlogue on the Home screen
+<a id="put-tokenlogue-on-the-home-screen"></a>
+### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Home screen icon
 
-Automatic placement on the Home screen depends on your launcher and its settings. Open the app list, find Tokenlogue, then hold its icon and drag it to the Home screen if your launcher permits. Programmatic pinning also depends on launcher support and user confirmation. If Tokenlogue is absent from the app list too, report the device model, Android version and launcher. See [Android's shortcut guide](https://developer.android.com/develop/ui/compose/system/shortcuts/creating-shortcuts).
+Open the app list, find Tokenlogue, then hold its icon and drag it to the Home screen. Automatic placement depends on the launcher and its settings. If the app is missing from the app list as well, [report the issue](https://github.com/Umichata/tokenlogue/issues) with the device model, Android version and launcher.
 
 <a id="en-update"></a>
 
 <a id="-update-a-compatible-installation"></a>
-## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Update a compatible installation
+<a id="update-a-compatible-installation"></a>
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Updates
 
 Install the new APK over the compatible existing installation with the same application identity and signing certificate. Keep the existing application data. Preview builds use the displayed version `0.1.0`. A compatible update requires a higher versionCode and the same signing certificate. Uninstalling or clearing data is not an ordinary update step and can make encrypted conversations unrecoverable.
 
@@ -82,7 +86,8 @@ If Android refuses the update, check the package version, architecture and signi
 <a id="en-first-launch"></a>
 
 <a id="-connect-and-start-chatting"></a>
-## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Connect and start chatting
+<a id="connect-and-start-chatting"></a>
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> First launch
 
 <img src="assets/ui/frame-top.svg" width="320" alt=""><br>
 <img src="assets/screenshots/android-start.png" alt="First launch on Android" width="320"><br>
@@ -94,14 +99,9 @@ Choose a language, enter your OpenRouter API key and select `Check key`. Choose 
 
 The top-left button opens the chat drawer. Select a chat, tap outside or press Back to close it. The keyboard can reduce the space for header actions. Dismiss it to show the rename and delete shortcuts again.
 
-<img src="assets/ui/frame-top.svg" width="360" alt=""><br>
-<img src="assets/screenshots/android-chat-en.png" alt="The Android chat workspace" width="360"><br>
-<img src="assets/ui/frame-bottom.svg" width="360" alt="">
-
-The Android chat workspace.
-
 <a id="-protect-the-local-profile"></a>
-## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Protect the local profile
+<a id="protect-the-local-profile"></a>
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Privacy and access
 
 Moving Tokenlogue to the background closes access. Enter the app PIN when returning. Your saved draft is restored. Unlocking Android does not unlock Tokenlogue automatically.
 
