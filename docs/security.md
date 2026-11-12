@@ -1,7 +1,7 @@
 <p align="left">
-<a href="security.ru.md" title="Русский"><img align="right" src="assets/ui/buttons/en-0380058e71b5.svg" alt="Русский" width="46" height="28"></a>
-<a href="security.md" title="English"><img align="right" src="assets/ui/buttons/en-927deb529a3e.svg" alt="English" width="45" height="28"></a>
-<a href="../README.md" title="Home"><img src="assets/ui/buttons/en-2c296d10dfa5.svg" alt="Home" width="34" height="28"></a> <a href="README.md" title="Documentation map"><img src="assets/ui/buttons/en-992f2873a82b.svg" alt="Documentation map" width="174" height="28"></a>
+<a href="https://github.com/Umichata/tokenlogue/blob/main/docs/security.ru.md" title="Русский"><img align="right" src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/buttons/en-0380058e71b5.svg" alt="Русский" width="46" height="28"></a>
+<a href="https://github.com/Umichata/tokenlogue/blob/main/docs/security.md" title="English"><img align="right" src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/buttons/en-927deb529a3e.svg" alt="English" width="45" height="28"></a>
+<a href="https://github.com/Umichata/tokenlogue/blob/main/README.md" title="Home"><img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/buttons/en-2c296d10dfa5.svg" alt="Home" width="34" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/blob/main/docs/README.md" title="Documentation map"><img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/buttons/en-992f2873a82b.svg" alt="Documentation map" width="174" height="28"></a>
 </p>
 
 <a id="-conversation-protection"></a>
@@ -13,7 +13,7 @@
 
 Tokenlogue protects access to locally stored conversations with an app PIN and a separate encryption key. The same protection principles apply on Linux and Android.
 
-<img src="assets/ui/frame-top.svg" width="100%" alt="">
+<img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/frame-top.svg" width="100%" alt="">
 
 | Protection element | What it does |
 | --- | --- |
@@ -21,16 +21,16 @@ Tokenlogue protects access to locally stored conversations with an app PIN and a
 | Encryption key | Is stored separately and is needed to decrypt protected conversation fields. |
 | Recovery method | Lets you replace a forgotten PIN when the original protected encryption key remains available. |
 
-<img src="assets/ui/frame-bottom.svg" width="100%" alt="">
+<img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/frame-bottom.svg" width="100%" alt="">
 
-<p align="left"><a href="#en-pin"><img src="assets/ui/buttons/en-f4339e40ccbe.svg" alt="PIN" width="51" height="28"></a> <a href="#en-locking"><img src="assets/ui/buttons/en-7c036a2c68fa.svg" alt="Locking" width="82" height="28"></a> <a href="#en-recovery"><img src="assets/ui/buttons/en-3cd17d23de14.svg" alt="Recovery" width="93" height="28"></a> <a href="#en-encryption"><img src="assets/ui/buttons/en-4d3b89576c1d.svg" alt="Encryption" width="104" height="28"></a> <a href="#en-delete"><img src="assets/ui/buttons/en-8b48624df2d4.svg" alt="Delete a profile" width="139" height="28"></a></p>
+<p align="left"><a href="#en-pin"><img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/buttons/en-f4339e40ccbe.svg" alt="PIN" width="51" height="28"></a> <a href="#en-locking"><img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/buttons/en-7c036a2c68fa.svg" alt="Locking" width="82" height="28"></a> <a href="#en-recovery"><img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/buttons/en-3cd17d23de14.svg" alt="Recovery" width="93" height="28"></a> <a href="#en-encryption"><img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/buttons/en-4d3b89576c1d.svg" alt="Encryption" width="104" height="28"></a> <a href="#en-delete"><img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/buttons/en-8b48624df2d4.svg" alt="Delete a profile" width="139" height="28"></a></p>
 
 <a id="en-pin"></a>
 
 <a id="your-app-pin"></a>
 
 <a id="-your-app-pin"></a>
-## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> App PIN
+## <img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> App PIN
 
 Choose four digits `0`–`9` and repeat them during setup. A leading zero is allowed. Save the PIN separately. The eye button can reveal it, but Tokenlogue never copies it automatically.
 
@@ -43,7 +43,7 @@ The app PIN is different from your Linux password and Android screen-lock PIN. I
 <a id="lock-the-app-when-you-leave"></a>
 
 <a id="-lock-the-app-when-you-leave"></a>
-## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> App locking
+## <img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> App locking
 
 Use the lock button in the header to close access to chats. Returning requires the app PIN. Locking saves the latest draft. A request already sent can still finish and record its response and cost. The app does not automatically send a draft when you return.
 
@@ -54,7 +54,7 @@ On Linux, screen-lock and sleep monitoring depends on the desktop. The supported
 <a id="check-linux-screen-lock-and-sleep-protection"></a>
 
 <a id="-check-linux-screen-lock-and-sleep-protection"></a>
-## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Automatic locking on Linux
+## <img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Automatic locking on Linux
 
 After saving a new protected Linux profile, `Check local protection` explains the check before opening chats. Your PIN is already saved. Only `Start check` requests the system screen lock. Unlock Linux normally, then enter that app PIN. Choose `Open chats` after reviewing the result. If interrupted, sign in with your saved PIN to resume. You can choose `Continue with manual locking` and check again later.
 
@@ -71,7 +71,7 @@ Android uses background locking and has no desktop screen-lock or sleep tests in
 <a id="recover-a-forgotten-app-pin"></a>
 
 <a id="-recover-a-forgotten-app-pin"></a>
-## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> PIN recovery
+## <img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> PIN recovery
 
 Recovery lets you choose and save a new app PIN. It needs an existing valid recovery method and the original protected encryption key. It cannot rebuild a lost key or restore a database from a code alone.
 
@@ -80,7 +80,7 @@ Opening `Forgot PIN?` does not change the PIN. Your previous PIN keeps working u
 <a id="linux-recovery-code"></a>
 
 <a id="-linux-recovery-code"></a>
-### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Linux recovery code
+### <img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Linux recovery code
 
 Save a code before you need it. After signing in, open `⋮` and choose `Recovery code`. Confirm your app PIN again. New profiles also offer this after the local-protection introduction.
 
@@ -97,16 +97,16 @@ Code recovery needs no Linux password, administrator rights or system policy. It
 <a id="optional-linux-system-recovery"></a>
 
 <a id="-optional-linux-system-recovery"></a>
-### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Linux system recovery
+### <img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Linux system recovery
 
 `Use Linux system recovery` is a separate choice. It requests fresh confirmation of your own Linux account through the desktop authentication window. Enter your Linux password only in that system window, never into Tokenlogue. A different administrator account or an already unlocked keyring does not replace this check.
 
-This option needs the separately installed Tokenlogue policy and a working desktop authentication agent. Without them, conversations stay closed. The <a href="linux-appimage.md#en-system-recovery" title="Linux guide">Linux guide&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> explains the optional setup. Recovery codes work without it.
+This option needs the separately installed Tokenlogue policy and a working desktop authentication agent. Without them, conversations stay closed. The <a href="https://github.com/Umichata/tokenlogue/blob/main/docs/linux-appimage.md#en-system-recovery" title="Linux guide">Linux guide&nbsp;<img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> explains the optional setup. Recovery codes work without it.
 
 <a id="android-system-recovery"></a>
 
 <a id="-android-system-recovery"></a>
-### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Android system recovery
+### <img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Android system recovery
 
 On Android 11 or later, `Forgot PIN?` can request a separate system check of the device PIN, pattern or password. Supported biometrics may also be offered. A fingerprint is not required. A supported screen lock must be configured. Simply unlocking the device does not complete this fresh check.
 
@@ -117,7 +117,7 @@ After verification, choose a new app PIN, repeat it and select `Save new PIN`. C
 <a id="what-is-encrypted"></a>
 
 <a id="-what-is-encrypted"></a>
-## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Encryption and storage
+## <img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Encryption and storage
 
 Tokenlogue encrypts saved chat titles, user and model messages, and drafts. A random encryption key is stored separately in platform secure storage. It is not derived from the four-digit PIN or OpenRouter key. Linux needs an available, unlocked Secret Service such as GNOME Keyring.
 
@@ -136,7 +136,7 @@ Locking clears the visible workspace and closes new access. It does not promise 
 <a id="delete-a-local-profile"></a>
 
 <a id="-delete-a-local-profile"></a>
-## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Profile deletion
+## <img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Profile deletion
 
 **Deletion is irreversible within Tokenlogue.** To keep conversations, use a valid recovery method instead.
 
@@ -152,4 +152,4 @@ Once deletion has begun, it must finish. If storage fails, chats stay closed. Us
 
 Deleting locally does not revoke your key at OpenRouter, delete that account, cancel submitted requests or refund charges. Use `Replace OpenRouter key` after sign-in when you want to change keys and keep conversations.
 
-<p align="left"><a href="user-guide.md#english"><img src="assets/ui/buttons/en-4a1e7eca97e9.svg" alt="User guide" width="105" height="28"></a> <a href="linux-appimage.md#english"><img src="assets/ui/buttons/en-96c04f670a21.svg" alt="Linux" width="65" height="28"></a> <a href="android.md#english"><img src="assets/ui/buttons/en-46463edb13a7.svg" alt="Android" width="83" height="28"></a> <a href="../README.md#english"><img src="assets/ui/buttons/en-2e5a16e1977a.svg" alt="Tokenlogue" width="109" height="28"></a></p>
+<p align="left"><a href="https://github.com/Umichata/tokenlogue/blob/main/docs/user-guide.md#english"><img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/buttons/en-4a1e7eca97e9.svg" alt="User guide" width="105" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/blob/main/docs/linux-appimage.md#english"><img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/buttons/en-96c04f670a21.svg" alt="Linux" width="65" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/blob/main/docs/android.md#english"><img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/buttons/en-46463edb13a7.svg" alt="Android" width="83" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/blob/main/README.md#english"><img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/buttons/en-2e5a16e1977a.svg" alt="Tokenlogue" width="109" height="28"></a></p>
