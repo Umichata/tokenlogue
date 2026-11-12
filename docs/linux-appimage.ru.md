@@ -9,13 +9,16 @@
 <a id="russian"></a>
 <a id="lang-ru"></a>
 
+<a id="ru-preview-status"></a>
+> **Начальная предварительная версия 0.1.0 — черновик.** Пока выпуск находится в черновике, пакеты приложения и их исходные архивы недоступны для публичного скачивания. Имена файлов и суммы ниже описывают подготовленный комплект.
+
 Запускайте Tokenlogue на рабочем столе Linux в формате AppImage. Для обычного использования не нужно отдельно устанавливать Python, Flutter или инструменты сборки. В текущей предварительной версии есть русский и английский интерфейс.
 
 <img src="assets/ui/frame-top.svg" width="880" alt=""><br>
-<img src="assets/screenshots/linux-chat.png" alt="Интерфейс чата Linux в более ранней предварительной версии на английском языке" width="880"><br>
+<img src="assets/screenshots/linux-chat.png" alt="Иллюстрация рабочего пространства чата Linux" width="880"><br>
 <img src="assets/ui/frame-bottom.svg" width="880" alt="">
 
-Иллюстрация интерфейса Linux из более ранней предварительной версии. На снимке показан английский язык.
+Иллюстрация рабочего пространства Linux с демонстрационными данными на английском языке. Точный набор элементов зависит от выбранного чата и доступного места.
 
 <p align="left"><a href="#ru-requirements"><img src="assets/ui/buttons/ru-c8c1bdfd645d.svg" alt="Требования" width="114" height="28"></a> <a href="#ru-download"><img src="assets/ui/buttons/ru-a51ebf3766a4.svg" alt="Скачивание" width="115" height="28"></a> <a href="#ru-run"><img src="assets/ui/buttons/ru-dbadd61442d5.svg" alt="Запуск" width="77" height="28"></a> <a href="#ru-updates"><img src="assets/ui/buttons/ru-fee57eb0b9e5.svg" alt="Обновление" width="117" height="28"></a> <a href="#ru-help"><img src="assets/ui/buttons/ru-9079b2556a7e.svg" alt="Помощь" width="87" height="28"></a></p>
 
@@ -38,11 +41,11 @@
 <a id="-скачивание-и-проверка"></a>
 ## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Скачивание и проверка
 
-На странице <a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9" title="Releases">Releases&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> доступна предварительная версия Tokenlogue 0.1.0. Скачайте [AppImage](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage) и [`SHA256SUMS`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SHA256SUMS).
+В <a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9" title="Черновик выпуска">черновике выпуска&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> подготовлены [AppImage](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage) Tokenlogue 0.1.0 и [`SHA256SUMS`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SHA256SUMS). Ссылки на файлы черновика доступны сопровождающим репозитория для проверки. Публичными они станут только после публикации выпуска.
 
 <img src="assets/ui/frame-top.svg" width="100%" alt="">
 
-| Файл текущей версии | Значение |
+| Подготовленный файл | Значение |
 | --- | --- |
 | AppImage | [`Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage) |
 | SHA-256 | `247497d8f97aae0c16cab282edc1c6cbf47747c7b3597e3ba23b388558e40646` |
@@ -94,7 +97,7 @@ chmod u+x ./Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage
 
 Перед запуском замены закройте все прежние копии Tokenlogue. Проверьте новый файл и запустите его в той же учётной записи ОС. Автоматического обновления нет. Замена AppImage не удаляет отдельно сохранённые данные приложения.
 
-При первом успешном входе ранее незащищённая переписка преобразуется до открытия чатов. Всё это время держите прежние копии закрытыми. Не возвращайтесь к старой версии профиля без совместимой резервной копии. Прежние версии могут не понимать обновлённую базу и её защиту.
+Если локальный профиль содержит незащищённые поля переписки, первый успешный вход защищает их до открытия чатов. Во время работы с профилем держите другие экземпляры приложения закрытыми. Не открывайте защищённый профиль несовместимым ПО и не меняйте его базу без совместимой резервной копии.
 
 Одна база не является полной переносимой резервной копией. Ключ шифрования остаётся в системном хранилище. Его потеря может сделать переписку невосстановимой. Перед переносом данных или изменением связки ключей прочитайте <a href="security.ru.md#ru-encryption" title="о защите переписки">о защите переписки&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a>.
 

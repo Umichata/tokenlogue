@@ -9,7 +9,7 @@
 <a id="russian"></a>
 <a id="lang-ru"></a>
 
-Tokenlogue позволяет общаться с моделями OpenRouter в Linux и Android. Руководство описывает версию 0.2.0. Начните с <a href="linux-appimage.ru.md#russian" title="установки в Linux">установки в Linux&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> или <a href="android.ru.md#russian" title="установки в Android">установки в Android&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a>.
+Tokenlogue позволяет общаться с моделями OpenRouter в Linux и Android. Руководство описывает черновик начальной предварительной версии 0.1.0. Начните с <a href="linux-appimage.ru.md#russian" title="установки в Linux">установки в Linux&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> или <a href="android.ru.md#russian" title="установки в Android">установки в Android&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a>.
 
 <p align="left"><a href="#ru-access"><img src="assets/ui/buttons/ru-1e67d84c7855.svg" alt="Начало работы" width="141" height="28"></a> <a href="#ru-chats"><img src="assets/ui/buttons/ru-a1d1053a8a78.svg" alt="Чаты" width="64" height="28"></a> <a href="#ru-drafts"><img src="assets/ui/buttons/ru-947280e04422.svg" alt="Черновики" width="107" height="28"></a> <a href="#ru-limits"><img src="assets/ui/buttons/ru-2fb3ebb3382b.svg" alt="Лимиты" width="84" height="28"></a> <a href="#ru-chat-metrics"><img src="assets/ui/buttons/ru-d8db4581d3fd.svg" alt="Расходы" width="91" height="28"></a> <a href="security.ru.md#russian"><img src="assets/ui/buttons/ru-287972bc31ba.svg" alt="Защита" width="83" height="28"></a></p>
 
@@ -32,7 +32,7 @@ Tokenlogue позволяет общаться с моделями OpenRouter в
 <img src="assets/screenshots/android-start-ru.png" alt="Первоначальная настройка на Android" width="320"><br>
 <img src="assets/ui/frame-bottom.svg" width="320" alt="">
 
-*Иллюстрация первоначальной настройки Android из более ранней предварительной версии. Инструкции выше относятся к обеим платформам.*
+*Иллюстрация первоначальной настройки Android. Инструкции выше относятся к обеим платформам.*
 
 При следующих запусках введите PIN приложения и нажмите `Войти`. Обновление совместимой установки сохраняет этот PIN. После трёх неверных проверок ввод блокируется на пять минут. Перезапуск не сбрасывает отсчёт. Подробнее в разделе <a href="security.ru.md#ru-pin" title="о входе и восстановлении">о входе и восстановлении&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a>.
 
@@ -64,7 +64,7 @@ Tokenlogue позволяет общаться с моделями OpenRouter в
 <img src="assets/screenshots/linux-chat.png" alt="Рабочее пространство Linux с демонстрационными данными" width="760"><br>
 <img src="assets/ui/frame-bottom.svg" width="760" alt="">
 
-*Иллюстрация рабочего пространства Linux из более ранней предварительной версии с демонстрационными данными. Список чатов, переписка и редактор находятся рядом.*
+*Иллюстрация рабочего пространства Linux с демонстрационными данными. Список чатов, переписка и редактор находятся рядом. Точный набор элементов зависит от выбранного чата и доступного места.*
 
 Для переключения русского и английского выберите `Язык интерфейса` в `⋮`. Выбор сохраняется. Названия чатов, ваши сообщения и ответы модели не переводятся. Обычный ввод и черновики сохраняются при смене языка. Незавершённое подтверждение резервного кода или удаления профиля нужно начать заново на выбранном языке.
 

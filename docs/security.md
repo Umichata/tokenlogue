@@ -9,7 +9,7 @@
 <a id="english"></a>
 <a id="lang-en"></a>
 
-Tokenlogue protects access to locally stored conversations with an app PIN and a separate encryption key. This guide covers the current Linux and Android preview. Earlier published versions can store conversation content without this protection.
+Tokenlogue protects access to locally stored conversations with an app PIN and a separate encryption key. This guide covers the initial 0.1.0 preview draft for Linux and Android.
 
 <img src="assets/ui/frame-top.svg" width="100%" alt="">
 
@@ -123,7 +123,7 @@ Dates, model identifiers, chat modes, token counts, budgets and accounting state
 
 If secure storage or the encryption key is unavailable, conversations stay closed. After a temporary storage failure, restore access to the system key store and retry the existing PIN. Do not delete the database or reset device security to dismiss the error.
 
-When upgrading older local data, the first successful sign-in protects its content before opening chats. History, drafts, models and accounting are preserved. Close all older Linux copies first and keep them closed. Current builds allow one process per data folder, but earlier versions do not follow that rule.
+If a local profile contains unprotected conversation fields, the first successful sign-in protects them before opening chats. History, drafts, models and accounting are preserved. Keep other application instances closed while the profile is in use. Tokenlogue allows one process per data folder. Do not let incompatible software write to the same profile.
 
 Copying the database alone does not back up its encryption key. Android application backup is disabled. Uninstalling, clearing app data, losing secure storage or invalidating Android Keystore can make conversations unrecoverable. Changes to device security can affect key availability on some devices. A new PIN, recovery code or API key cannot recreate a lost encryption key.
 
