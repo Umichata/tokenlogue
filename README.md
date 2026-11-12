@@ -8,10 +8,13 @@
   <img src="docs/assets/tokenlogue-banner-en-v2.png" alt="Tokenlogue" width="100%">
 </h1>
 
-<p align="left"><a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9"><img src="docs/assets/ui/buttons/en-dd8bbfdbdd63.svg" alt="Downloads" width="106" height="28"></a> <a href="docs/android.md#english"><img src="docs/assets/ui/buttons/en-455f22ec11f5.svg" alt="Guide" width="68" height="28"></a> <a href="docs/README.md"><img src="docs/assets/ui/buttons/en-992f2873a82b.svg" alt="Documentation map" width="174" height="28"></a> <a href="#en-install"><img src="docs/assets/ui/buttons/en-c1a92da25825.svg" alt="Install" width="71" height="28"></a> <a href="#en-chat"><img src="docs/assets/ui/buttons/en-6147e3abd016.svg" alt="First chat" width="96" height="28"></a> <a href="docs/security.md#english"><img src="docs/assets/ui/buttons/en-9c2e33444d68.svg" alt="Protection" width="102" height="28"></a></p>
+<p align="left"><a href="docs/README.md#en-preview-status"><img src="docs/assets/ui/buttons/en-dd8bbfdbdd63.svg" alt="Downloads" width="106" height="28"></a> <a href="docs/android.md#english"><img src="docs/assets/ui/buttons/en-455f22ec11f5.svg" alt="Guide" width="68" height="28"></a> <a href="docs/README.md"><img src="docs/assets/ui/buttons/en-992f2873a82b.svg" alt="Documentation map" width="174" height="28"></a> <a href="#en-install"><img src="docs/assets/ui/buttons/en-c1a92da25825.svg" alt="Install" width="71" height="28"></a> <a href="#en-chat"><img src="docs/assets/ui/buttons/en-6147e3abd016.svg" alt="First chat" width="96" height="28"></a> <a href="docs/security.md#english"><img src="docs/assets/ui/buttons/en-9c2e33444d68.svg" alt="Protection" width="102" height="28"></a></p>
 
 <a id="english"></a>
 <a id="lang-en"></a>
+
+<a id="en-preview-status"></a>
+> **Initial preview 0.1.0 — draft.** Application packages are not publicly available while the release is a draft. Publication requires the project owner's explicit instruction.
 
 <h3 align="left">Use OpenRouter models from your Android phone or tablet. Tokenlogue keeps your chats, drafts and model choices in one mobile workspace.</h3>
 
@@ -32,9 +35,9 @@
 </tr>
 </table>
 
-Illustrations from an earlier Tokenlogue preview on an Android tablet. Available controls in newer builds can differ.
+Illustrative chat workspace with demonstration data. The exact controls depend on the selected chat and available space.
 
-New previews keep the displayed application version `0.1.0` until a separately designated official release. Unique tags and increasing build numbers distinguish individual previews.
+The initial preview series uses the displayed application version `0.1.0` until a separately designated official release. Unique tags and increasing build numbers identify prepared packages.
 
 <a id="en-install"></a>
 <a id="-install-or-update"></a>
@@ -42,7 +45,7 @@ New previews keep the displayed application version `0.1.0` until a separately d
 
 You need **ARM64 Android 7.0 / API 24 or later**. This minimum does not mean every Android version has been tested. Static 16 KiB checks passed, while operation on a native ARM64 device with a 16 KiB kernel has not yet been checked.
 
-For Tokenlogue 0.1.0, download [`Tokenlogue-0.1.0-android-arm64-v8a-v43.apk`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-android-arm64-v8a-v43.apk) and [`SHA256SUMS`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SHA256SUMS) from <a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9" title="Releases">Releases&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a>. Check only the APK against its manifest entry as explained in the Android guide below. You do not need a separate Python or Flutter installation or the source archives to run Tokenlogue.
+The draft prepares [`Tokenlogue-0.1.0-android-arm64-v8a-v43.apk`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-android-arm64-v8a-v43.apk) and [`SHA256SUMS`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SHA256SUMS). These links are available to repository maintainers while the release is a draft. The Android guide explains verification and installation. A separate Python or Flutter installation and source archives are unnecessary to run the app.
 
 Allow installation from your chosen file manager or browser, open the verified APK and follow Android's prompts. For an update, install over a compatible previous version with the same signing certificate. Do not uninstall or clear application data as a routine update step.
 
@@ -69,7 +72,7 @@ Before a paid request could leave 10% or less of its chat spending limit accordi
 
 Selected local conversation fields are encrypted, not the whole device. System recovery needs a supported and configured Android screen lock and access to the original protected encryption key. Deleting the local profile is irreversible and does not refund or delete your OpenRouter account.
 
-Ready-to-use packages are separate downloads from sources. The project archive identified in `PROVENANCE.json` matches the delivered build, while `Tokenlogue-0.1.0-dependency-sources.tar.gz` collects identified third-party materials without a chain of older releases. The source guide explains its contents and the remaining gaps in linking some native binaries to their sources. An archive or license alone does not establish a wheel's build provenance.
+Ready-to-use packages are separate downloads from sources. The project archive identified in `PROVENANCE.json` matches the delivered build, while `Tokenlogue-0.1.0-dependency-sources.tar.gz` collects identified third-party materials. The source guide explains its contents and the remaining gaps in linking some native binaries to their sources. An archive or license alone does not establish a wheel's build provenance.
 
 <p align="left"><a href="docs/source-materials.md#english"><img src="docs/assets/ui/buttons/en-81e7eddd2b57.svg" alt="Sources and provenance limits" width="251" height="28"></a> <a href="THIRD_PARTY_NOTICES.md#english"><img src="docs/assets/ui/buttons/en-2ac361b561de.svg" alt="Third-party licenses" width="172" height="28"></a> <a href="LICENSE"><img src="docs/assets/ui/buttons/en-35273ad53d41.svg" alt="MIT license" width="108" height="28"></a></p>
 
@@ -84,7 +87,7 @@ Ready-to-use packages are separate downloads from sources. The project archive i
 <tr><th align="left">Category</th><th align="left">Documents</th></tr>
 <tr>
 <td><a id="start-here"></a><strong>Start here</strong></td>
-<td><a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9" title="Downloads"><img src="docs/assets/ui/buttons/en-0af7fc63fbbe.svg" alt="Downloads" width="106" height="28"></a> <a href="docs/android.md#en-install" title="Android install"><img src="docs/assets/ui/buttons/en-ec13da01a81e.svg" alt="Android install" width="133" height="28"></a> <a href="docs/linux-appimage.md#en-download" title="Linux launch"><img src="docs/assets/ui/buttons/en-ce1db4f66563.svg" alt="Linux launch" width="118" height="28"></a></td>
+<td><a href="docs/README.md#en-preview-status" title="Downloads"><img src="docs/assets/ui/buttons/en-0af7fc63fbbe.svg" alt="Downloads" width="106" height="28"></a> <a href="docs/android.md#en-install" title="Android install"><img src="docs/assets/ui/buttons/en-ec13da01a81e.svg" alt="Android install" width="133" height="28"></a> <a href="docs/linux-appimage.md#en-download" title="Linux launch"><img src="docs/assets/ui/buttons/en-ce1db4f66563.svg" alt="Linux launch" width="118" height="28"></a></td>
 </tr>
 <tr>
 <td><a id="use-and-protect"></a><strong>Use and protect</strong></td>
