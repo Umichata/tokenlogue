@@ -4,15 +4,15 @@
 <a href="../../../README.md" title="Home"><img src="../../../docs/assets/ui/buttons/en-2c296d10dfa5.svg" alt="Home" width="34" height="28"></a> <a href="../../../docs/README.md" title="Documentation map"><img src="../../../docs/assets/ui/buttons/en-992f2873a82b.svg" alt="Documentation map" width="174" height="28"></a>
 </p>
 
-# Dependency source materials
+# Android dependencies
 
 <a id="english"></a>
 <a id="lang-en"></a>
 
-This collection makes the cryptography and Android device-authentication dependencies available for inspection. It contains original archives, licenses and selected upstream build recipes. You do not need to install these materials to use Tokenlogue.
+Source archives, licenses and upstream build recipes for the cryptography and Android device-authentication components are collected here. They are separate from the APK and are not needed to run Tokenlogue.
 
 <a id="-included-materials"></a>
-## <img src="../../../docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Included materials
+## <img src="../../../docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Components
 
 <img src="../../../docs/assets/ui/frame-top.svg" width="100%" alt="">
 
@@ -34,7 +34,7 @@ This collection makes the cryptography and Android device-authentication depende
 The Darwin and Windows packages belong to the resolved Flutter dependency graph. Their platform implementations are not used for Android recovery. Their presence does not indicate an available Tokenlogue package for those platforms.
 
 <a id="-verify-the-collection"></a>
-## <img src="../../../docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Verify the collection
+## <img src="../../../docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Checksums
 
 [sources.lock.json](sources.lock.json) records source URLs, archive hashes and the selected Android wheel filenames. [SHA256SUMS](SHA256SUMS) covers the files in this collection. From this directory, run the following command.
 ```bash
@@ -44,10 +44,10 @@ sha256sum --check SHA256SUMS
 The [Tokenlogue device adapter](../recovery_bridge.dart) and [template configuration](../recovery_template.py) are Tokenlogue's own source. They connect Android system recovery to the application. Flutter Secure Storage supplies the Android secure-storage implementation used through Flet Secure Storage.
 
 <a id="-what-these-materials-establish"></a>
-## <img src="../../../docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> What these materials establish
+## <img src="../../../docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Component provenance
 
-The original archives and their checksums identify the available source materials. They do not, by themselves, prove how a particular native wheel was built. The collection is not a complete offline Android build environment or a promise of byte-for-byte reproducibility.
+The source archives and checksums identify the materials supplied for these components. Source-to-binary correspondence for every native wheel is not fully documented, and the collection does not provide a complete offline Android build environment.
 
-The Mobile Forge CFFI recipe names a host libffi dependency without its version. The exact libffi incorporated in the selected CFFI wheel has not been identified. The separately documented libffi in the Android Python runtime does not identify the library inside CFFI. Original CFFI notices remain included.
+The Mobile Forge CFFI recipe does not pin the host libffi version. The exact libffi inside the selected CFFI wheel remains unidentified; it is separate from the libffi supplied with the Android Python runtime. Original CFFI notices are included.
 
-See <a href="../../../docs/source-materials.md#english" title="source materials and remaining provenance limits">source materials and remaining provenance limits&nbsp;<img src="../../../docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> for the wider collection. <a href="../../../THIRD_PARTY_NOTICES.md#english" title="Third-party notices">Third-party notices&nbsp;<img src="../../../docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> explain the licensing materials. Documentation changes here do not change the notices inside an already built APK or AppImage.
+See <a href="../../../docs/source-materials.md#english" title="source materials and remaining provenance limits">source materials and remaining provenance limits&nbsp;<img src="../../../docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> for the wider collection. <a href="../../../THIRD_PARTY_NOTICES.md#english" title="Third-party notices">Third-party notices&nbsp;<img src="../../../docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> explain the licensing materials.

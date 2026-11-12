@@ -4,7 +4,7 @@
 <a href="README.md" title="Home"><img src="docs/assets/ui/buttons/en-2c296d10dfa5.svg" alt="Home" width="34" height="28"></a> <a href="docs/README.md" title="Documentation map"><img src="docs/assets/ui/buttons/en-992f2873a82b.svg" alt="Documentation map" width="174" height="28"></a>
 </p>
 
-# Third-party software
+# Third-party licenses
 
 <a id="english"></a>
 <a id="lang-en"></a>
@@ -12,7 +12,7 @@
 Tokenlogue's own code uses the <a href="LICENSE" title="MIT license">MIT license&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a>. Its dependencies retain their respective original licenses. The original texts are not translated or replaced by this overview.
 
 <a id="-application-libraries"></a>
-## <img src="docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Application libraries
+## <img src="docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Components
 
 <img src="docs/assets/ui/frame-top.svg" width="100%" alt="">
 
@@ -29,14 +29,14 @@ Tokenlogue's own code uses the <a href="LICENSE" title="MIT license">MIT license
 Android secure storage uses flutter_secure_storage 10.3.1. Device recovery uses local_auth 3.0.2, local_auth_android 2.2.0 and local_auth_platform_interface 1.1.0. These Flutter packages use BSD 3-Clause licenses. Other platform implementations in the dependency graph do not imply that a Windows or Apple version is distributed.
 
 <a id="-notices-inside-your-package"></a>
-## <img src="docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Notices inside your package
+## <img src="docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Packaged notices
 
 Android includes Flutter's notices and a supplemental bundle inside `assets/app.zip`, under `assets/third-party-notices/`. It contains the original Android runtime libffi and Dart bridge MIT notices, complete OFL, KaTeX copyright and Material Icons declaration and attribution. See the <a href="packaging/notices/README.md#english" title="library and font texts">library and font texts&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a>.
 
 Linux includes its component index, original license collection and font supplement under `usr/share/doc/tokenlogue/`. The <a href="packaging/linux/appimage/notices.md#english" title="AppImage license guide">AppImage license guide&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> explains these files and the separate runtime materials. Always use the index supplied with your particular package to identify its actual components.
 
 <a id="-sources-and-provenance"></a>
-## <img src="docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Sources and provenance
+## <img src="docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Component sources
 
 The <a href="docs/source-materials.md#english" title="source guide">source guide&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> identifies the available archives, patches and recipes. The <a href="packaging/android/crypto/README.md#english" title="Android native-library overview">Android native-library overview&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> explains native inputs. Some source-to-binary links remain incomplete, including the actual libffi inside CFFI. The presence of a license or a matching-version source archive alone does not prove how a particular binary was produced.
 

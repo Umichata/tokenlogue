@@ -15,9 +15,9 @@
 <a id="russian"></a>
 
 <a id="ru-preview-status"></a>
-> **Начальная предварительная версия 0.1.0 — черновик.** Пока выпуск находится в черновике, пакеты приложения и их исходные архивы недоступны для публичного скачивания. Имена файлов и суммы в руководствах платформ описывают подготовленный комплект. Публикация выполняется только по прямому указанию владельца проекта.
+> **0.1.0 Preview** · Пакеты готовятся к публикации. Файлы появятся в [Releases](https://github.com/Umichata/tokenlogue/releases).
 
-Выберите нужный документ. Начните с установки и повседневной работы, а затем при необходимости перейдите к исходникам и упаковке.
+Установка, возможности чата, защита данных и исходники — в одном разделе.
 
 <a id="-начало-работы"></a>
 ## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Начало работы
@@ -25,17 +25,17 @@
 <table>
 <tr><th align="left">Раздел</th><th align="left">Документы</th></tr>
 <tr>
-<td><a id="получение-tokenlogue"></a><strong>Получение Tokenlogue</strong></td>
+<td><a id="получение-tokenlogue"></a><strong>Установка</strong></td>
 <td><a href="#ru-preview-status" title="Загрузки"><img src="assets/ui/buttons/ru-f0e4eb0b92d5.svg" alt="Загрузки" width="94" height="28"></a> <a href="android.ru.md#russian" title="Android"><img src="assets/ui/buttons/ru-007800957d4f.svg" alt="Android" width="83" height="28"></a> <a href="linux-appimage.ru.md#russian" title="Linux"><img src="assets/ui/buttons/ru-66f2899ff23a.svg" alt="Linux" width="65" height="28"></a></td>
 </tr>
 <tr>
-<td><a id="первый-разговор"></a><strong>Первый разговор</strong></td>
+<td><a id="первый-разговор"></a><strong>Первый запуск</strong></td>
 <td><a href="user-guide.ru.md#ru-access" title="Ключ и PIN"><img src="assets/ui/buttons/ru-5ae06a72bac7.svg" alt="Ключ и PIN" width="111" height="28"></a> <a href="user-guide.ru.md#ru-chats" title="Чаты"><img src="assets/ui/buttons/ru-a1d1053a8a78.svg" alt="Чаты" width="64" height="28"></a> <a href="user-guide.ru.md#ru-workspace" title="Рабочее место"><img src="assets/ui/buttons/ru-c11696d947cc.svg" alt="Рабочее место" width="137" height="28"></a></td>
 </tr>
 </table>
 
 <a id="-переписка-и-защита"></a>
-## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Переписка и защита
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Чаты и безопасность
 
 <table>
 <tr><th align="left">Раздел</th><th align="left">Документы</th></tr>
@@ -50,7 +50,7 @@
 <a href="security.ru.md#ru-recovery" title="Восстановление"><img src="assets/ui/buttons/ru-4ac5eacc0684.svg" alt="Восстановление" width="147" height="28"></a> <a href="security.ru.md#ru-encryption" title="Шифрование"><img src="assets/ui/buttons/ru-15b26e512b34.svg" alt="Шифрование" width="126" height="28"></a> <a href="security.ru.md#ru-delete" title="Удаление профиля"><img src="assets/ui/buttons/ru-cd67830fbad0.svg" alt="Удаление профиля" width="172" height="28"></a></td>
 </tr>
 <tr>
-<td><a id="получение-помощи"></a><strong>Получение помощи</strong></td>
+<td><a id="получение-помощи"></a><strong>Поддержка</strong></td>
 <td><a href="linux-appimage.ru.md#ru-help" title="Помощь Linux"><img src="assets/ui/buttons/ru-87fa55a43565.svg" alt="Помощь Linux" width="132" height="28"></a> <a href="android.ru.md#ru-update" title="Обновление APK"><img src="assets/ui/buttons/ru-50ce02ae96b5.svg" alt="Обновление APK" width="151" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/issues" title="Помощь"><img src="assets/ui/buttons/ru-9079b2556a7e.svg" alt="Помощь" width="87" height="28"></a></td>
 </tr>
 </table>
@@ -61,17 +61,17 @@
 <table>
 <tr><th align="left">Раздел</th><th align="left">Документы</th></tr>
 <tr>
-<td><a id="изучение-материалов"></a><strong>Изучение материалов</strong></td>
+<td><a id="изучение-материалов"></a><strong>Исходный код</strong></td>
 <td><a href="source-materials.ru.md#russian" title="Исходники"><img src="assets/ui/buttons/ru-2d110f2e4021.svg" alt="Исходники" width="108" height="28"></a> <a href="../THIRD_PARTY_NOTICES.ru.md#russian" title="Уведомления"><img src="assets/ui/buttons/ru-775331545a3f.svg" alt="Уведомления" width="127" height="28"></a> <a href="../LICENSE" title="Лицензия MIT"><img src="assets/ui/buttons/ru-b92966969a04.svg" alt="Лицензия MIT" width="129" height="28"></a></td>
 </tr>
 <tr>
-<td><a id="уведомления-в-пакетах"></a><strong>Уведомления в пакетах</strong></td>
+<td><a id="уведомления-в-пакетах"></a><strong>Лицензии пакетов</strong></td>
 <td><a href="../packaging/linux/appimage/notices.ru.md#russian" title="Лицензии AppImage"><img src="assets/ui/buttons/ru-85ece10d5cbe.svg" alt="Лицензии AppImage" width="177" height="28"></a> <a href="../packaging/notices/README.ru.md#russian" title="Библиотеки и шрифты"><img src="assets/ui/buttons/ru-a10d24556bcf.svg" alt="Библиотеки и шрифты" width="198" height="28"></a></td>
 </tr>
 </table>
 
 <details>
-<summary><strong>Документы для разработки и упаковки</strong></summary>
+<summary><strong>Разработка</strong></summary>
 
 <table>
 <tr><th align="left">Раздел</th><th align="left">Документы</th></tr>
@@ -80,7 +80,7 @@
 <td><a href="source-materials.ru.md#ru-run-from-source" title="Запуск из исходников"><img src="assets/ui/buttons/ru-688aba24157d.svg" alt="Запуск из исходников" width="192" height="28"></a> <a href="../packaging/android/crypto/README.ru.md#russian" title="Зависимости Android"><img src="assets/ui/buttons/ru-f02f449ba114.svg" alt="Зависимости Android" width="184" height="28"></a></td>
 </tr>
 <tr>
-<td><a id="пакет-linux"></a><strong>Пакет Linux</strong></td>
+<td><a id="пакет-linux"></a><strong>Сборка Linux</strong></td>
 <td><a href="../packaging/linux/appimage/README.ru.md#russian" title="Сборка AppImage"><img src="assets/ui/buttons/ru-6951d21c49ce.svg" alt="Сборка AppImage" width="158" height="28"></a> <a href="../packaging/linux/appimage/runtime/README.ru.md#russian" title="Компонент запуска"><img src="assets/ui/buttons/ru-d85b1ee7cf72.svg" alt="Компонент запуска" width="172" height="28"></a></td>
 </tr>
 <tr>
@@ -90,5 +90,3 @@
 </table>
 
 </details>
-
-Баланс аккаунта и три действия предупреждения описаны в разделах [об аккаунте](user-guide.ru.md#ru-balance) и [о бюджете чата](user-guide.ru.md#ru-budget-warning).

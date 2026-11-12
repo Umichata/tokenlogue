@@ -368,18 +368,18 @@ class LinuxBuildPipelineTests(unittest.TestCase):
             "Compare bundle package inventory",
             "Verify source bundle ABI",
             "Fetch and verify pinned AppImage tools",
-            "Build first diagnostic AppImage",
+            "Build AppImage",
             "Rebuild AppImage and verify reproducibility",
-            "Extract diagnostic AppImage",
+            "Extract AppImage",
             "Validate packaged metadata paths and ABI",
             "Run isolated headless AppImage smoke test",
             "Create artifact checksums",
-            "Upload diagnostic AppImage and reports",
+            "Upload AppImage and build records",
         )
         indices = [step_names.index(name) for name in required_order]
         self.assertEqual(indices, sorted(indices))
 
-        upload = text[text.index("- name: Upload diagnostic AppImage and reports") :]
+        upload = text[text.index("- name: Upload AppImage and build records") :]
         for required in (
             "Tokenlogue-${{ steps.application.outputs.version }}-x86_64.AppImage",
             "SHA256SUMS",

@@ -4,12 +4,14 @@
 <a href="../README.md" title="Home"><img src="assets/ui/buttons/en-2c296d10dfa5.svg" alt="Home" width="34" height="28"></a> <a href="README.md" title="Documentation map"><img src="assets/ui/buttons/en-992f2873a82b.svg" alt="Documentation map" width="174" height="28"></a>
 </p>
 
-# 🛡️ Conversation protection
+<a id="-conversation-protection"></a>
+<a id="conversation-protection"></a>
+# 🛡️ Data protection
 
 <a id="english"></a>
 <a id="lang-en"></a>
 
-Tokenlogue protects access to locally stored conversations with an app PIN and a separate encryption key. This guide covers the initial 0.1.0 preview draft for Linux and Android.
+Tokenlogue protects access to locally stored conversations with an app PIN and a separate encryption key. The same protection principles apply on Linux and Android.
 
 <img src="assets/ui/frame-top.svg" width="100%" alt="">
 
@@ -28,7 +30,7 @@ Tokenlogue protects access to locally stored conversations with an app PIN and a
 <a id="your-app-pin"></a>
 
 <a id="-your-app-pin"></a>
-### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Your app PIN
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> App PIN
 
 Choose four digits `0`–`9` and repeat them during setup. A leading zero is allowed. Save the PIN separately. The eye button can reveal it, but Tokenlogue never copies it automatically.
 
@@ -41,7 +43,7 @@ The app PIN is different from your Linux password and Android screen-lock PIN. I
 <a id="lock-the-app-when-you-leave"></a>
 
 <a id="-lock-the-app-when-you-leave"></a>
-### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Lock the app when you leave
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> App locking
 
 Use the lock button in the header to close access to chats. Returning requires the app PIN. Locking saves the latest draft. A request already sent can still finish and record its response and cost. The app does not automatically send a draft when you return.
 
@@ -52,7 +54,7 @@ On Linux, screen-lock and sleep monitoring depends on the desktop. The supported
 <a id="check-linux-screen-lock-and-sleep-protection"></a>
 
 <a id="-check-linux-screen-lock-and-sleep-protection"></a>
-### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Check Linux screen-lock and sleep protection
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Automatic locking on Linux
 
 After saving a new protected Linux profile, `Check local protection` explains the check before opening chats. Your PIN is already saved. Only `Start check` requests the system screen lock. Unlock Linux normally, then enter that app PIN. Choose `Open chats` after reviewing the result. If interrupted, sign in with your saved PIN to resume. You can choose `Continue with manual locking` and check again later.
 
@@ -69,7 +71,7 @@ Android uses background locking and has no desktop screen-lock or sleep tests in
 <a id="recover-a-forgotten-app-pin"></a>
 
 <a id="-recover-a-forgotten-app-pin"></a>
-### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Recover a forgotten app PIN
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> PIN recovery
 
 Recovery lets you choose and save a new app PIN. It needs an existing valid recovery method and the original protected encryption key. It cannot rebuild a lost key or restore a database from a code alone.
 
@@ -78,7 +80,7 @@ Opening `Forgot PIN?` does not change the PIN. Your previous PIN keeps working u
 <a id="linux-recovery-code"></a>
 
 <a id="-linux-recovery-code"></a>
-#### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Linux recovery code
+### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Linux recovery code
 
 Save a code before you need it. After signing in, open `⋮` and choose `Recovery code`. Confirm your app PIN again. New profiles also offer this after the local-protection introduction.
 
@@ -95,7 +97,7 @@ Code recovery needs no Linux password, administrator rights or system policy. It
 <a id="optional-linux-system-recovery"></a>
 
 <a id="-optional-linux-system-recovery"></a>
-#### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Optional Linux system recovery
+### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Linux system recovery
 
 `Use Linux system recovery` is a separate choice. It requests fresh confirmation of your own Linux account through the desktop authentication window. Enter your Linux password only in that system window, never into Tokenlogue. A different administrator account or an already unlocked keyring does not replace this check.
 
@@ -104,7 +106,7 @@ This option needs the separately installed Tokenlogue policy and a working deskt
 <a id="android-system-recovery"></a>
 
 <a id="-android-system-recovery"></a>
-#### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Android system recovery
+### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Android system recovery
 
 On Android 11 or later, `Forgot PIN?` can request a separate system check of the device PIN, pattern or password. Supported biometrics may also be offered. A fingerprint is not required. A supported screen lock must be configured. Simply unlocking the device does not complete this fresh check.
 
@@ -115,7 +117,7 @@ After verification, choose a new app PIN, repeat it and select `Save new PIN`. C
 <a id="what-is-encrypted"></a>
 
 <a id="-what-is-encrypted"></a>
-### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> What is encrypted
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Encryption and storage
 
 Tokenlogue encrypts saved chat titles, user and model messages, and drafts. A random encryption key is stored separately in platform secure storage. It is not derived from the four-digit PIN or OpenRouter key. Linux needs an available, unlocked Secret Service such as GNOME Keyring.
 
@@ -134,7 +136,7 @@ Locking clears the visible workspace and closes new access. It does not promise 
 <a id="delete-a-local-profile"></a>
 
 <a id="-delete-a-local-profile"></a>
-### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Delete a local profile
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Profile deletion
 
 **Deletion is irreversible within Tokenlogue.** To keep conversations, use a valid recovery method instead.
 

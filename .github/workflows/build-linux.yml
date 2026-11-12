@@ -1,4 +1,4 @@
-name: Build diagnostic Linux AppImage
+name: Build Linux AppImage
 
 on:
   workflow_dispatch:
@@ -189,7 +189,7 @@ jobs:
           test -f build/flutter/pubspec.lock
           cp build/flutter/pubspec.lock build/linux-release/reports/flutter-pubspec.lock
 
-      - name: Build first diagnostic AppImage
+      - name: Build AppImage
         run: |
           set -Eeuo pipefail
           RUNTIME_PREFIX_REPORT="$PWD/build/linux-release/reports/runtime-prefix-first.json" \
@@ -214,7 +214,7 @@ jobs:
             printf 'second_sha256=%s\n' "$second"
           } > build/linux-release/reports/appimage-reproducibility.txt
 
-      - name: Extract diagnostic AppImage
+      - name: Extract AppImage
         run: |
           set -Eeuo pipefail
           extract_root=$PWD/build/linux-release/extracted-appimage
@@ -296,7 +296,7 @@ jobs:
             sha256sum "Tokenlogue-${{ steps.application.outputs.version }}-x86_64.AppImage"
           ) > build/linux-release/SHA256SUMS
 
-      - name: Upload diagnostic AppImage and reports
+      - name: Upload AppImage and build records
         if: ${{ always() && !cancelled() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:

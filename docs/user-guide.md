@@ -4,12 +4,14 @@
 <a href="../README.md" title="Home"><img src="assets/ui/buttons/en-2c296d10dfa5.svg" alt="Home" width="34" height="28"></a> <a href="README.md" title="Documentation map"><img src="assets/ui/buttons/en-992f2873a82b.svg" alt="Documentation map" width="174" height="28"></a>
 </p>
 
-# 📘 Using Tokenlogue
+<a id="-using-tokenlogue"></a>
+<a id="using-tokenlogue"></a>
+# 📘 User guide
 
 <a id="english"></a>
 <a id="lang-en"></a>
 
-Tokenlogue lets you chat with OpenRouter models on Linux and Android. This guide describes the initial 0.1.0 preview draft. Start with the <a href="linux-appimage.md#english" title="Linux installation guide">Linux installation guide&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> or <a href="android.md#english" title="Android installation guide">Android installation guide&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a>.
+Tokenlogue lets you chat with OpenRouter models on Linux and Android. Start with the <a href="linux-appimage.md#english" title="Linux installation guide">Linux installation guide&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> or <a href="android.md#english" title="Android installation guide">Android installation guide&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a>.
 
 <p align="left"><a href="#en-access"><img src="assets/ui/buttons/en-ca3dbec2e101.svg" alt="Get started" width="109" height="28"></a> <a href="#en-chats"><img src="assets/ui/buttons/en-474e166de580.svg" alt="Chats" width="67" height="28"></a> <a href="#en-drafts"><img src="assets/ui/buttons/en-1cd72768132b.svg" alt="Drafts" width="71" height="28"></a> <a href="#en-limits"><img src="assets/ui/buttons/en-d98731f70acd.svg" alt="Limits" width="70" height="28"></a> <a href="#en-chat-metrics"><img src="assets/ui/buttons/en-0ee613298d92.svg" alt="Costs" width="66" height="28"></a> <a href="security.md#english"><img src="assets/ui/buttons/en-9c2e33444d68.svg" alt="Protection" width="102" height="28"></a></p>
 
@@ -19,7 +21,7 @@ Tokenlogue lets you chat with OpenRouter models on Linux and Android. This guide
 <a id="get-started"></a>
 
 <a id="-get-started"></a>
-### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Get started
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> First connection
 
 1. Choose English or Russian on the sign-in screen.
 2. Enter an API key created in your [OpenRouter account](https://openrouter.ai/settings/keys) and choose `Check key`. This contacts OpenRouter. A connection error alone does not mean that the key is invalid.
@@ -41,7 +43,7 @@ At later launches, enter your app PIN and choose `Sign in`. Updating a compatibl
 <a id="create-and-manage-chats"></a>
 
 <a id="-create-and-manage-chats"></a>
-### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Create and manage chats
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Conversations
 
 Choose free or paid mode, search by model name or ID, then set the chat limits. Each chat keeps its mode and model. Create another chat to choose a different model.
 
@@ -56,15 +58,9 @@ The `⋮` menu contains key status, model details, token prices, budget details 
 <a id="arrange-the-workspace"></a>
 
 <a id="-arrange-the-workspace"></a>
-### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Arrange the workspace
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Workspace
 
 The top-left button hides or shows the chat list in a wide Linux window. Tokenlogue remembers that choice. On a narrow screen it opens a drawer. Choose a chat, tap outside, or use Back or Escape to close the drawer. Changing to a narrow layout does not overwrite the saved wide-window choice.
-
-<img src="assets/ui/frame-top.svg" width="760" alt=""><br>
-<img src="assets/screenshots/linux-chat.png" alt="Linux conversation workspace with demonstration data" width="760"><br>
-<img src="assets/ui/frame-bottom.svg" width="760" alt="">
-
-*Illustrative Linux workspace with demonstration data. Your chat list, conversation and editor remain together. The exact controls depend on the selected chat and available space.*
 
 Choose `Interface language` in `⋮` to switch between English and Russian. The choice is remembered. Chat titles, your messages and model replies are not translated. Changing language preserves ordinary editor input and drafts. For safety, an unfinished recovery-code or profile-deletion confirmation must be started again in the selected language.
 
@@ -75,7 +71,7 @@ Long titles are shortened visually. When the keyboard or a short window leaves l
 <a id="send-messages-and-keep-drafts"></a>
 
 <a id="-send-messages-and-keep-drafts"></a>
-### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Send messages and keep drafts
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Messages and drafts
 
 Type in `Message` and choose `Send`. With a keyboard, Enter sends and Shift+Enter inserts a line break. Empty messages cannot be sent. Tokenlogue sends the message and eligible conversation context to OpenRouter and the selected model provider.
 
@@ -90,7 +86,7 @@ If a reply is incomplete or a request fails, read its status before retrying. Re
 <a id="set-chat-limits"></a>
 
 <a id="-set-chat-limits"></a>
-### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Set chat limits
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Chat limits
 
 Configure limits before the first request. Use `Set limits` or `Edit limits` in `⋮` to change them later.
 
@@ -109,7 +105,8 @@ Before sending, Tokenlogue reserves tokens and, in paid mode, money. The availab
 The chat budget is a local setting. The API key limit belongs to that key, while the OpenRouter account balance comes from the account API. Neither account balance nor key limit changes your saved chat spending limit.
 
 <a id="en-budget-warning"></a>
-### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Review a chat-budget warning
+<a id="review-a-chat-budget-warning"></a>
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Budget warnings
 
 A paid request triggers a warning when its upper cost estimate is positive and its projected chat remainder is 10% of the saved spending limit or less. The calculation subtracts actual costs, active monetary reservations and the planned request's upper estimate. It includes the history sent, model prices, fixed request costs and the response limit.
 
@@ -128,7 +125,7 @@ A projected zero can exhaust the budget. A negative projection can exceed it, an
 <a id="choose-when-paid-requests-need-confirmation"></a>
 
 <a id="-choose-when-paid-requests-need-confirmation"></a>
-### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Choose when paid requests need confirmation
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Paid request confirmation
 
 New paid chats ask for confirmation before sending. Review the model, estimated input, response maximum and spending reserve. Cancel to leave the message unsent.
 
@@ -137,22 +134,23 @@ New paid chats ask for confirmation before sending. Review the model, estimated 
 Turn the option off to require confirmation from the next request onward. The choice is saved per chat. Locking or changing this setting never submits a queued message automatically. Choose `Send` when ready.
 
 <a id="en-balance"></a>
-### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Read your OpenRouter account balance
+<a id="read-your-openrouter-account-balance"></a>
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> OpenRouter balance
 
-`OpenRouter balance` is the account amount returned for your current key by OpenRouter's credits API. Tokenlogue calculates `total_credits - total_usage` with decimal arithmetic. Positive, zero and negative results are valid. It does not estimate an account balance by subtracting local request costs.
+`OpenRouter balance` shows the account balance received from OpenRouter for the current API key. It can be positive, zero or negative. It is not calculated from the locally tracked cost of a chat.
 
 The balance appears in free and paid chats. Loading, a current snapshot, an outdated snapshot and `Balance unavailable` are distinct states. A saved session snapshot includes its receipt time. If a refresh fails, a previous value is explicitly marked outdated. Without a successful snapshot, no artificial zero is shown.
 
-The app refreshes after sign-in or unlock and after a sent request finishes, including a retry or an interrupted request that might have been charged. The reply is saved and shown without waiting for this read. A short delayed refresh allows for billing updates on the server. Switching chats does not cancel the account refresh. Locking, signing out or replacing the key discards the old session's balance.
+The balance refreshes after sign-in or unlock and after a sent request finishes, including retries and interrupted requests. The model response appears without waiting for the balance update. Switching chats keeps the account refresh active.
 
-Choose `Refresh key and balance` in `⋮` for a manual update. A denied balance read, including HTTP 403, does not by itself mean that the key cannot send model requests. Account access can vary between keys. Tokenlogue shows the read failure without deleting chats or changing your PIN.
+Choose `Refresh key and balance` in `⋮` for a manual update. Balance access depends on the key permissions. An unavailable balance does not necessarily prevent model requests, and it does not change your chats or PIN.
 
 <a id="en-chat-metrics"></a>
 
 <a id="read-token-and-cost-information"></a>
 
 <a id="-read-token-and-cost-information"></a>
-### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Read token and cost information
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Tokens and costs
 
 <img src="assets/ui/frame-top.svg" width="100%" alt="">
 
@@ -170,14 +168,14 @@ Choose `Refresh key and balance` in `⋮` for a manual update. A denied balance 
 
 `No requests`, `In progress`, `Reconciling` and `Unknown` describe different states. An unknown result is not treated as zero cost.
 
-The estimate under the editor changes as you type. It includes eligible history and the effective response maximum. It is a conservative local estimate based on UTF-8 text, not exact model tokenization or a prediction of reply length. The possible cost is an upper estimate for known prices before any chat-money cap could hide a budget risk. Missing or expired pricing produces `Cost unknown`. Actual usage and cost are determined after sending.
+The estimate under the editor changes as you type. It includes eligible history and the effective response maximum. It is an approximate local estimate, not exact model tokenization or a prediction of reply length. The possible cost is an upper estimate for known prices before any chat-money cap could hide a budget risk. Missing or expired pricing produces `Cost unknown`. Actual usage and cost are determined after sending.
 
 Calculating an estimate makes no network request and reserves no budget. The normal checks still run when you send.
 
 <a id="handle-an-unknown-request-result"></a>
 
 <a id="-handle-an-unknown-request-result"></a>
-### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Handle an unknown request result
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Interrupted requests
 
 A lost connection can leave uncertainty about whether OpenRouter processed a request. Tokenlogue keeps its protective reserve rather than treating it as free. Check the request and billing in your OpenRouter account before retrying.
 
@@ -188,7 +186,7 @@ After checking, `Release unknown reservation` returns that local reserve to the 
 <a id="replace-an-openrouter-key"></a>
 
 <a id="-replace-an-openrouter-key"></a>
-### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Replace an OpenRouter key
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> API key replacement
 
 Sign in with your existing PIN, open `⋮` and choose `Replace OpenRouter key`. This works with or without a selected chat. Finish any current send or key check first.
 
@@ -202,7 +200,7 @@ The old key stays saved until the replacement passes validation and is stored. C
 <a id="protect-your-conversations"></a>
 
 <a id="-protect-your-conversations"></a>
-### <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Protect your conversations
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Conversation protection
 
 Use the header lock button before leaving the device. On Android, moving the app to the background closes access. Linux screen-lock and sleep monitoring depends on the desktop session.
 

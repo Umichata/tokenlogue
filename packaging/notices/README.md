@@ -12,7 +12,7 @@
 Tokenlogue supplies original third-party notices alongside the software they describe. Android and Linux include the notices relevant to each package.
 
 <a id="-read-the-original-texts"></a>
-## <img src="../../docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Read the original texts
+## <img src="../../docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> License texts
 
 - [libffi 3.4.4](inputs/libffi-3.4.4-LICENSE.txt) belongs to the Android Python runtime.
 - [Dart bridge 1.10.0](inputs/dart-bridge-1.10.0-LICENSE.txt) connects the Android Python runtime and Dart.
