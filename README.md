@@ -8,13 +8,13 @@
   <img src="docs/assets/tokenlogue-banner-en-v2.png" alt="Tokenlogue" width="100%">
 </h1>
 
-<p align="left"><a href="docs/README.md#en-preview-status"><img src="docs/assets/ui/buttons/en-dd8bbfdbdd63.svg" alt="Downloads" width="106" height="28"></a> <a href="docs/linux-appimage.md#english"><img src="docs/assets/ui/buttons/en-455f22ec11f5.svg" alt="Guide" width="68" height="28"></a> <a href="docs/README.md"><img src="docs/assets/ui/buttons/en-992f2873a82b.svg" alt="Documentation map" width="174" height="28"></a> <a href="#en-install"><img src="docs/assets/ui/buttons/en-c1a92da25825.svg" alt="Install" width="71" height="28"></a> <a href="#en-chat"><img src="docs/assets/ui/buttons/en-6147e3abd016.svg" alt="First chat" width="96" height="28"></a> <a href="docs/security.md#english"><img src="docs/assets/ui/buttons/en-9c2e33444d68.svg" alt="Protection" width="102" height="28"></a></p>
+<p align="left"><a href="https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage" title="Download AppImage"><img src="docs/assets/ui/buttons/en-dd8bbfdbdd63.svg" alt="Downloads" width="106" height="28"></a> <a href="docs/linux-appimage.md#english"><img src="docs/assets/ui/buttons/en-455f22ec11f5.svg" alt="Guide" width="68" height="28"></a> <a href="docs/README.md"><img src="docs/assets/ui/buttons/en-992f2873a82b.svg" alt="Documentation map" width="174" height="28"></a> <a href="#en-install"><img src="docs/assets/ui/buttons/en-c1a92da25825.svg" alt="Install" width="71" height="28"></a> <a href="#en-chat"><img src="docs/assets/ui/buttons/en-6147e3abd016.svg" alt="First chat" width="96" height="28"></a> <a href="docs/security.md#english"><img src="docs/assets/ui/buttons/en-9c2e33444d68.svg" alt="Protection" width="102" height="28"></a></p>
 
 <a id="english"></a>
 <a id="lang-en"></a>
 
 <a id="en-preview-status"></a>
-> **0.1.0 Preview** · Packages are being prepared for publication. Downloads will appear in [Releases](https://github.com/Umichata/tokenlogue/releases).
+> **[0.1.0 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9)** · Available for Linux. Download the package above and follow the [installation guide](docs/linux-appimage.md#en-download).
 
 <h3 align="left">Chat with OpenRouter models from your Linux desktop. Tokenlogue provides a compact conversation workspace with saved drafts, model selection and a live cost estimate.</h3>
 
@@ -35,7 +35,7 @@
 
 Tokenlogue for Linux is distributed as an **unsigned x86_64 AppImage**. It requires an x86-64-v2 CPU, compatible desktop libraries and graphics drivers. Ubuntu 22.04 is the system-library baseline. FUSE is used for normal startup; extract-and-run is available as an alternative.
 
-Package availability is listed in the <a href="docs/README.md#en-preview-status">download section&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a>. Verify the AppImage with `SHA256SUMS`, allow execution and launch it as a normal user. Close running copies before replacing the file. Python, Flutter, Java and the source archives are not required to run the app.
+Download the [Linux AppImage](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage) and [SHA256SUMS](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SHA256SUMS) from [0.1.0 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9). Verify the AppImage with `SHA256SUMS`, allow execution and launch it as a normal user. Close running copies before replacing the file. Python, Flutter, Java and the source archives are not required to run the app.
 
 <p align="left"><a href="docs/linux-appimage.md#english"><img src="docs/assets/ui/buttons/en-a84c3e89f687.svg" alt="Linux requirements, checksum and launch instructions" width="428" height="28"></a></p>
 
@@ -73,7 +73,7 @@ Sending a message shares the selected conversation content with OpenRouter and t
 <tr><th align="left">Category</th><th align="left">Documents</th></tr>
 <tr>
 <td><a id="start-here"></a><strong>Installation</strong></td>
-<td><a href="docs/README.md#en-preview-status" title="Downloads"><img src="docs/assets/ui/buttons/en-0af7fc63fbbe.svg" alt="Downloads" width="106" height="28"></a> <a href="docs/linux-appimage.md#en-download" title="Linux launch"><img src="docs/assets/ui/buttons/en-ce1db4f66563.svg" alt="Linux launch" width="118" height="28"></a> <a href="docs/android.md#en-install" title="Android install"><img src="docs/assets/ui/buttons/en-ec13da01a81e.svg" alt="Android install" width="133" height="28"></a></td>
+<td><a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9" title="Downloads"><img src="docs/assets/ui/buttons/en-0af7fc63fbbe.svg" alt="Downloads" width="106" height="28"></a> <a href="docs/linux-appimage.md#en-download" title="Linux launch"><img src="docs/assets/ui/buttons/en-ce1db4f66563.svg" alt="Linux launch" width="118" height="28"></a> <a href="docs/android.md#en-install" title="Android install"><img src="docs/assets/ui/buttons/en-ec13da01a81e.svg" alt="Android install" width="133" height="28"></a></td>
 </tr>
 <tr>
 <td><a id="use-and-protect"></a><strong>Chats and security</strong></td>

@@ -10,7 +10,7 @@
 <a id="lang-ru"></a>
 
 <a id="ru-preview-status"></a>
-> **0.1.0 Preview.** Архивы исходников размещаются в Releases вместе с пакетами приложения. Пока выпуск остаётся черновиком, загрузки недоступны.
+> **[0.1.0 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9)** · Пакеты приложения и соответствующие архивы исходников доступны для скачивания.
 
 Код приложения Tokenlogue доступен по [лицензии MIT](../LICENSE). Сторонние компоненты сохраняют собственные условия. Готовые APK и AppImage скачиваются отдельно. Для запуска приложения исходники и средства сборки не нужны.
 
@@ -19,7 +19,7 @@
 
 Выберите исходный архив каждого пакета по [`PROVENANCE.json`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/PROVENANCE.json). Android и Linux используют общее ядро приложения и отдельные ревизии упаковки. Манифест содержит точные commits, деревья исходников и контрольные суммы пакетов.
 
-На странице [Releases](https://github.com/Umichata/tokenlogue/releases) размещаются пакеты приложения и архивы исходников. Сторонние исходники поставляются отдельно в архиве зависимостей с реестром компонентов.
+На странице [0.1.0 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9) доступны пакеты приложения и архивы исходников. Для установки скачайте [APK для Android](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-android-arm64-v8a-v43.apk) или [AppImage для Linux](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage) и следуйте руководству для [Android](android.ru.md#ru-install) или [Linux](linux-appimage.ru.md#ru-download). Сторонние исходники поставляются отдельно в архиве зависимостей с реестром компонентов.
 
 <a id="-выбор-подходящего-комплекта"></a>
 ## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Архив зависимостей

@@ -13,6 +13,12 @@
 
 Tokenlogue позволяет общаться с моделями OpenRouter в Linux и Android. Начните с <a href="linux-appimage.ru.md#russian" title="установки в Linux">установки в Linux&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> или <a href="android.ru.md#russian" title="установки в Android">установки в Android&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a>.
 
+**Скачать Tokenlogue 0.1.0 Preview**
+
+<p align="left"><a href="https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-android-arm64-v8a-v43.apk" title="Android APK"><img src="assets/ui/buttons/ru-007800957d4f.svg" alt="Android APK" width="83" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage" title="Linux AppImage"><img src="assets/ui/buttons/ru-66f2899ff23a.svg" alt="Linux AppImage" width="65" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SHA256SUMS">SHA256SUMS</a></p>
+
+Архивы исходников для установки не нужны.
+
 <p align="left"><a href="#ru-access"><img src="assets/ui/buttons/ru-1e67d84c7855.svg" alt="Начало работы" width="141" height="28"></a> <a href="#ru-chats"><img src="assets/ui/buttons/ru-a1d1053a8a78.svg" alt="Чаты" width="64" height="28"></a> <a href="#ru-drafts"><img src="assets/ui/buttons/ru-947280e04422.svg" alt="Черновики" width="107" height="28"></a> <a href="#ru-limits"><img src="assets/ui/buttons/ru-2fb3ebb3382b.svg" alt="Лимиты" width="84" height="28"></a> <a href="#ru-chat-metrics"><img src="assets/ui/buttons/ru-d8db4581d3fd.svg" alt="Расходы" width="91" height="28"></a> <a href="security.ru.md#russian"><img src="assets/ui/buttons/ru-287972bc31ba.svg" alt="Защита" width="83" height="28"></a></p>
 
 <a id="ru-access"></a>
