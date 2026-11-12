@@ -1,0 +1,302 @@
+name: Return initial Tokenlogue preview to draft
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tokenlogue-initial-preview-maintenance
+  cancel-in-progress: false
+
+jobs:
+  maintain:
+    if: github.repository == 'Umichata/tokenlogue' && github.ref == 'refs/heads/main' && github.actor == 'Umichata'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Return existing release to draft and remove merged working refs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          python3 - <<'TOKENLOGUE_MAINTENANCE'
+          #!/usr/bin/env python3
+          """Tokenlogue. Вернуть исходный preview в черновик и применить оформление.
+          
+          Запуск в терминале владельца: python3 Tokenlogue-baseline-reset.py
+          Предварительный просмотр без сетевых действий: добавить --check.
+          Нужны Python 3 и существующий авторизованный GitHub CLI gh.
+          Скрипт никогда не публикует выпуск и не изменяет APK или AppImage.
+          """
+          
+          from __future__ import annotations
+          
+          import argparse
+          import hashlib
+          import json
+          import os
+          import re
+          import shutil
+          import subprocess
+          import sys
+          import time
+          from datetime import datetime, timezone
+          from pathlib import Path
+          
+          PAYLOAD = json.loads('{"refs": {"main": {"old": "8dc6e8153ec3e6c0633d139ab67cdb75af827453", "sha": "1688b6f945429f3224fbf60fe5425f8a0f05c492", "tree": "d74a920ff3b1ee36f2374585021745760088726f"}, "android": {"old": "75e05638d5583b8ebfbaff1253d04b62e9a79fb3", "sha": "c1aeb1d66648bc0b9b6220979ff6ced5514a6d34", "tree": "dde40dee08ed3d83ff8b86cf3b8d75916219ae02"}, "linux": {"old": "e77022df1ae25f1ca28681881e3578fbbb349089", "sha": "1261a3977ab417fb5ed8ca6f269e721f9f92104f", "tree": "8b75e72d4170ff7ebb86cf5e1b86b2109be467dd"}}, "assets": {"PROVENANCE.json": {"id": 735752983, "size": 7634, "digest": "sha256:e2f3115672b056e0f1050bad47d2e682c7ca7e37a4e4d21d780851f4b6c4d68d"}, "RELEASE_NOTES.md": {"id": 735753570, "size": 14205, "digest": "sha256:472882a3172a186f66e5ec5c0c4f47d7e153f71cefa3bbd4a1db9a341e6f594a"}, "SHA256SUMS": {"id": 735753758, "size": 912, "digest": "sha256:59a99862f85e7b6fadfe55740594b60f5e0eaf5b65b1a2f2f0db83fa9db75834"}, "SOURCE_MATERIALS.json": {"id": 735753154, "size": 897191, "digest": "sha256:8bb05e15a620db7bb8d4868667c78fe09341d5add8bb0a55470c113dc8349a93"}, "SOURCE_MATERIALS.md": {"id": 735753298, "size": 10430, "digest": "sha256:a7c8b842afba528c249303e44a4c604dfee224926be71ba8a81c49c48af17609"}, "Tokenlogue-0.1.0-a981db9-linux-project-sources.tar.gz": {"id": 735752748, "size": 11508039, "digest": "sha256:75b0164d0b7f9432e3094bc537c3b5c7914df0fe116849929c981a5b40fb2781"}, "Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage": {"id": 735751844, "size": 35367304, "digest": "sha256:247497d8f97aae0c16cab282edc1c6cbf47747c7b3597e3ba23b388558e40646"}, "Tokenlogue-0.1.0-android-arm64-v8a-v43.apk": {"id": 735751895, "size": 56202990, "digest": "sha256:1e3ec65aaf1863eb50257aa4c090ca5fdf0b6b2c637c415d5b02056a2cf941f5"}, "Tokenlogue-0.1.0-dependency-sources.tar.gz": {"id": 735752875, "size": 1188171591, "digest": "sha256:7c760abaaf91428201b6417c70fe88d62ba0024cf1286f2703de734bf9c95f2f"}, "Tokenlogue-0.1.0-eafb093-android-project-sources.tar.gz": {"id": 735752693, "size": 11506134, "digest": "sha256:6b639c3156d065990a7ab5bdbf3090a05811e3850079375188442af390afbb6a"}}, "release_target": "a981db908f318d3b9b9c173b94d98d7326153ef7", "release_body": "# Tokenlogue 0.1.0 — Linux & Android preview\\n\\n## English\\n\\n**Initial preview baseline — draft.** This is the starting point for Tokenlogue. The release remains unpublished until the owner explicitly requests publication.\\n\\nTokenlogue is a client for chatting with OpenRouter models on Linux and Android. It provides:\\n\\n- Separate conversations, model selection and saved drafts.\\n- English and Russian interface with desktop and mobile layouts.\\n- OpenRouter account balance read from the API and refreshed after a sent request finishes.\\n- Separate API-key limits and user-defined chat budgets, with a three-action warning before a paid request can exhaust the chat budget.\\n- PIN access, protection of supported local conversation fields and platform-specific recovery.\\n\\n### Prepared packages\\n\\nPackages in this draft are available to repository maintainers. They are not public downloads while the release is a draft.\\n\\n| Platform | File | Version and requirements |\\n| --- | --- | --- |\\n| Android | [Tokenlogue-0.1.0-android-arm64-v8a-v43.apk](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-android-arm64-v8a-v43.apk) | Version 0.1.0, build 43. ARM64, Android 7.0 / API 24 or later. |\\n| Linux | [Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage) | Version 0.1.0+43. x86_64, x86-64-v2 CPU and compatible desktop libraries. |\\n\\nCheck the selected file against [SHA256SUMS](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SHA256SUMS) before use. Linux AppImage is unsigned. APK signature and checksums identify the supplied file and do not constitute Google approval.\\n\\nThe [Android guide](https://github.com/Umichata/tokenlogue/blob/main/docs/android.md) and [Linux guide](https://github.com/Umichata/tokenlogue/blob/main/docs/linux-appimage.md) describe installation. [User guide](https://github.com/Umichata/tokenlogue/blob/main/docs/user-guide.md), [protection](https://github.com/Umichata/tokenlogue/blob/main/docs/security.md) and the [documentation map](https://github.com/Umichata/tokenlogue/blob/main/docs/README.md) explain the application.\\n\\n### Sources and verification scope\\n\\nThe release includes the exact Android project sources for `eafb0936e0a70138d8c1e02334bb6c4183b49a10`, Linux project sources for `a981db908f318d3b9b9c173b94d98d7326153ef7`, identified dependency sources, provenance and checksums. These archives are separate from the runnable packages. Current repository documentation is maintained separately from the exact source snapshots used to build the packages.\\n\\nSee [SOURCE_MATERIALS.md](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SOURCE_MATERIALS.md), [SOURCE_MATERIALS.json](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SOURCE_MATERIALS.json) and [PROVENANCE.json](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/PROVENANCE.json) for the inventories and boundaries of verification.\\n\\n`REVIEW_REQUIRED` remains open for five source-to-wheel relationships involving Android CFFI, PyCryptodomex and msgpack, and Linux CFFI and PyCryptodomex. The exact libffi inside the selected CFFI wheels is not identified. Static ELF/ZIP checks cover 4 and 16 KiB alignment. Native ARM64 runtime with a 16 KiB kernel and FUSE startup are not verified. Paid live requests are not part of the runtime evidence. Sources and licenses do not alone prove the publisher-to-binary relationship or complete offline reproducibility.\\n\\n## Русский\\n\\n**Начальная точка preview — черновик.** Эта версия задаёт исходное состояние Tokenlogue. Выпуск остаётся неопубликованным до отдельного запроса владельца на публикацию.\\n\\nTokenlogue — клиент для общения с моделями OpenRouter в Linux и Android. В приложении доступны:\\n\\n- Отдельные чаты, выбор модели и сохранённые черновики.\\n- Русский и английский интерфейс с компоновкой для компьютера и мобильного устройства.\\n- Баланс аккаунта OpenRouter из API с обновлением после завершения отправленного запроса.\\n- Отдельные лимиты API-ключа и пользовательские бюджеты чатов. Перед возможным исчерпанием денежного бюджета платным запросом появляется предупреждение с тремя действиями.\\n- Вход по PIN, защита поддерживаемых локальных полей переписки и восстановление с учётом возможностей платформы.\\n\\n### Подготовленные пакеты\\n\\nФайлы этого черновика доступны сопровождающим репозитория. Пока выпуск остаётся черновиком, публичной загрузки пакетов нет.\\n\\n| Платформа | Файл | Версия и требования |\\n| --- | --- | --- |\\n| Android | [Tokenlogue-0.1.0-android-arm64-v8a-v43.apk](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-android-arm64-v8a-v43.apk) | Версия 0.1.0, сборка 43. ARM64, Android 7.0 / API 24 или новее. |\\n| Linux | [Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage) | Версия 0.1.0+43. x86_64, процессор x86-64-v2 и совместимые библиотеки рабочего стола. |\\n\\nПеред использованием проверьте выбранный файл по [SHA256SUMS](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SHA256SUMS). AppImage Linux не подписана. Подпись APK и контрольные суммы определяют поставленный файл и не означают одобрения Google.\\n\\nУстановка описана в [руководстве Android](https://github.com/Umichata/tokenlogue/blob/main/docs/android.ru.md) и [руководстве Linux](https://github.com/Umichata/tokenlogue/blob/main/docs/linux-appimage.ru.md). Работу приложения объясняют [руководство пользователя](https://github.com/Umichata/tokenlogue/blob/main/docs/user-guide.ru.md), [защита](https://github.com/Umichata/tokenlogue/blob/main/docs/security.ru.md) и [карта документации](https://github.com/Umichata/tokenlogue/blob/main/docs/README.ru.md).\\n\\n### Исходники и границы проверки\\n\\nВ комплект входят точные исходники Android для `eafb0936e0a70138d8c1e02334bb6c4183b49a10`, Linux для `a981db908f318d3b9b9c173b94d98d7326153ef7`, идентифицированные исходные материалы зависимостей, сведения о происхождении и контрольные суммы. Эти архивы скачиваются отдельно от готовых приложений. Текущая документация репозитория ведётся отдельно от точных снимков, использованных для сборки пакетов.\\n\\nОписи и границы подтверждений находятся в [SOURCE_MATERIALS.md](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SOURCE_MATERIALS.md), [SOURCE_MATERIALS.json](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SOURCE_MATERIALS.json) и [PROVENANCE.json](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/PROVENANCE.json).\\n\\n`REVIEW_REQUIRED` остаётся открытым для пяти связей source-to-wheel. Они относятся к Android CFFI, PyCryptodomex и msgpack, а также Linux CFFI и PyCryptodomex. Точная libffi внутри выбранных CFFI wheels не определена. Статические ELF/ZIP проверки охватывают выравнивание 4 и 16 КиБ. Нативный ARM64 runtime с ядром 16 КиБ и запуск через FUSE не проверены. Живые платные запросы не входят в runtime-доказательства. Наличие исходников и лицензий само по себе не доказывает происхождение стороннего бинарника и полную автономную офлайн-пересборку.\\n", "provenance": {"schema": 1, "application": "Tokenlogue", "version": "0.1.0", "release_tag": "v0.1.0-preview.a981db9", "release_target_commit": "a981db908f318d3b9b9c173b94d98d7326153ef7", "created_utc": "2026-11-11T13:58:02.382427+00:00", "preview_version_policy": "The initial preview baseline is 0.1.0 and remains a draft. Publication requires a separate explicit instruction from the project owner. Displayed preview versions remain 0.1.0 until an official release is separately designated.", "same_application_src_tree": "4c82c66843f1a90f613672638a08030749bf62e1", "android": {"filename": "Tokenlogue-0.1.0-android-arm64-v8a-v43.apk", "size": 56202990, "sha256": "1e3ec65aaf1863eb50257aa4c090ca5fdf0b6b2c637c415d5b02056a2cf941f5", "commit": "eafb0936e0a70138d8c1e02334bb6c4183b49a10", "tree": "5976ac43670e1810a67310ec629acfabcb1cdf2a", "source_archive": "Tokenlogue-0.1.0-eafb093-android-project-sources.tar.gz", "ABI": "arm64-v8a", "recipe": 7, "recipe_fingerprint": "5d61eac2a2cf80a4d4472acd998161a43f59f38c9750c1459945149527bdbe38", "application_id": "io.github.umichata.tokenlogue", "versionName": "0.1.0", "versionCode": 43, "min_sdk": 24, "target_sdk": 36, "allowBackup": false, "debuggable": false, "ordinary_device_recovery": true, "signer_SHA256": "927292ad5a76ff049059d1c5d8e9497a42c03f3e995a5d9ca935c59ad8d0b09e", "signer_role": "Existing compatible test certificate, not a production-signing claim", "build_network_mode": "Session-only proxy, verified warm runtime/bridge copies, private dependency cache and read-only tool inputs. Gradle online. Not an offline or fresh-cache independence claim.", "runtime_cached_input": {"version": "3.12.14", "size": 9946386, "sha256": "29e4d83f9f7076b42395d70b32b0d951fa514aeb8ac8b4c6381c32bdb4809eb1"}, "bridge_cached_input_before_strip": {"version": "1.10.0", "size": 42360, "sha256": "4f138ab193c3747a1b4eca351cef96d818a692e896a5fd935d30846c817fff80"}, "checks": {"signature_CRC_manifest_source_inventory_notices_scanner": "PASS", "source_inventory_files": 150, "hook_before_package_and_split": true, "exact_allowed_SelfTest_exclusions": 97, "other_stage_files_preserved": 773, "final_build_path_gate": {"schema": 1, "gate": "final-apk-build-paths", "status": "PASS", "apk_sha256": "1e3ec65aaf1863eb50257aa4c090ca5fdf0b6b2c637c415d5b02056a2cf941f5", "apk_size": 56202990, "prefix_count": 1, "entries_read": 2104, "bytes_read": 146131858, "pyc_files_read": 1190, "code_objects_read": 26187, "findings": [], "pinned_public_fixtures": [], "secret_scanner_changed": false, "application_code_executed": false}, "ELF_ZIP_4KiB_16KiB_static": "PASS", "ELF_libraries": 106}, "user_confirmation": {"source": "User message during this task, exact manual time not supplied", "update_over_APK42_without_clear": true, "previous_PIN_chat_draft_preserved": true, "manual_key_balance_refresh_free_response_balance_after_response": true, "restart_data_preserved": true, "runtime_environment": "Isolated API36 x86_64 emulator with ARM64 translation and 4KiB pages", "not_a_physical_ARM64_runtime_claim": true}}, "linux": {"filename": "Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage", "size": 35367304, "sha256": "247497d8f97aae0c16cab282edc1c6cbf47747c7b3597e3ba23b388558e40646", "commit": "a981db908f318d3b9b9c173b94d98d7326153ef7", "tree": "68b5f31970d9ecdcbf9fb6b83d5f7b7f7446f28a", "source_archive": "Tokenlogue-0.1.0-a981db9-linux-project-sources.tar.gz", "architecture": "x86_64", "version": "0.1.0", "build_number": 43, "signed": false, "CI": {"run_id": 43026909566, "attempt": 1, "url": "https://github.com/Umichata/tokenlogue/actions/runs/43026909566", "status": "completed", "conclusion": "success"}, "checks": {"effective_version_at_bundle_AppDir_extracted_AppImage": "0.1.0+43", "repeat_packaging_reproducibility_ABI_notices_scanner_isolated_smoke": "PASS", "native_producer_proof_files": 12, "native_runtime_recipe_fingerprint": "0a48a197defbe880732f5938d87fc789b248d5ddab470cba83233e5b83b8a2eb", "fresh_verified_native_build_inputs": 150, "old_application_artifacts_used_for_runtime": false, "pyc_files_read": 1187, "code_objects_read": 26102, "native_payloads_read": 93, "personal_path_findings": 0}, "user_confirmation": {"source": "User message during this task, exact manual time not supplied", "compatible_profile_old_to_new_PIN_chat_draft_preserved": true, "manual_balance_refresh_free_response_and_balance_after_response": true, "real_owner_profile_used": false}}, "documentation": {"commit": "1688b6f945429f3224fbf60fe5425f8a0f05c492", "tree": "d74a920ff3b1ee36f2374585021745760088726f", "binary_build_input_claim": false, "platform_commits": {"android": "c1aeb1d66648bc0b9b6220979ff6ced5514a6d34", "linux": "1261a3977ab417fb5ed8ca6f269e721f9f92104f"}, "platform_only_tree_differences": ["README.md", "README.ru.md"], "illustrations": "Illustrative workspaces use demonstration data. Screenshots are not release-history entries. No real account amounts or private user messages are supplied."}, "source_materials": {"index": "SOURCE_MATERIALS.json", "dependency_archive": {"filename": "Tokenlogue-0.1.0-dependency-sources.tar.gz", "created": true, "size": 1188171591, "sha256": "7c760abaaf91428201b6417c70fe88d62ba0024cf1286f2703de734bf9c95f2f", "role": "dependency_source_materials", "application_code_included": false, "old_application_release_required": false, "complete_offline_SDK_claimed": false}, "original_payloads": 504, "component_mappings": 551, "source_availability_and_binary_origin_are_distinct": true, "status": "REVIEW_REQUIRED", "open_source_to_wheel_relationships": ["Android CFFI 2.0.0", "Android PyCryptodomex 3.23.0", "Android msgpack 1.1.2", "Linux CFFI 2.0.0", "Linux PyCryptodomex 3.23.0"], "actual_libffi_inside_selected_CFFI_wheels": "UNRESOLVED", "complete_offline_rebuild_or_legal_approval_claimed": false}, "runtime_limits": {"native_ARM64_with_16KiB_kernel": "NOT_RUN", "FUSE_runtime": "NOT_RUN", "paid_model_requests": "NOT_RUN", "source_native_geometry": "168 base cases plus 12 font/rotation cases, actual Flutter and native pixels", "APK_native_geometry": "17 cases, portrait/landscape, EN/RU, free/paid, system font150%, zero measured right-edge difference", "within_chat_controls_preserved": true, "cross_chat_security_context_controls": "Existing new context controls retained. Per-chat state and handlers preserved, no claim of UID reuse across chats."}, "production_graph": {"selected_Dart_versions": {"flutter_svg": "2.3.3", "vector_graphics": "1.2.7", "vector_graphics_codec": "1.2.0"}, "source_archives_and_full_original_notices_verified": true, "Android_only_recovery_packages": ["local_auth", "local_auth_android", "local_auth_darwin", "local_auth_platform_interface", "local_auth_windows"], "complete_inventory": "See package notices and SOURCE_MATERIALS.json for complete Python and Dart inventories."}}, "checksum_order": ["Tokenlogue-0.1.0-android-arm64-v8a-v43.apk", "Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage", "Tokenlogue-0.1.0-eafb093-android-project-sources.tar.gz", "Tokenlogue-0.1.0-a981db9-linux-project-sources.tar.gz", "Tokenlogue-0.1.0-dependency-sources.tar.gz", "PROVENANCE.json", "SOURCE_MATERIALS.json", "SOURCE_MATERIALS.md", "RELEASE_NOTES.md"], "extra_branches": {"fix/metrics-width-preview-0.1": "a981db908f318d3b9b9c173b94d98d7326153ef7", "work/openrouter-balance-compact-20261110": "52a834da9763527bc198010bd08683bf7ccd0688"}, "runtime_assets": [["PROVENANCE.json", 5462, "sha256:bdca9e07fbd7269eb98810f640711082a40dbddb22ddf41e2b8d054fa2e06c81"], ["README.md", 4124, "sha256:b0ec3e4a75592ce6e8f7f1c9aeed0314150506d2794d51ebd00ccfdb19509eb2"], ["SHA256SUMS", 360, "sha256:4e30cba62dd7fb6615606359c07f4c749917981d3dbed1cfa12039c7a1845077"], ["SOURCE_MATERIALS.json", 20575, "sha256:40a57ea305d082603ffd335f667c3d37ad493afc1e95d659372fe769196b07f0"], ["Tokenlogue-runtime-build-inputs-20261110.tar.gz", 6143933, "sha256:ddd591d597da38aec25d1130ac009751c911d78d79951302e02d22b6cc8c5a57"]], "original_body_sha256": "472882a3172a186f66e5ec5c0c4f47d7e153f71cefa3bbd4a1db9a341e6f594a"}')
+          REPO = 'Umichata/tokenlogue'
+          PREFIX = 'repos/' + REPO
+          RELEASE_ID = 441781663
+          TAG = 'v0.1.0-preview.a981db9'
+          REWRITABLE = {'RELEASE_NOTES.md', 'PROVENANCE.json', 'SHA256SUMS'}
+          ENV = dict(os.environ)
+          for _key in list(ENV):
+              if _key.startswith(('GIT_TRACE', 'GH_DEBUG')) or _key == 'GIT_CURL_VERBOSE':
+                  ENV.pop(_key)
+          ENV['GIT_TERMINAL_PROMPT'] = '0'
+          ENV['GH_HOST'] = 'github.com'
+          
+          
+          def stop(message):
+              raise RuntimeError(message)
+          
+          def run(command, *, stdin=None, allow_missing=False):
+              result = subprocess.run(command, input=stdin, stdout=subprocess.PIPE,
+                                      stderr=subprocess.PIPE, env=ENV)
+              if result.returncode:
+                  error = result.stderr.decode('utf-8', 'replace')
+                  if allow_missing and '(HTTP 404)' in error:
+                      return None
+                  error = re.sub(r'(?:github_pat_|gh[pousr]_)[A-Za-z0-9_]+', '[REDACTED]', error)
+                  stop('Команда не выполнена: ' + command[0] + '\n' + error[:1200])
+              return result.stdout
+          
+          def api(path, *, method=None, body=None, raw=False, optional=False):
+              command = ['gh', 'api', path]
+              if method:
+                  command += ['--method', method]
+              if raw:
+                  command += ['--header', 'Accept: application/octet-stream']
+              else:
+                  command += ['--header', 'Accept: application/vnd.github+json']
+              data = None
+              if body is not None:
+                  command += ['--input', '-']
+                  data = json.dumps(body, ensure_ascii=False).encode('utf-8')
+              result = run(command, stdin=data, allow_missing=optional)
+              if result is None:
+                  return None
+              return result if raw else json.loads(result)
+          
+          def sha(data):
+              return hashlib.sha256(data).hexdigest()
+          
+          def files_to_write():
+              files = {
+                  'RELEASE_NOTES.md': PAYLOAD['release_body'].encode('utf-8'),
+                  'PROVENANCE.json': (json.dumps(PAYLOAD['provenance'], ensure_ascii=False, indent=2) + '\n').encode('utf-8'),
+              }
+              sums = []
+              for name in PAYLOAD['checksum_order']:
+                  digest = sha(files[name]) if name in files else PAYLOAD['assets'][name]['digest'].split(':', 1)[1]
+                  sums.append(digest + '  ' + name + '\n')
+              files['SHA256SUMS'] = ''.join(sums).encode('utf-8')
+              return files
+          
+          def validate_assets(release, new_files):
+              if release['id'] != RELEASE_ID or release['tag_name'] != TAG:
+                  stop('Не совпадает идентификатор или тег выпуска. Никакая замена не разрешена.')
+              if release['target_commitish'] != PAYLOAD['release_target']:
+                  stop('Изменился исходный target выпуска. Проверьте актуальное состояние.')
+              if sha((release.get('body') or '').encode('utf-8')) not in {
+                  PAYLOAD['original_body_sha256'], sha(PAYLOAD['release_body'].encode('utf-8'))
+              }:
+                  stop('Описание выпуска изменилось после подготовки. Оно не перезаписывается автоматически.')
+              if release.get('immutable'):
+                  stop('Выпуск неизменяемый. Скрипт не обходит эту защиту.')
+              current = {a['name']: a for a in release['assets']}
+              if len(current) != len(release['assets']) or set(current) - set(PAYLOAD['assets']):
+                  stop('Набор assets изменился. Непроверенные файлы не затрагиваются.')
+              missing = set(PAYLOAD['assets']) - set(current)
+              if missing - REWRITABLE or (missing and not release['draft']):
+                  stop('Отсутствуют ожидаемые файлы. Проверьте выпуск вручную.')
+              for name, item in current.items():
+                  expected = PAYLOAD['assets'][name]
+                  original = (item['size'], item.get('digest')) == (expected['size'], expected['digest'])
+                  prepared = name in new_files and (item['size'], item.get('digest')) == (len(new_files[name]), 'sha256:' + sha(new_files[name]))
+                  if not original and not prepared:
+                      stop('Изменилось содержимое asset: ' + name)
+                  if name not in REWRITABLE and item['id'] != expected['id']:
+                      stop('Изменился ID сохранённого asset: ' + name)
+          
+          def ref(branch, optional=False):
+              item = api(PREFIX + '/git/ref/heads/' + branch, optional=optional)
+              return None if item is None else item['object']['sha']
+          
+          def self_check(new_files):
+              assert set(PAYLOAD['refs']) == {'main', 'android', 'linux'}
+              assert set(PAYLOAD['assets']) - set(PAYLOAD['checksum_order']) == {'SHA256SUMS'}
+              assert set(new_files) == REWRITABLE
+              assert 'What changed' not in PAYLOAD['release_body']
+              assert '\n## Изменения' not in PAYLOAD['release_body']
+              assert '0.2.0' not in PAYLOAD['release_body']
+              assert PAYLOAD['provenance']['release_target_commit'] == PAYLOAD['release_target']
+              assert PAYLOAD['provenance']['version'] == '0.1.0'
+              assert len(PAYLOAD['assets']) == 10
+              # Проверяем, что охранный код действительно отвергает изменение бинарника.
+              test = {'id': RELEASE_ID, 'tag_name': TAG, 'target_commitish': PAYLOAD['release_target'],
+                      'immutable': False, 'draft': False, 'body': PAYLOAD['release_body'],
+                      'assets': [dict(item, name=name) for name, item in PAYLOAD['assets'].items()]}
+              for item in test['assets']:
+                  if item['name'].endswith('.apk'):
+                      item['digest'] = 'sha256:' + '0' * 64
+              try:
+                  validate_assets(test, new_files)
+              except RuntimeError:
+                  pass
+              else:
+                  stop('Проверка защиты бинарников не сработала.')
+          
+          
+          def maintain_release():
+              if os.environ.get('GITHUB_REPOSITORY') != REPO or os.environ.get('GITHUB_ACTOR') != 'Umichata':
+                  stop('Only the repository owner can dispatch this one-time job.')
+              if os.environ.get('GITHUB_REF') != 'refs/heads/main':
+                  stop('Only main may run this job.')
+              dispatch_head = os.environ['GITHUB_SHA']
+              if ref('main') != dispatch_head:
+                  stop('main moved after dispatch; nothing is changed.')
+              commit = api(PREFIX + '/commits/' + dispatch_head)
+              if [p['sha'] for p in commit['parents']] != [PAYLOAD['refs']['main']['old']]:
+                  stop('Unexpected workflow parent; inspect the repository first.')
+              expected_path = '.github/workflows/tokenlogue-baseline-draft.yml'
+              if [(f['filename'], f['status']) for f in commit['files']] != [(expected_path, 'added')]:
+                  stop('The dispatch commit must only add the reviewed temporary workflow.')
+              for branch in ('android', 'linux'):
+                  if ref(branch) != PAYLOAD['refs'][branch]['old']:
+                      stop('A platform branch changed; nothing is changed.')
+              branches = api(PREFIX + '/branches?per_page=100')
+              expected_branches = set(PAYLOAD['refs']) | set(PAYLOAD['extra_branches'])
+              if {b['name'] for b in branches} != expected_branches:
+                  stop('The branch set changed; nothing is changed.')
+              for branch, expected in PAYLOAD['extra_branches'].items():
+                  if ref(branch) != expected:
+                      stop('An extra branch changed; nothing is deleted.')
+                  comparison = api(PREFIX + '/compare/' + expected + '...' + PAYLOAD['refs']['main']['old'])
+                  if comparison['status'] not in ('ahead', 'identical'):
+                      stop('An extra branch is not merged; nothing is deleted.')
+              runtime_before = api(PREFIX + '/releases/440334413')
+              runtime_assets = {a['name']: (a['id'], a['size'], a.get('digest')) for a in runtime_before['assets']}
+              release = api(PREFIX + '/releases/' + str(RELEASE_ID))
+              new_files = files_to_write()
+              self_check(new_files)
+              validate_assets(release, new_files)
+              output = Path(os.environ['RUNNER_TEMP']) / 'tokenlogue-baseline-result'
+              output.mkdir(parents=True, exist_ok=False)
+              (output / 'release-before.json').write_text(json.dumps(release, ensure_ascii=False, indent=2) + '\n')
+              (output / 'branches-before.json').write_text(json.dumps(branches, ensure_ascii=False, indent=2) + '\n')
+              # Back up the three replaceable documents before any write.
+              for item in release['assets']:
+                  if item['name'] in REWRITABLE:
+                      data = api(PREFIX + '/releases/assets/' + str(item['id']), raw=True)
+                      if sha(data) != item['digest'].split(':', 1)[1]:
+                          stop('Downloaded original asset failed its digest check.')
+                      (output / (item['name'] + '.before')).write_bytes(data)
+              api(PREFIX + '/releases/' + str(RELEASE_ID), method='PATCH', body={
+                  'draft': True, 'prerelease': True, 'make_latest': 'false',
+                  'name': 'Tokenlogue 0.1.0 — Linux & Android preview',
+                  'body': PAYLOAD['release_body'],
+              })
+              drafted = api(PREFIX + '/releases/' + str(RELEASE_ID))
+              if not drafted['draft'] or not drafted['prerelease']:
+                  stop('Draft status was not confirmed. No upload or ref deletion is attempted.')
+              for name in ('RELEASE_NOTES.md', 'PROVENANCE.json', 'SHA256SUMS'):
+                  path = output / name
+                  path.write_bytes(new_files[name])
+                  run(['gh', 'release', 'upload', TAG, str(path), '--clobber', '--repo', REPO])
+              for attempt in range(6):
+                  after = api(PREFIX + '/releases/' + str(RELEASE_ID))
+                  available = {a['name']: a for a in after['assets']}
+                  if all(name in available and available[name].get('digest') == 'sha256:' + sha(content)
+                         for name, content in new_files.items()):
+                      break
+                  if attempt < 5:
+                      time.sleep(2)
+              validate_assets(after, new_files)
+              if not (after['draft'] and after['prerelease'] and len(after['assets']) == 10 and after['body'] == PAYLOAD['release_body']):
+                  stop('Unexpected final release state.')
+              for name, content in new_files.items():
+                  item = available[name]
+                  if (item['size'], item.get('digest')) != (len(content), 'sha256:' + sha(content)):
+                      stop('Updated document digest or size mismatch.')
+              # Atomic deletion with exact leases: a concurrent branch update is never discarded.
+              transport = output / 'transport.git'
+              run(['git', 'init', '--bare', '--quiet', str(transport)])
+              git = ['git', '-C', str(transport), '-c', 'credential.helper=', '-c', 'credential.helper=!gh auth git-credential']
+              run(git + ['remote', 'add', 'origin', 'https://github.com/' + REPO + '.git'])
+              run(git + ['fetch', '--no-tags', 'origin', dispatch_head, *PAYLOAD['extra_branches'].values()])
+              for branch, expected in PAYLOAD['extra_branches'].items():
+                  run(git + ['merge-base', '--is-ancestor', expected, dispatch_head])
+                  if ref(branch) != expected:
+                      stop('An extra branch changed; no branch is deleted.')
+              if ref('main') != dispatch_head:
+                  stop('main moved; no branch is deleted.')
+              command = git + ['push', '--atomic']
+              command += ['--force-with-lease=refs/heads/' + b + ':' + s for b, s in PAYLOAD['extra_branches'].items()]
+              command += ['origin'] + [':refs/heads/' + b for b in PAYLOAD['extra_branches']]
+              run(command)
+              for branch in PAYLOAD['extra_branches']:
+                  if ref(branch, optional=True) is not None:
+                      stop('Branch deletion was not confirmed.')
+              branches_after = api(PREFIX + '/branches?per_page=100')
+              if {b['name'] for b in branches_after} != {'main', 'android', 'linux'}:
+                  stop('Unexpected remaining branch set.')
+              for branch in ('android', 'linux'):
+                  if ref(branch) != PAYLOAD['refs'][branch]['old']:
+                      stop('A platform branch changed during the job.')
+              runtime_after = api(PREFIX + '/releases/440334413')
+              if {a['name']: (a['id'], a['size'], a.get('digest')) for a in runtime_after['assets']} != runtime_assets:
+                  stop('Runtime kit changed during the job.')
+              if any(runtime_after.get(k) != runtime_before.get(k) for k in ('tag_name', 'draft', 'prerelease', 'target_commitish')):
+                  stop('Runtime release metadata changed during the job.')
+              (output / 'release-after.json').write_text(json.dumps(after, ensure_ascii=False, indent=2) + '\n')
+              (output / 'branches-after.json').write_text(json.dumps(branches_after, ensure_ascii=False, indent=2) + '\n')
+              (output / 'runtime-release-after.json').write_text(json.dumps(runtime_after, ensure_ascii=False, indent=2) + '\n')
+              # The separate prepared documentation commits are applied by the owner connector afterward.
+              summary = {
+                  'release_id': RELEASE_ID, 'draft': True, 'prerelease': True,
+                  'tag': TAG, 'target': PAYLOAD['release_target'], 'asset_count': len(after['assets']),
+                  'replaced_documents': {name: sha(content) for name, content in new_files.items()},
+                  'removed_branches': PAYLOAD['extra_branches'],
+                  'remaining_branches': ['main', 'android', 'linux'],
+                  'binaries_sources_and_runtime_kit': 'PRESERVED',
+                  'documentation_branch_updates': 'PENDING_CONNECTOR',
+                  'temporary_workflow_cleanup': 'PENDING_CONNECTOR',
+              }
+              (output / 'result.json').write_text(json.dumps(summary, ensure_ascii=False, indent=2) + '\n')
+              print(json.dumps(summary, ensure_ascii=False, indent=2))
+          
+          
+          if __name__ == '__main__':
+              try:
+                  maintain_release()
+              except Exception as error:
+                  print('STOP: ' + str(error), file=sys.stderr)
+                  sys.exit(1)
+          TOKENLOGUE_MAINTENANCE
+      - name: Preserve maintenance evidence and original documents
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # Shared project pin, v7.0.1
+        with:
+          name: tokenlogue-baseline-draft-evidence
+          path: |
+            ${{ runner.temp }}/tokenlogue-baseline-result/*.json
+            ${{ runner.temp }}/tokenlogue-baseline-result/*.before
+            ${{ runner.temp }}/tokenlogue-baseline-result/RELEASE_NOTES.md
+            ${{ runner.temp }}/tokenlogue-baseline-result/SHA256SUMS
+          if-no-files-found: warn
+          retention-days: 7
