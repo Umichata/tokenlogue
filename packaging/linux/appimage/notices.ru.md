@@ -4,7 +4,7 @@
 <a href="../../../README.ru.md" title="Главная"><img src="../../../docs/assets/ui/buttons/ru-461b9280bad5.svg" alt="Главная" width="34" height="28"></a> <a href="../../../docs/README.ru.md" title="Карта документации"><img src="../../../docs/assets/ui/buttons/ru-b4e89d854289.svg" alt="Карта документации" width="184" height="28"></a>
 </p>
 
-# Лицензии внутри AppImage
+# Лицензии AppImage
 
 <a id="russian"></a>
 <a id="lang-ru"></a>
@@ -12,7 +12,7 @@
 Пакет Linux содержит оригинальные лицензии и уведомления об авторских правах включённого программного обеспечения. Собственный код Tokenlogue распространяется по <a href="../../../LICENSE" title="лицензии MIT">лицензии MIT&nbsp;<img src="../../../docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a>.
 
 <a id="-где-найти-оригинальные-тексты"></a>
-## <img src="../../../docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Где найти оригинальные тексты
+## <img src="../../../docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Файлы лицензий
 
 После распаковки проверенного AppImage пути отсчитываются от корня извлечённого каталога:
 
@@ -28,10 +28,10 @@
 
 <img src="../../../docs/assets/ui/frame-bottom.svg" width="100%" alt="">
 
-В <a href="../../../docs/linux-appimage.ru.md#russian" title="руководстве для Linux">руководстве для Linux&nbsp;<img src="../../../docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> описаны проверка суммы и варианты запуска. Смещение файловой системы относится к конкретному AppImage, его нельзя переносить на другой файл.
+В <a href="../../../docs/linux-appimage.ru.md#russian" title="руководстве для Linux">руководстве для Linux&nbsp;<img src="../../../docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> описаны проверка суммы и варианты запуска.
 
 <a id="-как-читать-комплект"></a>
-## <img src="../../../docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Как читать комплект
+## <img src="../../../docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Состав компонентов
 
 В комплект входят уведомления Python, Flutter и его плагинов, нативных библиотек, шрифтов и runtime AppImage. Для Material Icons сохранены исходная декларация и сведения об авторстве Google. Шрифт Linux совпадает с исходным файлом. Лицензия KaTeX и уведомления о шрифтах находятся вместе с соответствующими шрифтами.
 

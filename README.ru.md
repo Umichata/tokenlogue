@@ -14,71 +14,55 @@
 <a id="lang-ru"></a>
 
 <a id="ru-preview-status"></a>
-> **Начальная предварительная версия 0.1.0 — черновик.** Пока выпуск находится в черновике, пакеты приложения недоступны для публичного скачивания. Публикация выполняется только по прямому указанию владельца проекта.
+> **0.1.0 Preview** · Пакеты готовятся к публикации. Файлы появятся в [Releases](https://github.com/Umichata/tokenlogue/releases).
 
 <h3 align="left">Общайтесь с моделями OpenRouter на <strong>Linux и Android</strong>. Храните чаты и черновики вместе, выбирайте модель для каждого разговора и смотрите оценку перед платным запросом.</h3>
 
 <a id="ru-features"></a>
 <a id="-всё-для-переписки"></a>
-## <img src="docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Всё для переписки
+## <img src="docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Возможности
 
-- Отдельные чаты, выбор модели и черновики, которые остаются в своём разговоре.
-- Английский и русский интерфейс с компактным видом для компьютера и телефона.
-- Бесплатные и платные модели, бюджет каждого чата и оценка затрат во время набора.
-- Баланс аккаунта OpenRouter с понятным состоянием обновления и предупреждение перед приближением к денежному лимиту чата.
-- Полоса метрик занимает всю область чата и подстраивается под широкие и узкие окна.
-- Вход по PIN и защита поддерживаемых полей переписки с восстановлением, зависящим от платформы.
+- Отдельные разговоры с сохранёнными черновиками и выбором модели для каждого чата.
+- Бесплатные и платные модели OpenRouter в одном приложении.
+- Баланс аккаунта из OpenRouter с обновлением после завершения отправленного запроса.
+- Отдельные лимиты API-ключа и бюджеты чатов с предупреждением перед возможным исчерпанием бюджета платным запросом.
+- Оценка токенов и стоимости во время набора, а также статистика запросов в чате.
+- Русский и английский интерфейс, вход по PIN и локальное шифрование поддерживаемых полей переписки.
 
 <a id="ru-screenshots"></a>
 <a id="-как-выглядит-приложение"></a>
-## <img src="docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Как выглядит приложение
+## <img src="docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Интерфейс
 
-<table>
-<tr><th align="center">Linux</th><th align="center">Android</th></tr>
-<tr>
-<td align="center"><a href="docs/assets/screenshots/linux-chat.png"><img src="docs/assets/ui/frame-top.svg" width="520" alt=""><br>
-<img src="docs/assets/screenshots/linux-chat.png" alt="Чат Linux с локальными демонстрационными сообщениями" width="520"><br>
-<img src="docs/assets/ui/frame-bottom.svg" width="520" alt=""></a></td>
-<td align="center"><a href="docs/assets/screenshots/android-chat-ru.png"><img src="docs/assets/ui/frame-top.svg" width="260" alt=""><br>
-<img src="docs/assets/screenshots/android-chat-ru.png" alt="Рабочий чат Tokenlogue на планшете Android" width="260"><br>
-<img src="docs/assets/ui/frame-bottom.svg" width="260" alt=""></a></td>
-</tr>
-<tr><td>Чат Linux с локальными демонстрационными сообщениями</td><td>Рабочий чат Tokenlogue на планшете Android</td></tr>
-</table>
+<p align="center">
+<a href="docs/assets/screenshots/android-start-ru.png"><img src="docs/assets/ui/frame-top.svg" width="320" alt=""><br>
+<img src="docs/assets/screenshots/android-start-ru.png" alt="Экран подключения OpenRouter в Android." width="320"><br>
+<img src="docs/assets/ui/frame-bottom.svg" width="320" alt=""></a>
+</p>
 
-Иллюстрация рабочего пространства чата с демонстрационными данными. Точный набор элементов зависит от выбранного чата и доступного места.
-
-Начальная серия предварительных выпусков использует отображаемую версию приложения `0.1.0` до отдельно объявленного официального релиза. Отдельные теги и возрастающие номера сборок идентифицируют подготовленные пакеты.
+<p align="center">Экран подключения OpenRouter в Android.</p>
 
 <a id="ru-start"></a>
 <a id="-начало-работы"></a>
-## <img src="docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Начало работы
+## <img src="docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Установка
 
 <img src="docs/assets/ui/frame-top.svg" width="100%" alt="">
 
-| Платформа | Пакет и требования | Установка |
-| --- | --- | --- |
-| Linux | AppImage x86_64, процессор x86-64-v2, совместимые библиотеки рабочего стола | <a href="docs/linux-appimage.ru.md#russian" title="Руководство Linux">Руководство Linux&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> <a href="docs/README.ru.md#ru-preview-status" title="Состояние черновика">Состояние черновика&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> |
-| Android | APK ARM64, Android 7.0 / API 24 или новее | <a href="docs/android.ru.md#russian" title="Руководство Android">Руководство Android&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> <a href="docs/README.ru.md#ru-preview-status" title="Состояние черновика">Состояние черновика&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> |
+| Платформа | Пакет | Требования | Руководство |
+| --- | --- | --- | --- |
+| Linux | AppImage x86_64 | Процессор x86-64-v2 и совместимые библиотеки рабочего стола | <a href="docs/linux-appimage.ru.md#russian">Установка в Linux&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> |
+| Android | APK ARM64 | Android 7.0 / API 24 или новее | <a href="docs/android.ru.md#russian">Установка в Android&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> |
 
 <img src="docs/assets/ui/frame-bottom.svg" width="100%" alt="">
 
-В черновике подготовлены пакеты, перечисленные ниже, и [`SHA256SUMS`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SHA256SUMS). Руководства платформ описывают требования и проверку сумм. Файлы станут публичными загрузками только после публикации.
+Доступность пакетов указана в <a href="docs/README.ru.md#ru-preview-status">разделе загрузок&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a>. Руководства платформ описывают установку и проверку по `SHA256SUMS`. Для запуска не нужны Python, Flutter и архивы исходников. AppImage Linux не подписана.
 
-- Android — [`Tokenlogue-0.1.0-android-arm64-v8a-v43.apk`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-android-arm64-v8a-v43.apk).
-- Linux — [`Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage).
+### Первый запуск
 
-Список пакетов описывает черновик начальной версии Tokenlogue 0.1.0. Доступность указана в [состоянии черновика](docs/README.ru.md#ru-preview-status).
+1. Добавьте API-ключ OpenRouter и дождитесь его проверки через сеть.
+2. Задайте PIN приложения и сохраните предложенные для платформы сведения восстановления.
+3. Создайте чат, выберите модель и напишите сообщение.
 
-Для запуска Tokenlogue не нужны отдельная установка Python или Flutter и архивы исходников. AppImage Linux не подписана.
-
-Для обновления Linux закройте прежние копии перед запуском нового файла. На Android устанавливайте совместимый APK с прежним сертификатом поверх приложения. Удаление приложения и очистка его данных не являются обычным шагом обновления.
-
-1. Добавьте свой API-ключ OpenRouter и дождитесь его проверки приложением.
-2. Задайте PIN. Заранее ознакомьтесь с восстановлением для вашей платформы.
-3. Создайте чат, выберите модель и напишите первое сообщение.
-
-Полный порядок действий описан в <a href="docs/user-guide.ru.md#russian" title="руководстве по подключению и чату">руководстве по подключению и чату&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a>.
+Полный порядок действий — в <a href="docs/user-guide.ru.md#russian">руководстве по чату&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a>.
 
 <a id="ru-docs"></a>
 
@@ -90,11 +74,11 @@
 <table>
 <tr><th align="left">Раздел</th><th align="left">Документы</th></tr>
 <tr>
-<td><a id="начало-работы"></a><a id="начало-работы-1"></a><strong>Начало работы</strong></td>
+<td><a id="начало-работы"></a><a id="начало-работы-1"></a><strong>Установка</strong></td>
 <td><a href="docs/README.ru.md#ru-preview-status" title="Загрузки"><img src="docs/assets/ui/buttons/ru-f0e4eb0b92d5.svg" alt="Загрузки" width="94" height="28"></a> <a href="docs/android.ru.md#ru-install" title="Установка Android"><img src="docs/assets/ui/buttons/ru-0abdbebf204e.svg" alt="Установка Android" width="166" height="28"></a> <a href="docs/linux-appimage.ru.md#ru-download" title="Запуск Linux"><img src="docs/assets/ui/buttons/ru-4b91e607dca0.svg" alt="Запуск Linux" width="122" height="28"></a></td>
 </tr>
 <tr>
-<td><a id="переписка-и-защита"></a><strong>Переписка и защита</strong></td>
+<td><a id="переписка-и-защита"></a><strong>Чаты и безопасность</strong></td>
 <td><a href="docs/user-guide.ru.md#russian" title="Руководство"><img src="docs/assets/ui/buttons/ru-7c519bac3145.svg" alt="Руководство" width="121" height="28"></a> <a href="docs/security.ru.md#russian" title="Защита"><img src="docs/assets/ui/buttons/ru-287972bc31ba.svg" alt="Защита" width="83" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/issues" title="Помощь"><img src="docs/assets/ui/buttons/ru-9079b2556a7e.svg" alt="Помощь" width="87" height="28"></a></td>
 </tr>
 <tr>
@@ -103,20 +87,19 @@
 </tr>
 </table>
 
-Полная карта документации также содержит материалы упаковки и руководство по актуальным исходным материалам.
 
 <a id="-затраты-и-локальная-защита"></a>
-## <img src="docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Затраты и локальная защита
+## <img src="docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Расходы и защита данных
 
-Баланс аккаунта OpenRouter поступает из API аккаунта. Лимит расходов API-ключа и локальный бюджет чата остаются отдельными величинами. Если баланс не удалось обновить, приложение показывает устаревшее значение или отсутствие данных, а не заменяет его локальным расчётом.
+Баланс аккаунта OpenRouter, лимит API-ключа и бюджет каждого чата — отдельные величины. Баланс поступает из OpenRouter; при ошибке обновления значение помечается устаревшим или недоступным.
 
-Перед платным запросом, после которого может остаться 10% лимита чата или меньше, Tokenlogue предлагает отмену, разовую отправку или изменение лимита этого чата. Предупреждение действует и при отключённых обычных подтверждениях. Разовое разрешение превысить бюджет не меняет сохранённый лимит. Оценки стоимости и токенов остаются приблизительными.
+Если после платного запроса может остаться 10% денежного лимита чата или меньше, предупреждение предлагает **отмену**, **разовую отправку** и **изменение лимита чата**. Оно действует и при отключённых обычных подтверждениях. Разовое превышение не меняет сохранённый лимит. Оценки токенов и стоимости остаются приблизительными.
 
-PIN и шифрование защищают доступ и отдельные локальные поля. Они не шифруют всё устройство. Восстановление зависит от сохранённых ключей и настроенного платформенного способа. При отправке сообщения выбранное содержимое разговора передаётся OpenRouter и провайдеру модели. Tokenlogue разрабатывается независимо от OpenRouter.
+PIN и шифрование защищают отдельные локальные поля, а не всё устройство. Восстановление зависит от платформы и сохранённых материалов восстановления. При отправке сообщения выбранное содержимое разговора передаётся OpenRouter и провайдеру модели. Tokenlogue разрабатывается независимо от OpenRouter.
 
 <p align="left"><a href="docs/user-guide.ru.md#russian"><img src="docs/assets/ui/buttons/ru-80312f6e20aa.svg" alt="Чаты и оценка затрат" width="190" height="28"></a> <a href="docs/security.ru.md#russian"><img src="docs/assets/ui/buttons/ru-ef9c23a5000c.svg" alt="Защита переписки" width="167" height="28"></a></p>
 
 <a id="-исходники-и-лицензии"></a>
-## <img src="docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Исходники и лицензии
+## <img src="docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Лицензия
 
-Код Tokenlogue доступен по <a href="LICENSE" title="лицензии MIT">лицензии MIT&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a>. В <a href="docs/source-materials.ru.md#russian" title="исходных материалах">исходных материалах&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> описаны архивы и оставшиеся пробелы в связи части нативных бинарников с исходниками. <a href="THIRD_PARTY_NOTICES.ru.md#russian" title="Сторонние уведомления">Сторонние уведомления&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> сохраняют оригинальные условия библиотек и шрифтов.
+Tokenlogue доступен по <a href="LICENSE">лицензии MIT&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a>. Пакеты сопровождаются <a href="docs/source-materials.ru.md#russian">исходниками и материалами зависимостей&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a>. Условия библиотек и шрифтов собраны в <a href="THIRD_PARTY_NOTICES.ru.md#russian">уведомлениях сторонних компонентов&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a>.

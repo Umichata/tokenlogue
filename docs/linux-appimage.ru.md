@@ -10,15 +10,9 @@
 <a id="lang-ru"></a>
 
 <a id="ru-preview-status"></a>
-> **Начальная предварительная версия 0.1.0 — черновик.** Пока выпуск находится в черновике, пакеты приложения и их исходные архивы недоступны для публичного скачивания. Имена файлов и суммы ниже описывают подготовленный комплект.
+> **0.1.0 Preview · черновик.** Файлы станут доступны для скачивания после публикации.
 
-Запускайте Tokenlogue на рабочем столе Linux в формате AppImage. Для обычного использования не нужно отдельно устанавливать Python, Flutter или инструменты сборки. В текущей предварительной версии есть русский и английский интерфейс.
-
-<img src="assets/ui/frame-top.svg" width="880" alt=""><br>
-<img src="assets/screenshots/linux-chat.png" alt="Иллюстрация рабочего пространства чата Linux" width="880"><br>
-<img src="assets/ui/frame-bottom.svg" width="880" alt="">
-
-Иллюстрация рабочего пространства Linux с демонстрационными данными на английском языке. Точный набор элементов зависит от выбранного чата и доступного места.
+Запускайте Tokenlogue на рабочем столе Linux из одного файла AppImage. Отдельная установка Python, Flutter или инструментов сборки не нужна. Интерфейс доступен на русском и английском.
 
 <p align="left"><a href="#ru-requirements"><img src="assets/ui/buttons/ru-c8c1bdfd645d.svg" alt="Требования" width="114" height="28"></a> <a href="#ru-download"><img src="assets/ui/buttons/ru-a51ebf3766a4.svg" alt="Скачивание" width="115" height="28"></a> <a href="#ru-run"><img src="assets/ui/buttons/ru-dbadd61442d5.svg" alt="Запуск" width="77" height="28"></a> <a href="#ru-updates"><img src="assets/ui/buttons/ru-fee57eb0b9e5.svg" alt="Обновление" width="117" height="28"></a> <a href="#ru-help"><img src="assets/ui/buttons/ru-9079b2556a7e.svg" alt="Помощь" width="87" height="28"></a></p>
 
@@ -39,15 +33,17 @@
 <a id="ru-download"></a>
 
 <a id="-скачивание-и-проверка"></a>
-## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Скачивание и проверка
+<a id="скачивание-и-проверка"></a>
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Загрузка
 
-В <a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9" title="Черновик выпуска">черновике выпуска&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> подготовлены [AppImage](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage) Tokenlogue 0.1.0 и [`SHA256SUMS`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SHA256SUMS). Ссылки на файлы черновика доступны сопровождающим репозитория для проверки. Публичными они станут только после публикации выпуска.
+В <a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9" title="Выпуски">разделе выпусков&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> указаны [AppImage](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage) Tokenlogue 0.1.0 и [`SHA256SUMS`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SHA256SUMS).
 
 <img src="assets/ui/frame-top.svg" width="100%" alt="">
 
-| Подготовленный файл | Значение |
+| Пакет Linux | Сведения |
 | --- | --- |
 | AppImage | [`Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage) |
+| Версия | `0.1.0+43` |
 | SHA-256 | `247497d8f97aae0c16cab282edc1c6cbf47747c7b3597e3ba23b388558e40646` |
 
 <img src="assets/ui/frame-bottom.svg" width="100%" alt="">
@@ -60,7 +56,7 @@ awk -v wanted="$file" '$2 == wanted { entry = $0; count++ } END { if (count != 1
   sha256sum --check -
 ```
 
-Выбранная AppImage должна получить `OK`. Отсутствующая или повторная запись в манифесте, изменённый или отсутствующий файл вызывают ошибку команды. Сумма обнаруживает изменение байтов, но не заменяет подпись издателя. Эта AppImage не подписана. Не подменяйте ожидаемую сумму хешем файла, который не прошёл проверку.
+Продолжайте запуск, только если проверка завершилась с `OK`. При несовпадении скачайте пакет заново. Контрольная сумма подтверждает целостность файла, но не заменяет подпись издателя. AppImage не подписана.
 
 Архивы исходников и средства сборки скачиваются отдельно. Для установки и запуска Tokenlogue они не нужны.
 
@@ -68,7 +64,8 @@ awk -v wanted="$file" '$2 == wanted { entry = $0; count++ } END { if (count != 1
 <a id="ru-run"></a>
 
 <a id="-запуск-tokenlogue"></a>
-## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Запуск Tokenlogue
+<a id="запуск-tokenlogue"></a>
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Запуск
 
 Один раз разрешите исполнение и запустите проверенную AppImage от своего обычного пользователя.
 ```bash
@@ -93,7 +90,8 @@ chmod u+x ./Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage
 <a id="ru-updates"></a>
 
 <a id="-обновление-с-сохранением-профиля"></a>
-## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Обновление с сохранением профиля
+<a id="обновление-с-сохранением-профиля"></a>
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Обновление
 
 Перед запуском замены закройте все прежние копии Tokenlogue. Проверьте новый файл и запустите его в той же учётной записи ОС. Автоматического обновления нет. Замена AppImage не удаляет отдельно сохранённые данные приложения.
 
@@ -105,7 +103,8 @@ chmod u+x ./Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage
 <a id="ru-system-recovery"></a>
 
 <a id="-необязательное-восстановление-через-учётную-запись-linux"></a>
-## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Необязательное восстановление через учётную запись Linux
+<a id="необязательное-восстановление-через-учётную-запись-linux"></a>
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Системное восстановление
 
 Основной способ восстановления PIN в Linux — заранее сохранённый <a href="security.ru.md#ru-recovery" title="резервный код">резервный код&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a>. Для него не нужна настройка администратора. Дополнительный пункт `Системное восстановление Linux` требует policy Tokenlogue для polkit и системного агента аутентификации.
 

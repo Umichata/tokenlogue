@@ -4,15 +4,15 @@
 <a href="../../../README.ru.md" title="Главная"><img src="../../../docs/assets/ui/buttons/ru-461b9280bad5.svg" alt="Главная" width="34" height="28"></a> <a href="../../../docs/README.ru.md" title="Карта документации"><img src="../../../docs/assets/ui/buttons/ru-b4e89d854289.svg" alt="Карта документации" width="184" height="28"></a>
 </p>
 
-# Исходные материалы зависимостей
+# Зависимости Android
 
 <a id="russian"></a>
 <a id="lang-ru"></a>
 
-Этот комплект позволяет изучить зависимости криптографии и системной аутентификации Android. Здесь находятся оригинальные архивы, лицензии и отдельные upstream-рецепты сборки. Для использования Tokenlogue устанавливать эти материалы не нужно.
+Здесь собраны исходные архивы, лицензии и upstream-рецепты сборки компонентов криптографии и системной аутентификации Android. Эти материалы поставляются отдельно от APK и не нужны для запуска Tokenlogue.
 
 <a id="-включённые-материалы"></a>
-## <img src="../../../docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Включённые материалы
+## <img src="../../../docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Компоненты
 
 <img src="../../../docs/assets/ui/frame-top.svg" width="100%" alt="">
 
@@ -34,7 +34,7 @@
 Пакеты Darwin и Windows входят в разрешённый граф зависимостей Flutter. Их платформенные реализации не используются для восстановления Android. Их наличие не означает, что Tokenlogue доступен для этих платформ.
 
 <a id="-проверка-комплекта"></a>
-## <img src="../../../docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Проверка комплекта
+## <img src="../../../docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Контрольные суммы
 
 Файл [sources.lock.json](sources.lock.json) содержит исходные URL, суммы архивов и выбранные имена Android wheels. [SHA256SUMS](SHA256SUMS) покрывает файлы комплекта. Выполните следующую команду из этого каталога.
 ```bash
@@ -44,10 +44,10 @@ sha256sum --check SHA256SUMS
 [Платформенный адаптер](../recovery_bridge.dart) и [настройка шаблона](../recovery_template.py) относятся к собственным исходникам Tokenlogue. Они подключают системное восстановление Android к приложению. Flutter Secure Storage предоставляет реализацию защищённого хранилища Android, используемую через Flet Secure Storage.
 
 <a id="-что-подтверждают-эти-материалы"></a>
-## <img src="../../../docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Что подтверждают эти материалы
+## <img src="../../../docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Происхождение компонентов
 
-Оригинальные архивы и их суммы идентифицируют доступные исходные материалы. Сами по себе они не доказывают способ сборки конкретного нативного wheel. Комплект не является полным автономным окружением Android и не обещает побайтного воспроизведения сборки.
+Исходные архивы и суммы определяют материалы, поставляемые для этих компонентов. Связь каждого нативного wheel с исходниками документирована не полностью; комплект не предоставляет полное автономное окружение сборки Android.
 
-Рецепт CFFI из Mobile Forge указывает host-зависимость libffi без версии. Точная libffi внутри выбранного wheel CFFI пока не определена. Отдельно описанная libffi из Python runtime Android не идентифицирует библиотеку внутри CFFI. Оригинальные уведомления CFFI сохранены.
+Рецепт CFFI из Mobile Forge не закрепляет версию host-зависимости libffi. Точная libffi внутри выбранного wheel CFFI остаётся неопределённой; это отдельная библиотека от libffi среды Python для Android. Оригинальные уведомления CFFI сохранены.
 
-Общий комплект и границы подтверждённого происхождения описаны в <a href="../../../docs/source-materials.ru.md#russian" title="руководстве по исходным материалам">руководстве по исходным материалам&nbsp;<img src="../../../docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a>. <a href="../../../THIRD_PARTY_NOTICES.ru.md#russian" title="Сторонние уведомления">Сторонние уведомления&nbsp;<img src="../../../docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> объясняют лицензионные материалы. Изменение этого документа не меняет уведомления внутри уже собранного APK или AppImage.
+Общий комплект и границы подтверждённого происхождения описаны в <a href="../../../docs/source-materials.ru.md#russian" title="руководстве по исходным материалам">руководстве по исходным материалам&nbsp;<img src="../../../docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a>. <a href="../../../THIRD_PARTY_NOTICES.ru.md#russian" title="Сторонние уведомления">Сторонние уведомления&nbsp;<img src="../../../docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> объясняют лицензионные материалы.

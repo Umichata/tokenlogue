@@ -12,7 +12,7 @@
 Tokenlogue поставляет оригинальные уведомления сторонних компонентов вместе с соответствующим программным обеспечением. Пакеты Android и Linux включают относящиеся к ним тексты.
 
 <a id="-оригинальные-тексты"></a>
-## <img src="../../docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Оригинальные тексты
+## <img src="../../docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Тексты лицензий
 
 - [libffi 3.4.4](inputs/libffi-3.4.4-LICENSE.txt) относится к среде Python для Android.
 - [Dart bridge 1.10.0](inputs/dart-bridge-1.10.0-LICENSE.txt) связывает среду Python для Android и Dart.

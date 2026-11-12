@@ -4,7 +4,7 @@
 <a href="../../../README.ru.md" title="Главная"><img src="../../../docs/assets/ui/buttons/ru-461b9280bad5.svg" alt="Главная" width="34" height="28"></a> <a href="../../../docs/README.ru.md" title="Карта документации"><img src="../../../docs/assets/ui/buttons/ru-b4e89d854289.svg" alt="Карта документации" width="184" height="28"></a>
 </p>
 
-# Tokenlogue для Linux
+# AppImage для Linux
 
 <a id="russian"></a>
 <a id="lang-ru"></a>
@@ -12,19 +12,19 @@
 Tokenlogue доступен в переносимом AppImage для x86_64. Для работы не нужно устанавливать Python, Flutter или Java.
 
 <a id="-начало-работы"></a>
-## <img src="../../../docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Начало работы
+## <img src="../../../docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Установка
 
 В <a href="../../../docs/linux-appimage.ru.md#russian" title="руководстве для Linux">руководстве для Linux&nbsp;<img src="../../../docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> описаны доступные загрузки, проверка суммы, первый запуск и обновление. Перед открытием нового AppImage закройте прежние копии. Автоматического обновления и цифровой подписи у пакета нет.
 
 Нужны процессор x86-64-v2, графическая среда Linux и совместимые системные библиотеки. Базовая версия системных библиотек соответствует Ubuntu 22.04. GTK3, GLib/GIO и видеодрайверы предоставляет дистрибутив. Обычный запуск использует FUSE, а вариант с распаковкой описан в руководстве.
 
 <a id="-защита-переписки"></a>
-## <img src="../../../docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Защита переписки
+## <img src="../../../docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Хранилище ключей
 
 Для защищённого хранения ключей нужен работающий Secret Service в сеансе рабочего стола. Перед изменением настроек хранилища ключей или переносом профиля прочитайте о <a href="../../../docs/security.ru.md#russian" title="защите и восстановлении">защите и восстановлении&nbsp;<img src="../../../docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a>. AppImage содержит приложение, а не резервную копию переписки.
 
 <a id="-лицензии-и-исходники"></a>
-## <img src="../../../docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Лицензии и исходники
+## <img src="../../../docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Исходники и лицензии
 
 <a href="notices.ru.md#russian" title="Уведомления компонентов">Уведомления компонентов&nbsp;<img src="../../../docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> помогут найти лицензии. <a href="runtime/README.ru.md#russian" title="Обзор runtime">Обзор runtime&nbsp;<img src="../../../docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> объясняет встроенный компонент запуска. В <a href="../../../docs/source-materials.ru.md#russian" title="руководстве по исходным материалам">руководстве по исходным материалам&nbsp;<img src="../../../docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> описаны отдельные архивы и ограничения их полноты.
 

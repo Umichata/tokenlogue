@@ -14,71 +14,55 @@
 <a id="lang-en"></a>
 
 <a id="en-preview-status"></a>
-> **Initial preview 0.1.0 — draft.** Application packages are not publicly available while the release is a draft. Publication requires the project owner's explicit instruction.
+> **0.1.0 Preview** · Packages are being prepared for publication. Downloads will appear in [Releases](https://github.com/Umichata/tokenlogue/releases).
 
 <h3 align="left">Chat with OpenRouter models on <strong>Linux and Android</strong>. Keep conversations and drafts together, choose a model for each chat and see an estimate before sending a paid request.</h3>
 
 <a id="en-features"></a>
 <a id="-your-chat-workspace"></a>
-## <img src="docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Your chat workspace
+## <img src="docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Features
 
-- Separate chats, model selection and drafts that stay with the conversation.
-- English and Russian interface with a compact layout for desktop and mobile.
-- Free and paid models, per-chat budgets and a live estimate while you write.
-- OpenRouter account balance with explicit refresh status and a warning before a paid request approaches the chat spending limit.
-- A full-width metrics strip that adapts to the chat area on wide and narrow screens.
-- PIN access and local protection for supported conversation fields, with platform-specific recovery options.
+- Separate conversations with saved drafts and a model choice for each chat.
+- Free and paid OpenRouter models in one workspace.
+- Account balance from OpenRouter, refreshed after a sent request finishes.
+- Separate API-key limits and chat budgets, with a warning before a paid request can exhaust the chat budget.
+- Token and cost estimates while writing, plus request statistics in the chat.
+- English and Russian interface, PIN access and local encryption for supported conversation fields.
 
 <a id="en-screenshots"></a>
 <a id="-a-look-inside"></a>
-## <img src="docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> A look inside
+## <img src="docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Interface
 
-<table>
-<tr><th align="center">Linux</th><th align="center">Android</th></tr>
-<tr>
-<td align="center"><a href="docs/assets/screenshots/linux-chat.png"><img src="docs/assets/ui/frame-top.svg" width="520" alt=""><br>
-<img src="docs/assets/screenshots/linux-chat.png" alt="Linux chat with local demonstration messages" width="520"><br>
-<img src="docs/assets/ui/frame-bottom.svg" width="520" alt=""></a></td>
-<td align="center"><a href="docs/assets/screenshots/android-chat-en.png"><img src="docs/assets/ui/frame-top.svg" width="260" alt=""><br>
-<img src="docs/assets/screenshots/android-chat-en.png" alt="Tokenlogue chat on an Android tablet" width="260"><br>
-<img src="docs/assets/ui/frame-bottom.svg" width="260" alt=""></a></td>
-</tr>
-<tr><td>Linux chat with local demonstration messages</td><td>Tokenlogue chat on an Android tablet</td></tr>
-</table>
+<p align="center">
+<a href="docs/assets/screenshots/android-start.png"><img src="docs/assets/ui/frame-top.svg" width="320" alt=""><br>
+<img src="docs/assets/screenshots/android-start.png" alt="OpenRouter connection screen on Android." width="320"><br>
+<img src="docs/assets/ui/frame-bottom.svg" width="320" alt=""></a>
+</p>
 
-Illustrative chat workspace with demonstration data. The exact controls depend on the selected chat and available space.
-
-The initial preview series uses the displayed application version `0.1.0` until a separately designated official release. Unique tags and increasing build numbers identify prepared packages.
+<p align="center">OpenRouter connection screen on Android.</p>
 
 <a id="en-start"></a>
 <a id="-get-started"></a>
-## <img src="docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Get started
+## <img src="docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Installation
 
 <img src="docs/assets/ui/frame-top.svg" width="100%" alt="">
 
-| Platform | Package and requirements | Installation |
-| --- | --- | --- |
-| Linux | x86_64 AppImage, x86-64-v2 CPU, compatible desktop libraries | <a href="docs/linux-appimage.md#english" title="Linux guide">Linux guide&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> <a href="docs/README.md#en-preview-status" title="Draft status">Draft status&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> |
-| Android | ARM64 APK, Android 7.0 / API 24 or later | <a href="docs/android.md#english" title="Android guide">Android guide&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> <a href="docs/README.md#en-preview-status" title="Draft status">Draft status&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> |
+| Platform | Package | Requirements | Guide |
+| --- | --- | --- | --- |
+| Linux | AppImage x86_64 | x86-64-v2 CPU and compatible desktop libraries | <a href="docs/linux-appimage.md#english">Linux installation&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> |
+| Android | APK ARM64 | Android 7.0 / API 24 or later | <a href="docs/android.md#english">Android installation&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> |
 
 <img src="docs/assets/ui/frame-bottom.svg" width="100%" alt="">
 
-The prepared draft contains the packages listed below and [`SHA256SUMS`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SHA256SUMS). The platform guides explain their requirements and checksum verification. These files become public downloads only after publication.
+Package availability is listed in the <a href="docs/README.md#en-preview-status">download section&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a>. The platform guides cover installation and verification with `SHA256SUMS`. Python, Flutter and the source archives are not required to run the app. The Linux AppImage is unsigned.
 
-- Android — [`Tokenlogue-0.1.0-android-arm64-v8a-v43.apk`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-android-arm64-v8a-v43.apk).
-- Linux — [`Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage).
+### First launch
 
-The package list describes the initial Tokenlogue 0.1.0 draft. See the [draft status](docs/README.md#en-preview-status) for availability.
+1. Add an OpenRouter API key and complete its online check.
+2. Set an application PIN and save the recovery information offered for the platform.
+3. Create a chat, choose a model and write a message.
 
-You do not need a separate Python or Flutter installation or the source archives to run Tokenlogue. The Linux AppImage is unsigned.
-
-For Linux updates, close earlier copies before launching the new file. For Android, install a compatible APK with the same signing certificate over the existing application. Removing the application or clearing its data is not an update step.
-
-1. Add your own OpenRouter API key and let the application check it.
-2. Set a PIN. Read the recovery options for your platform before you need them.
-3. Create a chat, choose a model and write your first message.
-
-See <a href="docs/user-guide.md#english" title="first connection and chat controls">first connection and chat controls&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> for the full walkthrough.
+<a href="docs/user-guide.md#english">Open the chat guide&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> for the complete walkthrough.
 
 <a id="en-docs"></a>
 
@@ -90,11 +74,11 @@ See <a href="docs/user-guide.md#english" title="first connection and chat contro
 <table>
 <tr><th align="left">Category</th><th align="left">Documents</th></tr>
 <tr>
-<td><a id="start-here"></a><strong>Start here</strong></td>
+<td><a id="start-here"></a><strong>Installation</strong></td>
 <td><a href="docs/README.md#en-preview-status" title="Downloads"><img src="docs/assets/ui/buttons/en-0af7fc63fbbe.svg" alt="Downloads" width="106" height="28"></a> <a href="docs/android.md#en-install" title="Android install"><img src="docs/assets/ui/buttons/en-ec13da01a81e.svg" alt="Android install" width="133" height="28"></a> <a href="docs/linux-appimage.md#en-download" title="Linux launch"><img src="docs/assets/ui/buttons/en-ce1db4f66563.svg" alt="Linux launch" width="118" height="28"></a></td>
 </tr>
 <tr>
-<td><a id="use-and-protect"></a><strong>Use and protect</strong></td>
+<td><a id="use-and-protect"></a><strong>Chats and security</strong></td>
 <td><a href="docs/user-guide.md#english" title="User guide"><img src="docs/assets/ui/buttons/en-4a1e7eca97e9.svg" alt="User guide" width="105" height="28"></a> <a href="docs/security.md#english" title="Protection"><img src="docs/assets/ui/buttons/en-9c2e33444d68.svg" alt="Protection" width="102" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/issues" title="Help and issues"><img src="docs/assets/ui/buttons/en-b35e6ff4675a.svg" alt="Help and issues" width="141" height="28"></a></td>
 </tr>
 <tr>
@@ -103,20 +87,19 @@ See <a href="docs/user-guide.md#english" title="first connection and chat contro
 </tr>
 </table>
 
-The full documentation map also includes packaging documents and the current source-materials guide.
 
 <a id="-costs-and-local-protection"></a>
-## <img src="docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Costs and local protection
+## <img src="docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Privacy and spending
 
-OpenRouter account balance comes from the account API. The API key spending limit and the local chat budget remain separate. A balance that could not be refreshed is shown as stale or unavailable, rather than replaced with a local calculation.
+OpenRouter account balance, the API key limit and each chat budget are separate values. The balance comes from OpenRouter and is marked stale or unavailable when it cannot be refreshed.
 
-Before a paid request could leave 10% or less of its chat spending limit, Tokenlogue asks whether to cancel, send once or edit that chat's limit. This warning remains active when ordinary paid confirmations are disabled. A confirmed one-off overrun does not change the saved limit. Cost and token estimates remain approximate.
+If a paid request could leave 10% or less of a chat's spending limit, a warning offers **Cancel**, **Send once** and **Edit chat limit**. The warning stays active when ordinary paid confirmations are disabled. A one-off overrun does not change the saved limit. Token and cost estimates remain approximate.
 
-PIN and encryption protect access and selected local fields. They do not encrypt your whole device. Recovery depends on the saved keys and the configured platform method. When you send a message, the selected conversation content goes to OpenRouter and the chosen model provider. Tokenlogue is independent of OpenRouter.
+PIN access and encryption protect selected local fields, not the entire device. Recovery depends on the platform and saved recovery material. Sending a message shares the selected conversation content with OpenRouter and the model provider. Tokenlogue is independent of OpenRouter.
 
 <p align="left"><a href="docs/user-guide.md#english"><img src="docs/assets/ui/buttons/en-c6cc0af96e1c.svg" alt="Using chats and estimates" width="220" height="28"></a> <a href="docs/security.md#english"><img src="docs/assets/ui/buttons/en-5098cef88c2b.svg" alt="Protecting your conversations" width="247" height="28"></a></p>
 
 <a id="-sources-and-licenses"></a>
-## <img src="docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Sources and licenses
+## <img src="docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> License
 
-Tokenlogue's code uses the <a href="LICENSE" title="MIT license">MIT license&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a>. <a href="docs/source-materials.md#english" title="Source materials">Source materials&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> explain the available archives and the remaining gaps in linking some native binaries to their sources. <a href="THIRD_PARTY_NOTICES.md#english" title="Third-party notices">Third-party notices&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> preserve the original terms for libraries and fonts.
+Tokenlogue is available under the <a href="LICENSE">MIT license&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a>. <a href="docs/source-materials.md#english">Source code and dependency materials&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> accompany the packages. Library and font terms are collected in <a href="THIRD_PARTY_NOTICES.md#english">third-party notices&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a>.

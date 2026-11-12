@@ -4,7 +4,7 @@
 <a href="../../../README.md" title="Home"><img src="../../../docs/assets/ui/buttons/en-2c296d10dfa5.svg" alt="Home" width="34" height="28"></a> <a href="../../../docs/README.md" title="Documentation map"><img src="../../../docs/assets/ui/buttons/en-992f2873a82b.svg" alt="Documentation map" width="174" height="28"></a>
 </p>
 
-# Licenses inside the AppImage
+# AppImage licenses
 
 <a id="english"></a>
 <a id="lang-en"></a>
@@ -12,7 +12,7 @@
 The Linux package carries the original licenses and copyright notices for its included software. Tokenlogue's own code uses the <a href="../../../LICENSE" title="MIT license">MIT license&nbsp;<img src="../../../docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a>.
 
 <a id="-find-the-original-texts"></a>
-## <img src="../../../docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Find the original texts
+## <img src="../../../docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> License files
 
 After extracting your verified AppImage, these paths are relative to its extracted root:
 
@@ -28,10 +28,10 @@ After extracting your verified AppImage, these paths are relative to its extract
 
 <img src="../../../docs/assets/ui/frame-bottom.svg" width="100%" alt="">
 
-The <a href="../../../docs/linux-appimage.md#english" title="Linux guide">Linux guide&nbsp;<img src="../../../docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> covers checksum verification and launch options. An extraction offset belongs to a particular AppImage and should not be reused for a different download.
+The <a href="../../../docs/linux-appimage.md#english" title="Linux guide">Linux guide&nbsp;<img src="../../../docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> covers checksum verification and launch options.
 
 <a id="-read-the-collection"></a>
-## <img src="../../../docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Read the collection
+## <img src="../../../docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Included components
 
 The collection covers Python, Flutter and its plugins, native libraries, fonts and the AppImage runtime. Material Icons retains its original declaration and Google attribution. The Linux font matches the original font input. KaTeX license and font notices remain with their corresponding fonts.
 

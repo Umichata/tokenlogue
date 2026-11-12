@@ -10,15 +10,9 @@
 <a id="lang-en"></a>
 
 <a id="en-preview-status"></a>
-> **Initial preview 0.1.0 — draft.** Application packages and their source archives are not public downloads while the release is a draft. The filenames and checksums below describe the prepared package set.
+> **0.1.0 Preview · draft.** Downloads will be available after publication.
 
-Run Tokenlogue as an AppImage on a Linux desktop. Python, Flutter and build tools are included or unnecessary for normal use. The current preview has an English and Russian interface.
-
-<img src="assets/ui/frame-top.svg" width="880" alt=""><br>
-<img src="assets/screenshots/linux-chat.png" alt="Illustrative Linux chat workspace in English" width="880"><br>
-<img src="assets/ui/frame-bottom.svg" width="880" alt="">
-
-Illustrative Linux workspace with demonstration data in English. The exact controls depend on the selected chat and available space.
+Run Tokenlogue on your Linux desktop with a single AppImage. No separate Python, Flutter or build-tool installation is required. The interface supports English and Russian.
 
 <p align="left"><a href="#en-requirements"><img src="assets/ui/buttons/en-54cd239b749b.svg" alt="Requirements" width="128" height="28"></a> <a href="#en-download"><img src="assets/ui/buttons/en-eb7306e41747.svg" alt="Download" width="98" height="28"></a> <a href="#en-run"><img src="assets/ui/buttons/en-ae7b8814a827.svg" alt="Run" width="54" height="28"></a> <a href="#en-updates"><img src="assets/ui/buttons/en-c94624d60136.svg" alt="Update" width="78" height="28"></a> <a href="#en-help"><img src="assets/ui/buttons/en-f0fa42aa9ee2.svg" alt="Troubleshooting" width="144" height="28"></a></p>
 
@@ -39,15 +33,17 @@ Screen-lock and sleep protection is designed for the supported Cinnamon/X11 desk
 <a id="en-download"></a>
 
 <a id="-download-and-verify"></a>
-## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Download and verify
+<a id="download-and-verify"></a>
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Download
 
-The <a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9" title="Release draft">release draft&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> contains the prepared Tokenlogue 0.1.0 [AppImage](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage) and [`SHA256SUMS`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SHA256SUMS). Draft-package links are available to repository maintainers for review. They become public only when the release is published.
+The <a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9" title="Releases">Releases page&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> lists the Tokenlogue 0.1.0 [AppImage](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage) and [`SHA256SUMS`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SHA256SUMS).
 
 <img src="assets/ui/frame-top.svg" width="100%" alt="">
 
-| Prepared preview file | Value |
+| Linux package | Details |
 | --- | --- |
 | AppImage | [`Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage) |
+| Version | `0.1.0+43` |
 | SHA-256 | `247497d8f97aae0c16cab282edc1c6cbf47747c7b3597e3ba23b388558e40646` |
 
 <img src="assets/ui/frame-bottom.svg" width="100%" alt="">
@@ -60,7 +56,7 @@ awk -v wanted="$file" '$2 == wanted { entry = $0; count++ } END { if (count != 1
   sha256sum --check -
 ```
 
-The selected AppImage must report `OK`. A missing or duplicate manifest entry, a changed file or a missing file makes the command fail. A checksum detects changed bytes but does not replace a publisher's signature. This AppImage is unsigned. Do not replace an expected checksum with the hash of a file that failed verification.
+Continue only when verification reports `OK`. Download the package again if verification fails. Checksums confirm file integrity; they do not replace a publisher signature. The AppImage is unsigned.
 
 The source archives and build tools are separate downloads. You do not need them to install or run Tokenlogue.
 
@@ -68,7 +64,8 @@ The source archives and build tools are separate downloads. You do not need them
 <a id="en-run"></a>
 
 <a id="-start-tokenlogue"></a>
-## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Start Tokenlogue
+<a id="start-tokenlogue"></a>
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Launch
 
 Grant execute permission once, then start the verified AppImage as your normal user.
 ```bash
@@ -81,7 +78,8 @@ You can keep the file in a convenient folder. A file manager that supports progr
 <a id="en-without-fuse"></a>
 
 <a id="-run-without-fuse"></a>
-## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Run without FUSE
+<a id="run-without-fuse"></a>
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Launch without FUSE
 
 If your system cannot mount AppImages through FUSE, use extract-and-run.
 ```bash
@@ -93,7 +91,8 @@ This unpacks files to a temporary directory and starts the app without FUSE. Ens
 <a id="en-updates"></a>
 
 <a id="-update-without-removing-your-profile"></a>
-## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Update without removing your profile
+<a id="update-without-removing-your-profile"></a>
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Updates
 
 Close every older Tokenlogue copy before opening the replacement. Verify the new file and run it under the same OS account. There is no automatic updater. Replacing the AppImage does not remove the separately stored application data.
 
@@ -105,7 +104,8 @@ The database alone is not a complete portable backup. Its encryption key stays i
 <a id="en-system-recovery"></a>
 
 <a id="-optional-recovery-through-your-linux-account"></a>
-## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Optional recovery through your Linux account
+<a id="optional-recovery-through-your-linux-account"></a>
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> System recovery
 
 A saved <a href="security.md#en-recovery" title="recovery code">recovery code&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> is the usual Linux PIN-recovery method. It needs no administrator setup. The optional `Use Linux system recovery` action requires a Tokenlogue polkit policy and the desktop authentication agent.
 
@@ -129,7 +129,8 @@ sudo /usr/bin/python3 -I packaging/linux/polkit/tokenlogue-polkit.py uninstall
 <a id="en-help"></a>
 
 <a id="-troubleshoot-startup"></a>
-## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Troubleshoot startup
+<a id="troubleshoot-startup"></a>
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Startup help
 
 <img src="assets/ui/frame-top.svg" width="100%" alt="">
 

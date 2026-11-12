@@ -92,7 +92,7 @@ jobs:
             --reports build/matrix-reports --sha256 "$EXPECTED_SHA256" \
             --source-commit "$SOURCE_COMMIT" --source-run-id "$SOURCE_RUN_ID" \
             --infrastructure-commit "$GITHUB_SHA"
-      - name: Preserve diagnostic reports and unchanged user copy
+      - name: Preserve compatibility test results
         if: ${{ always() && !cancelled() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
