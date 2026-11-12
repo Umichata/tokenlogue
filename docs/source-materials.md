@@ -10,7 +10,7 @@
 <a id="lang-en"></a>
 
 <a id="en-preview-status"></a>
-> **0.1.0 Preview.** Source archives accompany the application packages in Releases. Downloads are unavailable while the release remains a draft.
+> **[0.1.0 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9)** · Application packages and matching source archives are available for download.
 
 Tokenlogue's application code uses the [MIT License](../LICENSE). Third-party components keep their original terms. Ready-to-use APK and AppImage packages are separate downloads. You do not need source archives or build tools to run the application.
 
@@ -19,7 +19,7 @@ Tokenlogue's application code uses the [MIT License](../LICENSE). Third-party co
 
 Use [`PROVENANCE.json`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/PROVENANCE.json) to select the source archive for each package. Android and Linux share the application core and use separate packaging revisions. The manifest records the exact commits, source trees and package checksums.
 
-The [Releases page](https://github.com/Umichata/tokenlogue/releases) lists application packages and source archives. Third-party sources are supplied separately in a dependency archive with a component index.
+The [0.1.0 Preview release](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9) lists application packages and source archives. For installation, download the [Android APK](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-android-arm64-v8a-v43.apk) or [Linux AppImage](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage) and follow the [Android](android.md#en-install) or [Linux](linux-appimage.md#en-download) guide. Third-party sources are supplied separately in a dependency archive with a component index.
 
 <a id="-find-the-matching-collection"></a>
 ## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Dependency archive

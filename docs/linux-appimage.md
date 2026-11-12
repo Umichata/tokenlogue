@@ -10,9 +10,11 @@
 <a id="lang-en"></a>
 
 <a id="en-preview-status"></a>
-> **0.1.0 Preview · draft.** Downloads will be available after publication.
+> **0.1.0 Preview · prerelease.** [Download the published release](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9).
 
 Run Tokenlogue on your Linux desktop with a single AppImage. No separate Python, Flutter or build-tool installation is required. The interface supports English and Russian.
+
+<p align="left"><a href="https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage" title="Download AppImage"><img src="assets/ui/buttons/en-dd8bbfdbdd63.svg" alt="Download AppImage" width="106" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SHA256SUMS">Checksums (SHA256SUMS)</a></p>
 
 <p align="left"><a href="#en-requirements"><img src="assets/ui/buttons/en-54cd239b749b.svg" alt="Requirements" width="128" height="28"></a> <a href="#en-download"><img src="assets/ui/buttons/en-eb7306e41747.svg" alt="Download" width="98" height="28"></a> <a href="#en-run"><img src="assets/ui/buttons/en-ae7b8814a827.svg" alt="Run" width="54" height="28"></a> <a href="#en-updates"><img src="assets/ui/buttons/en-c94624d60136.svg" alt="Update" width="78" height="28"></a> <a href="#en-help"><img src="assets/ui/buttons/en-f0fa42aa9ee2.svg" alt="Troubleshooting" width="144" height="28"></a></p>
 
@@ -36,7 +38,7 @@ Screen-lock and sleep protection is designed for the supported Cinnamon/X11 desk
 <a id="download-and-verify"></a>
 ## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Download
 
-The <a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9" title="Releases">Releases page&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> lists the Tokenlogue 0.1.0 [AppImage](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage) and [`SHA256SUMS`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SHA256SUMS).
+Download the [Linux AppImage](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage) and [`SHA256SUMS`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SHA256SUMS) from the published **Tokenlogue 0.1.0 Preview** release. AppImage is the ready-to-run application; GitHub’s “Source code” archives are not Linux installation packages.
 
 <img src="assets/ui/frame-top.svg" width="100%" alt="">
 

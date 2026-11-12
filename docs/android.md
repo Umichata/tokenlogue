@@ -10,9 +10,11 @@
 <a id="lang-en"></a>
 
 <a id="en-preview-status"></a>
-> **0.1.0 Preview · draft.** Downloads will be available after publication.
+> **0.1.0 Preview · prerelease.** [Download the published release](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9).
 
 Tokenlogue brings OpenRouter chats to an ARM64 Android phone or tablet. The interface supports English and Russian, saved per-chat drafts and layouts that adapt to the available space.
+
+<p align="left"><a href="https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-android-arm64-v8a-v43.apk" title="Download APK"><img src="assets/ui/buttons/en-dd8bbfdbdd63.svg" alt="Download APK" width="106" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SHA256SUMS">Checksums (SHA256SUMS)</a></p>
 
 <p align="left"><a href="#en-requirements"><img src="assets/ui/buttons/en-54cd239b749b.svg" alt="Requirements" width="128" height="28"></a> <a href="#en-install"><img src="assets/ui/buttons/en-c1a92da25825.svg" alt="Install" width="71" height="28"></a> <a href="#en-update"><img src="assets/ui/buttons/en-c94624d60136.svg" alt="Update" width="78" height="28"></a> <a href="#en-first-launch"><img src="assets/ui/buttons/en-1de6f9fc48e6.svg" alt="First launch" width="112" height="28"></a> <a href="security.md#english"><img src="assets/ui/buttons/en-9c2e33444d68.svg" alt="Protection" width="102" height="28"></a></p>
 
@@ -35,7 +37,7 @@ Compatibility with devices that use 16 KiB memory pages is not yet confirmed.
 <a id="obtain-and-install-the-apk"></a>
 ## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Installation
 
-The <a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9" title="Releases">Releases page&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> lists the Tokenlogue 0.1.0 [APK](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-android-arm64-v8a-v43.apk) and [`SHA256SUMS`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SHA256SUMS).
+Download the [Android APK](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-android-arm64-v8a-v43.apk) and [`SHA256SUMS`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SHA256SUMS) from the published **Tokenlogue 0.1.0 Preview** release. The APK is the installation file; GitHub’s “Source code” archives are not Android installers.
 
 <img src="assets/ui/frame-top.svg" width="100%" alt="">
 

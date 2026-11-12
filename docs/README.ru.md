@@ -10,14 +10,24 @@
 
 # 🧭 Документация
 
-<p align="left"><a href="../README.ru.md"><img src="assets/ui/buttons/ru-e51081debfbf.svg" alt="Обзор проекта" width="137" height="28"></a> <a href="#ru-preview-status"><img src="assets/ui/buttons/ru-840902d46c65.svg" alt="Загрузки" width="94" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/issues"><img src="assets/ui/buttons/ru-9079b2556a7e.svg" alt="Помощь" width="87" height="28"></a></p>
+<p align="left"><a href="../README.ru.md"><img src="assets/ui/buttons/ru-e51081debfbf.svg" alt="Обзор проекта" width="137" height="28"></a> <a href="#ru-downloads"><img src="assets/ui/buttons/ru-840902d46c65.svg" alt="Загрузки" width="94" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/issues"><img src="assets/ui/buttons/ru-9079b2556a7e.svg" alt="Помощь" width="87" height="28"></a></p>
 
 <a id="russian"></a>
 
 <a id="ru-preview-status"></a>
-> **0.1.0 Preview** · Пакеты готовятся к публикации. Файлы появятся в [Releases](https://github.com/Umichata/tokenlogue/releases).
+> **0.1.0 Preview** · [Опубликованный prerelease](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9) для Android и Linux.
 
 Установка, возможности чата, защита данных и исходники — в одном разделе.
+
+<a id="ru-downloads"></a>
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Скачать Tokenlogue
+
+| Платформа | Скачать приложение | Установка |
+| --- | --- | --- |
+| Android · ARM64 | <a href="https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-android-arm64-v8a-v43.apk" title="APK"><img src="assets/ui/buttons/ru-007800957d4f.svg" alt="Android APK" width="83" height="28"></a> | [Установка Android](android.ru.md#ru-install) |
+| Linux · x86_64 | <a href="https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage" title="AppImage"><img src="assets/ui/buttons/ru-66f2899ff23a.svg" alt="Linux AppImage" width="65" height="28"></a> | [Запуск Linux](linux-appimage.ru.md#ru-run) |
+
+[Контрольные суммы (SHA256SUMS)](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SHA256SUMS). Архивы «Source code» и исходники зависимостей для установки не нужны.
 
 <a id="-начало-работы"></a>
 ## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Начало работы
@@ -26,7 +36,7 @@
 <tr><th align="left">Раздел</th><th align="left">Документы</th></tr>
 <tr>
 <td><a id="получение-tokenlogue"></a><strong>Установка</strong></td>
-<td><a href="#ru-preview-status" title="Загрузки"><img src="assets/ui/buttons/ru-f0e4eb0b92d5.svg" alt="Загрузки" width="94" height="28"></a> <a href="android.ru.md#russian" title="Android"><img src="assets/ui/buttons/ru-007800957d4f.svg" alt="Android" width="83" height="28"></a> <a href="linux-appimage.ru.md#russian" title="Linux"><img src="assets/ui/buttons/ru-66f2899ff23a.svg" alt="Linux" width="65" height="28"></a></td>
+<td><a href="#ru-downloads" title="Загрузки"><img src="assets/ui/buttons/ru-f0e4eb0b92d5.svg" alt="Загрузки" width="94" height="28"></a> <a href="android.ru.md#russian" title="Android"><img src="assets/ui/buttons/ru-007800957d4f.svg" alt="Android" width="83" height="28"></a> <a href="linux-appimage.ru.md#russian" title="Linux"><img src="assets/ui/buttons/ru-66f2899ff23a.svg" alt="Linux" width="65" height="28"></a></td>
 </tr>
 <tr>
 <td><a id="первый-разговор"></a><strong>Первый запуск</strong></td>
