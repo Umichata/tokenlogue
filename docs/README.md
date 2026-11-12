@@ -10,14 +10,24 @@
 
 # 🧭 Documentation
 
-<p align="left"><a href="../README.md"><img src="assets/ui/buttons/en-7a9481e952d5.svg" alt="Project overview" width="148" height="28"></a> <a href="#en-preview-status"><img src="assets/ui/buttons/en-dd8bbfdbdd63.svg" alt="Downloads" width="106" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/issues"><img src="assets/ui/buttons/en-90990361e68d.svg" alt="Help" width="59" height="28"></a></p>
+<p align="left"><a href="../README.md"><img src="assets/ui/buttons/en-7a9481e952d5.svg" alt="Project overview" width="148" height="28"></a> <a href="#downloads"><img src="assets/ui/buttons/en-dd8bbfdbdd63.svg" alt="Downloads" width="106" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/issues"><img src="assets/ui/buttons/en-90990361e68d.svg" alt="Help" width="59" height="28"></a></p>
 
 <a id="english"></a>
 
 <a id="en-preview-status"></a>
-> **0.1.0 Preview** · Packages are being prepared for publication. Downloads will appear in [Releases](https://github.com/Umichata/tokenlogue/releases).
+> **0.1.0 Preview** · [Published prerelease](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9) for Android and Linux.
 
 Installation, chat features, privacy and source code — all in one place.
+
+<a id="downloads"></a>
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Download Tokenlogue
+
+| Platform | Download the app | Installation |
+| --- | --- | --- |
+| Android · ARM64 | <a href="https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-android-arm64-v8a-v43.apk" title="APK"><img src="assets/ui/buttons/en-46463edb13a7.svg" alt="Android APK" width="83" height="28"></a> | [Android installation](android.md#en-install) |
+| Linux · x86_64 | <a href="https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage" title="AppImage"><img src="assets/ui/buttons/en-96c04f670a21.svg" alt="Linux AppImage" width="65" height="28"></a> | [Linux installation](linux-appimage.md#en-run) |
+
+[Checksums (SHA256SUMS)](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SHA256SUMS). “Source code” archives and dependency sources are not needed to install the app.
 
 <a id="-start-here"></a>
 ## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Getting started
@@ -26,7 +36,7 @@ Installation, chat features, privacy and source code — all in one place.
 <tr><th align="left">Category</th><th align="left">Documents</th></tr>
 <tr>
 <td><a id="get-tokenlogue"></a><strong>Installation</strong></td>
-<td><a href="#en-preview-status" title="Downloads"><img src="assets/ui/buttons/en-0af7fc63fbbe.svg" alt="Downloads" width="106" height="28"></a> <a href="android.md#english" title="Android"><img src="assets/ui/buttons/en-46463edb13a7.svg" alt="Android" width="83" height="28"></a> <a href="linux-appimage.md#english" title="Linux"><img src="assets/ui/buttons/en-96c04f670a21.svg" alt="Linux" width="65" height="28"></a></td>
+<td><a href="#downloads" title="Downloads"><img src="assets/ui/buttons/en-0af7fc63fbbe.svg" alt="Downloads" width="106" height="28"></a> <a href="android.md#english" title="Android"><img src="assets/ui/buttons/en-46463edb13a7.svg" alt="Android" width="83" height="28"></a> <a href="linux-appimage.md#english" title="Linux"><img src="assets/ui/buttons/en-96c04f670a21.svg" alt="Linux" width="65" height="28"></a></td>
 </tr>
 <tr>
 <td><a id="your-first-conversation"></a><strong>First launch</strong></td>

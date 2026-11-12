@@ -10,9 +10,11 @@
 <a id="lang-ru"></a>
 
 <a id="ru-preview-status"></a>
-> **0.1.0 Preview · черновик.** Файлы станут доступны для скачивания после публикации.
+> **0.1.0 Preview · prerelease.** [Скачать опубликованную версию](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9).
 
 Запускайте Tokenlogue на рабочем столе Linux из одного файла AppImage. Отдельная установка Python, Flutter или инструментов сборки не нужна. Интерфейс доступен на русском и английском.
+
+<p align="left"><a href="https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage" title="Скачать AppImage"><img src="assets/ui/buttons/ru-840902d46c65.svg" alt="Скачать AppImage" width="94" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SHA256SUMS">Контрольные суммы (SHA256SUMS)</a></p>
 
 <p align="left"><a href="#ru-requirements"><img src="assets/ui/buttons/ru-c8c1bdfd645d.svg" alt="Требования" width="114" height="28"></a> <a href="#ru-download"><img src="assets/ui/buttons/ru-a51ebf3766a4.svg" alt="Скачивание" width="115" height="28"></a> <a href="#ru-run"><img src="assets/ui/buttons/ru-dbadd61442d5.svg" alt="Запуск" width="77" height="28"></a> <a href="#ru-updates"><img src="assets/ui/buttons/ru-fee57eb0b9e5.svg" alt="Обновление" width="117" height="28"></a> <a href="#ru-help"><img src="assets/ui/buttons/ru-9079b2556a7e.svg" alt="Помощь" width="87" height="28"></a></p>
 
@@ -36,7 +38,7 @@
 <a id="скачивание-и-проверка"></a>
 ## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Загрузка
 
-В <a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9" title="Выпуски">разделе выпусков&nbsp;<img src="assets/ui/inline-link.svg" alt="" width="17" height="17"></a> указаны [AppImage](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage) Tokenlogue 0.1.0 и [`SHA256SUMS`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SHA256SUMS).
+Скачайте [AppImage для Linux](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage) и [`SHA256SUMS`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SHA256SUMS) из опубликованного выпуска **Tokenlogue 0.1.0 Preview**. AppImage — готовое приложение; архивы GitHub «Source code» не являются установочными пакетами Linux.
 
 <img src="assets/ui/frame-top.svg" width="100%" alt="">
 

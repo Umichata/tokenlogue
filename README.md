@@ -8,13 +8,13 @@
   <img src="docs/assets/tokenlogue-banner-en-v2.png" alt="Tokenlogue" width="100%">
 </h1>
 
-<p align="left"><a href="docs/README.md#en-preview-status"><img src="docs/assets/ui/buttons/en-dd8bbfdbdd63.svg" alt="Downloads" width="106" height="28"></a> <a href="docs/user-guide.md#english"><img src="docs/assets/ui/buttons/en-4a1e7eca97e9.svg" alt="User guide" width="105" height="28"></a> <a href="docs/README.md"><img src="docs/assets/ui/buttons/en-992f2873a82b.svg" alt="Documentation map" width="174" height="28"></a> <a href="#en-features"><img src="docs/assets/ui/buttons/en-f6b7b37e8509.svg" alt="Features" width="90" height="28"></a> <a href="#en-screenshots"><img src="docs/assets/ui/buttons/en-fcdfafa3f3ee.svg" alt="Screenshots" width="116" height="28"></a> <a href="#en-start"><img src="docs/assets/ui/buttons/en-ca3dbec2e101.svg" alt="Get started" width="109" height="28"></a></p>
+<p align="left"><a href="https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-android-arm64-v8a-v43.apk" title="Download Android APK"><img src="docs/assets/ui/buttons/en-46463edb13a7.svg" alt="Android APK" width="83" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage" title="Download Linux AppImage"><img src="docs/assets/ui/buttons/en-96c04f670a21.svg" alt="Linux AppImage" width="65" height="28"></a> <a href="docs/user-guide.md#english"><img src="docs/assets/ui/buttons/en-4a1e7eca97e9.svg" alt="User guide" width="105" height="28"></a> <a href="docs/README.md"><img src="docs/assets/ui/buttons/en-992f2873a82b.svg" alt="Documentation map" width="174" height="28"></a> <a href="#en-features"><img src="docs/assets/ui/buttons/en-f6b7b37e8509.svg" alt="Features" width="90" height="28"></a> <a href="#en-screenshots"><img src="docs/assets/ui/buttons/en-fcdfafa3f3ee.svg" alt="Screenshots" width="116" height="28"></a> <a href="#en-start"><img src="docs/assets/ui/buttons/en-ca3dbec2e101.svg" alt="Get started" width="109" height="28"></a></p>
 
 <a id="english"></a>
 <a id="lang-en"></a>
 
 <a id="en-preview-status"></a>
-> **0.1.0 Preview** · Packages are being prepared for publication. Downloads will appear in [Releases](https://github.com/Umichata/tokenlogue/releases).
+> **[0.1.0 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9)** · Available for Android and Linux. Choose your package above and follow the [Android installation](docs/android.md#en-install) or [Linux installation](docs/linux-appimage.md#en-download) guide.
 
 <h3 align="left">Chat with OpenRouter models on <strong>Linux and Android</strong>. Keep conversations and drafts together, choose a model for each chat and see an estimate before sending a paid request.</h3>
 
@@ -49,12 +49,12 @@
 
 | Platform | Package | Requirements | Guide |
 | --- | --- | --- | --- |
-| Linux | AppImage x86_64 | x86-64-v2 CPU and compatible desktop libraries | <a href="docs/linux-appimage.md#english">Linux installation&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> |
-| Android | APK ARM64 | Android 7.0 / API 24 or later | <a href="docs/android.md#english">Android installation&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> |
+| Linux | [Download AppImage x86_64](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage) | x86-64-v2 CPU and compatible desktop libraries | <a href="docs/linux-appimage.md#english">Linux installation&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> |
+| Android | [Download APK ARM64](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-android-arm64-v8a-v43.apk) | Android 7.0 / API 24 or later | <a href="docs/android.md#english">Android installation&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> |
 
 <img src="docs/assets/ui/frame-bottom.svg" width="100%" alt="">
 
-Package availability is listed in the <a href="docs/README.md#en-preview-status">download section&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a>. The platform guides cover installation and verification with `SHA256SUMS`. Python, Flutter and the source archives are not required to run the app. The Linux AppImage is unsigned.
+The packages and [SHA256SUMS](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SHA256SUMS) are available in [0.1.0 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9). The platform guides cover installation and checksum verification. Python, Flutter and the source archives are not required to run the app. The Linux AppImage is unsigned.
 
 ### First launch
 
@@ -75,7 +75,7 @@ Package availability is listed in the <a href="docs/README.md#en-preview-status"
 <tr><th align="left">Category</th><th align="left">Documents</th></tr>
 <tr>
 <td><a id="start-here"></a><strong>Installation</strong></td>
-<td><a href="docs/README.md#en-preview-status" title="Downloads"><img src="docs/assets/ui/buttons/en-0af7fc63fbbe.svg" alt="Downloads" width="106" height="28"></a> <a href="docs/android.md#en-install" title="Android install"><img src="docs/assets/ui/buttons/en-ec13da01a81e.svg" alt="Android install" width="133" height="28"></a> <a href="docs/linux-appimage.md#en-download" title="Linux launch"><img src="docs/assets/ui/buttons/en-ce1db4f66563.svg" alt="Linux launch" width="118" height="28"></a></td>
+<td><a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9" title="Downloads"><img src="docs/assets/ui/buttons/en-0af7fc63fbbe.svg" alt="Downloads" width="106" height="28"></a> <a href="docs/android.md#en-install" title="Android install"><img src="docs/assets/ui/buttons/en-ec13da01a81e.svg" alt="Android install" width="133" height="28"></a> <a href="docs/linux-appimage.md#en-download" title="Linux launch"><img src="docs/assets/ui/buttons/en-ce1db4f66563.svg" alt="Linux launch" width="118" height="28"></a></td>
 </tr>
 <tr>
 <td><a id="use-and-protect"></a><strong>Chats and security</strong></td>

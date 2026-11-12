@@ -8,13 +8,13 @@
   <img src="docs/assets/tokenlogue-banner-ru-v2.png" alt="Tokenlogue" width="100%">
 </h1>
 
-<p align="left"><a href="docs/README.ru.md#ru-preview-status"><img src="docs/assets/ui/buttons/ru-f3b0f21094a4.svg" alt="Скачать" width="86" height="28"></a> <a href="docs/user-guide.ru.md#russian"><img src="docs/assets/ui/buttons/ru-7c519bac3145.svg" alt="Руководство" width="121" height="28"></a> <a href="docs/README.ru.md"><img src="docs/assets/ui/buttons/ru-b4e89d854289.svg" alt="Карта документации" width="184" height="28"></a> <a href="#ru-features"><img src="docs/assets/ui/buttons/ru-c233223e41f1.svg" alt="Функции" width="93" height="28"></a> <a href="#ru-screenshots"><img src="docs/assets/ui/buttons/ru-2ac04551ccc4.svg" alt="Скриншоты" width="113" height="28"></a> <a href="#ru-start"><img src="docs/assets/ui/buttons/ru-f1eadb913310.svg" alt="Начать" width="79" height="28"></a></p>
+<p align="left"><a href="https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-android-arm64-v8a-v43.apk" title="Скачать APK для Android"><img src="docs/assets/ui/buttons/ru-007800957d4f.svg" alt="APK для Android" width="83" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage" title="Скачать AppImage для Linux"><img src="docs/assets/ui/buttons/ru-66f2899ff23a.svg" alt="AppImage для Linux" width="65" height="28"></a> <a href="docs/user-guide.ru.md#russian"><img src="docs/assets/ui/buttons/ru-7c519bac3145.svg" alt="Руководство" width="121" height="28"></a> <a href="docs/README.ru.md"><img src="docs/assets/ui/buttons/ru-b4e89d854289.svg" alt="Карта документации" width="184" height="28"></a> <a href="#ru-features"><img src="docs/assets/ui/buttons/ru-c233223e41f1.svg" alt="Функции" width="93" height="28"></a> <a href="#ru-screenshots"><img src="docs/assets/ui/buttons/ru-2ac04551ccc4.svg" alt="Скриншоты" width="113" height="28"></a> <a href="#ru-start"><img src="docs/assets/ui/buttons/ru-f1eadb913310.svg" alt="Начать" width="79" height="28"></a></p>
 
 <a id="russian"></a>
 <a id="lang-ru"></a>
 
 <a id="ru-preview-status"></a>
-> **0.1.0 Preview** · Пакеты готовятся к публикации. Файлы появятся в [Releases](https://github.com/Umichata/tokenlogue/releases).
+> **[0.1.0 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9)** · Доступна для Android и Linux. Выберите пакет выше и следуйте руководству по [установке в Android](docs/android.ru.md#ru-install) или [установке в Linux](docs/linux-appimage.ru.md#ru-download).
 
 <h3 align="left">Общайтесь с моделями OpenRouter на <strong>Linux и Android</strong>. Храните чаты и черновики вместе, выбирайте модель для каждого разговора и смотрите оценку перед платным запросом.</h3>
 
@@ -49,12 +49,12 @@
 
 | Платформа | Пакет | Требования | Руководство |
 | --- | --- | --- | --- |
-| Linux | AppImage x86_64 | Процессор x86-64-v2 и совместимые библиотеки рабочего стола | <a href="docs/linux-appimage.ru.md#russian">Установка в Linux&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> |
-| Android | APK ARM64 | Android 7.0 / API 24 или новее | <a href="docs/android.ru.md#russian">Установка в Android&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> |
+| Linux | [Скачать AppImage x86_64](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage) | Процессор x86-64-v2 и совместимые библиотеки рабочего стола | <a href="docs/linux-appimage.ru.md#russian">Установка в Linux&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> |
+| Android | [Скачать APK ARM64](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-android-arm64-v8a-v43.apk) | Android 7.0 / API 24 или новее | <a href="docs/android.ru.md#russian">Установка в Android&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> |
 
 <img src="docs/assets/ui/frame-bottom.svg" width="100%" alt="">
 
-Доступность пакетов указана в <a href="docs/README.ru.md#ru-preview-status">разделе загрузок&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a>. Руководства платформ описывают установку и проверку по `SHA256SUMS`. Для запуска не нужны Python, Flutter и архивы исходников. AppImage Linux не подписана.
+Пакеты и [SHA256SUMS](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SHA256SUMS) доступны в [0.1.0 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9). Руководства платформ описывают установку и проверку контрольных сумм. Для запуска не нужны Python, Flutter и архивы исходников. AppImage Linux не подписана.
 
 ### Первый запуск
 
@@ -75,7 +75,7 @@
 <tr><th align="left">Раздел</th><th align="left">Документы</th></tr>
 <tr>
 <td><a id="начало-работы"></a><a id="начало-работы-1"></a><strong>Установка</strong></td>
-<td><a href="docs/README.ru.md#ru-preview-status" title="Загрузки"><img src="docs/assets/ui/buttons/ru-f0e4eb0b92d5.svg" alt="Загрузки" width="94" height="28"></a> <a href="docs/android.ru.md#ru-install" title="Установка Android"><img src="docs/assets/ui/buttons/ru-0abdbebf204e.svg" alt="Установка Android" width="166" height="28"></a> <a href="docs/linux-appimage.ru.md#ru-download" title="Запуск Linux"><img src="docs/assets/ui/buttons/ru-4b91e607dca0.svg" alt="Запуск Linux" width="122" height="28"></a></td>
+<td><a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9" title="Загрузки"><img src="docs/assets/ui/buttons/ru-f0e4eb0b92d5.svg" alt="Загрузки" width="94" height="28"></a> <a href="docs/android.ru.md#ru-install" title="Установка Android"><img src="docs/assets/ui/buttons/ru-0abdbebf204e.svg" alt="Установка Android" width="166" height="28"></a> <a href="docs/linux-appimage.ru.md#ru-download" title="Запуск Linux"><img src="docs/assets/ui/buttons/ru-4b91e607dca0.svg" alt="Запуск Linux" width="122" height="28"></a></td>
 </tr>
 <tr>
 <td><a id="переписка-и-защита"></a><strong>Чаты и безопасность</strong></td>
