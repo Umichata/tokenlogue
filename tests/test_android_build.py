@@ -44,6 +44,36 @@ class AndroidBuildTests(unittest.TestCase):
         workspace_patch.start()
         self.addCleanup(workspace_patch.stop)
 
+    def test_crypto_source_material_index_covers_exact_tracked_bytes(self) -> None:
+        root = PROJECT / "packaging/android/crypto"
+        indexed: set[str] = set()
+        for line in (root / "SHA256SUMS").read_text().splitlines():
+            expected, name = line.split("  ", 1)
+            relative = Path(name)
+            self.assertFalse(relative.is_absolute())
+            self.assertNotIn("..", relative.parts)
+            self.assertNotIn(name, indexed)
+            indexed.add(name)
+            path = root / relative
+            self.assertFalse(path.is_symlink())
+            with path.open("rb") as stream:
+                observed = hashlib.file_digest(stream, "sha256").hexdigest()
+            self.assertEqual(observed, expected, name)
+        tracked = subprocess.check_output(
+            ["git", "ls-files", "-z", "--", "packaging/android/crypto"],
+            cwd=PROJECT,
+        ).split(b"\0")
+        self.assertEqual(
+            indexed,
+            {
+                Path(os.fsdecode(name))
+                .relative_to("packaging/android/crypto")
+                .as_posix()
+                for name in tracked
+                if name and not name.endswith(b"/SHA256SUMS")
+            },
+        )
+
     def archive(
         self,
         *,

@@ -69,7 +69,7 @@ class ProjectMetadataTests(unittest.TestCase):
         self.assertEqual(flet["artifact"], "tokenlogue")
         self.assertEqual(flet["org"], "io.github.umichata")
         self.assertEqual(flet["bundle_id"], "io.github.umichata.tokenlogue")
-        self.assertEqual(flet["build_number"], 44)
+        self.assertEqual(flet["build_number"], 45)
         self.assertEqual(flet["company"], "Umichata")
         self.assertEqual(flet["copyright"], "Copyright © 2026 Viktor Zemkov")
 
