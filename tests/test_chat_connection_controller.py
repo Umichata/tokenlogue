@@ -32,7 +32,7 @@ from storage.chat_repository import SqliteChatRepository  # noqa: E402
 from storage.database import AuthDatabase  # noqa: E402
 from storage.draft_repository import SqliteDraftRepository  # noqa: E402
 from storage.message_repository import SqliteMessageRepository  # noqa: E402
-from tests.test_chat_menu import texts  # noqa: E402
+from tests.test_chat_menu import texts, walk  # noqa: E402
 from tests.test_chat_ui_integration import FakeKeyValidator, FakePage  # noqa: E402
 from tests.test_provider_sending import FakeProviderProfiles  # noqa: E402
 
@@ -194,6 +194,14 @@ class ChatConnectionControllerTests(unittest.IsolatedAsyncioTestCase):
         )
         assert selector is not None
         await self.click(selector.provider_buttons[provider])
+        headings = [
+            getattr(control.value, "key", None)
+            for control in walk(self.page.controls[0])
+            if isinstance(control, ft.Text)
+            and control.theme_style is ft.TextThemeStyle.HEADLINE_MEDIUM
+        ]
+        self.assertEqual(headings, ["connection.change_provider"])
+        self.assertEqual(len(await self.chats.list_chats()), 2)
         mode = ChatMode.PAID if provider is ProviderId.VSEGPT else ChatMode.FREE
         await self.controller.select_chat_mode(mode)
         model = (

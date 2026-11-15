@@ -1,4 +1,4 @@
-"""Экраны выбора режима и модели нового чата."""
+"""Выбор режима и модели для нового чата или его нового подключения."""
 
 from __future__ import annotations
 
@@ -71,6 +71,7 @@ class ModeSelectionView:
         on_cancel: AsyncCallback,
         *,
         provider_id: ProviderId | None = None,
+        changing_provider: bool = False,
     ) -> None:
         async def select_free(_event: ft.Event[ft.Button]) -> None:
             await on_select(ChatMode.FREE)
@@ -114,8 +115,17 @@ class ModeSelectionView:
             on_click=select_paid,
         )
         controls: list[ft.Control] = [
-            ft.Text(tr("chat.untitled"), theme_style=ft.TextThemeStyle.HEADLINE_MEDIUM),
-            ft.Text(tr("mode.choose_first")),
+            ft.Text(
+                tr("connection.change_provider")
+                if changing_provider
+                else tr("chat.untitled"),
+                theme_style=ft.TextThemeStyle.HEADLINE_MEDIUM,
+            ),
+            ft.Text(
+                tr("connection.choose_mode", provider=provider_spec(provider_id).name)
+                if changing_provider
+                else tr("mode.choose_first")
+            ),
             ft.Container(
                 bgcolor=PANEL_BACKGROUND,
                 border_radius=16,

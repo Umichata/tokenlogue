@@ -23,5 +23,6 @@
   "connection.catalog_unavailable": "Models could not be loaded. Try configuring later.",
   "connection.change_failed": "The chat connection could not be saved.",
   "connection.stale": "The connection or key changed. Start again.",
-  "connection.resume": "Key configured. Choose the provider to continue."
+  "connection.resume": "Key configured. Choose the provider to continue.",
+  "connection.choose_mode": "Choose the model mode for this chat’s {provider} connection."
 }

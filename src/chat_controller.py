@@ -2589,6 +2589,7 @@ class ChatSessionController:
             on_select=choose,
             on_cancel=cancel,
             provider_id=self._creation_provider,
+            changing_provider=change is not None,
         )
         self._screen = _ChatScreen.MODE_SELECTION
         self._replace_page(view.control)
