@@ -1,28 +1,32 @@
-<p align="left">
-<a href="source-materials.ru.md" title="Русский"><img align="right" src="assets/ui/buttons/en-0380058e71b5.svg" alt="Русский" width="46" height="28"></a>
-<a href="source-materials.md" title="English"><img align="right" src="assets/ui/buttons/en-927deb529a3e.svg" alt="English" width="45" height="28"></a>
-<a href="../README.md" title="Home"><img src="assets/ui/buttons/en-2c296d10dfa5.svg" alt="Home" width="34" height="28"></a> <a href="README.md" title="Documentation map"><img src="assets/ui/buttons/en-992f2873a82b.svg" alt="Documentation map" width="174" height="28"></a>
-</p>
-
-# Source code and dependencies
+[English](source-materials.md#english) · [Русский](source-materials.ru.md#russian)
 
 <a id="english"></a>
 <a id="lang-en"></a>
 
-<a id="en-preview-status"></a>
-> **[0.1.0 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9)** · Application packages and matching source archives are available for download.
+# Source code and dependencies
+
+[Home](../README.md) · [Documentation](../docs/README.md)
+
+> **0.1.1 is local.** These instructions describe the current source and local builds. [Published 0.1.0 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9) is the earlier release. Its download links do not provide 0.1.1.
+
+
+## Choose materials for your package
+
+The links below belong to the published 0.1.0 packages. Local 0.1.1 has a different application revision and includes the two-provider interface and analytics. Use the provenance supplied with your specific local package to identify its exact source commit, tree, locks and build inputs. A documentation-only revision does not change an already built binary.
+
+The application source archive, original dependency sources and evidence of binary production have different roles. Matching a version or source checksum does not prove that a particular wheel was compiled from it. Source availability is separate from complete binary provenance.
 
 Tokenlogue's application code uses the [MIT License](../LICENSE). Third-party components keep their original terms. Ready-to-use APK and AppImage packages are separate downloads. You do not need source archives or build tools to run the application.
 
 <a id="-application-sources"></a>
-## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Application sources
+## Application sources
 
-Use [`PROVENANCE.json`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/PROVENANCE.json) to select the source archive for each package. Android and Linux share the application core and use separate packaging revisions. The manifest records the exact commits, source trees and package checksums.
+Use [`PROVENANCE.json`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/PROVENANCE.json) to select the source archive for each package. The published Android and Linux packages share the application core and use separate packaging revisions. The manifest records the exact commits, source trees and package checksums.
 
 The [0.1.0 Preview release](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9) lists application packages and source archives. For installation, download the [Android APK](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-android-arm64-v8a-v43.apk) or [Linux AppImage](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage) and follow the [Android](android.md#en-install) or [Linux](linux-appimage.md#en-download) guide. Third-party sources are supplied separately in a dependency archive with a component index.
 
 <a id="-find-the-matching-collection"></a>
-## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Dependency archive
+## Dependency archive
 
 | File | Purpose |
 | --- | --- |
@@ -58,7 +62,7 @@ The release manifest checks the downloaded archive. The inner manifest checks it
 
 <a id="en-run-from-source"></a>
 <a id="-run-from-source-on-linux"></a>
-## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Run from source on Linux
+## Run current sources on Linux
 
 Install Python 3.12 and [uv](https://docs.astral.sh/uv/). Open a terminal in the extracted project directory containing `pyproject.toml` and `uv.lock`. The [Linux desktop and key-store requirements](linux-appimage.md#english) also apply.
 
@@ -70,15 +74,13 @@ uv run --locked flet run
 These commands run the source application and do not create an APK or AppImage. Preparing the environment and downloading Flet desktop components may require internet access. For packaging, use the project recipes and exact locks from the matching project archive. The [Linux packaging guide](../packaging/linux/appimage/README.md#english), [Linux startup runtime recipe](../packaging/linux/appimage/runtime/README.md#english) and [Android native dependency guide](../packaging/android/crypto/README.md#english) describe the corresponding components.
 
 <a id="-what-the-available-materials-establish"></a>
-## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Component provenance
+## Component provenance
 
-Source-to-binary correspondence is not fully documented for Android CFFI 2.0.0, PyCryptodomex 3.23.0 and msgpack 1.1.2, or for Linux CFFI 2.0.0 and PyCryptodomex 3.23.0. The exact libffi revision and patches inside the selected CFFI wheels remain unidentified; the libffi in the Python runtime is a separate component.
+Source-to-binary correspondence is not fully documented for Android CFFI 2.0.0, PyCryptodomex 3.23.0 and msgpack 1.1.2, or for Linux CFFI 2.0.0 and PyCryptodomex 3.23.0. The exact libffi revision and patches inside the selected CFFI wheels remain unidentified. The libffi in the Python runtime is a separate component.
 
 The component index describes the available source materials. A matching source version and checksum identify an archive, but do not establish independent reproduction of every native binary or a complete offline build environment.
 
 <a id="-licenses-and-older-collections"></a>
-## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Licenses and notices
+## Licenses and notices
 
 The [package license guide](../packaging/linux/appimage/notices.md#english) and [libraries and fonts](../packaging/notices/README.md#english) explain the notices included with the application. Original licenses and copyright statements are preserved in their original language. Component sources and their build metadata are listed separately.
-
-<p align="left"><a href="../README.md#english"><img src="assets/ui/buttons/en-e3d813162a8e.svg" alt="Back to Tokenlogue" width="168" height="28"></a></p>

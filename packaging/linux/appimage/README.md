@@ -1,31 +1,24 @@
-<p align="left">
-<a href="README.ru.md" title="Русский"><img align="right" src="../../../docs/assets/ui/buttons/en-0380058e71b5.svg" alt="Русский" width="46" height="28"></a>
-<a href="README.md" title="English"><img align="right" src="../../../docs/assets/ui/buttons/en-927deb529a3e.svg" alt="English" width="45" height="28"></a>
-<a href="../../../README.md" title="Home"><img src="../../../docs/assets/ui/buttons/en-2c296d10dfa5.svg" alt="Home" width="34" height="28"></a> <a href="../../../docs/README.md" title="Documentation map"><img src="../../../docs/assets/ui/buttons/en-992f2873a82b.svg" alt="Documentation map" width="174" height="28"></a>
-</p>
-
-# Linux AppImage
+[English](README.md#english) · [Русский](README.ru.md#russian)
 
 <a id="english"></a>
 <a id="lang-en"></a>
 
-Tokenlogue is available as a portable x86_64 AppImage. You do not need to install Python, Flutter or Java to use it.
+# Linux packages
 
-<a id="-get-started"></a>
-## <img src="../../../docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Installation
+[Home](../../../README.md) · [Documentation](../../../docs/README.md)
 
-Follow the <a href="../../../docs/linux-appimage.md#english" title="Linux installation guide">Linux installation guide&nbsp;<img src="../../../docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> for download availability, checksum verification, first launch and updates. Close any running copy before opening a replacement AppImage. The package has no automatic updater and is not digitally signed.
+## Choose the package
 
-You need an x86-64-v2 processor, a graphical Linux desktop and compatible system libraries. Ubuntu 22.04 is the system-library baseline. GTK3, GLib/GIO and graphics drivers come from your distribution. FUSE is used for the usual launch, with an extract-and-run alternative described in the guide.
+The [Linux installation guide](../../../docs/linux-appimage.md) distinguishes the published 0.1.0 AppImage from the current local 0.1.1 desktop bundle. Python, Flutter and Java are not required to run packaged applications.
 
-<a id="-protect-your-conversations"></a>
-## <img src="../../../docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Key storage
+AppImage is unsigned. Verify its supplied checksum, grant execute permission and close older copies before opening a replacement. FUSE is needed for ordinary mounting, with extract-and-run available as an alternative. A desktop bundle keeps the executable, libraries and data together and uses no FUSE.
 
-A working Secret Service in your desktop session is needed for protected key storage. See <a href="../../../docs/security.md#english" title="local protection and recovery">local protection and recovery&nbsp;<img src="../../../docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> before changing your key-store settings or moving your profile. An AppImage is the application, not a backup of your conversations.
+## Desktop requirements
 
-<a id="-licenses-and-sources"></a>
-## <img src="../../../docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Sources and licenses
+Use an x86-64-v2 CPU, compatible system libraries, GTK3, distribution graphics drivers and an available user D-Bus session. Ubuntu 22.04 is the system-library baseline.
 
-<a href="notices.md#english" title="Included notices">Included notices&nbsp;<img src="../../../docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> explain the license collection. The <a href="runtime/README.md#english" title="runtime overview">runtime overview&nbsp;<img src="../../../docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> describes the included startup component. <a href="../../../docs/source-materials.md#english" title="Source materials">Source materials&nbsp;<img src="../../../docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> explain the separate source archives and their limits.
+A Secret Service provider such as GNOME Keyring stores protected keys. AppImage contains the application and is not a backup of conversations. Read [protection and recovery](../../../docs/security.md) before moving a profile or changing the key store.
 
-<p align="left"><a href="../../../README.md#english"><img src="../../../docs/assets/ui/buttons/en-e3d813162a8e.svg" alt="Back to Tokenlogue" width="168" height="28"></a></p>
+## Sources and licenses
+
+The [notice collection](notices.md), [startup runtime](runtime/README.md) and [source-materials guide](../../../docs/source-materials.md) explain their separate roles. Building a new AppImage uses the existing producer and its source, ABI and notice checks. It is separate from obtaining a normal desktop bundle.

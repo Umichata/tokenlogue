@@ -1,169 +1,85 @@
-<p align="left">
-<a href="https://github.com/Umichata/tokenlogue/blob/main/docs/security.ru.md" title="Русский"><img align="right" src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/buttons/en-0380058e71b5.svg" alt="Русский" width="46" height="28"></a>
-<a href="https://github.com/Umichata/tokenlogue/blob/main/docs/security.md" title="English"><img align="right" src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/buttons/en-927deb529a3e.svg" alt="English" width="45" height="28"></a>
-<a href="https://github.com/Umichata/tokenlogue/blob/main/README.md" title="Home"><img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/buttons/en-2c296d10dfa5.svg" alt="Home" width="34" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/blob/main/docs/README.md" title="Documentation map"><img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/buttons/en-992f2873a82b.svg" alt="Documentation map" width="174" height="28"></a>
-</p>
-
-<a id="-conversation-protection"></a>
-<a id="conversation-protection"></a>
-# 🛡️ Data protection
+[English](security.md#english) · [Русский](security.ru.md#russian)
 
 <a id="english"></a>
 <a id="lang-en"></a>
 
-Tokenlogue protects access to locally stored conversations with an app PIN and a separate encryption key. The same protection principles apply on Linux and Android.
+# Protect conversations and recover access
 
-<a id="en-provider-security"></a>
-## <img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Provider keys and analytics in current source builds
+[Home](../README.md) · [Documentation](../docs/README.md)
 
-This section applies to the current source application and new local builds. Existing published Preview downloads remain the earlier OpenRouter release. See the [current-source guide](user-guide.md#en-local-flow) for the new four-page workflow.
-
-OpenRouter and VSEGPT keys are separate entries in platform secure storage, outside preferences and readable database fields. Both can coexist in one protected profile. Providers settings never load a saved key into the editor. The reveal action shows only the candidate you have entered. Locking clears entered keys, revealed values and visible analytics on every private page. Input suggestions and keyboard learning are disabled for key fields where the platform supports those controls.
-
-Complete keys beginning with `sk-or-v1-` select the fixed OpenRouter HTTPS endpoint. VSEGPT keys beginning with `sk-or-vv-` or `sk-or-vis` select the same fixed VSEGPT HTTPS endpoint and the same secure-storage slot. A secret continuation is required after each prefix. The `sk-or-vis` format does not require a following hyphen. The key content and case are preserved. Recognition is local and is not proof of authorization or funds. A mismatch is rejected before a provider check. Keys are not tried on the other service, authenticated redirects do not forward them to another host, and failures do not trigger automatic provider switching or resend the conversation elsewhere. A public model catalogue response alone does not validate a key. Saving an unverified recognized key is explicit and does not bypass PIN setup or send a paid check request.
-
-Each chat stays bound to its provider and currency. A missing key stops sending from that chat until its provider is configured. Replacing a key leaves the previous saved key in place after a failed candidate check and does not reset PIN or move history to another service. Balance access restrictions do not by themselves invalidate a chat key. An unknown charge after dispatch stays uncertain. Local estimates and an account balance difference do not prove a request's final charge.
-
-Token and spending pages read the local request journal for saved chats on this device. Provider/model IDs, timestamps, currencies, usage, costs and their provenance remain accounting metadata rather than encrypted conversation content. API usage, estimates and unknown values are distinguished. USD and RUB are not combined. Deleting a chat removes its related journal and changes the statistics. Profile deletion removes both provider keys, all related statistics and provider caches. It does not revoke either remote key or erase activity held by either service.
+> **0.1.1 is local.** These instructions describe the current source and local builds. [Published 0.1.0 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9) is the earlier release. Its download links do not provide 0.1.1.
 
 
-<img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/frame-top.svg" width="100%" alt="">
+## PIN and app locking
 
-| Protection element | What it does |
-| --- | --- |
-| App PIN | Controls access through Tokenlogue. It is not the encryption key. |
-| Encryption key | Is stored separately and is needed to decrypt protected conversation fields. |
-| Recovery method | Lets you replace a forgotten PIN when the original protected encryption key remains available. |
+Choose four digits `0`–`9` and repeat them during setup. A leading zero is allowed. The app PIN is separate from your operating-system password and from the encryption key.
 
-<img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/frame-bottom.svg" width="100%" alt="">
+Three incorrect PIN checks block entry for five minutes. Restarting does not reset the countdown. The same limit applies when confirming a PIN to issue a recovery code.
 
-<p align="left"><a href="#en-pin"><img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/buttons/en-f4339e40ccbe.svg" alt="PIN" width="51" height="28"></a> <a href="#en-locking"><img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/buttons/en-7c036a2c68fa.svg" alt="Locking" width="82" height="28"></a> <a href="#en-recovery"><img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/buttons/en-3cd17d23de14.svg" alt="Recovery" width="93" height="28"></a> <a href="#en-encryption"><img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/buttons/en-4d3b89576c1d.svg" alt="Encryption" width="104" height="28"></a> <a href="#en-delete"><img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/buttons/en-8b48624df2d4.svg" alt="Delete a profile" width="139" height="28"></a></p>
+Use the lock button before leaving the device. Locking saves the draft and closes all private pages. Entered provider candidates and visible analytics are cleared, including hidden cards. An already dispatched request can finish and record its response once. Unlocking never sends a draft.
 
-<a id="en-pin"></a>
+![The ordinary Tokenlogue PIN sign-in screen on Linux](assets/screenshots/v011-linux-pin-login-en.png)
 
-<a id="your-app-pin"></a>
+*Separate demonstration profile. No PIN or recovery secret is shown.*
 
-<a id="-your-app-pin"></a>
-## <img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> App PIN
+Android backgrounding closes access. Returning or unlocking Android still requires the app PIN. On Linux, supported Cinnamon/X11 monitoring can lock the app on a screen lock, session change or suspend. Minimizing alone does not lock it. Other desktops and Wayland can limit monitoring, so use manual app locking when needed.
 
-Choose four digits `0`–`9` and repeat them during setup. A leading zero is allowed. Save the PIN separately. The eye button can reveal it, but Tokenlogue never copies it automatically.
+## Check Linux protection
 
-Three incorrect PIN checks block PIN entry for five minutes. Sign-in and PIN confirmation before issuing a recovery code share this limit. Restarting, sleeping or changing language does not reset it. Wait for the displayed countdown to finish. Recovery and local profile deletion remain available.
+After first setup, **Check local protection** introduces the check. The PIN is already saved. **Start check** requests a normal system lock. Unlock Linux, then enter your app PIN and review the result. You can continue with manual app locking and check later.
 
-The app PIN is different from your Linux password and Android screen-lock PIN. It controls access through Tokenlogue. It is not the encryption key and is not a substitute for a protected OS account.
-
-<a id="en-locking"></a>
-
-<a id="lock-the-app-when-you-leave"></a>
-
-<a id="-lock-the-app-when-you-leave"></a>
-## <img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> App locking
-
-Use the lock button in the header to close access to chats. Returning requires the app PIN. Locking saves the latest draft. A request already sent can still finish and record its response and cost. The app does not automatically send a draft when you return.
-
-On Android, leaving the app for the background locks access and closes dialogs. Returning to the app or unlocking Android does not unlock Tokenlogue. Merely opening the keyboard or briefly losing focus is not the same as backgrounding.
-
-On Linux, screen-lock and sleep monitoring depends on the desktop. The supported Cinnamon/X11 session can close access on screen lock, session switching and suspend. Minimizing or changing focus alone does not lock the app. Use manual app locking whenever monitoring is unavailable or unconfirmed. Other desktops, Wayland, additional displays and ambiguous sessions can limit automatic detection.
-
-<a id="check-linux-screen-lock-and-sleep-protection"></a>
-
-<a id="-check-linux-screen-lock-and-sleep-protection"></a>
-## <img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Automatic locking on Linux
-
-After saving a new protected Linux profile, `Check local protection` explains the check before opening chats. Your PIN is already saved. Only `Start check` requests the system screen lock. Unlock Linux normally, then enter that app PIN. Choose `Open chats` after reviewing the result. If interrupted, sign in with your saved PIN to resume. You can choose `Continue with manual locking` and check again later.
-
-The shield in the app header opens the protection panel before or after sign-in. Opening it never locks or suspends the computer. While signed out, choosing a test first takes you through normal app PIN sign-in. `Start test` remains a separate action.
-
-`Test screen lock` saves the draft and requests a normal system lock. `Test sleep protection` saves it and asks the computer to sleep. For the latter, wake the computer, unlock Linux normally and enter the app PIN. You do not need a successful screen test before testing sleep. The two checks have separate results.
-
-The panel distinguishes remembered checks from monitoring available now. A previous successful check is not proof that a currently disconnected service works. Results belong to this device and OS account. A different desktop setup may need another check. A cancelled or refused check does not confirm protection. Do not change system security settings merely to make a test succeed.
-
-Android uses background locking and has no desktop screen-lock or sleep tests in this panel.
+The shield opens the protection panel without locking or suspending the computer. Screen-lock and sleep checks have separate results. A saved result does not prove that current monitoring remains available. Enter your Linux password only in the operating system's authentication window.
 
 <a id="en-recovery"></a>
+## Recover a forgotten PIN
 
-<a id="recover-a-forgotten-app-pin"></a>
+Recovery replaces an app PIN while keeping the original protected encryption key. It cannot rebuild a lost key or restore a database from a code alone. Cancelling before saving keeps the old PIN.
 
-<a id="-recover-a-forgotten-app-pin"></a>
-## <img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> PIN recovery
+<a id="en-linux-code"></a>
+### Linux recovery code
 
-Recovery lets you choose and save a new app PIN. It needs an existing valid recovery method and the original protected encryption key. It cannot rebuild a lost key or restore a database from a code alone.
+After signing in, choose **Recovery code** in **⋮** and confirm your app PIN. Save the displayed 32-character code separately and repeat it to confirm storage. Anyone with the code can replace the app PIN. Clipboard history can keep a copied code.
 
-Opening `Forgot PIN?` does not change the PIN. Your previous PIN keeps working until a new one is saved. A system lock, backgrounding or language change can cancel an unfinished attempt. Start again if needed. A new PIN already saved remains active.
+The old code remains valid until a replacement is confirmed. You cannot reveal the same code later. Choose **Forgot PIN?**, enter your saved code, then choose and save a new PIN. Letter case, ordinary spaces and hyphens are accepted. Five wrong code checks block code entry for 30 seconds.
 
-<a id="linux-recovery-code"></a>
+Saving a replacement PIN consumes the used code. Save and confirm the replacement offered afterwards. If you close the app first, sign in with the new PIN and issue another code. Creating a code for an already locked profile requires valid access first.
 
-<a id="-linux-recovery-code"></a>
-### <img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Linux recovery code
+### Linux system recovery
 
-Save a code before you need it. After signing in, open `⋮` and choose `Recovery code`. Confirm your app PIN again. New profiles also offer this after the local-protection introduction.
+The separate **Use Linux system recovery** option needs the Tokenlogue polkit policy and desktop authentication agent. It requests fresh confirmation of your own Linux account. An already unlocked keyring or another administrator does not replace this proof. See [optional Linux setup](linux-appimage.md).
 
-The code has 32 Base32 characters, displayed in groups of four. Anyone with it can replace the app PIN. Save it separately in a password manager or on paper, then repeat the saved code to confirm. It is shown once. Copying is optional, and clipboard history may keep a copy.
+### Android system recovery
 
-A previous code remains valid until a replacement is confirmed. Cancelling or a failed save keeps the working code. You cannot reveal the same code later. Sign in and issue a replacement if you need a new one.
+On supported Android 11 or later devices, **Forgot PIN?** requests fresh system verification with the device PIN, pattern, password or supported biometrics. Fingerprint is not required. Android 7–10 can run the app but do not provide this recovery method. Set an Android screen lock before using it.
 
-To use it, choose `Forgot PIN?`, enter the saved code, then choose, repeat and save a new app PIN. ASCII letter case, ordinary spaces and hyphens are accepted. All 32 characters are required. Five incorrect code checks block code entry for 30 seconds, separately from the app PIN limit. Restarting does not bypass the delay.
+After confirmation, choose and repeat a new app PIN and save it. Cancelling before saving keeps the old PIN and conversations. If the device check is unavailable, use the current app PIN.
 
-Saving the new PIN consumes the code. Save and confirm the replacement offered afterwards. If you close the app first, sign in with the new PIN and create another code from `⋮`.
+<a href="assets/screenshots/v011-android-recovery-en.png"><img src="assets/screenshots/v011-android-recovery-en.png" alt="Android recovery entry when the device-lock prerequisite is unavailable" width="320"></a>
 
-Code recovery needs no Linux password, administrator rights or system policy. It keeps your API key, encryption key, conversations, drafts and budgets. It cannot be enrolled while a profile is already locked with a forgotten PIN. A new API key or an unlocked keyring does not prove access to that profile.
+*Android emulator. This example shows the message displayed when device screen lock is unavailable. Recovery availability depends on the device.*
 
-<a id="optional-linux-system-recovery"></a>
+## Encryption and separate storage
 
-<a id="-optional-linux-system-recovery"></a>
-### <img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Linux system recovery
+Saved chat titles, messages and drafts are encrypted. A random key is stored separately in platform secure storage. It is not derived from the four-digit PIN or provider key. Linux needs an available Secret Service such as GNOME Keyring.
 
-`Use Linux system recovery` is a separate choice. It requests fresh confirmation of your own Linux account through the desktop authentication window. Enter your Linux password only in that system window, never into Tokenlogue. A different administrator account or an already unlocked keyring does not replace this check.
+Provider and model identifiers, dates, currencies, token counts, budgets and accounting states remain readable. This protects selected fields rather than the entire database or device. It is not end-to-end encryption with a provider. Sending shares the required content with the service assigned to the chat and its selected model provider.
 
-This option needs the separately installed Tokenlogue policy and a working desktop authentication agent. Without them, conversations stay closed. The <a href="https://github.com/Umichata/tokenlogue/blob/main/docs/linux-appimage.md#en-system-recovery" title="Linux guide">Linux guide&nbsp;<img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> explains the optional setup. Recovery codes work without it.
+OpenRouter and VSEGPT keys occupy separate protected entries. Preferences and conversation fields do not store them. Matching a prefix does not confirm authorization. A key is never retried on the other service, forwarded to another host on redirect or used for an automatic paid check.
 
-<a id="android-system-recovery"></a>
+When storage or its key is unavailable, conversations remain closed. Restore the system key store and retry your PIN rather than deleting files. A supported plaintext profile is encrypted during the first successful sign-in without discarding its chats or accounting. Keep other copies closed.
 
-<a id="-android-system-recovery"></a>
-### <img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Android system recovery
+A database copy does not contain its separate encryption key. Android backup is disabled. Uninstalling, clearing data, losing the key store or invalidating Android Keystore can make conversations unrecoverable. PIN recovery cannot recover a lost encryption key. Locking also cannot protect an already compromised OS or promise erasure of every copy from memory, swap or old backups.
 
-On Android 11 or later, `Forgot PIN?` can request a separate system check of the device PIN, pattern or password. Supported biometrics may also be offered. A fingerprint is not required. A supported screen lock must be configured. Simply unlocking the device does not complete this fresh check.
+## Delete a local profile
 
-After verification, choose a new app PIN, repeat it and select `Save new PIN`. Cancelling before saving keeps the previous PIN and conversations. If verification is unavailable or refused, use your existing app PIN. Android 7–10 can run the app but do not provide this recovery method.
+**Deletion is irreversible in Tokenlogue.** Use recovery if you want to keep the conversations.
 
-<a id="en-encryption"></a>
+**Delete local profile** is available from the PIN screen or **⋮**, including during PIN lockout. It needs no old PIN or network access. Anyone able to use this screen can confirm it. Read the warning, type **DELETE PROFILE** exactly and choose **Delete profile**. **Keep profile** cancels before acceptance.
 
-<a id="what-is-encrypted"></a>
+![Local-profile deletion warning before confirmation](assets/screenshots/v011-linux-delete-profile-en.png)
 
-<a id="-what-is-encrypted"></a>
-## <img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Encryption and storage
+*Separate demonstration profile. The typed confirmation is an intent check, not an identity check.*
 
-Tokenlogue encrypts saved chat titles, user and model messages, and drafts. A random encryption key is stored separately in platform secure storage. It is not derived from the four-digit PIN or provider API key. Linux needs an available, unlocked Secret Service such as GNOME Keyring.
+Deletion removes both local provider keys, PIN, recovery material, encryption key, chats, drafts, limits and statistics. Language and layout preferences remain. External copies remain too, and secure physical erasure is not guaranteed.
 
-Dates, provider and model identifiers, currencies, chat modes, token counts, budgets and accounting states remain readable. This is encryption of selected database fields. It does not encrypt the whole database or device, and it is not end-to-end encryption with a remote provider. Sending transmits the necessary messages and context to the service bound to the chat and its selected model provider. Check their data policies before sending private information.
-
-If secure storage or the encryption key is unavailable, conversations stay closed. After a temporary storage failure, restore access to the system key store and retry the existing PIN. Do not delete the database or reset device security to dismiss the error.
-
-If a local profile contains unprotected conversation fields, the first successful sign-in protects them before opening chats. History, drafts, models and accounting are preserved. Keep other application instances closed while the profile is in use. Tokenlogue allows one process per data folder. Do not let incompatible software write to the same profile.
-
-Copying the database alone does not back up its encryption key. Android application backup is disabled. Uninstalling, clearing app data, losing secure storage or invalidating Android Keystore can make conversations unrecoverable. Changes to device security can affect key availability on some devices. A new PIN, recovery code or API key cannot recreate a lost encryption key.
-
-Locking clears the visible workspace and closes new access. It does not promise immediate erasure of every plaintext or key copy from process memory. It cannot protect an already compromised operating system. Old external backups, storage blocks, swap or snapshots may retain earlier content.
-
-<a id="en-delete"></a>
-
-<a id="delete-a-local-profile"></a>
-
-<a id="-delete-a-local-profile"></a>
-## <img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Profile deletion
-
-**Deletion is irreversible within Tokenlogue.** To keep conversations, use a valid recovery method instead.
-
-`Delete local profile` is available on the PIN screen and at the bottom of `⋮` after sign-in, even without a selected chat. It remains available during PIN lockout. It does not require the old PIN, a recovery code, Linux password or network access. Anyone who can use this screen can confirm it.
-
-Read the dialog, type the displayed phrase `DELETE PROFILE` exactly, then choose `Delete profile`. `Keep profile` cancels before acceptance. The phrase confirms intent, not identity. Changing language or closing an unconfirmed dialog cancels it.
-
-Deletion removes the profile's local provider API keys, PIN, recovery code, encryption key, chats, messages, drafts, limits and spending records. The new profile cannot recover the old conversations. Language and panel layout choices remain. External exports and backups are untouched. Secure physical erasure of all device copies is not guaranteed.
-
-On Linux, Tokenlogue may first make its own supported data folder private. A failure before deletion starts keeps the profile. If permissions were already restricted, the folder stays private. Do not manually remove files or change permissions to bypass an error.
-
-Once deletion has begun, it must finish. If storage fails, chats stay closed. Use `Finish deletion` or restart to continue. New setup opens only after removal is complete. Enter a key and choose a new PIN for the empty profile.
-
-Deleting locally does not revoke provider keys, delete remote accounts, cancel submitted requests or refund charges. In current source builds, use `Providers` after sign-in to replace a key and keep conversations. The published OpenRouter preview uses `Replace OpenRouter key` in `⋮`.
-
-<p align="left"><a href="https://github.com/Umichata/tokenlogue/blob/main/docs/user-guide.md#english"><img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/buttons/en-4a1e7eca97e9.svg" alt="User guide" width="105" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/blob/main/docs/linux-appimage.md#english"><img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/buttons/en-96c04f670a21.svg" alt="Linux" width="65" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/blob/main/docs/android.md#english"><img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/buttons/en-46463edb13a7.svg" alt="Android" width="83" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/blob/main/README.md#english"><img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/buttons/en-2e5a16e1977a.svg" alt="Tokenlogue" width="109" height="28"></a></p>
+If accepted deletion is interrupted, use **Finish deletion** or restart to continue. Chats remain closed until removal finishes. Deletion does not revoke remote keys, cancel dispatched requests or refund charges. Use [Providers](providers.md) to replace a key while keeping the profile.

@@ -1,31 +1,24 @@
-<p align="left">
-<a href="README.ru.md" title="Русский"><img align="right" src="../../../docs/assets/ui/buttons/ru-1e800a389462.svg" alt="Русский" width="46" height="28"></a>
-<a href="README.md" title="English"><img align="right" src="../../../docs/assets/ui/buttons/ru-ccbd7ff610ca.svg" alt="English" width="45" height="28"></a>
-<a href="../../../README.ru.md" title="Главная"><img src="../../../docs/assets/ui/buttons/ru-461b9280bad5.svg" alt="Главная" width="34" height="28"></a> <a href="../../../docs/README.ru.md" title="Карта документации"><img src="../../../docs/assets/ui/buttons/ru-b4e89d854289.svg" alt="Карта документации" width="184" height="28"></a>
-</p>
-
-# AppImage для Linux
+[English](README.md#english) · [Русский](README.ru.md#russian)
 
 <a id="russian"></a>
 <a id="lang-ru"></a>
 
-Tokenlogue доступен в переносимом AppImage для x86_64. Для работы не нужно устанавливать Python, Flutter или Java.
+# Пакеты Linux
 
-<a id="-начало-работы"></a>
-## <img src="../../../docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Установка
+[Главная](../../../README.ru.md) · [Документация](../../../docs/README.ru.md)
 
-В <a href="../../../docs/linux-appimage.ru.md#russian" title="руководстве для Linux">руководстве для Linux&nbsp;<img src="../../../docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> описаны доступные загрузки, проверка суммы, первый запуск и обновление. Перед открытием нового AppImage закройте прежние копии. Автоматического обновления и цифровой подписи у пакета нет.
+## Выбор пакета
 
-Нужны процессор x86-64-v2, графическая среда Linux и совместимые системные библиотеки. Базовая версия системных библиотек соответствует Ubuntu 22.04. GTK3, GLib/GIO и видеодрайверы предоставляет дистрибутив. Обычный запуск использует FUSE, а вариант с распаковкой описан в руководстве.
+[Руководство Linux](../../../docs/linux-appimage.ru.md) различает опубликованную AppImage 0.1.0 и текущий локальный настольный bundle 0.1.1. Для готового приложения не нужны Python, Flutter и Java.
 
-<a id="-защита-переписки"></a>
-## <img src="../../../docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Хранилище ключей
+AppImage не подписана. Сверьте её сумму, разрешите исполнение и закройте старые копии перед запуском замены. Обычное монтирование требует FUSE. Есть вариант extract-and-run. Настольный bundle хранит исполняемый файл, библиотеки и данные вместе и не использует FUSE.
 
-Для защищённого хранения ключей нужен работающий Secret Service в сеансе рабочего стола. Перед изменением настроек хранилища ключей или переносом профиля прочитайте о <a href="../../../docs/security.ru.md#russian" title="защите и восстановлении">защите и восстановлении&nbsp;<img src="../../../docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a>. AppImage содержит приложение, а не резервную копию переписки.
+## Требования рабочего стола
 
-<a id="-лицензии-и-исходники"></a>
-## <img src="../../../docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Исходники и лицензии
+Нужны процессор x86-64-v2, совместимые системные библиотеки, GTK3, видеодрайверы дистрибутива и пользовательская сессия D-Bus. Базовая среда системных библиотек соответствует Ubuntu 22.04.
 
-<a href="notices.ru.md#russian" title="Уведомления компонентов">Уведомления компонентов&nbsp;<img src="../../../docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> помогут найти лицензии. <a href="runtime/README.ru.md#russian" title="Обзор runtime">Обзор runtime&nbsp;<img src="../../../docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> объясняет встроенный компонент запуска. В <a href="../../../docs/source-materials.ru.md#russian" title="руководстве по исходным материалам">руководстве по исходным материалам&nbsp;<img src="../../../docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> описаны отдельные архивы и ограничения их полноты.
+Защищённые ключи хранит Secret Service, например GNOME Keyring. AppImage содержит приложение и не является резервной копией переписки. Перед переносом профиля и изменением хранилища прочитайте о [защите и восстановлении](../../../docs/security.ru.md).
 
-<p align="left"><a href="../../../README.ru.md#russian"><img src="../../../docs/assets/ui/buttons/ru-6382944424ac.svg" alt="К Tokenlogue" width="124" height="28"></a></p>
+## Исходники и лицензии
+
+[Уведомления](notices.ru.md), [стартовый runtime](runtime/README.ru.md) и [исходные материалы](../../../docs/source-materials.ru.md) описывают разные части поставки. Новая AppImage собирается штатным producer с проверками исходников, ABI и уведомлений. Получение обычного настольного bundle — отдельный процесс.
