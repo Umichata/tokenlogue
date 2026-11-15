@@ -64,6 +64,8 @@ Saved chat titles, messages and drafts are encrypted. A random key is stored sep
 
 Provider and model identifiers, dates, currencies, token counts, budgets and accounting states remain readable. This protects selected fields rather than the entire database or device. It is not end-to-end encryption with a provider. Sending shares the required content with the service assigned to the chat and its selected model provider.
 
+Changing a chat’s provider requires an explicit review of the new service, model and budget. No history is sent while configuring. The next ordinary send shares only the new message and completed pairs that fit the model context with that service. Cancel before confirming to keep the existing connection. Changing the connection preserves local encryption and does not change the PIN or encryption key.
+
 OpenRouter and VSEGPT keys occupy separate protected entries. Preferences and conversation fields do not store them. Matching a prefix does not confirm authorization. A key is never retried on the other service, forwarded to another host on redirect or used for an automatic paid check.
 
 When storage or its key is unavailable, conversations remain closed. Restore the system key store and retry your PIN rather than deleting files. A supported plaintext profile is encrypted during the first successful sign-in without discarding its chats or accounting. Keep other copies closed.

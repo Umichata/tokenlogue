@@ -29,13 +29,15 @@ After the first setup, each form belongs to its named service. OpenRouter accept
 3. Choose **Check**. The app checks only the matching service through a free endpoint.
 4. Choose **Save key** when authorized, or explicitly **Save unverified key** when offered.
 
+One protected key is saved per service and shared by all its chats. Replacing it updates the connection shown in every chat of that provider. PIN, conversations, drafts and budgets are preserved.
+
 A failed check or cancelled replacement keeps the saved key. Entering another service's key is rejected locally. It is not forwarded elsewhere. Prefix recognition alone does not prove authorization or funds.
 
 Each card retains only its own unfinished candidate while unlocked. Changing the filter masks it. The reveal button shows your entered candidate only. Locking clears all cards, including hidden inputs. Do not share screenshots containing a key.
 
 ## Choose the provider for new chats
 
-**Provider for new chats** is a separate setting from the viewing filter. Existing chats retain their service, currency and model. A missing key must be added for that service before sending. Tokenlogue does not move the chat history to the other provider after an error.
+**Provider for new chats** is separate from the viewing filter and does not change existing chats. Use [Chat connection](user-guide.md#en-chat-connection) in a chat’s **⋮** menu to change that chat’s provider with an explicit model and budget review. Configure a missing key for the intended service before continuing. An error never moves history to another provider automatically.
 
 ## Read balance and key status
 

@@ -14,6 +14,8 @@
 
 **Tokens** and **Spending** read the request journal of saved chats on this device. Activity from other applications is excluded. Deleting a chat also deletes its local statistics.
 
+A chat can contain requests made through both services. Each recorded attempt keeps the provider, model, currency and known dispatch date used for that request. Changing the chat’s current connection does not relabel earlier activity. USD and RUB stay separate after returning to a previously used provider.
+
 Each page retains its own **All · OpenRouter · VSEGPT** selection, period and compatible model filter. Choose **7 days**, **30 days** or **All time**. Viewing a service does not change its key, the default for new chats or the provider of the open chat.
 
 The model list follows the selected service and period. The same model ID from OpenRouter and VSEGPT remains two choices. An incompatible model filter is reset when you change the provider.

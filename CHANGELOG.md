@@ -16,6 +16,9 @@
 - Independent USD and RUB panels and protection against stale statistics replacing the current view.
 - Shorter English and Russian messages for keys, balances and errors.
 - Clear labels for service balance, OpenRouter key limit and local chat budget. VSEGPT does not display an unsupported separate key limit.
+- A chat connection block with its provider, a safe shared-key mask and provider-specific settings.
+- Explicit provider changes for an existing chat, with model and budget review while preserving history and draft.
+- Shared token accounting, separate provider money states and historical request identities across provider changes. Changing provider revokes earlier permission for automatic paid sends.
 - Updated guides and examples of the four-page interface.
 
 The [user guide](docs/user-guide.md), [provider guide](docs/providers.md) and [statistics guide](docs/analytics.md) explain the workflow. Demonstration illustrations do not prove live provider requests.
