@@ -29,7 +29,9 @@ from platform_security.local_protection import (  # noqa: E402
     DeviceCheckRecord,
 )
 from preferences import PreferencesStore  # noqa: E402
-from tests.test_app import FakeAuthService, FakeKeyValidator  # noqa: E402
+from storage.secure_credentials import FletSecureCredentials  # noqa: E402
+from tests.provider_fakes import FakeProviderRouter  # noqa: E402
+from tests.test_app import FakeAuthService  # noqa: E402
 from tests.test_app_close import ClosingPage  # noqa: E402
 from tests.test_secure_credentials import FakeSecureStorage  # noqa: E402
 
@@ -77,7 +79,7 @@ class DeviceHistoryStartupTests(unittest.IsolatedAsyncioTestCase):
             patch.object(
                 composition,
                 "FletSecureCredentials",
-                return_value=SimpleNamespace(storage_backend=FakeSecureStorage()),
+                return_value=FletSecureCredentials(FakeSecureStorage()),
             ),
             patch.object(
                 composition,
@@ -90,10 +92,8 @@ class DeviceHistoryStartupTests(unittest.IsolatedAsyncioTestCase):
                 return_value=FakeAuthService(initial_route=InitialRoute.PIN),
             ),
             patch.object(
-                composition, "OpenRouterClient", return_value=FakeKeyValidator()
+                composition, "ProviderRouter", return_value=FakeProviderRouter()
             ),
-            patch.object(composition, "ModelCatalogClient"),
-            patch.object(composition, "ChatCompletionsClient"),
             patch.object(composition, "AppController", side_effect=controller),
             patch.object(ft.Control, "update"),
         ):

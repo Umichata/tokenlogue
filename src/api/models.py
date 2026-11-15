@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 import time
 from collections.abc import Callable
 from decimal import Decimal, InvalidOperation
-from typing import Any
+from typing import Any, Protocol
 
 import httpx
 
@@ -21,10 +22,40 @@ from chat.models import (
     is_standard_text_chat_model,
 )
 from i18n import tr
+from providers.models import Currency, PriceUnit, ProviderId, detect_key, provider_spec
 
 OPENROUTER_MODELS_URL = "https://openrouter.ai/api/v1/models"
+VSEGPT_MODELS_URL = "https://api.vsegpt.ru/v1/models"
 DEFAULT_CATALOG_TTL_SECONDS = 300.0
 CATALOG_WARNING = tr("service.catalog_warning")
+# Text model namespaces verified in the official text-model catalogue. Unknown
+# categories are not assumed to accept chat just because they have token limits.
+VSEGPT_TEXT_VENDORS = frozenset(
+    {
+        "openai",
+        "anthropic",
+        "gryphe",
+        "google",
+        "amazon",
+        "qwen",
+        "x-ai",
+        "perplexity",
+        "mistralai",
+        "microsoft",
+        "nvidia",
+        "meta-llama",
+        "nousresearch",
+        "sao10k",
+        "thedrummer",
+        "cohere",
+        "deepseek",
+        "minimax",
+        "moonshotai",
+        "z-ai",
+        "aion",
+        "xiaomi",
+    }
+)
 # Канонические ключи внешнего pricing из GET /api/v1/models.
 PRICE_FIELDS = {
     "prompt",
@@ -60,13 +91,15 @@ class ModelCatalogClient:
         *,
         transport: httpx.AsyncBaseTransport | None = None,
         timeout: httpx.Timeout | float = 10.0,
+        provider_id: ProviderId = ProviderId.OPENROUTER,
     ) -> None:
         self._transport = transport
         self._timeout = timeout
+        self.provider_id = ProviderId(provider_id)
 
     async def fetch_models(self, api_key: str) -> tuple[CatalogModel, ...] | None:
         normalized_key = api_key.strip()
-        if not normalized_key:
+        if detect_key(normalized_key) is not self.provider_id:
             return None
         try:
             async with httpx.AsyncClient(
@@ -76,15 +109,27 @@ class ModelCatalogClient:
                 trust_env=False,
             ) as client:
                 response = await client.get(
-                    OPENROUTER_MODELS_URL,
-                    headers={"Authorization": f"Bearer {normalized_key}"},
+                    provider_spec(self.provider_id).base_url + "/models",
+                    headers=(
+                        {"Authorization": f"Bearer {normalized_key}"}
+                        if self.provider_id is ProviderId.OPENROUTER
+                        else {}
+                    ),
                 )
         except (httpx.HTTPError, ImportError):
             return None
 
         if response.status_code != 200:
             return None
-        return _parse_catalog(response.content)
+        return (
+            _parse_catalog(response.content)
+            if self.provider_id is ProviderId.OPENROUTER
+            else _parse_vsegpt_catalog(response.content)
+        )
+
+
+class CatalogReader(Protocol):
+    async def fetch_models(self, api_key: str) -> tuple[CatalogModel, ...] | None: ...
 
 
 class ModelCatalogService:
@@ -92,7 +137,7 @@ class ModelCatalogService:
 
     def __init__(
         self,
-        client: ModelCatalogClient,
+        client: CatalogReader,
         *,
         ttl_seconds: float = DEFAULT_CATALOG_TTL_SECONDS,
         clock: Callable[[], float] = time.monotonic,
@@ -104,21 +149,31 @@ class ModelCatalogService:
         self._expires_at = 0.0
         self._generation = 0
         self._lock = asyncio.Lock()
+        self._identity: tuple[ProviderId | None, bytes] | None = None
+        self._entries: dict[
+            tuple[ProviderId | None, bytes], tuple[ModelCatalog, float]
+        ] = {}
 
-    def peek_catalog(self) -> ModelCatalog | None:
+    def peek_catalog(self, api_key: str | None = None) -> ModelCatalog | None:
         """Return only a still-current in-memory snapshot, without any request."""
-        if self._cached is not None and self._clock() < self._expires_at:
-            return self._cached
+        identity = self._identity if api_key is None else _catalog_identity(api_key)
+        if identity is not None:
+            entry = self._entries.get(identity)
+            if entry is not None and self._clock() < entry[1]:
+                return entry[0]
         return None
 
     def cache_remaining_seconds(self) -> float | None:
         """Expose cache age for an idle UI timer, without retaining a key."""
-        if self._cached is None:
+        if self._identity is None or self._identity not in self._entries:
             return None
-        return max(0.0, self._expires_at - self._clock())
+        return max(0.0, self._entries[self._identity][1] - self._clock())
 
     async def get_catalog(self, api_key: str) -> ModelCatalog:
         generation = self._generation
+        provider_id = detect_key(api_key)
+        identity = _catalog_identity(api_key)
+        self._identity = identity
         cached = self.peek_catalog()
         if cached is not None:
             return cached
@@ -127,25 +182,84 @@ class ModelCatalogService:
             # A waiter from an old protected session must not fetch with its
             # previous credential or consume the next session's cache.
             if generation != self._generation:
-                return _classify_catalog(None)
-            cached = self.peek_catalog()
-            if cached is not None:
-                return cached
+                return _classify_catalog(None, provider_id)
+            entry = self._entries.get(identity)
+            if entry is not None and self._clock() < entry[1]:
+                return entry[0]
             try:
                 models = await self._client.fetch_models(api_key)
             except Exception:
                 models = None
-            catalog = _classify_catalog(models)
+            catalog = _classify_catalog(models, provider_id)
             if generation != self._generation:
-                return _classify_catalog(None)
+                return _classify_catalog(None, provider_id)
             self._cached = catalog
             self._expires_at = self._clock() + self._ttl_seconds
+            self._entries[identity] = catalog, self._expires_at
             return catalog
 
     def clear_cache(self) -> None:
         self._generation += 1
         self._cached = None
         self._expires_at = 0.0
+        self._identity = None
+        self._entries.clear()
+
+
+def _parse_vsegpt_catalog(content: bytes) -> tuple[CatalogModel, ...] | None:
+    """Catalog rates have no machine-readable billing units or complete extras.
+
+    Do not place RUB/character (or unknown per-model units) in token price fields.
+    https://vsegpt.ru/Docs/Tariffs/Example and /Docs/ModelsNew differ by model.
+    """
+    try:
+        payload = json.loads(content, parse_float=Decimal, parse_int=Decimal)
+    except (ValueError, UnicodeDecodeError):
+        return None
+    if not isinstance(payload, dict) or not isinstance(payload.get("data"), list):
+        return None
+    models: list[CatalogModel] = []
+    for item in payload["data"]:
+        if not isinstance(item, dict):
+            continue
+        model_id, name = item.get("id"), item.get("name")
+        if not isinstance(model_id, str) or not model_id.strip():
+            continue
+        if not isinstance(name, str) or not name.strip():
+            continue
+        # /Docs/ModelsNew documents these namespaces as ordinary text models;
+        # /Docs/API/Code separately documents image/audio/embeddings endpoints.
+        # A nonzero context_length is also present on embeddings/image models.
+        category = model_id.split("/", 1)[0].lower()
+        if category not in VSEGPT_TEXT_VENDORS:
+            continue
+        raw_context = item.get("context_length")
+        if isinstance(raw_context, str):
+            try:
+                raw_context = Decimal(raw_context)
+            except Exception:
+                raw_context = None
+        context_length = _parse_positive_int(raw_context)
+        if context_length is None:
+            continue
+        models.append(
+            CatalogModel(
+                id=model_id.strip(),
+                name=name.strip(),
+                prompt_price_per_token=Decimal("0"),
+                completion_price_per_token=Decimal("0"),
+                pricing_is_complete=False,
+                context_length=context_length,
+                provider_id=ProviderId.VSEGPT,
+                currency=Currency.RUB,
+                pricing_unit=PriceUnit.UNKNOWN,
+            )
+        )
+    return tuple(models)
+
+
+def _catalog_identity(api_key: str) -> tuple[ProviderId | None, bytes]:
+    return detect_key(api_key), hashlib.sha256(api_key.strip().encode("utf-8")).digest()
 
 
 def _parse_catalog(content: bytes) -> tuple[CatalogModel, ...] | None:
@@ -353,7 +467,21 @@ def _parse_positive_int(value: Any) -> int | None:
     return None
 
 
-def _classify_catalog(models: tuple[CatalogModel, ...] | None) -> ModelCatalog:
+def _classify_catalog(
+    models: tuple[CatalogModel, ...] | None,
+    provider_id: ProviderId | None = ProviderId.OPENROUTER,
+) -> ModelCatalog:
+    if provider_id is not ProviderId.OPENROUTER:
+        return ModelCatalog(
+            free_models=(),
+            paid_models=tuple(
+                sorted(
+                    models or (), key=lambda model: (model.name.casefold(), model.id)
+                )
+            ),
+            available=models is not None,
+            warning=CATALOG_WARNING if models is None else None,
+        )
     if models is None:
         return ModelCatalog(
             free_models=(FREE_ROUTER_MODEL,),

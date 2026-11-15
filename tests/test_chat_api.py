@@ -21,7 +21,7 @@ from chat.context import ContextMessage  # noqa: E402
 from chat.errors import ChatErrorType  # noqa: E402
 from chat.models import MessageRole, ProviderPriceLimit  # noqa: E402
 
-TEST_CREDENTIAL = "completion-test-credential"
+TEST_CREDENTIAL = "sk-or-v1-completion-test-credential"
 MODEL_ID = "vendor/test-model"
 
 
@@ -238,7 +238,9 @@ class ChatCompletionsClientTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result.finish_reason, "stop")
         self.assertEqual(result.prompt_tokens, 7)
         self.assertEqual(result.completion_tokens, 3)
-        self.assertEqual(result.total_tokens, 10)
+        # Preserve the API-reported total; budget aggregation separately uses
+        # a conservative maximum when component counts disagree.
+        self.assertEqual(result.total_tokens, 8)
         self.assertEqual(result.cost_usd, Decimal("0.000000123456789"))
         self.assertTrue(result.successful)
         self.assertNotIn("answer", repr(result))
@@ -366,9 +368,9 @@ class ChatCompletionsClientTests(unittest.IsolatedAsyncioTestCase):
 
         result = await self._complete_with_response(httpx.Response(200, json=payload))
 
-        self.assertIsNone(result.prompt_tokens)
-        self.assertIsNone(result.completion_tokens)
-        self.assertIsNone(result.total_tokens)
+        self.assertEqual(result.prompt_tokens, 7)
+        self.assertEqual(result.completion_tokens, 3)
+        self.assertEqual(result.total_tokens, 10)
         self.assertIsNone(result.cost_usd)
         self.assertTrue(result.accounting_unknown)
 

@@ -43,13 +43,16 @@ class MemoryChatRepository:
         *,
         token_limit: int,
         max_completion_tokens: int,
-        cost_limit_usd: Decimal,
+        cost_limit_usd: Decimal | None = None,
+        cost_limit: Decimal | None = None,
     ) -> None:
+        cost_limit = cost_limit if cost_limit is not None else cost_limit_usd
+        assert cost_limit is not None
         self.chats[chat.id] = chat
         self.limits[chat.id] = (
             token_limit,
             max_completion_tokens,
-            cost_limit_usd,
+            cost_limit,
         )
 
     def list_chats(self) -> list[Chat]:

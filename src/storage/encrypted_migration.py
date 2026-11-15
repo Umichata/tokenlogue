@@ -12,12 +12,14 @@ from pathlib import Path
 
 from storage.database_connections import database_lock
 from storage.field_cipher import FORMAT_VERSION, CiphertextError, FieldCipher
+from storage.provider_schema import ensure_provider_schema, has_provider_schema
 from storage.request_attempts import (
     TABLE as REQUEST_ATTEMPTS_TABLE,
 )
 from storage.request_attempts import (
     create_request_attempts_schema,
     has_request_attempts,
+    request_attempts_are_extended,
     validate_request_attempts_schema,
 )
 
@@ -194,7 +196,11 @@ def _protected_fields(table: str) -> tuple[str, ...]:
 
 
 def _schema(
-    connection: sqlite3.Connection, *, include_request_attempts: bool = False
+    connection: sqlite3.Connection,
+    *,
+    include_request_attempts: bool = False,
+    provider_schema: bool = False,
+    legacy_attempts: bool = False,
 ) -> None:
     from storage import database
 
@@ -215,8 +221,10 @@ def _schema(
         "CREATE TABLE content_protection (singleton_id INTEGER PRIMARY KEY CHECK(singleton_id=1),"
         "database_id TEXT NOT NULL,key_id TEXT NOT NULL,format_version INTEGER NOT NULL,marker TEXT NOT NULL)"
     )
+    if provider_schema:
+        ensure_provider_schema(connection)
     if include_request_attempts:
-        create_request_attempts_schema(connection)
+        create_request_attempts_schema(connection, legacy=legacy_attempts)
 
 
 def _cleanup_previous(journal: Path, database: Path, cipher: FieldCipher) -> None:
@@ -334,6 +342,9 @@ def migrate_database(
             _schema(
                 destination,
                 include_request_attempts=REQUEST_ATTEMPTS_TABLE in copy_tables,
+                provider_schema=has_provider_schema(source),
+                legacy_attempts=REQUEST_ATTEMPTS_TABLE in copy_tables
+                and not request_attempts_are_extended(source),
             )
             copied = 0
             for table in copy_tables:

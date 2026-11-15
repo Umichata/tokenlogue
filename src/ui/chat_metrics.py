@@ -13,6 +13,7 @@ from chat.estimates import DraftEstimate, EstimateState
 from chat.metrics import ChatMetricsSnapshot, LastRequestState
 from chat.models import ChatMode
 from i18n import money, number, tr
+from providers.models import Currency
 from ui.styles import (
     BORDER_COLOR,
     MUTED_COLOR,
@@ -21,22 +22,31 @@ from ui.styles import (
     secondary_button_style,
 )
 
-_MINIMUM_DISPLAY_USD = Decimal("0.0001")
+_MINIMUM_DISPLAY_AMOUNT = Decimal("0.0001")
 
 
 def display_usd(value: Decimal, *, upper_bound: bool = False) -> str:
+    return display_money(value, Currency.USD, upper_bound=upper_bound)
+
+
+def display_money(
+    value: Decimal,
+    currency: Currency | str,
+    *,
+    upper_bound: bool = False,
+) -> str:
     """Round display only while preserving the sign of every nonzero amount."""
-    if -_MINIMUM_DISPLAY_USD < value < Decimal(0):
-        return money(value)
-    if Decimal(0) < value < _MINIMUM_DISPLAY_USD:
-        return tr("metrics.less_than", amount=money(_MINIMUM_DISPLAY_USD))
+    if -_MINIMUM_DISPLAY_AMOUNT < value < Decimal(0):
+        return money(value, currency)
+    if Decimal(0) < value < _MINIMUM_DISPLAY_AMOUNT:
+        return tr("metrics.less_than", amount=money(_MINIMUM_DISPLAY_AMOUNT, currency))
     with localcontext() as context:
         context.prec = max(context.prec, value.adjusted() + 8)
         rounded = value.quantize(
-            _MINIMUM_DISPLAY_USD,
+            _MINIMUM_DISPLAY_AMOUNT,
             rounding=ROUND_CEILING if upper_bound else ROUND_HALF_UP,
         )
-    return money(rounded)
+    return money(rounded, currency)
 
 
 def explanatory_tooltip(message: str) -> ft.Tooltip:
@@ -166,8 +176,10 @@ class ChatMetricsStrip:
             return
         account = snapshot.account_balance
         amount = (
-            display_usd(account.balance_usd)
-            if account.balance_usd is not None
+            display_money(account.balance_amount, account.currency)
+            if account.balance_amount is not None
+            and account.provider_id == snapshot.provider_id
+            and account.currency == snapshot.currency
             else None
         )
         if account.state is AccountBalanceState.LOADING:
@@ -204,10 +216,52 @@ class ChatMetricsStrip:
                 if not last.chronology_known
                 else "metrics.reconciling"
             )
+            if any(
+                value is not None
+                for value in (
+                    last.prompt_tokens,
+                    last.completion_tokens,
+                    last.total_tokens,
+                )
+            ):
+                previous = tr(
+                    "workspace.last_tokens_unknown_cost",
+                    input=number(last.prompt_tokens)
+                    if last.prompt_tokens is not None
+                    else tr("metrics.unknown"),
+                    output=number(last.completion_tokens)
+                    if last.completion_tokens is not None
+                    else tr("metrics.unknown"),
+                    total=number(last.total_tokens)
+                    if last.total_tokens is not None
+                    else tr("metrics.unknown"),
+                    status=previous,
+                )
         elif snapshot.mode is ChatMode.PAID:
             previous = (
-                display_usd(last.cost_usd)
-                if last.cost_usd is not None
+                display_money(last.cost, last.currency)
+                if last.cost is not None
+                else tr(
+                    "workspace.last_tokens_unknown_cost",
+                    input=number(last.prompt_tokens)
+                    if last.prompt_tokens is not None
+                    else tr("metrics.unknown"),
+                    output=number(last.completion_tokens)
+                    if last.completion_tokens is not None
+                    else tr("metrics.unknown"),
+                    total=number(last.total_tokens)
+                    if last.total_tokens is not None
+                    else tr("metrics.unknown"),
+                    status=tr("metrics.unknown"),
+                )
+                if any(
+                    value is not None
+                    for value in (
+                        last.prompt_tokens,
+                        last.completion_tokens,
+                        last.total_tokens,
+                    )
+                )
                 else tr("metrics.unknown")
             )
         else:
@@ -218,8 +272,8 @@ class ChatMetricsStrip:
             )
         if snapshot.mode is ChatMode.PAID:
             available = (
-                display_usd(snapshot.remaining.cost_usd)
-                if snapshot.remaining.cost_usd is not None
+                display_money(snapshot.remaining.cost, snapshot.currency)
+                if snapshot.remaining.cost is not None
                 else tr("metrics.unknown")
             )
             self.values.value = tr(
@@ -236,9 +290,9 @@ class ChatMetricsStrip:
                 and key_limit.remaining is not None
             ):
                 amount = (
-                    tr("metrics.key_below_zero", amount=money(0))
-                    if -_MINIMUM_DISPLAY_USD < key_limit.remaining < 0
-                    else display_usd(key_limit.remaining)
+                    tr("metrics.key_below_zero", amount=money(0, snapshot.currency))
+                    if -_MINIMUM_DISPLAY_AMOUNT < key_limit.remaining < 0
+                    else display_money(key_limit.remaining, snapshot.currency)
                 )
                 metadata = tr(
                     "metrics.key_remaining"
@@ -406,11 +460,13 @@ class DraftEstimateLine:
             values.append(
                 tr("estimate.reply", count=number(estimate.max_completion_tokens))
             )
-        if estimate.cost_upper_usd is not None:
+        if estimate.cost_upper is not None:
             values.append(
                 tr(
                     "estimate.cost",
-                    amount=display_usd(estimate.cost_upper_usd, upper_bound=True),
+                    amount=display_money(
+                        estimate.cost_upper, estimate.currency, upper_bound=True
+                    ),
                 )
             )
         elif estimate.state is not EstimateState.OVER_LIMIT:

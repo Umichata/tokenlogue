@@ -91,16 +91,19 @@ class FakeChatService:
         key_limit: KeyLimitInfo,
         token_limit: int,
         max_completion_tokens: int,
-        cost_limit_usd: Decimal,
+        cost_limit_usd: Decimal | None = None,
+        cost_limit: Decimal | None = None,
         paid_confirmed: bool = False,
     ) -> Chat:
+        cost_limit = cost_limit if cost_limit is not None else cost_limit_usd
+        assert cost_limit is not None
         self.create_calls.append(
             (
                 mode,
                 model,
                 token_limit,
                 max_completion_tokens,
-                cost_limit_usd,
+                cost_limit,
                 paid_confirmed,
             )
         )

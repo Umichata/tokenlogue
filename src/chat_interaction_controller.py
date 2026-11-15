@@ -17,7 +17,7 @@ from chat.accounting import (
     TurnRecord,
     calculate_remaining_budget,
 )
-from chat.budget_consent import BudgetConsent
+from chat.budget_consent import BudgetConsent, UnknownPriceConsent
 from chat.errors import ChatErrorType, safe_error_message
 from chat.metrics import LastRequestMetrics, LastRequestState
 from chat.models import Chat, Message
@@ -25,6 +25,7 @@ from chat.paid_consent import PaidConsent
 from chat.sending import MessageSendingService, MessageSendPreview, SendMessageResult
 from chat.service import ChatService
 from i18n import tr
+from providers.models import ProviderId
 from storage.data_access import DataAccessError
 
 
@@ -33,6 +34,13 @@ class ChatSessionContext:
     api_key: str = field(repr=False)
     key_validity: KeyValidityState
     key_limit: KeyLimitInfo
+    provider_id: ProviderId = ProviderId.OPENROUTER
+    request_finished: Callable[[], None] | None = field(
+        default=None, repr=False, compare=False
+    )
+    apply_key_state: Callable[[KeyValidityState, KeyLimitInfo], None] | None = field(
+        default=None, repr=False, compare=False
+    )
 
 
 @dataclass(frozen=True)
@@ -62,6 +70,7 @@ ReservationCallback = Callable[[str], Awaitable[None]]
 
 class _SendOptions(TypedDict, total=False):
     budget_consent: BudgetConsent
+    unknown_price_consent: UnknownPriceConsent
     on_request_finished: Callable[[], None]
 
 
@@ -200,7 +209,9 @@ class ChatInteractionController:
             )
         if not self._matches(chat_id, generation):
             return _stale_preview(chat_id)
-        self._apply_key_state(preview.key_validity_update, preview.key_limit_update)
+        self._apply_key_state(
+            preview.key_validity_update, preview.key_limit_update, session
+        )
         return preview
 
     async def preview_retry(
@@ -225,7 +236,9 @@ class ChatInteractionController:
             )
         if chat_id is None or not self._matches(chat_id, generation):
             return _stale_preview(preview.chat_id, turn_id=turn_id)
-        self._apply_key_state(preview.key_validity_update, preview.key_limit_update)
+        self._apply_key_state(
+            preview.key_validity_update, preview.key_limit_update, session
+        )
         return preview
 
     def paid_consent(self, chat: Chat) -> PaidConsent | None:
@@ -240,7 +253,11 @@ class ChatInteractionController:
             or self._active_chat_id != preview.chat_id
         ):
             raise RuntimeError(tr("service.session_inactive"))
-        return self._sending_service.confirm_budget_warning(preview)
+        return (
+            self._sending_service.confirm_unknown_price(preview)
+            if preview.unknown_pricing
+            else self._sending_service.confirm_budget_warning(preview)
+        )
 
     async def save_paid_without_confirmation(
         self, chat_id: str, enabled: bool
@@ -289,15 +306,25 @@ class ChatInteractionController:
             if (
                 self._active
                 and self._session_generation == session_generation
-                and self._session_provider() is not None
-                and self._on_request_finished is not None
+                and (
+                    session.request_finished is not None
+                    or self._on_request_finished is not None
+                )
             ):
-                self._on_request_finished()
+                callback = session.request_finished or self._on_request_finished
+                assert callback is not None
+                callback()
 
         options: _SendOptions = {}
         if budget_consent is not None:
-            options["budget_consent"] = budget_consent
-        if self._on_request_finished is not None:
+            if isinstance(budget_consent, UnknownPriceConsent):
+                options["unknown_price_consent"] = budget_consent
+            else:
+                options["budget_consent"] = budget_consent
+        if (
+            session.request_finished is not None
+            or self._on_request_finished is not None
+        ):
             options["on_request_finished"] = request_finished
 
         def current_dispatch() -> bool:
@@ -338,8 +365,17 @@ class ChatInteractionController:
                     return InteractionOutcome(False, _missing_session_result(), None)
                 raise
         if not self._matches(chat_id, generation):
+            if (
+                session.apply_key_state is not None
+                and session_generation == self._session_generation
+            ):
+                self._apply_key_state(
+                    result.key_validity_update, result.key_limit_update, session
+                )
             return InteractionOutcome(False, result, None)
-        self._apply_key_state(result.key_validity_update, result.key_limit_update)
+        self._apply_key_state(
+            result.key_validity_update, result.key_limit_update, session
+        )
         return InteractionOutcome(True, result, await self.load_state(chat_id))
 
     async def retry_turn(
@@ -370,15 +406,25 @@ class ChatInteractionController:
             if (
                 self._active
                 and self._session_generation == session_generation
-                and self._session_provider() is not None
-                and self._on_request_finished is not None
+                and (
+                    session.request_finished is not None
+                    or self._on_request_finished is not None
+                )
             ):
-                self._on_request_finished()
+                callback = session.request_finished or self._on_request_finished
+                assert callback is not None
+                callback()
 
         options: _SendOptions = {}
         if budget_consent is not None:
-            options["budget_consent"] = budget_consent
-        if self._on_request_finished is not None:
+            if isinstance(budget_consent, UnknownPriceConsent):
+                options["unknown_price_consent"] = budget_consent
+            else:
+                options["budget_consent"] = budget_consent
+        if (
+            session.request_finished is not None
+            or self._on_request_finished is not None
+        ):
             options["on_request_finished"] = request_finished
 
         async def reserved(reserved_turn_id: str) -> None:
@@ -411,8 +457,17 @@ class ChatInteractionController:
                     )
                 raise
         if not self._matches(chat_id, generation):
+            if (
+                session.apply_key_state is not None
+                and session_generation == self._session_generation
+            ):
+                self._apply_key_state(
+                    result.key_validity_update, result.key_limit_update, session
+                )
             return InteractionOutcome(False, result, None)
-        self._apply_key_state(result.key_validity_update, result.key_limit_update)
+        self._apply_key_state(
+            result.key_validity_update, result.key_limit_update, session
+        )
         return InteractionOutcome(True, result, await self.load_state(chat_id))
 
     async def save_limits(
@@ -441,7 +496,7 @@ class ChatInteractionController:
                 chat_id,
                 token_limit=configuration.token_limit,
                 max_completion_tokens=configuration.max_completion_tokens,
-                cost_limit_usd=configuration.cost_limit_usd,
+                cost_limit=configuration.cost_limit,
                 cost_increase_confirmed=cost_increase_confirmed,
             )
         if not self._matches(chat_id, generation):
@@ -502,9 +557,13 @@ class ChatInteractionController:
         self,
         validity: KeyValidityState | None,
         limit: KeyLimitInfo | None,
+        session: ChatSessionContext | None = None,
     ) -> None:
         if validity is not None and limit is not None and self._active:
-            self._on_key_state_changed(validity, limit)
+            if session is not None and session.apply_key_state is not None:
+                session.apply_key_state(validity, limit)
+            else:
+                self._on_key_state_changed(validity, limit)
 
 
 def _busy_result(turn_id: str | None = None) -> SendMessageResult:

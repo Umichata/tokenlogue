@@ -46,7 +46,7 @@ class ProtectedAuthTests(ProtectionFixture):
             (await self.auth.reset_authentication()).status, AuthStatus.INVALID_STATE
         )
         self.assertEqual(
-            (await self.auth.start_setup("synthetic-new-api")).status,
+            (await self.auth.start_setup("sk-or-v1-synthetic-new-api")).status,
             AuthStatus.PIN_REQUIRED,
         )
         self.assertEqual(self.storage.values, before)
@@ -62,7 +62,7 @@ class ProtectedAuthTests(ProtectionFixture):
             (await self.auth.reset_authentication()).status, AuthStatus.SETUP_REQUIRED
         )
         self.assertFalse(self.access.unlocked)
-        replaced = await self.auth.start_setup("synthetic-new-api")
+        replaced = await self.auth.start_setup("sk-or-v1-synthetic-new-api")
         self.assertEqual(replaced.status, AuthStatus.AUTHENTICATED)
         self.assertEqual(self.stored(), pin)
         self.assertEqual(self.storage.values[DATA_KEY_ALIAS], key)
@@ -70,7 +70,7 @@ class ProtectedAuthTests(ProtectionFixture):
         self.auth.lock_access()
         result = await self.auth.login("0123")
         self.assertEqual(result.status, AuthStatus.AUTHENTICATED)
-        self.assertEqual(result.api_key, "synthetic-new-api")
+        self.assertEqual(result.api_key, "sk-or-v1-synthetic-new-api")
 
     async def test_api_loss_does_not_automatically_clear_auth_or_data_key(self):
         await self.auth.login("0123")

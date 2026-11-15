@@ -64,6 +64,13 @@ The packages and [SHA256SUMS](https://github.com/Umichata/tokenlogue/releases/do
 
 <a href="docs/user-guide.md#english">Open the chat guide&nbsp;<img src="docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> for the complete walkthrough.
 
+<a id="en-local-development"></a>
+## <img src="docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Providers and analytics in local builds
+
+The current source checkout adds **OpenRouter and VSEGPT** with separate secure keys and four pages: **Home**, **Providers**, **Token usage** and **Spending**. New chats use the chosen default service. Existing chats keep their provider and model. Local request statistics distinguish API-reported token fields, estimates and missing data, with separate USD/RUB daily charts and tables. Unknown pricing requires explicit confirmation and is never treated as free.
+
+These changes apply when running the current source or a new local build made from it. The published Preview downloads linked above remain the earlier OpenRouter release. Follow the [source-build provider and analytics guide](docs/user-guide.md#en-local-flow). The existing published URLs and checksums have not changed.
+
 <a id="en-docs"></a>
 
 <a id="-find-your-document"></a>

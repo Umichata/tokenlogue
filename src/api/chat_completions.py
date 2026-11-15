@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
 from decimal import ROUND_CEILING, Decimal, InvalidOperation
 from email.utils import parsedate_to_datetime
@@ -15,8 +15,10 @@ import httpx
 from chat.context import ContextMessage
 from chat.errors import ChatErrorType
 from chat.models import ProviderPriceLimit
+from providers.models import Currency, ProviderId, detect_key, provider_spec
 
 OPENROUTER_CHAT_URL = "https://openrouter.ai/api/v1/chat/completions"
+VSEGPT_CHAT_URL = "https://api.vsegpt.ru/v1/chat/completions"
 DEFAULT_CHAT_TIMEOUT = httpx.Timeout(connect=5.0, read=45.0, write=10.0, pool=5.0)
 MAX_RETRY_AFTER_SECONDS = 86_400
 TOKENS_PER_MILLION = Decimal("1000000")
@@ -36,6 +38,23 @@ class ChatCompletionResult:
     error_type: ChatErrorType | None
     retry_after: int | None = None
     accounting_unknown: bool = False
+    provider_id: ProviderId = ProviderId.OPENROUTER
+    currency: Currency = Currency.USD
+    cost_amount: Decimal | None = None
+    usage_source: str = "unknown"
+    cost_source: str = "unknown"
+    cached_tokens: int | None = None
+    reasoning_tokens: int | None = None
+
+    def __post_init__(self) -> None:
+        if self.currency is Currency.USD and self.cost_amount is None:
+            object.__setattr__(self, "cost_amount", self.cost_usd)
+        if self.currency is not Currency.USD and self.cost_usd is not None:
+            raise ValueError("USD amount requires USD currency")
+        if self.usage_source == "unknown" and self.has_token_usage:
+            object.__setattr__(self, "usage_source", "api")
+        if self.cost_source == "unknown" and self.cost_amount is not None:
+            object.__setattr__(self, "cost_source", "api")
 
     @property
     def successful(self) -> bool:
@@ -51,7 +70,14 @@ class ChatCompletionResult:
             self.prompt_tokens is not None
             and self.completion_tokens is not None
             and self.total_tokens is not None
-            and self.cost_usd is not None
+            and self.cost_amount is not None
+        )
+
+    @property
+    def has_token_usage(self) -> bool:
+        return any(
+            value is not None
+            for value in (self.prompt_tokens, self.completion_tokens, self.total_tokens)
         )
 
 
@@ -61,9 +87,11 @@ class ChatCompletionsClient:
         *,
         transport: httpx.AsyncBaseTransport | None = None,
         timeout: httpx.Timeout = DEFAULT_CHAT_TIMEOUT,
+        provider_id: ProviderId = ProviderId.OPENROUTER,
     ) -> None:
         self._transport = transport
         self._timeout = timeout
+        self.provider_id = ProviderId(provider_id)
 
     async def complete(
         self,
@@ -73,8 +101,52 @@ class ChatCompletionsClient:
         max_completion_tokens: int,
         provider_price_limit: ProviderPriceLimit,
     ) -> ChatCompletionResult:
+        result = await self._complete(
+            api_key,
+            requested_model_id,
+            messages,
+            max_completion_tokens,
+            provider_price_limit,
+        )
+        return replace(
+            result,
+            provider_id=self.provider_id,
+            currency=provider_spec(self.provider_id).currency,
+            cost_usd=result.cost_usd
+            if self.provider_id is ProviderId.OPENROUTER
+            else None,
+            cost_amount=result.cost_amount
+            if self.provider_id is ProviderId.OPENROUTER
+            else None,
+            cost_source=(
+                "api"
+                if result.cost_usd is not None
+                and self.provider_id is ProviderId.OPENROUTER
+                else "unknown"
+            ),
+            accounting_unknown=(
+                result.accounting_unknown
+                or (
+                    self.provider_id is ProviderId.VSEGPT
+                    and (
+                        result.successful
+                        or result.has_token_usage
+                        or result.cost_usd is not None
+                    )
+                )
+            ),
+        )
+
+    async def _complete(
+        self,
+        api_key: str,
+        requested_model_id: str,
+        messages: tuple[ContextMessage, ...],
+        max_completion_tokens: int,
+        provider_price_limit: ProviderPriceLimit,
+    ) -> ChatCompletionResult:
         normalized_key = api_key.strip()
-        if not normalized_key:
+        if detect_key(normalized_key) is not self.provider_id:
             return _error_result(
                 requested_model_id,
                 ChatErrorType.AUTHENTICATION,
@@ -91,20 +163,23 @@ class ChatCompletionsClient:
                 ChatErrorType.INVALID_REQUEST,
                 accounting_unknown=False,
             )
-        payload = {
+        payload: dict[str, Any] = {
             "model": requested_model_id,
             "messages": [
                 {"role": message.role.value, "content": message.content}
                 for message in messages
             ],
-            "max_completion_tokens": max_completion_tokens,
             "stream": False,
-            "provider": {
+        }
+        if self.provider_id is ProviderId.OPENROUTER:
+            payload["max_completion_tokens"] = max_completion_tokens
+            payload["provider"] = {
                 # Резервируется только провайдер того же единственного model.
                 "allow_fallbacks": True,
                 "max_price": _wire_max_price(provider_price_limit),
-            },
-        }
+            }
+        else:
+            payload["max_tokens"] = max_completion_tokens
         try:
             encoded_payload = _encode_json(payload)
         except (TypeError, ValueError):
@@ -122,7 +197,7 @@ class ChatCompletionsClient:
                 trust_env=False,
             ) as client:
                 response = await client.post(
-                    OPENROUTER_CHAT_URL,
+                    provider_spec(self.provider_id).base_url + "/chat/completions",
                     content=encoded_payload,
                     headers={
                         "Authorization": f"Bearer {normalized_key}",
@@ -165,8 +240,8 @@ class ChatCompletionsClient:
                 accounting_unknown=_ambiguous_http_status(response.status_code),
             )
 
-        payload = _decode_json(response.content)
-        if payload is None:
+        response_payload = _decode_json(response.content)
+        if response_payload is None:
             return _error_result(
                 requested_model_id,
                 (
@@ -184,27 +259,36 @@ class ChatCompletionsClient:
             return _parse_http_error(
                 requested_model_id,
                 response.status_code,
-                payload,
+                response_payload,
                 retry_after,
+                provider_id=self.provider_id,
             )
-        return _parse_success_response(requested_model_id, payload)
+        return _parse_success_response(
+            requested_model_id, response_payload, provider_id=self.provider_id
+        )
 
 
 @dataclass(frozen=True)
 class _Usage:
-    prompt_tokens: int
-    completion_tokens: int
-    total_tokens: int
-    cost_usd: Decimal
+    prompt_tokens: int | None
+    completion_tokens: int | None
+    total_tokens: int | None
+    cost_usd: Decimal | None
+    cached_tokens: int | None = None
+    reasoning_tokens: int | None = None
 
 
 def _parse_success_response(
     requested_model_id: str,
     payload: dict[str, Any],
+    *,
+    provider_id: ProviderId = ProviderId.OPENROUTER,
 ) -> ChatCompletionResult:
     usage = _parse_usage(payload.get("usage"))
     if payload.get("error") is not None:
-        error_type = _payload_error_type(payload.get("error"), 200)
+        error_type = _provider_payload_error_type(
+            payload.get("error"), 200, provider_id
+        )
         return _result_with_usage(
             requested_model_id,
             error_type,
@@ -265,7 +349,10 @@ def _parse_success_response(
         total_tokens=usage.total_tokens if usage else None,
         cost_usd=usage.cost_usd if usage else None,
         error_type=error_type,
-        accounting_unknown=usage is None,
+        accounting_unknown=usage is None or usage.cost_usd is None,
+        usage_source="api" if usage and _has_tokens(usage) else "unknown",
+        cached_tokens=usage.cached_tokens if usage else None,
+        reasoning_tokens=usage.reasoning_tokens if usage else None,
     )
 
 
@@ -274,9 +361,13 @@ def _parse_http_error(
     status_code: int,
     payload: dict[str, Any],
     retry_after: int | None,
+    *,
+    provider_id: ProviderId = ProviderId.OPENROUTER,
 ) -> ChatCompletionResult:
     usage = _parse_usage(payload.get("usage"))
-    error_type = _payload_error_type(payload.get("error"), status_code)
+    error_type = _provider_payload_error_type(
+        payload.get("error"), status_code, provider_id
+    )
     return _result_with_usage(
         requested_model_id,
         error_type,
@@ -293,14 +384,32 @@ def _parse_usage(value: Any) -> _Usage | None:
     completion_tokens = _parse_nonnegative_int(value.get("completion_tokens"))
     reported_total = _parse_nonnegative_int(value.get("total_tokens"))
     cost = _parse_nonnegative_decimal(value.get("cost"))
-    if None in {prompt_tokens, completion_tokens, reported_total, cost}:
+    if all(
+        value is None
+        for value in (prompt_tokens, completion_tokens, reported_total, cost)
+    ):
         return None
-    assert prompt_tokens is not None
-    assert completion_tokens is not None
-    assert reported_total is not None
-    assert cost is not None
-    safe_total = max(reported_total, prompt_tokens + completion_tokens)
-    return _Usage(prompt_tokens, completion_tokens, safe_total, cost)
+    prompt_details = value.get("prompt_tokens_details")
+    completion_details = value.get("completion_tokens_details")
+    return _Usage(
+        prompt_tokens,
+        completion_tokens,
+        reported_total,
+        cost,
+        _parse_nonnegative_int(prompt_details.get("cached_tokens"))
+        if isinstance(prompt_details, dict)
+        else None,
+        _parse_nonnegative_int(completion_details.get("reasoning_tokens"))
+        if isinstance(completion_details, dict)
+        else None,
+    )
+
+
+def _has_tokens(usage: _Usage) -> bool:
+    return any(
+        value is not None
+        for value in (usage.prompt_tokens, usage.completion_tokens, usage.total_tokens)
+    )
 
 
 def _payload_error_type(value: Any, status_code: int) -> ChatErrorType:
@@ -329,6 +438,32 @@ def _payload_error_type(value: Any, status_code: int) -> ChatErrorType:
     if code is not None and code.isascii() and code.isdigit():
         return _http_error_type(int(code), code)
     return _http_error_type(status_code, code)
+
+
+def _provider_payload_error_type(
+    value: Any, status_code: int, provider_id: ProviderId
+) -> ChatErrorType:
+    if provider_id is ProviderId.VSEGPT:
+        # VSEGPT's official /Docs/API/Errors documents several unrelated
+        # failures as HTTP 400. Inspect only known categories and discard text.
+        message = value.get("message") if isinstance(value, dict) else None
+        if isinstance(message, str):
+            lowered = message.lower()
+            if "api key" in lowered and (
+                "not found" in lowered or "original openai" in lowered
+            ):
+                return ChatErrorType.AUTHENTICATION
+            if "out of budget" in lowered:
+                return ChatErrorType.PAYMENT_REQUIRED
+            if "subscription" in lowered and "not available" in lowered:
+                return ChatErrorType.SUBSCRIPTION_REQUIRED
+            if "soft user limit" in lowered:
+                return ChatErrorType.KEY_LIMIT_EXCEEDED
+            if "context length" in lowered or "maxTokens".lower() in lowered:
+                return ChatErrorType.CONTEXT_LENGTH_EXCEEDED
+        if status_code == 403:
+            return ChatErrorType.CONTENT_POLICY_VIOLATION
+    return _payload_error_type(value, status_code)
 
 
 def _http_error_type(status_code: int, _code: str | None) -> ChatErrorType:
@@ -371,7 +506,12 @@ def _result_with_usage(
         cost_usd=usage.cost_usd if usage else None,
         error_type=error_type,
         retry_after=retry_after,
-        accounting_unknown=accounting_unknown,
+        accounting_unknown=(
+            accounting_unknown or (usage is not None and usage.cost_usd is None)
+        ),
+        usage_source="api" if usage and _has_tokens(usage) else "unknown",
+        cached_tokens=usage.cached_tokens if usage else None,
+        reasoning_tokens=usage.reasoning_tokens if usage else None,
     )
 
 

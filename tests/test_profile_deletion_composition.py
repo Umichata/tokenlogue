@@ -24,12 +24,8 @@ from storage.database import AuthDatabase  # noqa: E402
 from storage.profile_deletion import PROFILE_ALIASES, ProfileDeletion  # noqa: E402
 from storage.secure_credentials import FletSecureCredentials  # noqa: E402
 from tests import test_encryption_initialization as fixtures  # noqa: E402
+from tests.provider_fakes import FakeProviderRouter  # noqa: E402
 from tests.test_app_lifecycle import AndroidPage  # noqa: E402
-from tests.test_message_sending import (  # noqa: E402
-    FakeCatalogClient,
-    FakeCompletionClient,
-    FakeKeyValidator,
-)
 
 
 class ProfileDeletionCompositionTests(unittest.IsolatedAsyncioTestCase):
@@ -62,15 +58,7 @@ class ProfileDeletionCompositionTests(unittest.IsolatedAsyncioTestCase):
             ),
             patch.object(composition, "DeviceRecovery", return_value=self.bridge),
             patch.object(
-                composition, "OpenRouterClient", return_value=FakeKeyValidator()
-            ),
-            patch.object(
-                composition, "ModelCatalogClient", return_value=FakeCatalogClient(())
-            ),
-            patch.object(
-                composition,
-                "ChatCompletionsClient",
-                return_value=FakeCompletionClient([]),
+                composition, "ProviderRouter", return_value=FakeProviderRouter()
             ),
             patch.object(
                 composition, "AppController", side_effect=self.capture_controller

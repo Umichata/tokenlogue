@@ -32,6 +32,7 @@ class PackagedNoticesTests(unittest.TestCase):
             "font.txt": "Original font notice\nCopyright © 2019\n".encode(),
             "bridge.txt": b"Original bridge notice\n",
             "katex.txt": b"Original KaTeX notice\n",
+            "tzdata.txt": b"Original tzdata notice\n",
         }
         self.registry = {
             "schema": 1,
@@ -48,6 +49,7 @@ class PackagedNoticesTests(unittest.TestCase):
             ("libffi-runtime", "runtime.txt", ["android"]),
             ("material-icons", "font.txt", ["android", "linux"]),
             ("dart-bridge", "bridge.txt", ["android"]),
+            ("tzdata", "tzdata.txt", ["android", "linux"]),
             ("katex-fonts", "katex.txt", ["android"]),
         ):
             data = self.texts[name]
@@ -90,13 +92,23 @@ class PackagedNoticesTests(unittest.TestCase):
         }
         self.assertEqual(
             set(components),
-            {"libffi-runtime", "dart-bridge", "katex-fonts", "material-icons"},
+            {
+                "libffi-runtime",
+                "dart-bridge",
+                "katex-fonts",
+                "material-icons",
+                "tzdata",
+            },
         )
         self.assertEqual(
             [component["id"] for component in linux_manifest["components"]],
-            ["material-icons"],
+            ["material-icons", "tzdata"],
         )
         expected = {
+            "tzdata": (
+                "2026.6",
+                "df58f69ea88683035d720b5375bcef0cf5aeaa98a1d098d572e0992c378deb46",
+            ),
             "libffi-runtime": (
                 "3.4.4",
                 "2c9c2acb9743e6b007b91350475308aee44691d96aa20eacef8e199988c8c388",
@@ -121,6 +133,7 @@ class PackagedNoticesTests(unittest.TestCase):
                     },
                 )
         for identity, digest in {
+            "tzdata": "0a10eec6e13ef16b627fabed9a5f2ba61a62b1c67f327305f4e7e412a70b4aec",
             "libffi-runtime": "d66c56ad259a82cf2a9dfc408b32bf5da52371500b84745f7fb8b645712df676",
             "dart-bridge": "a261849049b8710511a0bf264c4aad17acd2a94782c9563d59a636b520b5d7eb",
             "katex-fonts": "6d5f2f1aa57ae539ffb0a04bb39d2da67af74601d685a161aff7ce5bda5fa407",
@@ -162,7 +175,13 @@ class PackagedNoticesTests(unittest.TestCase):
             )
         self.assertEqual(
             [component["id"] for component in manifest["components"]],
-            ["libffi-runtime", "material-icons", "dart-bridge", "katex-fonts"],
+            [
+                "libffi-runtime",
+                "material-icons",
+                "dart-bridge",
+                "tzdata",
+                "katex-fonts",
+            ],
         )
         self.assertEqual(
             manifest["components"][0]["source"],

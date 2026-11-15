@@ -154,7 +154,7 @@ class ProtectionOnboardingTests(unittest.IsolatedAsyncioTestCase):
         return app
 
     async def register(self):
-        await self.app.submit_key("synthetic-onboarding-key-no-network")
+        await self.app.submit_key("sk-or-v1-synthetic-onboarding-key-no-network")
         token = self.app._pending_setup_token
         assert token is not None
         await self.app.confirm_pin_setup("0123", token)
@@ -176,7 +176,7 @@ class ProtectionOnboardingTests(unittest.IsolatedAsyncioTestCase):
         self.assertIsNone(self.app._protection_trace)
         self.app.set_protection_trace(events.append)
         await self.app.start()
-        key = "synthetic-trace-credential-never-in-records"
+        key = "sk-or-v1-synthetic-trace-credential-never-in-records"
         await self.app.submit_key(key)
         token = self.app._pending_setup_token
         assert token is not None
@@ -252,7 +252,9 @@ class ProtectionOnboardingTests(unittest.IsolatedAsyncioTestCase):
             )
 
         with patch.object(self.auth, "start_setup", delayed):
-            task = asyncio.create_task(self.app.submit_key("synthetic-unused-key"))
+            task = asyncio.create_task(
+                self.app.submit_key("sk-or-v1-synthetic-unused-key")
+            )
             try:
                 await asyncio.wait_for(entered.wait(), 0.5)
                 self.app._show_pin_login()
@@ -278,7 +280,7 @@ class ProtectionOnboardingTests(unittest.IsolatedAsyncioTestCase):
         failure = ValueError(private_message)
         with patch("app.PinSetupView", side_effect=failure):
             with self.assertRaises(ValueError) as caught:
-                await self.app.submit_key("synthetic-trace-key-no-network")
+                await self.app.submit_key("sk-or-v1-synthetic-trace-key-no-network")
         self.assertIs(caught.exception, failure)
         failed = next(item for item in events if item["event"] == "pin_setup_failed")
         self.assertEqual(failed["exception_class"], "ValueError")
@@ -291,14 +293,14 @@ class ProtectionOnboardingTests(unittest.IsolatedAsyncioTestCase):
 
         self.app.set_protection_trace(unavailable)
         await self.app.start()
-        await self.app.submit_key("synthetic-trace-key-no-network")
+        await self.app.submit_key("sk-or-v1-synthetic-trace-key-no-network")
         self.assertIsNotNone(self.app._pin_setup_view)
         self.assertIsNone(self.app._key_view)
 
     async def test_system_event_trace_uses_known_reasons_and_never_field_values(self):
         events = []
         self.app.set_protection_trace(events.append)
-        await self.app.submit_key("synthetic-trace-key-no-network")
+        await self.app.submit_key("sk-or-v1-synthetic-trace-key-no-network")
         setup = self.app._pin_setup_view
         assert setup is not None
         setup.pin_field.value = "3141"
@@ -535,7 +537,7 @@ class ProtectionOnboardingTests(unittest.IsolatedAsyncioTestCase):
         await self.app.request_reset()
         await self.app.confirm_reset()
         self.assertIsNotNone(self.app._key_view)
-        await self.app.submit_key("synthetic-replacement-no-network")
+        await self.app.submit_key("sk-or-v1-synthetic-replacement-no-network")
         self.assertIsNone(self.app._protection_setup_view)
         self.assertTrue(self.app._chat_controller.workspace_visible)
         self.assertEqual(self.preferences.local_protection_onboarding, "done")
@@ -570,7 +572,7 @@ class ProtectionOnboardingTests(unittest.IsolatedAsyncioTestCase):
     async def test_preferences_failure_before_registration_keeps_unsaved_profile_safe(
         self,
     ):
-        await self.app.submit_key("synthetic-onboarding-key-no-network")
+        await self.app.submit_key("sk-or-v1-synthetic-onboarding-key-no-network")
         token = self.app._pending_setup_token
         assert token is not None
         with patch.object(

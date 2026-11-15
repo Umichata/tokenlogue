@@ -163,7 +163,7 @@ class ControllerEstimateMetadataTests(unittest.IsolatedAsyncioTestCase):
 
     async def activate(self) -> None:
         await self.controller.activate(
-            "public synthetic session",
+            "sk-or-v1-public-synthetic-session",
             KeyValidityState.VALID,
             KeyLimitInfo.from_validated_remaining(Decimal("5")),
         )

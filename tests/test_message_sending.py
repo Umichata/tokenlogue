@@ -51,7 +51,7 @@ from storage.database import AuthDatabase  # noqa: E402
 from storage.message_repository import SqliteMessageRepository  # noqa: E402
 
 NOW = datetime(2026, 5, 1, tzinfo=UTC)
-TEST_CREDENTIAL = "message-test-credential"
+TEST_CREDENTIAL = "sk-or-v1-message-test-credential"
 
 
 class FakeCompletionClient:

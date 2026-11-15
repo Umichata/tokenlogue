@@ -538,6 +538,8 @@ assert Path(initialization.__file__).resolve() == Path(sys.argv[1]) / 'storage/e
             ("pycryptodomex==3.23.0", "pycryptodomex>=3.23.0"),
             ("cffi==2.0.0", "cffi==2.1.1"),
             ("pycparser==3.11", "pycparser==3.10"),
+            ("tzdata==2026.6", "tzdata>=2026.6"),
+            ("tzdata==2026.6", "tzdata==2025.2"),
         ):
             with self.subTest(requirement=before):
                 (repo / "pyproject.toml").write_text(current.replace(before, after))

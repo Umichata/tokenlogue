@@ -11,6 +11,7 @@ from auth.models import KeyLimitInfo
 from chat.account_balance import AccountBalanceSnapshot
 from chat.accounting import ChatBudget, RemainingBudget, calculate_remaining_budget
 from chat.models import Chat, ChatMode
+from providers.models import Currency, ProviderId
 
 
 class LastRequestState(str, Enum):
@@ -31,6 +32,15 @@ class LastRequestMetrics:
     sent_at: datetime | None = None
     chronology_known: bool = True
     attempt_sequence: int | None = None
+    cost: Decimal | None = None
+    currency: Currency = Currency.USD
+    provider_id: ProviderId = ProviderId.OPENROUTER
+    usage_source: str = "unknown"
+    cost_source: str = "unknown"
+
+    def __post_init__(self) -> None:
+        if self.currency is Currency.USD and self.cost is None:
+            object.__setattr__(self, "cost", self.cost_usd)
 
 
 @dataclass(frozen=True)
@@ -46,6 +56,8 @@ class ChatMetricsSnapshot:
     account_balance: AccountBalanceSnapshot = field(
         default_factory=AccountBalanceSnapshot
     )
+    provider_id: ProviderId = ProviderId.OPENROUTER
+    currency: Currency = Currency.USD
 
 
 def build_chat_metrics(
@@ -73,4 +85,6 @@ def build_chat_metrics(
             account_balance.balance_usd if account_balance is not None else None
         ),
         account_balance=account_balance or AccountBalanceSnapshot(),
+        provider_id=chat.provider_id,
+        currency=chat.currency,
     )

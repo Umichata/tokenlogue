@@ -303,7 +303,7 @@ class AppControllerTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(view.submit_button.disabled)
         self.assertIsNotNone(view.key_field.on_change)
 
-        view.key_field.value = "test-value"
+        view.key_field.value = "sk-or-v1-synthetic-ui-only"
         view._apply_key_state()
         self.assertFalse(view.submit_button.disabled)
         view.set_busy(True)
@@ -311,7 +311,7 @@ class AppControllerTests(unittest.IsolatedAsyncioTestCase):
         view.set_busy(False)
         self.assertFalse(view.submit_button.disabled)
         await view._submit_value()
-        self.assertEqual(submitted, ["test-value"])
+        self.assertEqual(submitted, ["sk-or-v1-synthetic-ui-only"])
 
         view.clear_key()
         self.assertTrue(view.submit_button.disabled)

@@ -2,7 +2,7 @@
 name = "tokenlogue"
 # Предварительные выпуски остаются 0.1.0 до официального релиза.
 version = "0.1.0"
-description = "A secure cross-platform OpenRouter chat client with local history and configurable token and spending limits."
+description = "A secure Linux and Android chat client for OpenRouter and VSEGPT with local history, usage analytics and configurable budgets."
 authors = [{ name = "Viktor Zemkov" }]
 license = "MIT"
 license-files = ["LICENSE"]
@@ -14,6 +14,7 @@ dependencies = [
     "pycryptodomex==3.23.0",
     "cffi==2.0.0",
     "pycparser==3.11",
+    "tzdata==2026.6",
 ]
 
 [dependency-groups]
@@ -44,7 +45,7 @@ artifact = "tokenlogue"
 org = "io.github.umichata"
 bundle_id = "io.github.umichata.tokenlogue"
 # Номер сборки растёт независимо от пользовательской версии.
-build_number = 43
+build_number = 44
 company = "Umichata"
 copyright = "Copyright © 2026 Viktor Zemkov"
 
@@ -59,12 +60,13 @@ exclude = [
     "api/__pycache__",
     "auth/__pycache__",
     "chat/__pycache__",
+    "providers/__pycache__",
     "storage/__pycache__",
     "ui/__pycache__",
 ]
 
 [tool.flet.flutter.pubspec]
-version = "0.1.0+43"
+version = "0.1.0+44"
 
 # Сохраняем совместимость с JNI 1.0.0, закреплённым в Flet 0.86.5.
 [tool.flet.flutter.pubspec.dependency_overrides]

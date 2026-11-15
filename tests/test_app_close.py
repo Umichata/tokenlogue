@@ -11,7 +11,6 @@ import unittest
 from datetime import UTC, datetime
 from decimal import Decimal
 from pathlib import Path
-from types import SimpleNamespace
 from typing import cast
 from unittest.mock import AsyncMock, patch
 
@@ -32,7 +31,9 @@ from storage.database import AuthDatabase  # noqa: E402
 from storage.draft_repository import SqliteDraftRepository  # noqa: E402
 from storage.encrypted_migration import migrate_database  # noqa: E402
 from storage.field_cipher import FieldCipher  # noqa: E402
-from tests.test_app import FakeAuthService, FakeKeyValidator, FakePage  # noqa: E402
+from storage.secure_credentials import FletSecureCredentials  # noqa: E402
+from tests.provider_fakes import FakeProviderRouter  # noqa: E402
+from tests.test_app import FakeAuthService, FakePage  # noqa: E402
 from tests.test_secure_credentials import FakeSecureStorage  # noqa: E402
 
 
@@ -69,6 +70,10 @@ class AppCloseTests(unittest.IsolatedAsyncioTestCase):
             )
             page = ClosingPage()
             auth = FakeAuthService(initial_route=InitialRoute.PIN)
+            secure_credentials = FletSecureCredentials(FakeSecureStorage())
+            await secure_credentials.save_credentials(
+                "sk-or-v1-synthetic-close", "close-registration"
+            )
             created = []
 
             def make_controller(*args, **kwargs):
@@ -96,7 +101,7 @@ class AppCloseTests(unittest.IsolatedAsyncioTestCase):
                 patch.object(
                     application,
                     "FletSecureCredentials",
-                    return_value=SimpleNamespace(storage_backend=FakeSecureStorage()),
+                    return_value=secure_credentials,
                 ),
                 patch.object(application, "DataAccess", return_value=access),
                 patch.object(
@@ -104,17 +109,15 @@ class AppCloseTests(unittest.IsolatedAsyncioTestCase):
                 ),
                 patch.object(application, "AuthService", return_value=auth),
                 patch.object(
-                    application, "OpenRouterClient", return_value=FakeKeyValidator()
+                    application, "ProviderRouter", return_value=FakeProviderRouter()
                 ),
-                patch.object(application, "ModelCatalogClient"),
-                patch.object(application, "ChatCompletionsClient"),
                 patch.object(application, "AppController", side_effect=make_controller),
                 patch.object(ft.Control, "update"),
             ):
                 await application.main(cast(ft.Page, page))
                 controller = created[0]
                 await controller._activate_session(
-                    "synthetic-session-key",
+                    "sk-or-v1-synthetic-close",
                     KeyValidityState.VALID,
                     KeyLimitInfo.from_validated_remaining(None),
                 )

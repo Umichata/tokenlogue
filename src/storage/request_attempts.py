@@ -23,7 +23,9 @@ def has_request_attempts(connection: sqlite3.Connection) -> bool:
     )
 
 
-def create_request_attempts_schema(connection: sqlite3.Connection) -> None:
+def create_request_attempts_schema(
+    connection: sqlite3.Connection, *, legacy: bool = False
+) -> None:
     connection.execute(
         """
         CREATE TABLE chat_request_attempts (
@@ -54,12 +56,57 @@ def create_request_attempts_schema(connection: sqlite3.Connection) -> None:
         "CREATE INDEX idx_chat_request_attempts_turn ON chat_request_attempts(turn_id,sequence)"
     )
 
+    if not legacy:
+        extend_request_attempts_schema(connection)
+
+
+def extend_request_attempts_schema(connection: sqlite3.Connection) -> None:
+    columns = {str(row[1]) for row in connection.execute(f"PRAGMA table_info({TABLE})")}
+    for definition in (
+        "provider_id TEXT NOT NULL DEFAULT 'openrouter' CHECK(provider_id IN ('openrouter','vsegpt'))",
+        "currency TEXT NOT NULL DEFAULT 'USD' CHECK(currency IN ('USD','RUB'))",
+        "requested_model_id TEXT",
+        "actual_model_id TEXT",
+        "usage_source TEXT NOT NULL DEFAULT 'unknown' CHECK(usage_source IN ('api','estimated','unknown'))",
+        "cost_source TEXT NOT NULL DEFAULT 'unknown' CHECK(cost_source IN ('api','estimated','unknown'))",
+        "cost TEXT",
+        "cached_tokens INTEGER CHECK(cached_tokens IS NULL OR cached_tokens>=0)",
+        "reasoning_tokens INTEGER CHECK(reasoning_tokens IS NULL OR reasoning_tokens>=0)",
+        "reserved_cost TEXT",
+        "reserved_tokens INTEGER CHECK(reserved_tokens IS NULL OR reserved_tokens>=0)",
+    ):
+        name = definition.split()[0]
+        if name in columns:
+            continue
+        connection.execute(f"ALTER TABLE {TABLE} ADD COLUMN {definition}")
+        if name == "cost":
+            connection.execute(f"UPDATE {TABLE} SET cost=cost_usd")
+        elif name == "cost_source":
+            connection.execute(
+                f"UPDATE {TABLE} SET cost_source='api' WHERE cost_usd IS NOT NULL"
+            )
+        elif name == "usage_source":
+            connection.execute(
+                f"UPDATE {TABLE} SET usage_source='api' WHERE prompt_tokens IS NOT NULL OR completion_tokens IS NOT NULL OR total_tokens IS NOT NULL"
+            )
+    # Existing mutable turns cannot prove a historical requested or actual model.
+    # Do not backfill either identifier from the current chat or reused turn.
+
+
+def request_attempts_are_extended(connection: sqlite3.Connection) -> bool:
+    return any(
+        row[1] == "provider_id"
+        for row in connection.execute(f"PRAGMA table_info({TABLE})")
+    )
+
 
 def validate_request_attempts_schema(connection: sqlite3.Connection) -> None:
     """Accept only the known extension, including its foreign-key boundaries."""
     expected = sqlite3.connect(":memory:")
     try:
-        create_request_attempts_schema(expected)
+        create_request_attempts_schema(
+            expected, legacy=not request_attempts_are_extended(connection)
+        )
         for pragma in ("table_info", "foreign_key_list", "index_list"):
             actual = [
                 tuple(row) for row in connection.execute(f"PRAGMA {pragma}({TABLE})")
@@ -88,6 +135,7 @@ def validate_request_attempts_schema(connection: sqlite3.Connection) -> None:
 
 def ensure_request_attempts(connection: sqlite3.Connection) -> None:
     if has_request_attempts(connection):
+        extend_request_attempts_schema(connection)
         return
     create_request_attempts_schema(connection)
     # Older turns have no immutable send chronology. Their created_at may
@@ -97,10 +145,12 @@ def ensure_request_attempts(connection: sqlite3.Connection) -> None:
         """
         INSERT INTO chat_request_attempts (
             turn_id,chat_id,sent_at,chronology_known,status,accounting_status,
-            prompt_tokens,completion_tokens,total_tokens,cost_usd
+            prompt_tokens,completion_tokens,total_tokens,cost_usd,cost,usage_source,cost_source
         )
         SELECT id,chat_id,NULL,0,status,accounting_status,
-            prompt_tokens,completion_tokens,total_tokens,cost_usd
+            prompt_tokens,completion_tokens,total_tokens,cost_usd,cost_usd,
+            CASE WHEN prompt_tokens IS NOT NULL OR completion_tokens IS NOT NULL OR total_tokens IS NOT NULL THEN 'api' ELSE 'unknown' END,
+            CASE WHEN cost_usd IS NOT NULL THEN 'api' ELSE 'unknown' END
         FROM turns WHERE request_sent=1 ORDER BY rowid
         """
     )
@@ -108,36 +158,45 @@ def ensure_request_attempts(connection: sqlite3.Connection) -> None:
 
 def record_request_attempt(
     connection: sqlite3.Connection, turn_id: str, sent_at: str
-) -> None:
-    connection.execute(
+) -> int:
+    cursor = connection.execute(
         """
         INSERT INTO chat_request_attempts (
             turn_id,chat_id,sent_at,chronology_known,status,accounting_status,
-            prompt_tokens,completion_tokens,total_tokens,cost_usd
+            prompt_tokens,completion_tokens,total_tokens,cost_usd,
+            provider_id,currency,requested_model_id,actual_model_id,
+            cost,usage_source,cost_source,cached_tokens,reasoning_tokens,reserved_cost,reserved_tokens
         )
-        SELECT id,chat_id,?,1,status,accounting_status,
-            prompt_tokens,completion_tokens,total_tokens,cost_usd
-        FROM turns WHERE id=? AND request_sent=1
+        SELECT t.id,t.chat_id,?,1,t.status,t.accounting_status,
+            t.prompt_tokens,t.completion_tokens,t.total_tokens,t.cost_usd,
+            t.provider_id,t.currency,t.requested_model_id,t.actual_model_id,
+            t.cost,t.usage_source,t.cost_source,t.cached_tokens,t.reasoning_tokens,t.reserved_cost,t.reserved_tokens
+        FROM turns AS t WHERE t.id=? AND t.request_sent=1
         """,
         (sent_at, turn_id),
     )
+    if cursor.lastrowid is None:
+        raise ValueError("request_attempt_not_recorded")
+    return cursor.lastrowid
 
 
 def synchronize_request_attempt(connection: sqlite3.Connection, turn_id: str) -> None:
     if not has_request_attempts(connection):
         return
-    # Only a dispatched current attempt can update its snapshot. An unsent
-    # retry must not overwrite the previous attempt with its cleared fields.
+    extended = request_attempts_are_extended(connection) and any(
+        row[1] == "cost" for row in connection.execute("PRAGMA table_info(turns)")
+    )
+    fields = (
+        "status,accounting_status,prompt_tokens,completion_tokens,total_tokens,cost_usd"
+    )
+    if extended:
+        fields += ",actual_model_id,cost,usage_source,cost_source,cached_tokens,reasoning_tokens"
+    # Immutable dispatch identity, requested model, provider, currency and time
+    # are deliberately absent from the update list.
     connection.execute(
-        """
-        UPDATE chat_request_attempts
-        SET (status,accounting_status,prompt_tokens,completion_tokens,total_tokens,cost_usd) = (
-            SELECT status,accounting_status,prompt_tokens,completion_tokens,total_tokens,cost_usd
-            FROM turns WHERE id=?
-        )
-        WHERE sequence=(SELECT MAX(sequence) FROM chat_request_attempts WHERE turn_id=?)
-          AND EXISTS (SELECT 1 FROM turns WHERE id=? AND request_sent=1)
-        """,
+        f"UPDATE {TABLE} SET ({fields})=(SELECT {fields} FROM turns WHERE id=?) "
+        f"WHERE sequence=(SELECT MAX(sequence) FROM {TABLE} WHERE turn_id=?) "
+        "AND EXISTS (SELECT 1 FROM turns WHERE id=? AND request_sent=1)",
         (turn_id, turn_id, turn_id),
     )
 

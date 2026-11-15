@@ -8,14 +8,16 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import Enum
+from typing import Protocol
 
 import flet as ft
 
 from api.models import ModelCatalogService
+from api.openrouter import KeyValidationResult, KeyValidationStatus
 from auth.access import free_mode_allowed, paid_mode_allowed
 from auth.contracts import KeyValidator
 from auth.key_validation import interpret_key_validation
-from auth.models import KeyLimitInfo, KeyValidityState
+from auth.models import KeyLimitInfo, KeyLimitState, KeyValidityState
 from chat.account_balance import (
     AccountBalanceService,
     AccountBalanceSnapshot,
@@ -37,6 +39,7 @@ from chat_interaction_controller import (
 from chat_workspace_controller import ChatWorkspaceController
 from i18n import tr
 from platform_security.local_protection import ProtectionSnapshot
+from providers.models import ProviderId, detect_key
 from service_errors import localized_error_text
 from storage.data_access import DataAccess
 from ui import (
@@ -78,6 +81,28 @@ class WorkspaceDeletionOrigin:
     workspace: ChatWorkspaceView
 
 
+class ProviderProfiles(Protocol):
+    @property
+    def default_provider(self) -> ProviderId: ...
+    @property
+    def active(self) -> bool: ...
+    def key_for(self, provider: ProviderId) -> str | None: ...
+    def key_validity_for(self, provider: ProviderId) -> KeyValidityState: ...
+    def key_limit_for(self, provider: ProviderId) -> KeyLimitInfo: ...
+    def balance_for(self, provider: ProviderId) -> AccountBalanceSnapshot: ...
+    def credential_revision(self, provider: ProviderId) -> object: ...
+    def apply_validation(
+        self, provider: ProviderId, key: str, result: KeyValidationResult
+    ) -> None: ...
+    async def refresh(
+        self,
+        provider: ProviderId,
+        *,
+        after_response: bool = False,
+        validate_key: bool = False,
+    ) -> None: ...
+
+
 class ChatSessionController:
     """Хранит только краткоживущее состояние разблокированной чат-сессии."""
 
@@ -101,9 +126,20 @@ class ChatSessionController:
         on_delete_profile: Callable[[WorkspaceDeletionOrigin], Awaitable[None]]
         | None = None,
         data_access: DataAccess | None = None,
+        provider_profiles: ProviderProfiles | None = None,
+        on_provider_settings: AsyncCallback | None = None,
+        present_content: Callable[[ft.Control], None] | None = None,
     ) -> None:
         self._page = page
         self._data_access = data_access
+        self._provider_profiles = provider_profiles
+        self._on_provider_settings = on_provider_settings
+        self._present_content = present_content
+        self._navigation_hidden = False
+        self._provider_tasks: set[asyncio.Task[None]] = set()
+        self._provider_revisions: dict[ProviderId, object] = {}
+        self._selected_provider = ProviderId.OPENROUTER
+        self._creation_provider = ProviderId.OPENROUTER
         self._key_validator = key_validator
         self._chat_service = chat_service
         self._catalog_service = catalog_service
@@ -228,6 +264,12 @@ class ChatSessionController:
             return
         self.deactivate()
         self._session_api_key = api_key
+        self._selected_provider = detect_key(api_key) or ProviderId.OPENROUTER
+        self._creation_provider = (
+            self._provider_profiles.default_provider
+            if self._provider_profiles is not None
+            else self._selected_provider
+        )
         self._key_validity = key_validity
         self._key_limit = key_limit
         if self._balance_service is not None:
@@ -245,8 +287,11 @@ class ChatSessionController:
         if self._disposed or not self.session_active:
             return
         self._deferred_workspace = False
+        self._navigation_hidden = False
         generation = self._session_generation
         await self._show_workspace(expected_generation=generation)
+        if self._present_content is not None and self._workspace_view is not None:
+            self._replace_page(self._workspace_view.control)
         if (
             not self._disposed
             and generation == self._session_generation
@@ -254,11 +299,166 @@ class ChatSessionController:
         ):
             self._start_key_validation()
 
+    async def prepare_navigation(self) -> bool:
+        """Keep the bound workspace and in-flight attempt while leaving Home."""
+        if self._disposed or not self.session_active:
+            return False
+        if not await self.flush_drafts():
+            return False
+        self._dismiss_chat_dialog()
+        self._workspace_controller.cancel_confirmation_for_navigation()
+        self._workspace_controller.cancel_cost_increase()
+        self._workspace_controller.cancel_limits_dialog()
+        self._workspace_controller.cancel_release_unknown()
+        if self._workspace_view is not None:
+            self._workspace_view.close_menu()
+            await self._workspace_view.close_drawer()
+        self._page.drawer = None
+        self._navigation_hidden = True
+        return True
+
+    async def resume_home(self) -> None:
+        """Reveal the retained Home without restarting a send or its workspace."""
+        if self._disposed or not self.session_active:
+            return
+        self._navigation_hidden = False
+        if self._workspace_view is not None and self._screen is _ChatScreen.WORKSPACE:
+            self._workspace_view.restore_navigation()
+            if self._provider_profiles is not None:
+                self._sync_provider_metadata(self._selected_provider)
+            self._push_estimate_metadata()
+            self._replace_page(self._workspace_view.control)
+            return
+        await self.cancel_new_chat()
+
+    async def handle_application_back(self) -> bool:
+        """Consume local navigation surfaces before the platform leaves Home."""
+        if self._disposed or not self.session_active:
+            return False
+        view = self._workspace_view
+        if view is not None and getattr(view, "_menu_dialog", None) is not None:
+            view.close_menu()
+            return True
+        if view is not None and view.drawer_open:
+            await view.close_drawer()
+            return True
+        if self._delete_dialog is not None or self._rename_dialog is not None:
+            self._dismiss_chat_dialog()
+            return True
+        if self._workspace_controller.has_dialog():
+            self._workspace_controller.cancel_confirmation_for_navigation()
+            self._workspace_controller.cancel_cost_increase()
+            self._workspace_controller.cancel_limits_dialog()
+            self._workspace_controller.cancel_release_unknown()
+            return True
+        if self._screen is _ChatScreen.LIMITS_SELECTION:
+            await self.back_to_model_selection()
+            return True
+        if self._screen is _ChatScreen.MODEL_SELECTION:
+            await self.back_to_mode_selection()
+            return True
+        if self._screen in {_ChatScreen.MODE_SELECTION, _ChatScreen.CATALOG_LOADING}:
+            await self.cancel_new_chat()
+            return True
+        if not await self.flush_drafts():
+            return True
+        return False
+
+    async def refresh_provider_state(self) -> None:
+        if self._provider_profiles is None or not self.session_active or self._disposed:
+            return
+        provider = self._current_provider()
+        revision = self._provider_revision(provider)
+        if self._provider_revisions.get(provider) != revision:
+            self._provider_revisions[provider] = revision
+            self._catalog_service.clear_cache()
+            self._cancel_estimate_metadata()
+        self._sync_provider_metadata(provider)
+        self._push_estimate_metadata()
+        if self._screen is _ChatScreen.WORKSPACE:
+            await self._show_workspace(expected_generation=self._session_generation)
+
+    async def _open_provider_settings(self) -> None:
+        if self._on_provider_settings is not None:
+            if await self.prepare_navigation():
+                await self._on_provider_settings()
+
+    def _current_provider(self) -> ProviderId:
+        if self._screen in {
+            _ChatScreen.CATALOG_LOADING,
+            _ChatScreen.MODE_SELECTION,
+            _ChatScreen.MODEL_SELECTION,
+            _ChatScreen.LIMITS_SELECTION,
+        }:
+            return self._creation_provider
+        return self._selected_provider
+
+    def _key_for_provider(self, provider: ProviderId) -> str | None:
+        if self._provider_profiles is not None:
+            return self._provider_profiles.key_for(provider)
+        return self._session_api_key
+
+    def _provider_revision(self, provider: ProviderId) -> object:
+        if self._provider_profiles is not None:
+            return self._provider_profiles.credential_revision(provider)
+        return self._session_generation
+
+    def _peek_catalog(self, provider: ProviderId | None = None) -> ModelCatalog | None:
+        if self._provider_profiles is None:
+            return self._catalog_service.peek_catalog()
+        key = self._key_for_provider(provider or self._selected_provider)
+        return self._catalog_service.peek_catalog(key) if key is not None else None
+
+    def _sync_provider_metadata(
+        self, provider: ProviderId, *, publish_balance: bool = True
+    ) -> None:
+        profiles = self._provider_profiles
+        if profiles is None:
+            return
+        self._key_validity = profiles.key_validity_for(provider)
+        self._key_limit = profiles.key_limit_for(provider)
+        if profiles.key_for(provider) is None:
+            self._key_validity = KeyValidityState.INVALID
+        self._key_validation_in_progress = False
+        if publish_balance:
+            self._workspace_controller.set_account_balance(
+                profiles.balance_for(provider)
+            )
+
+    def _start_provider_refresh(
+        self,
+        provider: ProviderId,
+        *,
+        after_response: bool = False,
+        validate_key: bool = False,
+    ) -> None:
+        profiles = self._provider_profiles
+        if profiles is None or not profiles.active or not self.session_active:
+            return
+        generation = self._session_generation
+
+        async def refresh() -> None:
+            try:
+                await profiles.refresh(
+                    provider, after_response=after_response, validate_key=validate_key
+                )
+                if generation == self._session_generation and self.session_active:
+                    await self.refresh_provider_state()
+            except asyncio.CancelledError:
+                pass
+            except Exception:
+                pass
+
+        task = asyncio.create_task(refresh())
+        self._provider_tasks.add(task)
+        task.add_done_callback(self._provider_tasks.discard)
+
     def deactivate(self) -> None:
         """Удаляет ключ и каталог из памяти, не изменяя SQLite."""
         self._session_generation += 1
         self._workspace_request_id += 1
         self._session_api_key = None
+        self._navigation_hidden = False
         self._cancel_balance_refresh()
         self._deferred_workspace = False
         self._cancel_estimate_metadata()
@@ -412,12 +612,18 @@ class ChatSessionController:
         await self._drafts.discard_for_deletion()
 
     async def request_new_chat(self) -> None:
+        if self._provider_profiles is not None:
+            self._creation_provider = self._provider_profiles.default_provider
+            if self._provider_profiles.key_for(self._creation_provider) is None:
+                await self._open_provider_settings()
+                return
+            self._sync_provider_metadata(self._creation_provider, publish_balance=False)
         if (
             self._disposed
             or self._screen is _ChatScreen.SECURITY
             or self._session_api_key is None
             or self._catalog_task is not None
-            or not free_mode_allowed(self._key_validity)
+            or (self._key_validity is KeyValidityState.INVALID)
             or self._workspace_controller.busy
             or self._workspace_controller.has_dialog()
         ):
@@ -434,7 +640,11 @@ class ChatSessionController:
         self._catalog_request_id += 1
         request_id = self._catalog_request_id
         generation = self._session_generation
-        api_key = self._session_api_key
+        api_key = self._key_for_provider(self._creation_provider)
+        if api_key is None:
+            self._catalog_task = None
+            return
+        credential_revision = self._provider_revision(self._creation_provider)
         self._show_catalog_loading()
         try:
             catalog = await self._catalog_service.get_catalog(api_key)
@@ -449,6 +659,8 @@ class ChatSessionController:
             or request_id != self._catalog_request_id
             or generation != self._session_generation
             or self._session_api_key is None
+            or credential_revision != self._provider_revision(self._creation_provider)
+            or api_key != self._key_for_provider(self._creation_provider)
         ):
             return
         self._catalog = catalog
@@ -473,7 +685,9 @@ class ChatSessionController:
         if mode is ChatMode.FREE and not free_mode_allowed(self._key_validity):
             return
         if mode is ChatMode.PAID and (
-            not paid_mode_allowed(self._key_validity, self._key_limit)
+            not paid_mode_allowed(
+                self._key_validity, self._key_limit, self._creation_provider
+            )
             or not catalog.available
             or not catalog.paid_models
         ):
@@ -506,6 +720,8 @@ class ChatSessionController:
             or self._pending_mode is None
             or self._session_api_key is None
         ):
+            return
+        if model.provider_id is not self._creation_provider:
             return
         self._pending_model = model
         self._new_limits_view = NewChatLimitsView(
@@ -559,6 +775,7 @@ class ChatSessionController:
                 token_limit,
                 max_completion_tokens,
                 cost_limit_usd,
+                currency=model.currency,
             )
         except ValueError as error:
             view.form.show_error(localized_error_text(error))
@@ -578,7 +795,7 @@ class ChatSessionController:
                     key_limit=self._key_limit,
                     token_limit=configuration.token_limit,
                     max_completion_tokens=configuration.max_completion_tokens,
-                    cost_limit_usd=configuration.cost_limit_usd,
+                    cost_limit=configuration.cost_limit,
                     paid_confirmed=mode is ChatMode.PAID,
                 )
             except (ChatPolicyError, ValueError) as error:
@@ -602,6 +819,7 @@ class ChatSessionController:
         if self._disposed or generation != self._session_generation:
             return
         self._selected_chat_id = chat.id
+        self._selected_provider = chat.provider_id
         self._catalog = None
         self._pending_mode = None
         self._pending_model = None
@@ -623,6 +841,7 @@ class ChatSessionController:
             return
         self._dismiss_chat_dialog()
         self._workspace_controller.cancel_confirmation_for_navigation()
+        self._cancel_estimate_metadata()
         self._workspace_controller.begin_navigation(chat_id)
         self._selected_chat_id = chat_id
         await self._show_workspace(expected_generation=generation)
@@ -850,9 +1069,21 @@ class ChatSessionController:
         self._workspace_controller.cancel_cost_increase()
 
     async def submit_message(self, text: str) -> None:
+        if (
+            self._provider_profiles is not None
+            and self._key_for_provider(self._selected_provider) is None
+        ):
+            await self._open_provider_settings()
+            return
         await self._workspace_controller.submit_message(text)
 
     async def request_retry_turn(self, turn_id: str) -> None:
+        if (
+            self._provider_profiles is not None
+            and self._key_for_provider(self._selected_provider) is None
+        ):
+            await self._open_provider_settings()
+            return
         await self._workspace_controller.request_retry_turn(turn_id)
 
     async def confirm_paid_request(self) -> None:
@@ -875,6 +1106,12 @@ class ChatSessionController:
 
     async def request_key_revalidation(self) -> None:
         """Запускает одну повторную проверку и сразу возвращает управление UI."""
+        if self._provider_profiles is not None:
+            await self._provider_profiles.refresh(
+                self._current_provider(), validate_key=True
+            )
+            await self.refresh_provider_state()
+            return
         if (
             self._disposed
             or self._screen is _ChatScreen.SECURITY
@@ -889,6 +1126,11 @@ class ChatSessionController:
         await self._refresh_after_key_validation(generation)
 
     def _start_balance_refresh(self, *, after_response: bool = False) -> None:
+        if self._provider_profiles is not None:
+            self._start_provider_refresh(
+                self._current_provider(), after_response=after_response
+            )
+            return
         if (
             self._disposed
             or self._session_api_key is None
@@ -939,6 +1181,9 @@ class ChatSessionController:
             self._balance_expiry = asyncio.get_running_loop().call_later(300, expire)
 
     def _cancel_balance_refresh(self) -> None:
+        for task in self._provider_tasks:
+            task.cancel()
+        self._provider_tasks.clear()
         if self._balance_task is not None:
             self._balance_task.cancel()
             self._balance_task = None
@@ -950,6 +1195,9 @@ class ChatSessionController:
 
     async def request_key_replacement(self) -> None:
         """Передаёт замену API-ключа из свободной разблокированной сессии."""
+        if self._provider_profiles is not None:
+            await self._open_provider_settings()
+            return
         view = self._workspace_view
         if (
             self._disposed
@@ -1185,6 +1433,9 @@ class ChatSessionController:
         return True
 
     def _start_key_validation(self, *, metadata_only: bool = False) -> bool:
+        if self._provider_profiles is not None:
+            self._start_provider_refresh(self._current_provider(), validate_key=True)
+            return False
         if (
             self._disposed
             or self._session_api_key is None
@@ -1273,7 +1524,9 @@ class ChatSessionController:
             return
 
         can_use_free = free_mode_allowed(self._key_validity)
-        can_use_paid = paid_mode_allowed(self._key_validity, self._key_limit)
+        can_use_paid = paid_mode_allowed(
+            self._key_validity, self._key_limit, self._current_provider()
+        )
         if not can_use_paid and self._workspace_controller.pending_preview is not None:
             self._workspace_controller.cancel_pending_send()
 
@@ -1343,6 +1596,17 @@ class ChatSessionController:
         if selected is None and chats:
             selected = chats[0]
         self._selected_chat_id = selected.id if selected is not None else None
+        self._selected_provider = (
+            selected.provider_id
+            if selected is not None
+            else (
+                self._provider_profiles.default_provider
+                if self._provider_profiles is not None
+                else self._selected_provider
+            )
+        )
+        if self._provider_profiles is not None:
+            self._sync_provider_metadata(self._selected_provider)
         interaction_state: ActiveChatState | None = None
         if selected is not None:
             try:
@@ -1527,11 +1791,73 @@ class ChatSessionController:
     def _session_context(self) -> ChatSessionContext | None:
         if self._disposed or self._session_api_key is None:
             return None
+        provider = self._selected_provider
+        key = self._key_for_provider(provider)
+        if key is None:
+            return None
+        profiles = self._provider_profiles
+        revision = self._provider_revision(provider)
         return ChatSessionContext(
-            self._session_api_key,
-            self._key_validity,
-            self._key_limit,
+            key,
+            profiles.key_validity_for(provider)
+            if profiles is not None
+            else self._key_validity,
+            profiles.key_limit_for(provider)
+            if profiles is not None
+            else self._key_limit,
+            provider_id=provider,
+            request_finished=(
+                lambda: self._start_provider_refresh(provider, after_response=True)
+            )
+            if self._provider_profiles is not None
+            else None,
+            apply_key_state=(
+                lambda validity, limit: self._apply_provider_key_state(
+                    provider, key, revision, validity, limit
+                )
+            )
+            if profiles is not None
+            else None,
         )
+
+    def _apply_provider_key_state(
+        self,
+        provider: ProviderId,
+        key: str,
+        revision: object,
+        validity: KeyValidityState,
+        limit: KeyLimitInfo,
+    ) -> None:
+        if self._provider_profiles is None or revision != self._provider_revision(
+            provider
+        ):
+            return
+        status = {
+            KeyValidityState.INVALID: KeyValidationStatus.INVALID,
+            KeyValidityState.RESTRICTED: KeyValidationStatus.RESTRICTED,
+            KeyValidityState.UNVERIFIED: KeyValidationStatus.UNVERIFIED,
+        }.get(validity)
+        if validity is KeyValidityState.VALID:
+            if (
+                provider is ProviderId.OPENROUTER
+                and limit.state is KeyLimitState.UNKNOWN
+            ):
+                return
+            status = (
+                KeyValidationStatus.ACCEPTED_WITHOUT_LIMIT
+                if limit.state in {KeyLimitState.NOT_SET, KeyLimitState.UNKNOWN}
+                else (
+                    KeyValidationStatus.ACCEPTED
+                    if limit.state is KeyLimitState.AVAILABLE
+                    else KeyValidationStatus.ACCEPTED_LIMIT_EXHAUSTED
+                )
+            )
+        if status is not None:
+            self._provider_profiles.apply_validation(
+                provider,
+                key,
+                KeyValidationResult(status, limit.remaining, provider_id=provider),
+            )
 
     def _apply_interaction_key_state(
         self,
@@ -1539,6 +1865,12 @@ class ChatSessionController:
         limit: KeyLimitInfo,
     ) -> None:
         if self._disposed or self._session_api_key is None:
+            return
+        if self._provider_profiles is not None:
+            # The provider manager owns validity per credential revision. Its
+            # callback will publish the selected provider's current snapshot.
+            self._sync_provider_metadata(self._selected_provider)
+            self._push_estimate_metadata()
             return
         if validity is not self._key_validity or limit != self._key_limit:
             # Interaction results can echo cached free-mode metadata, and a
@@ -1563,16 +1895,20 @@ class ChatSessionController:
         model: CatalogModel | None = None
         if self.session_active and self._key_validity is not KeyValidityState.INVALID:
             if state is not None:
-                if state.chat.requested_model_id == FREE_ROUTER_MODEL.id:
+                if (
+                    state.chat.provider_id is ProviderId.OPENROUTER
+                    and state.chat.requested_model_id == FREE_ROUTER_MODEL.id
+                ):
                     model = FREE_ROUTER_MODEL
                 else:
-                    catalog = self._catalog_service.peek_catalog()
+                    catalog = self._peek_catalog(state.chat.provider_id)
                     if catalog is not None:
                         model = next(
                             (
                                 item
                                 for item in (*catalog.free_models, *catalog.paid_models)
                                 if item.id == state.chat.requested_model_id
+                                and item.provider_id is state.chat.provider_id
                             ),
                             None,
                         )
@@ -1632,16 +1968,14 @@ class ChatSessionController:
                 and not self._estimate_refresh_key
             )
             or self._estimate_metadata_task is not None
-            or (
-                self._catalog_service.peek_catalog() is not None
-                and not self._estimate_refresh_key
-            )
+            or (self._peek_catalog() is not None and not self._estimate_refresh_key)
         ):
             return False
         generation = self._session_generation
         request = self._estimate_metadata_request
-        api_key = self._session_api_key
-        assert api_key is not None
+        api_key = self._key_for_provider(self._selected_provider)
+        if api_key is None:
+            return False
         self._estimate_metadata_task = asyncio.create_task(
             self._run_estimate_metadata_refresh(api_key, generation, request)
         )
@@ -1733,6 +2067,11 @@ class ChatSessionController:
 
     def _replace_page(self, control: ft.Control) -> None:
         if self._disposed:
+            return
+        if self._navigation_hidden:
+            return
+        if self._present_content is not None:
+            self._present_content(control)
             return
         self._page.controls.clear()
         self._page.add(control)

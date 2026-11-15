@@ -11,6 +11,7 @@ class ChatErrorType(str, Enum):
     INVALID_REQUEST = "invalid_request"
     AUTHENTICATION = "authentication"
     PAYMENT_REQUIRED = "payment_required"
+    SUBSCRIPTION_REQUIRED = "subscription_required"
     PERMISSION_DENIED = "permission_denied"
     CONTENT_POLICY_VIOLATION = "content_policy_violation"
     REFUSAL = "refusal"
@@ -41,6 +42,7 @@ SAFE_ERROR_MESSAGES: dict[ChatErrorType, str] = {
     ChatErrorType.INVALID_REQUEST: tr("service.error.invalid_request"),
     ChatErrorType.AUTHENTICATION: tr("service.error.authentication"),
     ChatErrorType.PAYMENT_REQUIRED: (tr("service.error.payment")),
+    ChatErrorType.SUBSCRIPTION_REQUIRED: tr("service.error.subscription"),
     ChatErrorType.PERMISSION_DENIED: tr("service.error.permission"),
     ChatErrorType.CONTENT_POLICY_VIOLATION: tr("service.error.policy"),
     ChatErrorType.REFUSAL: tr("service.error.refusal"),

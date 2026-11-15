@@ -26,6 +26,7 @@ from i18n import (
 )
 from platform_security.local_protection import ProtectionSnapshot
 from preferences import PreferencesStore
+from providers.models import Currency, PriceUnit, provider_spec
 from ui.branding import BrandHeader, BrandLoader
 from ui.chat_metrics import (
     ChatMetricsStrip,
@@ -49,6 +50,7 @@ from ui.styles import (
     PANEL_BACKGROUND,
     PRIMARY_COLOR,
     SUCCESS_COLOR,
+    WARNING_COLOR,
     danger_button_style,
     detail_row,
     input_style,
@@ -154,6 +156,7 @@ class ChatWorkspaceView:
                 self.protection_button.tooltip = tr("protection_panel.open")
         self._new_chat_allowed = free_mode_allowed(key_validity)
         self._disposed = False
+        self._drawer_open = False
         self._sending = False
         self._paid_setting_pending = False
         self._chat_generation = 0
@@ -242,6 +245,7 @@ class ChatWorkspaceView:
 
     def dispose(self) -> None:
         self._disposed = True
+        self._drawer_open = False
         self._chat_generation += 1
         self.close_menu()
         self._protection_panel.close()
@@ -484,14 +488,31 @@ class ChatWorkspaceView:
             return False
         if not state.budget.limits_configured:
             return False
-        if state.budget.state in {
-            BudgetState.ACCOUNTING_UNKNOWN,
-            BudgetState.EXHAUSTED,
-        }:
+        unknown_price_review = (
+            state.chat.mode is ChatMode.PAID
+            and (
+                state.chat.pricing_unit is not PriceUnit.TOKEN
+                or not state.chat.pricing_snapshot_complete
+            )
+            and state.remaining.tokens is not None
+            and state.remaining.tokens > 0
+        )
+        if (
+            state.budget.state is BudgetState.ACCOUNTING_UNKNOWN
+            and not unknown_price_review
+        ):
+            return False
+        if state.budget.state is BudgetState.EXHAUSTED and (
+            state.chat.mode is ChatMode.FREE
+            or state.remaining.tokens is None
+            or state.remaining.tokens <= 0
+        ):
             return False
         if state.chat.mode is ChatMode.FREE:
             return free_mode_allowed(self._key_validity)
-        return paid_mode_allowed(self._key_validity, self._key_limit)
+        return paid_mode_allowed(
+            self._key_validity, self._key_limit, state.chat.provider_id
+        )
 
     def _handle_size_change(
         self,
@@ -515,6 +536,7 @@ class ChatWorkspaceView:
             self._apply_sidebar_visibility()
             responsive_changed = self._apply_available_height()
             if wide_changed:
+                self._drawer_open = False
                 self._page.drawer = None if wide else self._build_drawer()
                 # drawer belongs to Page's root View, outside this layout container.
                 update_page = getattr(self._page, "update", None)
@@ -591,11 +613,41 @@ class ChatWorkspaceView:
         if self._disposed:
             return
         if not self._wide:
-            await self._page.show_drawer()
+            await self._show_drawer()
             return
         self._preferences.set_wide_sidebar_visible(not self.sidebar_visible)
         self._apply_sidebar_visibility()
         self._layout.update()
+
+    @property
+    def drawer_open(self) -> bool:
+        return self._drawer_open
+
+    async def _show_drawer(self) -> None:
+        if self._disposed or self._wide or self._page.drawer is None:
+            return
+        # Mark the opening transition too, so Back closes it while Flutter is
+        # still acknowledging show_drawer rather than leaving the workspace.
+        self._drawer_open = True
+        try:
+            await self._page.show_drawer()
+        except Exception:
+            self._drawer_open = False
+            raise
+
+    async def close_drawer(self) -> None:
+        """Close Flutter's drawer before top-level navigation detaches it."""
+        opened = self._drawer_open
+        self._drawer_open = False
+        if opened and not self._disposed and self._page.drawer is not None:
+            await self._page.close_drawer()
+
+    def restore_navigation(self) -> None:
+        """Attach the retained Home's chat drawer after another page was shown."""
+        if self._disposed:
+            return
+        self._drawer_open = False
+        self._page.drawer = None if self._wide else self._build_drawer()
 
     def _render_layout(self) -> None:
         self._resize_metrics()
@@ -615,7 +667,16 @@ class ChatWorkspaceView:
                 self._build_chat_content(show_menu=True),
             ],
         )
-        self._page.drawer = None if self._wide else self._build_drawer()
+        if self._wide:
+            self._drawer_open = False
+            self._page.drawer = None
+        elif self._drawer_open and isinstance(self._page.drawer, ft.NavigationDrawer):
+            # A background response can refresh chat tiles while the native
+            # drawer is open. Preserve its identity and Back ownership.
+            self._page.drawer.controls = [self._build_chat_panel()]
+        else:
+            self._drawer_open = False
+            self._page.drawer = self._build_drawer()
         self._apply_sidebar_visibility()
 
     def _sync_chat_actions(self) -> None:
@@ -689,16 +750,22 @@ class ChatWorkspaceView:
         )
 
     def _build_drawer(self) -> ft.NavigationDrawer:
-        return ft.NavigationDrawer(
+        def dismissed(_event: ft.Event) -> None:
+            if self._page.drawer is drawer:
+                self._drawer_open = False
+
+        drawer = ft.NavigationDrawer(
             bgcolor=PANEL_BACKGROUND,
             controls=[self._build_chat_panel()],
+            on_dismiss=dismissed,
         )
+        return drawer
 
     def _build_chat_tile(self, chat: Chat) -> ft.ListTile:
         async def select_chat(_event: ft.Event[ft.ListTile]) -> None:
             self.close_menu()
             if not self._wide:
-                await self._page.close_drawer()
+                await self.close_drawer()
             await self._on_select_chat(chat.id)
 
         mode = tr("chat.free") if chat.mode is ChatMode.FREE else tr("chat.paid")
@@ -788,6 +855,27 @@ class ChatWorkspaceView:
                 ft.Container(
                     padding=ft.Padding.symmetric(horizontal=8),
                     content=ft.Row(spacing=0, controls=header_controls),
+                ),
+                ft.Container(
+                    width=float("inf"),
+                    padding=ft.Padding.symmetric(horizontal=12, vertical=4),
+                    content=ft.Text(
+                        tr(
+                            "workspace.current_model",
+                            provider=provider_spec(
+                                self._selected_chat.provider_id
+                            ).name,
+                            model=display_model_name(
+                                self._selected_chat.requested_model_id,
+                                self._selected_chat.requested_model_name,
+                            ),
+                        )
+                        if self._selected_chat is not None
+                        else "",
+                        size=12,
+                        color=MUTED_COLOR,
+                        selectable=True,
+                    ),
                 ),
                 self._chat_actions_row,
                 ft.Divider(height=1),
@@ -909,7 +997,7 @@ class ChatWorkspaceView:
     def _key_allows_chat(self, chat: Chat) -> bool:
         if chat.mode is ChatMode.FREE:
             return free_mode_allowed(self._key_validity)
-        return paid_mode_allowed(self._key_validity, self._key_limit)
+        return paid_mode_allowed(self._key_validity, self._key_limit, chat.provider_id)
 
     def _chat_action(self, callback: ChatCallback, chat_id: str, *, menu: bool = False):
         generation = self._chat_generation
@@ -1033,20 +1121,37 @@ class ChatWorkspaceView:
                     ),
                 ),
                 detail_row(tr("meta.model_id"), chat.requested_model_id),
+                detail_row(
+                    tr("workspace.provider"), provider_spec(chat.provider_id).name
+                ),
             ]
         )
-        if chat.mode is ChatMode.PAID:
+        if (
+            chat.mode is ChatMode.PAID
+            and chat.pricing_snapshot_complete
+            and chat.pricing_unit is PriceUnit.TOKEN
+        ):
             controls.extend(
                 [
                     detail_row(
                         tr("price.prompt_million"),
-                        money(chat.prompt_price_per_token * Decimal(1_000_000)),
+                        money(
+                            chat.prompt_price_per_token * Decimal(1_000_000),
+                            chat.currency,
+                        ),
                     ),
                     detail_row(
                         tr("price.completion_million"),
-                        money(chat.completion_price_per_token * Decimal(1_000_000)),
+                        money(
+                            chat.completion_price_per_token * Decimal(1_000_000),
+                            chat.currency,
+                        ),
                     ),
                 ]
+            )
+        elif chat.mode is ChatMode.PAID:
+            controls.append(
+                ft.Text(tr("workspace.pricing_unknown"), color=WARNING_COLOR)
             )
         if state is None or state.chat.id != chat.id:
             return [*controls, *profile_controls]
@@ -1083,19 +1188,19 @@ class ChatWorkspaceView:
                 [
                     detail_row(
                         tr("budget.actual_cost"),
-                        money(budget.cost_used_usd),
+                        money(budget.cost_used, budget.currency),
                     ),
                     detail_row(
                         tr("budget.reserved_cost"),
-                        money(budget.cost_reserved_usd),
+                        money(budget.cost_reserved, budget.currency),
                     ),
                     detail_row(
                         tr("budget.remaining_money"),
-                        _money_or_unknown(remaining.cost_usd),
+                        _money_or_unknown(remaining.cost, budget.currency),
                     ),
                     detail_row(
                         tr("budget.spending_limit"),
-                        _money_or_unknown(budget.cost_limit_usd),
+                        _money_or_unknown(budget.cost_limit, budget.currency),
                     ),
                 ]
             )
@@ -1355,7 +1460,9 @@ class ChatWorkspaceView:
                         else tr(
                             "reserve.unknown_paid",
                             tokens=number(state.budget.reserved_tokens),
-                            amount=money(state.budget.cost_reserved_usd),
+                            amount=money(
+                                state.budget.cost_reserved, state.budget.currency
+                            ),
                         ),
                         color=ft.Colors.AMBER_300,
                     ),
@@ -1376,6 +1483,9 @@ class ChatWorkspaceView:
             message=message,
             color=color,
             limit=self._key_limit.remaining,
+            currency=self._selected_chat.currency
+            if self._selected_chat is not None
+            else Currency.USD,
             busy=self._key_validation_in_progress or self._key_refresh_in_progress,
             replacement_busy=self.key_replacement_busy,
             replacement_notice=(
@@ -1409,7 +1519,7 @@ class ChatWorkspaceView:
         await self._on_lock()
 
     async def _open_drawer(self, _event: ft.Event[ft.IconButton]) -> None:
-        await self._page.show_drawer()
+        await self._show_drawer()
 
 
 class _KeyStatusPanel:
@@ -1465,6 +1575,7 @@ class _KeyStatusPanel:
         busy: bool,
         replacement_busy: bool,
         replacement_notice: str,
+        currency: Currency = Currency.USD,
     ) -> None:
         self.message.value = fresh_text(message)
         self.message.color = color
@@ -1472,7 +1583,7 @@ class _KeyStatusPanel:
         self.limit_row.visible = limit is not None
         value = self.limit_row.controls[1]
         assert isinstance(value, ft.Text)
-        value.value = _money_or_unknown(limit)
+        value.value = _money_or_unknown(limit, currency)
         self.progress.visible = busy
         self.loader.set_active(busy)
         self.refresh_button.disabled = busy
@@ -1606,8 +1717,8 @@ def _history_warning() -> ft.Control:
     )
 
 
-def _money_or_unknown(value: Decimal | None) -> str:
-    return "—" if value is None else money(value)
+def _money_or_unknown(value: Decimal | None, currency: Currency = Currency.USD) -> str:
+    return "—" if value is None else money(value, currency)
 
 
 def _key_status_presentation(

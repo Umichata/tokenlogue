@@ -25,6 +25,7 @@ from chat.models import (
 )
 from chat.paid_consent import PaidConsent
 from i18n import tr
+from providers.models import ProviderId
 from storage.access_context import finish_worker, repository_session
 
 
@@ -40,7 +41,8 @@ class ChatRepository(Protocol):
         *,
         token_limit: int,
         max_completion_tokens: int,
-        cost_limit_usd: Decimal,
+        cost_limit_usd: Decimal | None = None,
+        cost_limit: Decimal | None = None,
     ) -> None: ...
 
     def list_chats(self) -> list[Chat]: ...
@@ -187,7 +189,8 @@ class ChatService:
         key_limit: KeyLimitInfo,
         token_limit: int,
         max_completion_tokens: int,
-        cost_limit_usd: Decimal | None,
+        cost_limit_usd: Decimal | None = None,
+        cost_limit: Decimal | None = None,
         paid_confirmed: bool = False,
     ) -> Chat:
         if not isinstance(paid_confirmed, bool):
@@ -204,7 +207,7 @@ class ChatService:
             mode,
             token_limit,
             max_completion_tokens,
-            cost_limit_usd,
+            cost_limit if cost_limit is not None else cost_limit_usd,
         )
         chat = self._build_chat(mode, selected_model)
         await asyncio.to_thread(
@@ -212,7 +215,7 @@ class ChatService:
             chat,
             token_limit=token_limit,
             max_completion_tokens=max_completion_tokens,
-            cost_limit_usd=normalized_cost,
+            cost_limit=normalized_cost,
         )
         return chat
 
@@ -286,6 +289,9 @@ class ChatService:
             ),
             pricing_overrides=selected_model.pricing_overrides,
             pricing_snapshot_complete=selected_model.pricing_is_complete,
+            provider_id=selected_model.provider_id,
+            currency=selected_model.currency,
+            pricing_unit=selected_model.pricing_unit,
         )
 
 
@@ -306,7 +312,10 @@ def validate_model_for_mode(
     if mode is ChatMode.FREE:
         if not free_mode_allowed(key_validity):
             raise ChatPolicyError(tr("service.invalid_key_blocks"))
-        if model.id == FREE_ROUTER_MODEL.id:
+        if (
+            model.provider_id is ProviderId.OPENROUTER
+            and model.id == FREE_ROUTER_MODEL.id
+        ):
             return FREE_ROUTER_MODEL
         if (
             not catalog.available
@@ -318,9 +327,12 @@ def validate_model_for_mode(
 
     if mode is ChatMode.PAID:
         if (
-            not paid_mode_allowed(key_validity, key_limit)
+            not paid_mode_allowed(key_validity, key_limit, model.provider_id)
             or not catalog.available
-            or model.id == FREE_ROUTER_MODEL.id
+            or (
+                model.provider_id is ProviderId.OPENROUTER
+                and model.id == FREE_ROUTER_MODEL.id
+            )
             or model not in catalog.paid_models
             or not is_paid_model(model)
         ):

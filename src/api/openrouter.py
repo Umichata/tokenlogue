@@ -11,6 +11,8 @@ from typing import Any
 
 import httpx
 
+from providers.models import Currency, ProviderId, detect_key
+
 OPENROUTER_KEY_URL = "https://openrouter.ai/api/v1/key"
 OPENROUTER_CREDITS_URL = "https://openrouter.ai/api/v1/credits"
 
@@ -28,6 +30,10 @@ class CreditsStatus(str, Enum):
     SERVER_ERROR = "server_error"
     INVALID_RESPONSE = "invalid_response"
     UNEXPECTED_STATUS = "unexpected_status"
+    BALANCE_DISABLED = "balance_disabled"
+    SUBSCRIPTION_REQUIRED = "subscription_required"
+    ACCOUNT_DISABLED = "account_disabled"
+    INSUFFICIENT_FUNDS = "insufficient_funds"
 
 
 @dataclass(frozen=True)
@@ -38,6 +44,17 @@ class CreditsResult:
     total_credits: Decimal | None = field(default=None, repr=False)
     total_usage: Decimal | None = field(default=None, repr=False)
     balance_usd: Decimal | None = field(default=None, repr=False)
+    balance_amount: Decimal | None = field(default=None, repr=False)
+    currency: Currency = Currency.USD
+    provider_id: ProviderId = ProviderId.OPENROUTER
+    warning: bool = False
+    subscription_active: bool | None = None
+
+    def __post_init__(self) -> None:
+        if self.currency is Currency.USD and self.balance_amount is None:
+            object.__setattr__(self, "balance_amount", self.balance_usd)
+        if self.currency is not Currency.USD and self.balance_usd is not None:
+            raise ValueError("USD amount requires USD currency")
 
 
 class KeyValidationStatus(str, Enum):
@@ -55,6 +72,7 @@ class KeyValidationStatus(str, Enum):
     SERVER_ERROR = "server_error"
     INVALID_RESPONSE = "invalid_response"
     UNEXPECTED_STATUS = "unexpected_status"
+    UNVERIFIED = "unverified"
 
 
 @dataclass(frozen=True)
@@ -63,6 +81,9 @@ class KeyValidationResult:
 
     status: KeyValidationStatus
     limit_remaining: Decimal | None = None
+    provider_id: ProviderId = ProviderId.OPENROUTER
+    warning: bool = False
+    subscription_active: bool | None = None
 
     @property
     def accepted(self) -> bool:
@@ -72,6 +93,27 @@ class KeyValidationResult:
             KeyValidationStatus.ACCEPTED_WITHOUT_LIMIT,
             KeyValidationStatus.ACCEPTED_LIMIT_EXHAUSTED,
         }
+
+    @property
+    def authorization_confirmed(self) -> bool:
+        return self.accepted
+
+    @property
+    def save_allowed(self) -> bool:
+        """Unverified keys require the caller's separate explicit save action."""
+        return self.accepted or (
+            self.provider_id is ProviderId.VSEGPT
+            and self.status
+            in {
+                KeyValidationStatus.UNVERIFIED,
+                KeyValidationStatus.NETWORK_ERROR,
+                KeyValidationStatus.TIMEOUT,
+                KeyValidationStatus.TLS_ERROR,
+                KeyValidationStatus.RATE_LIMITED,
+                KeyValidationStatus.SERVER_ERROR,
+                KeyValidationStatus.UNEXPECTED_STATUS,
+            }
+        )
 
 
 class OpenRouterClient:
@@ -89,7 +131,7 @@ class OpenRouterClient:
     async def get_credits(self, api_key: str) -> CreditsResult:
         """Read real account totals using the current key and existing policy."""
         normalized_key = api_key.strip()
-        if not normalized_key:
+        if detect_key(normalized_key) is not ProviderId.OPENROUTER:
             return CreditsResult(CreditsStatus.UNAUTHORIZED)
         try:
             async with httpx.AsyncClient(
@@ -129,7 +171,7 @@ class OpenRouterClient:
     async def validate_key(self, api_key: str) -> KeyValidationResult:
         """Проверяет ключ без сохранения и без раскрытия сетевых исключений."""
         normalized_key = api_key.strip()
-        if not normalized_key:
+        if detect_key(normalized_key) is not ProviderId.OPENROUTER:
             return KeyValidationResult(KeyValidationStatus.INVALID)
 
         try:
@@ -229,6 +271,10 @@ def _parse_key_response(content: bytes) -> KeyValidationResult:
     data = payload.get("data")
     if not isinstance(data, dict) or "limit_remaining" not in data:
         return KeyValidationResult(KeyValidationStatus.INVALID_RESPONSE)
+    if data.get("is_management_key") is True:
+        # Administration credentials are not inference credentials. Reading
+        # credits with such a key does not establish permission to send chat.
+        return KeyValidationResult(KeyValidationStatus.RESTRICTED)
 
     raw_limit = data["limit_remaining"]
     if raw_limit is None:

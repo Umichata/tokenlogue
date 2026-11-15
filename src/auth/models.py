@@ -34,6 +34,7 @@ class AuthStatus(str, Enum):
     LOCKED = "locked"
     BUSY = "busy"
     INVALID_KEY = "invalid_key"
+    UNVERIFIED_KEY = "unverified_key"
     NETWORK_ERROR = "network_error"
     TIMEOUT = "timeout"
     TLS_ERROR = "tls_error"
@@ -105,6 +106,7 @@ class KeyValidityState(str, Enum):
     VALID = "valid"
     INVALID = "invalid"
     RESTRICTED = "restricted"
+    UNVERIFIED = "unverified"
 
 
 @dataclass(frozen=True)

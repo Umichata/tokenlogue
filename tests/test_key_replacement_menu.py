@@ -6,6 +6,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import inspect
+import json
 import sqlite3
 import sys
 import unittest
@@ -34,11 +35,17 @@ from chat.service import ChatService
 from i18n import configure_localization, localize_tree, set_language
 from platform_security.device_recovery import DeviceRecovery, RecoveryStatus
 from preferences import PreferencesStore
+from providers.models import ProviderId
 from storage.chat_repository import SqliteChatRepository
 from storage.data_protection import DATA_KEY_ALIAS
 from storage.draft_repository import SqliteDraftRepository
 from storage.message_repository import SqliteMessageRepository
-from storage.secure_credentials import API_KEY_STORAGE_NAME, FletSecureCredentials
+from storage.secure_credentials import (
+    API_KEY_STORAGE_NAME,
+    DEFAULT_PROVIDER_STORAGE_NAME,
+    PROVIDER_VALIDATION_STORAGE_NAMES,
+    FletSecureCredentials,
+)
 from tests import test_chat_controller as controller_fixtures
 from tests import test_encryption_initialization as encryption_fixtures
 from tests import test_message_sending as sending_fixtures
@@ -170,7 +177,32 @@ class KeyReplacementMenuTests(unittest.IsolatedAsyncioTestCase):
         for alias, value in self.original_storage.items():
             if alias != API_KEY_STORAGE_NAME:
                 self.assertEqual(self.fixture.storage.values[alias], value)
-        self.assertEqual(set(self.fixture.storage.values), set(self.original_storage))
+        added = set(self.fixture.storage.values) - set(self.original_storage)
+        if added:
+            # A successful replacement adds only the explicit provider choice
+            # and its safe validation receipt; protected profile aliases stay
+            # byte-for-byte identical above.
+            self.assertEqual(
+                added,
+                {
+                    DEFAULT_PROVIDER_STORAGE_NAME,
+                    PROVIDER_VALIDATION_STORAGE_NAMES[ProviderId.OPENROUTER],
+                },
+            )
+            self.assertEqual(
+                self.fixture.storage.values[DEFAULT_PROVIDER_STORAGE_NAME], "openrouter"
+            )
+            metadata = json.loads(
+                self.fixture.storage.values[
+                    PROVIDER_VALIDATION_STORAGE_NAMES[ProviderId.OPENROUTER]
+                ]
+            )
+            self.assertIsInstance(metadata["authorization_confirmed"], bool)
+            self.assertTrue(metadata["revision"])
+            self.assertTrue(metadata["checked_at"])
+        self.assertTrue(
+            set(self.original_storage).issubset(self.fixture.storage.values)
+        )
         state = self.fixture.database.get_auth_state()
         assert state is not None
         self.assertTrue(self.fixture.hasher.verify("0123", state.pin_record))
@@ -304,7 +336,7 @@ class KeyReplacementMenuTests(unittest.IsolatedAsyncioTestCase):
         flushed_state = self.snapshot()
         rows = flushed_state["chat_drafts"]
         self.assertTrue(any(row["content"] == draft for row in rows))
-        new_key = "synthetic-replacement-no-network"
+        new_key = "sk-or-v1-synthetic-replacement-no-network"
         await self.app.submit_key(new_key)
         self.assertTrue(self.chat.session_active)
         self.assertFalse(self.protection.replacement_pending)
@@ -325,7 +357,7 @@ class KeyReplacementMenuTests(unittest.IsolatedAsyncioTestCase):
         await self.confirm_from_menu()
         view = self.app._key_view
         self.validator.result = KeyValidationResult(KeyValidationStatus.INVALID)
-        await self.app.submit_key("synthetic-invalid-no-network")
+        await self.app.submit_key("sk-or-v1-synthetic-invalid-no-network")
         self.assertIs(self.app._key_view, view)
         self.assertFalse(self.chat.session_active)
         self.assertTrue(self.protection.replacement_pending)
@@ -334,14 +366,14 @@ class KeyReplacementMenuTests(unittest.IsolatedAsyncioTestCase):
         self.validator.result = KeyValidationResult(
             KeyValidationStatus.ACCEPTED, limit_remaining=Decimal("5")
         )
-        await self.app.submit_key("synthetic-valid-retry-no-network")
+        await self.app.submit_key("sk-or-v1-synthetic-valid-retry-no-network")
         self.assertTrue(self.chat.session_active)
         self.assert_protected_state_preserved()
 
     async def test_network_error_retains_old_credentials_then_retry_works(self) -> None:
         await self.confirm_from_menu()
         self.validator.result = KeyValidationResult(KeyValidationStatus.NETWORK_ERROR)
-        await self.app.submit_key("synthetic-network-no-network")
+        await self.app.submit_key("sk-or-v1-synthetic-network-no-network")
         self.assertIsNotNone(self.app._key_view)
         self.assertTrue(self.protection.replacement_pending)
         self.assertEqual(self.fixture.storage.values, self.original_storage)
@@ -349,7 +381,7 @@ class KeyReplacementMenuTests(unittest.IsolatedAsyncioTestCase):
         self.validator.result = KeyValidationResult(
             KeyValidationStatus.ACCEPTED, limit_remaining=Decimal("5")
         )
-        await self.app.submit_key("synthetic-valid-after-network")
+        await self.app.submit_key("sk-or-v1-synthetic-valid-after-network")
         self.assertTrue(self.chat.session_active)
         self.assert_protected_state_preserved()
 
@@ -358,12 +390,12 @@ class KeyReplacementMenuTests(unittest.IsolatedAsyncioTestCase):
     ) -> None:
         await self.confirm_from_menu()
         self.fixture.storage.fail_set_key = API_KEY_STORAGE_NAME
-        await self.app.submit_key("synthetic-write-failure")
+        await self.app.submit_key("sk-or-v1-synthetic-write-failure")
         self.assertTrue(self.protection.replacement_pending)
         self.assertEqual(self.fixture.storage.values, self.original_storage)
         self.assert_protected_state_preserved()
         self.fixture.storage.fail_set_key = None
-        await self.app.submit_key("synthetic-valid-after-write-failure")
+        await self.app.submit_key("sk-or-v1-synthetic-valid-after-write-failure")
         self.assertTrue(self.chat.session_active)
         self.assert_protected_state_preserved()
 
@@ -371,7 +403,7 @@ class KeyReplacementMenuTests(unittest.IsolatedAsyncioTestCase):
         self,
     ) -> None:
         await self.confirm_from_menu()
-        new_key = "synthetic-readback-failure"
+        new_key = "sk-or-v1-synthetic-readback-failure"
         original_get = self.fixture.storage.get
         failed = False
 
@@ -400,12 +432,12 @@ class KeyReplacementMenuTests(unittest.IsolatedAsyncioTestCase):
         await self.confirm_from_menu()
         view = self.app._key_view
         assert view is not None
-        view.key_field.value = "synthetic-draft-secret"
+        view.key_field.value = "sk-or-v1-synthetic-draft-secret"
         self.assertTrue(view.key_field.password)
-        self.assertNotIn("synthetic-draft-secret", repr(view.key_field))
-        for language, existing, first_setup in (
-            ("ru", "PIN", "PIN"),
-            ("en", "PIN", "PIN"),
+        self.assertNotIn("sk-or-v1-synthetic-draft-secret", repr(view.key_field))
+        for language, existing in (
+            ("ru", "PIN"),
+            ("en", "PIN"),
         ):
             set_language(language)
             localize_tree(view.control)
@@ -413,10 +445,12 @@ class KeyReplacementMenuTests(unittest.IsolatedAsyncioTestCase):
             self.assertIn(existing, combined)
             self.assertNotIn("choose a PIN", combined)
             self.assertNotIn("выберите PIN", combined)
-            self.assertEqual(view.key_field.value, "synthetic-draft-secret")
-            self.assertIn(
-                first_setup, " ".join(texts(KeyEntryView(self.app.submit_key).control))
-            )
+            self.assertEqual(view.key_field.value, "sk-or-v1-synthetic-draft-secret")
+            # Entry describes both providers and offers an explicit unverified
+            # choice; PIN selection happens after the key decision.
+            setup_copy = " ".join(texts(KeyEntryView(self.app.submit_key).control))
+            self.assertIn("OpenRouter", setup_copy)
+            self.assertIn("VSEGPT", setup_copy)
 
     async def test_locked_new_api_key_cannot_bypass_pin_or_read_dek(self) -> None:
         await self.app.lock_application()
@@ -427,9 +461,9 @@ class KeyReplacementMenuTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(self.app._reset_dialog_open)
         self.assertFalse(self.protection.replacement_pending)
         self.assertIsNone(self.app._key_view)
-        denied = await self.auth.start_setup("synthetic-locked-bypass-attempt")
+        denied = await self.auth.start_setup("sk-or-v1-synthetic-locked-bypass-attempt")
         self.assertIs(denied.status, AuthStatus.PIN_REQUIRED)
-        await self.app.submit_key("synthetic-locked-bypass-attempt")
+        await self.app.submit_key("sk-or-v1-synthetic-locked-bypass-attempt")
         self.assertEqual(self.validator.calls, checks)
         self.assertNotIn(DATA_KEY_ALIAS, self.fixture.storage.read_keys)
         self.assertFalse(self.fixture.access.unlocked)
@@ -610,7 +644,7 @@ class KeyReplacementMenuTests(unittest.IsolatedAsyncioTestCase):
         await self.app.submit_pin("0123")
         await controller_fixtures._wait_for_key_validation(self.chat)
         await self.confirm_from_menu()
-        new_key = "synthetic-key-after-late-status"
+        new_key = "sk-or-v1-synthetic-key-after-late-status"
         await self.app.submit_key(new_key)
         self.assertTrue(self.chat.session_active)
         self.assertIs(self.chat.key_validity, KeyValidityState.VALID)

@@ -198,8 +198,8 @@ class BudgetPermissionTests(unittest.IsolatedAsyncioTestCase):
         def racing_reserve(*args, **kwargs):
             with sqlite3.connect(self.database.path) as connection:
                 connection.execute(
-                    "UPDATE chat_budgets SET cost_reserved_usd=? WHERE chat_id='paid'",
-                    ("0.000000000000000000001",),
+                    "UPDATE chat_budgets SET cost_reserved=?, cost_reserved_usd=? WHERE chat_id='paid'",
+                    ("0.000000000000000000001", "0.000000000000000000001"),
                 )
             return original(*args, **kwargs)
 
@@ -211,6 +211,8 @@ class BudgetPermissionTests(unittest.IsolatedAsyncioTestCase):
         assert result.budget_preview is not None
         assert result.budget_preview.budget_warning is not None
         assert preview.budget_warning is not None
+        assert result.budget_preview.budget_warning.projected_remaining_usd is not None
+        assert preview.budget_warning.projected_remaining_usd is not None
         self.assertLess(
             result.budget_preview.budget_warning.projected_remaining_usd,
             preview.budget_warning.projected_remaining_usd,
@@ -234,6 +236,8 @@ class BudgetPermissionTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue((await self.send(consent=first)).successful)
         second_preview = await self.preview()
         assert second_preview.budget_warning is not None
+        assert second_preview.budget_warning.remaining_usd is not None
+        assert second_preview.budget_warning.projected_remaining_usd is not None
         self.assertLess(second_preview.budget_warning.remaining_usd, 0)
         self.assertLess(second_preview.budget_warning.projected_remaining_usd, 0)
         denied = await self.send()
@@ -299,6 +303,7 @@ class BudgetPermissionTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(repriced.error_type, ChatErrorType.COST_LIMIT_EXCEEDED)
         assert repriced.budget_preview is not None
         assert repriced.budget_preview.budget_warning is not None
+        assert repriced.budget_preview.budget_warning.estimated_cost_usd is not None
         self.assertGreater(
             repriced.budget_preview.budget_warning.estimated_cost_usd, Decimal("1")
         )

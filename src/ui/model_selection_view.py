@@ -16,6 +16,7 @@ from chat.models import (
     maximum_pricing,
 )
 from i18n import display_model_name, fresh_text, money, number, tr
+from providers.models import Currency, PriceUnit, ProviderId, provider_spec
 from ui.branding import BrandHeader, BrandLoader
 from ui.styles import (
     BORDER_COLOR,
@@ -78,20 +79,26 @@ class ModeSelectionView:
         async def cancel(_event: ft.Event[ft.TextButton]) -> None:
             await on_cancel()
 
+        choices = catalog.paid_models or catalog.free_models
+        provider_id = choices[0].provider_id if choices else ProviderId.OPENROUTER
         paid_enabled = (
-            paid_mode_allowed(key_validity, key_limit)
+            paid_mode_allowed(key_validity, key_limit, provider_id)
             and catalog.available
             and bool(catalog.paid_models)
         )
+        currency = choices[0].currency if choices else Currency.USD
         limit_notice, limit_notice_color = key_access_mode_notice(
             key_validity,
             key_limit,
+            currency,
         )
         self.free_button = ft.Button(
             tr("mode.choose_free"),
             icon=ft.Icons.SAVINGS,
             style=primary_button_style(),
-            disabled=not free_mode_allowed(key_validity),
+            disabled=not (
+                free_mode_allowed(key_validity) and bool(catalog.free_models)
+            ),
             on_click=select_free,
         )
         self.paid_button = ft.Button(
@@ -127,7 +134,7 @@ class ModeSelectionView:
                     controls=[
                         ft.Text(tr("mode.paid_title"), weight=ft.FontWeight.BOLD),
                         ft.Text(
-                            tr("mode.paid_help"),
+                            tr("workspace.mode_paid_help"),
                             color=MUTED_COLOR,
                         ),
                         ft.Text(limit_notice, color=limit_notice_color),
@@ -227,18 +234,28 @@ class ModelSelectionView:
             else model.base_pricing
         )
         details: list[ft.Control] = [
+            ft.Text(provider_spec(model.provider_id).name, color=MUTED_COLOR),
             ft.Text(model.id, color=MUTED_COLOR, selectable=True),
-            detail_row(
-                tr("price.prompt_million"),
-                money_million(displayed_pricing.prompt),
-            ),
-            detail_row(
-                tr("price.completion_million"),
-                money_million(displayed_pricing.completion),
-            ),
         ]
-        if self._mode is ChatMode.PAID:
-            details.extend(_additional_price_controls(model))
+        if model.pricing_is_complete and model.pricing_unit is PriceUnit.TOKEN:
+            details.extend(
+                [
+                    detail_row(
+                        tr("price.prompt_million"),
+                        money_million(displayed_pricing.prompt, model.currency),
+                    ),
+                    detail_row(
+                        tr("price.completion_million"),
+                        money_million(displayed_pricing.completion, model.currency),
+                    ),
+                ]
+            )
+            if self._mode is ChatMode.PAID:
+                details.extend(_additional_price_controls(model))
+        else:
+            details.append(
+                ft.Text(tr("workspace.pricing_unknown"), color=WARNING_COLOR)
+            )
         if model.recommended:
             details.insert(0, ft.Text(tr("catalog.recommended"), color=SUCCESS_COLOR))
         return ft.Container(
@@ -281,7 +298,9 @@ def filter_models(
     )
 
 
-def key_limit_mode_notice(key_limit: KeyLimitInfo) -> tuple[str, str]:
+def key_limit_mode_notice(
+    key_limit: KeyLimitInfo, currency: Currency = Currency.USD
+) -> tuple[str, str]:
     """Описывает лимит ключа, не называя его балансом аккаунта."""
     if key_limit.state is KeyLimitState.EXHAUSTED:
         return (
@@ -296,8 +315,14 @@ def key_limit_mode_notice(key_limit: KeyLimitInfo) -> tuple[str, str]:
     if key_limit.state is KeyLimitState.AVAILABLE:
         return (
             tr(
-                "key.available_notice",
-                amount=number(key_limit.remaining)
+                "key.available_notice"
+                if currency is Currency.USD
+                else "workspace.key_available_notice",
+                amount=(
+                    number(key_limit.remaining)
+                    if currency is Currency.USD
+                    else money(key_limit.remaining, currency)
+                )
                 if key_limit.remaining is not None
                 else "—",
             ),
@@ -312,6 +337,7 @@ def key_limit_mode_notice(key_limit: KeyLimitInfo) -> tuple[str, str]:
 def key_access_mode_notice(
     key_validity: KeyValidityState,
     key_limit: KeyLimitInfo,
+    currency: Currency = Currency.USD,
 ) -> tuple[str, str]:
     """Показывает валидность отдельно от расходного лимита."""
     if key_validity is KeyValidityState.INVALID:
@@ -329,33 +355,35 @@ def key_access_mode_notice(
             tr("key.checking_notice"),
             WARNING_COLOR,
         )
-    return key_limit_mode_notice(key_limit)
+    return key_limit_mode_notice(key_limit, currency)
 
 
 def _additional_price_controls(model: CatalogModel) -> list[ft.Control]:
     pricing = maximum_pricing(model)
     details: list[ft.Control] = []
     if pricing.request > 0:
-        details.append(detail_row(tr("price.request"), money(pricing.request)))
+        details.append(
+            detail_row(tr("price.request"), money(pricing.request, model.currency))
+        )
     if pricing.internal_reasoning > 0:
         details.append(
             detail_row(
                 tr("price.reasoning_million"),
-                money_million(pricing.internal_reasoning),
+                money_million(pricing.internal_reasoning, model.currency),
             )
         )
     if pricing.input_cache_read > 0:
         details.append(
             detail_row(
                 tr("price.cache_read_million"),
-                money_million(pricing.input_cache_read),
+                money_million(pricing.input_cache_read, model.currency),
             )
         )
     if pricing.input_cache_write > 0:
         details.append(
             detail_row(
                 tr("price.cache_write_million"),
-                money_million(pricing.input_cache_write),
+                money_million(pricing.input_cache_write, model.currency),
             )
         )
     if model.pricing_overrides:
@@ -371,5 +399,5 @@ def _additional_price_controls(model: CatalogModel) -> list[ft.Control]:
     return [ft.Text(tr("price.additional"), size=12, color=MUTED_COLOR), *details]
 
 
-def money_million(value: Decimal) -> str:
-    return money(value * Decimal(1_000_000))
+def money_million(value: Decimal, currency: Currency = Currency.USD) -> str:
+    return money(value * Decimal(1_000_000), currency)

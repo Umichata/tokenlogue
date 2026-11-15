@@ -21,7 +21,7 @@ from api.openrouter import (  # noqa: E402
     OpenRouterClient,
 )
 
-TEST_CREDENTIAL = "unit-test-credential"
+TEST_CREDENTIAL = "sk-or-v1-unit-test-credential"
 
 
 class OpenRouterClientTests(unittest.IsolatedAsyncioTestCase):

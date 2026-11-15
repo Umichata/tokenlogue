@@ -19,6 +19,7 @@ from chat.models import (
     PriceComponents,
 )
 from i18n import tr
+from providers.models import Currency, ProviderId
 from storage.chat_preferences import (
     PaidPolicy,
     encode_stored,
@@ -33,6 +34,7 @@ from storage.database_connections import (
     connection as protected_connection,
 )
 from storage.field_cipher import FieldCipher
+from storage.provider_schema import ensure_provider_schema
 
 
 class SqliteChatRepository:
@@ -62,9 +64,11 @@ class SqliteChatRepository:
         *,
         token_limit: int,
         max_completion_tokens: int,
-        cost_limit_usd: Decimal,
+        cost_limit_usd: Decimal | None = None,
+        cost_limit: Decimal | None = None,
     ) -> None:
         """Атомарно сохраняет чат и его первоначально подтверждённый бюджет."""
+        cost_limit = cost_limit if cost_limit is not None else cost_limit_usd
         _require_chat(chat)
         if isinstance(token_limit, bool) or not isinstance(token_limit, int):
             raise ValueError(tr("service.token_integer"))
@@ -78,14 +82,14 @@ class SqliteChatRepository:
         if max_completion_tokens < 16 or max_completion_tokens > token_limit:
             raise ValueError(tr("service.completion_invalid"))
         if (
-            not isinstance(cost_limit_usd, Decimal)
-            or not cost_limit_usd.is_finite()
-            or cost_limit_usd < 0
+            not isinstance(cost_limit, Decimal)
+            or not cost_limit.is_finite()
+            or cost_limit < 0
         ):
             raise ValueError(tr("service.money_invalid"))
-        if chat.mode is ChatMode.FREE and cost_limit_usd != 0:
+        if chat.mode is ChatMode.FREE and cost_limit != 0:
             raise ValueError(tr("service.free_no_money"))
-        if chat.mode is ChatMode.PAID and cost_limit_usd <= 0:
+        if chat.mode is ChatMode.PAID and cost_limit <= 0:
             raise ValueError(tr("service.paid_positive_money"))
         with self._connection("write", chat_id=chat.id) as connection:
             connection.execute("BEGIN IMMEDIATE")
@@ -96,7 +100,7 @@ class SqliteChatRepository:
                 limits_configured=True,
                 token_limit=token_limit,
                 max_completion_tokens=max_completion_tokens,
-                cost_limit_usd=cost_limit_usd,
+                cost_limit_usd=cost_limit,
             )
 
     def list_chats(self) -> list[Chat]:
@@ -274,6 +278,10 @@ class SqliteChatRepository:
         with protected_connection(
             self.path, self.access, operation, chat_id=chat_id, record_id=record_id
         ) as connection:
+            if operation != "read":
+                connection.execute("BEGIN IMMEDIATE")
+                ensure_provider_schema(connection)
+                connection.commit()
             yield connection
 
 
@@ -307,6 +315,12 @@ def _chat_from_row(row: sqlite3.Row) -> Chat:
             str(row["pricing_overrides_json"])
         ).revision,
         pricing_snapshot_complete=bool(row["pricing_snapshot_complete"]),
+        provider_id=ProviderId(str(row["provider_id"]))
+        if "provider_id" in row.keys()
+        else ProviderId.OPENROUTER,
+        currency=Currency(str(row["currency"]))
+        if "currency" in row.keys()
+        else Currency.USD,
         title_origin=str(row["title_origin"])
         if "title_origin" in row.keys()
         else "legacy",
@@ -354,9 +368,9 @@ def _insert_chat(connection: sqlite3.Connection, chat: Chat) -> None:
             pricing_overrides_json,
             pricing_snapshot_complete,
             created_at,
-            updated_at
+            updated_at,provider_id,currency
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             chat.id,
@@ -376,6 +390,8 @@ def _insert_chat(connection: sqlite3.Connection, chat: Chat) -> None:
             int(chat.pricing_snapshot_complete),
             _serialize_datetime(chat.created_at),
             _serialize_datetime(chat.updated_at),
+            chat.provider_id.value,
+            chat.currency.value,
         ),
     )
 
@@ -399,17 +415,22 @@ def _insert_budget(
         """
         INSERT INTO chat_budgets (
             chat_id, limits_configured, token_limit,
-            max_completion_tokens, cost_limit_usd,
+            max_completion_tokens, cost_limit_usd,cost_limit,provider_id,currency,
             state, updated_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             chat.id,
             int(limits_configured),
             token_limit,
             max_completion_tokens,
+            str(cost_limit_usd)
+            if cost_limit_usd is not None and chat.currency is Currency.USD
+            else None,
             str(cost_limit_usd) if cost_limit_usd is not None else None,
+            chat.provider_id.value,
+            chat.currency.value,
             "ready" if limits_configured else "unconfigured",
             _serialize_datetime(chat.updated_at),
         ),

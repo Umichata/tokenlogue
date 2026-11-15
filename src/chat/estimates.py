@@ -6,7 +6,7 @@ estimate is deliberately conservative and is not model-specific tokenization.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from decimal import Decimal
 from enum import Enum
 
@@ -36,6 +36,7 @@ from chat.models import (
     PriceComponents,
     is_free_model,
 )
+from providers.models import Currency, PriceUnit, ProviderId
 
 MIN_COMPLETION_TOKENS = 16
 ZERO = Decimal("0")
@@ -56,6 +57,13 @@ class DraftEstimate:
     cost_upper_usd: Decimal | None = None
     error: ChatErrorType | None = None
     free_router: bool = False
+    cost_upper: Decimal | None = None
+    currency: Currency = Currency.USD
+    provider_id: ProviderId = ProviderId.OPENROUTER
+
+    def __post_init__(self) -> None:
+        if self.currency is Currency.USD and self.cost_upper is None:
+            object.__setattr__(self, "cost_upper", self.cost_upper_usd)
 
 
 @dataclass(frozen=True)
@@ -77,6 +85,12 @@ class RequestPlan:
     reserved_cost_usd: Decimal | None
     remaining_tokens_after_reservation: int
     remaining_cost_after_reservation: Decimal | None
+    reserved_cost: Decimal | None = None
+    currency: Currency = Currency.USD
+
+    def __post_init__(self) -> None:
+        if self.currency is Currency.USD and self.reserved_cost is None:
+            object.__setattr__(self, "reserved_cost", self.reserved_cost_usd)
 
 
 class RequestPlanError(ValueError):
@@ -95,6 +109,7 @@ def calculate_request_plan(
     pricing: tuple[PriceComponents, ...] | None,
     key_limit: KeyLimitInfo,
     apply_chat_cost_limit: bool = True,
+    allow_unknown_accounting: bool = False,
 ) -> RequestPlan:
     """Plan the exact local context and caps without authorizing a send.
 
@@ -107,7 +122,7 @@ def calculate_request_plan(
         raise RequestPlanError(ChatErrorType.INVALID_REQUEST)
     if not budget.limits_configured:
         raise RequestPlanError(ChatErrorType.LIMITS_NOT_CONFIGURED)
-    if budget.state is BudgetState.ACCOUNTING_UNKNOWN:
+    if budget.state is BudgetState.ACCOUNTING_UNKNOWN and not allow_unknown_accounting:
         raise RequestPlanError(ChatErrorType.ACCOUNTING_UNKNOWN)
     if budget.token_limit is None or budget.max_completion_tokens is None:
         raise RequestPlanError(ChatErrorType.LIMITS_NOT_CONFIGURED)
@@ -118,7 +133,8 @@ def calculate_request_plan(
             raise RequestPlanError(ChatErrorType.COST_LIMIT_EXCEEDED)
     context_length = (
         FREE_ROUTER_CONTEXT_LENGTH
-        if chat.requested_model_id == FREE_ROUTER_MODEL.id
+        if chat.provider_id is ProviderId.OPENROUTER
+        and chat.requested_model_id == FREE_ROUTER_MODEL.id
         else model.context_length
     )
     if context_length is None or context_length <= MIN_COMPLETION_TOKENS:
@@ -149,14 +165,12 @@ def calculate_request_plan(
     if effective_completion < MIN_COMPLETION_TOKENS:
         raise RequestPlanError(ChatErrorType.TOKEN_LIMIT_EXCEEDED)
     if chat.mode is ChatMode.PAID:
-        if budget.cost_limit_usd is None:
+        if budget.cost_limit is None:
             raise RequestPlanError(ChatErrorType.LIMITS_NOT_CONFIGURED)
         if pricing is not None:
             if not pricing or not all(item.valid for item in pricing):
                 raise RequestPlanError(ChatErrorType.MODEL_PRICE_UNSAFE)
-            cost_remaining = (
-                budget.cost_limit_usd - budget.cost_used_usd - budget.cost_reserved_usd
-            )
+            cost_remaining = budget.cost_limit - budget.cost_used - budget.cost_reserved
             if apply_chat_cost_limit:
                 effective_completion = _cap_completion_by_cost(
                     effective_completion,
@@ -191,26 +205,35 @@ def calculate_request_plan(
     remaining_cost = (
         None
         if chat.mode is ChatMode.FREE
-        or budget.cost_limit_usd is None
+        or budget.cost_limit is None
         or reserved_cost is None
-        else budget.cost_limit_usd
-        - budget.cost_used_usd
-        - budget.cost_reserved_usd
-        - reserved_cost
+        else budget.cost_limit - budget.cost_used - budget.cost_reserved - reserved_cost
     )
     return RequestPlan(
         context,
         effective_completion,
         reserved_tokens,
-        reserved_cost,
+        reserved_cost if chat.currency is Currency.USD else None,
         token_remaining - reserved_tokens,
         remaining_cost,
+        reserved_cost=reserved_cost,
+        currency=chat.currency,
     )
 
 
 def estimate_draft(snapshot: PreparedEstimateSnapshot, text: str) -> DraftEstimate:
     """Calculate immediately from an already authorized local snapshot."""
-    free_router = snapshot.chat.requested_model_id == FREE_ROUTER_MODEL.id
+    result = _estimate_draft(snapshot, text)
+    return replace(
+        result, currency=snapshot.chat.currency, provider_id=snapshot.chat.provider_id
+    )
+
+
+def _estimate_draft(snapshot: PreparedEstimateSnapshot, text: str) -> DraftEstimate:
+    free_router = (
+        snapshot.chat.provider_id is ProviderId.OPENROUTER
+        and snapshot.chat.requested_model_id == FREE_ROUTER_MODEL.id
+    )
     if not text.strip():
         return DraftEstimate(EstimateState.EMPTY, free_router=free_router)
     try:
@@ -226,7 +249,12 @@ def estimate_draft(snapshot: PreparedEstimateSnapshot, text: str) -> DraftEstima
             free_router=free_router,
         )
     model = FREE_ROUTER_MODEL if free_router else snapshot.model
-    if model is None or model.id != snapshot.chat.requested_model_id:
+    if (
+        model is None
+        or model.id != snapshot.chat.requested_model_id
+        or model.provider_id != snapshot.chat.provider_id
+        or model.currency != snapshot.chat.currency
+    ):
         return DraftEstimate(
             EstimateState.UNAVAILABLE,
             prompt_tokens=prompt_tokens,
@@ -251,6 +279,9 @@ def estimate_draft(snapshot: PreparedEstimateSnapshot, text: str) -> DraftEstima
             pricing=pricing,
             key_limit=snapshot.key_limit,
             apply_chat_cost_limit=False,
+            allow_unknown_accounting=(
+                snapshot.chat.provider_id is ProviderId.VSEGPT and pricing is None
+            ),
         )
     except RequestPlanError as error:
         unavailable = error.error_type in {
@@ -272,6 +303,7 @@ def estimate_draft(snapshot: PreparedEstimateSnapshot, text: str) -> DraftEstima
             plan.effective_max_completion_tokens if known_price else None
         ),
         cost_upper_usd=plan.reserved_cost_usd if known_price else None,
+        cost_upper=plan.reserved_cost if known_price else None,
         error=None if known_price else ChatErrorType.MODEL_PRICE_UNSAFE,
         free_router=free_router,
     )
@@ -280,12 +312,17 @@ def estimate_draft(snapshot: PreparedEstimateSnapshot, text: str) -> DraftEstima
 def _estimate_pricing(
     chat: Chat, model: CatalogModel
 ) -> tuple[PriceComponents, ...] | None:
-    if chat.requested_model_id == FREE_ROUTER_MODEL.id:
+    if (
+        chat.provider_id is ProviderId.OPENROUTER
+        and chat.requested_model_id == FREE_ROUTER_MODEL.id
+    ):
         return (PriceComponents(),)
     if chat.mode is ChatMode.FREE:
         return model.all_pricing if is_free_model(model) else None
-    if not model.pricing_is_complete or not all(
-        item.valid for item in model.all_pricing
+    if (
+        model.pricing_unit is not PriceUnit.TOKEN
+        or not model.pricing_is_complete
+        or not all(item.valid for item in model.all_pricing)
     ):
         return None
     # Opt-in sends use the current price. A manual price-increase confirmation

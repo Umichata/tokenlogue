@@ -19,6 +19,49 @@ Tokenlogue lets you chat with OpenRouter models on Linux and Android. Start with
 
 Source archives are not needed to install the app.
 
+<a id="en-local-flow"></a>
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Current source: providers and analytics
+
+**This section describes the current source checkout and new local builds made from it.** The download links above still point to the published OpenRouter preview. They do not include these source changes. Use the instructions below with the current source application or a new local package. Existing profile protection, chats, drafts and budgets are preserved during the source migration. Keep a compatible installation and its secure storage. Do not uninstall or clear application data to update.
+
+After signing in, choose **Home**, **Providers**, **Tokens** or **Spending**. A wide Linux window uses a navigation rail. Android and narrow windows use bottom navigation. Home is the existing chat workspace. Its separate chat-list button opens or hides conversations. Page changes save the draft and do not submit it. A request already dispatched can finish once in the background and update history and statistics. Back returns from an auxiliary page to Home. Chat setup and dialogs retain their own Back/cancel behavior.
+
+### Connect OpenRouter or VSEGPT
+
+1. On first setup, enter a key from the provider account. A complete `sk-or-v1-` key selects **OpenRouter**. A complete `sk-or-vv-` key selects **VSEGPT**. Recognition happens locally before checking. An unknown or incomplete prefix is rejected locally. Only accidental whitespace at the ends is removed. The key content and case are retained.
+2. Choose **Check key**. This requests a free provider endpoint, never an automatic paid generation. Prefix recognition alone does not confirm authorization, permissions or funds. If a free authorization check is unavailable, choose **Save unverified key** explicitly when offered. This allows PIN setup and does not send a chat message.
+3. Set and repeat the application PIN, then complete any local-protection steps. A VSEGPT-only profile does not require an OpenRouter key. At later launches use the same profile PIN. Changing providers does not replace PIN or recovery checks.
+4. Open **Providers** after sign-in to configure the other service or replace a key. Each card has its own masked input, explicit reveal button, check, save/replace action, connection status, account balance, check time and manual refresh. Saved key values are never loaded back into these fields. If the recognized key belongs to another card, use its matching provider field before checking.
+5. Check the candidate, then save it. **Save unverified key** is a separate decision for an unconfirmed candidate. A failed check or cancelled replacement keeps the previous working key. Both provider keys can be saved at once.
+6. Choose the default provider for **new chats**. Existing chats keep their provider, model and currency. Changing the default or a key does not relabel historical requests. If a chat's provider key is missing, configure that service before sending. Tokenlogue does not silently send its history to the other provider.
+
+OpenRouter uses **USD**. VSEGPT uses **RUB**. Account balance, API key limit and remaining chat budget are separate values. Unknown balance is not zero. OpenRouter account credits may require management-key permissions even when an ordinary key works for chat. VSEGPT balance access may need to be enabled in account settings. Authorization errors, restricted balance access, missing subscription, network failures and insufficient funds are distinct states. A low-balance warning alone is not an invalid key.
+
+### Chat and approve costs
+
+On Home, create a chat with `+`, choose an available model and set token/response limits and, for paid chats, a budget in the displayed currency. Home shows the chat's provider and model. OpenRouter's automatic free router belongs to OpenRouter. It is not a universal free VSEGPT model. A model with unconfirmed pricing or billing units is shown with an unavailable cost estimate, not a zero price. VSEGPT can bill by characters. Character prices are not token prices.
+
+A request with a projected chat remainder of 10% or less, zero or a negative remainder receives a budget warning. Unknown pricing also requires explicit conservative review. **Cancel** sends nothing and preserves the draft. **Send once** approves only the reviewed request without raising its saved budget. **Change chat limit** opens settings and never sends automatically after saving. These warnings still apply when ordinary paid confirmations are disabled. Changing the draft, provider, model, prices or budget invalidates earlier consent. Estimates cannot guarantee the eventual charge or strict compliance with the local budget.
+
+Typing, navigating and refreshing statistics do not send requests. A retry that reaches the service is another attempt and can incur another charge. After a timeout or interruption, an unknown charge stays unknown. It is never converted to a free request. Known API tokens remain visible even if cost is unavailable. Review uncertain requests in the provider account before retrying or releasing a local reserve.
+
+### Token usage
+
+Open **Tokens** and select **7 days**, **30 days** or **All time**, then filter by provider and model. Rows are grouped by provider plus model and sorted by usage. The same model ID at two services remains two groups. The page shows request counts, input/output/total tokens, compact period totals and the most used models.
+
+The scope is **saved chats on this device**, not the whole provider account or other clients. API usage, local estimates and unknown values are separate. Estimated tokens do not inflate confirmed totals. Cached/reasoning details are not counted twice in total tokens. Known tokens still count when cost is unknown. Missing values are unavailable rather than invented zeros, and characters are never labeled as actual tokens. Undated historical attempts are excluded from a dated range and shown separately in All time.
+
+### Daily spending
+
+Open **Spending** and apply its period, provider and model filters. Native daily bar charts have separate **USD** and **RUB** panels, each with an accessible date/amount/currency table, confirmed dated total and confirmed daily average. There is no exchange-rate conversion or combined USD/RUB total. Estimated costs form a separately labeled series and total.
+
+The chart uses the local request journal. Empty days in the selected range have zero bars. Requests with unknown cost carry an incompleteness indicator, including when the known amount is zero. Sending times are stored in UTC and grouped in the timezone named on the page. A later cost update stays on the original dispatch day. Historical amounts without a reliable dispatch time have their own undated total and do not acquire an invented day or enter the daily average.
+
+Deleting a chat also deletes its local request statistics. Deleting the profile removes both provider keys and all profile statistics. Locking, including Android backgrounding, closes every private page and clears entered/revealed key fields and visible analytics. Returning never unlocks the profile or resends the draft automatically.
+
+The remaining walkthrough and screenshots describe the linked published OpenRouter preview. Its downloads do not receive source changes automatically.
+
+
 <p align="left"><a href="#en-access"><img src="assets/ui/buttons/en-ca3dbec2e101.svg" alt="Get started" width="109" height="28"></a> <a href="#en-chats"><img src="assets/ui/buttons/en-474e166de580.svg" alt="Chats" width="67" height="28"></a> <a href="#en-drafts"><img src="assets/ui/buttons/en-1cd72768132b.svg" alt="Drafts" width="71" height="28"></a> <a href="#en-limits"><img src="assets/ui/buttons/en-d98731f70acd.svg" alt="Limits" width="70" height="28"></a> <a href="#en-chat-metrics"><img src="assets/ui/buttons/en-0ee613298d92.svg" alt="Costs" width="66" height="28"></a> <a href="security.md#english"><img src="assets/ui/buttons/en-9c2e33444d68.svg" alt="Protection" width="102" height="28"></a></p>
 
 <a id="en-access"></a>

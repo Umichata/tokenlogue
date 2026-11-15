@@ -12,6 +12,7 @@ from typing import Literal, cast
 import flet as ft
 
 from api.models import ModelCatalogService
+from api.openrouter import CreditsStatus
 from auth.contracts import KeyValidator
 from auth.models import (
     AuthResult,
@@ -21,8 +22,9 @@ from auth.models import (
     KeyValidityState,
 )
 from auth.service import AuthService, deletion_error_message
-from chat.account_balance import CreditsReader
+from chat.account_balance import AccountBalanceState, CreditsReader
 from chat.accounting import ChatBudgetService
+from chat.analytics import AnalyticsFilter, build_analytics
 from chat.drafts import ChatDraftService
 from chat.sending import MessageSendingService
 from chat.service import ChatService
@@ -40,7 +42,10 @@ from platform_security.local_protection import (
     ScreenLockAdapter,
     SleepAdapter,
 )
+from providers.models import ProviderId
+from providers.session import ProviderProfiles
 from storage.access_context import finish_worker
+from storage.analytics_repository import SqliteAnalyticsRepository
 from storage.data_access import DataAccess
 from storage.profile_deletion import DeletionScope
 from ui import (
@@ -54,6 +59,7 @@ from ui import (
     StorageErrorView,
     build_reset_dialog,
 )
+from ui.analytics_pages import SpendingPage, TokenUsagePage
 from ui.branding import set_page_animations_active
 from ui.local_protection_view import LocalProtectionSetupView
 from ui.profile_deletion_view import ProfileDeletionDialog, ProfileDeletionProgressView
@@ -64,12 +70,14 @@ from ui.protection_panel import (
     protection_shield,
     update_protection_shield,
 )
+from ui.provider_page import ProviderCheckResult, ProviderPage, ProviderPresentation
 from ui.security_status import (
     protection_notice,
     protection_ready,
     session_watch_details,
     untested_protection,
 )
+from ui.workspace_shell import WorkspacePage, WorkspaceShell
 
 _APP_TRACE_EVENTS = {
     "app_started",
@@ -130,8 +138,19 @@ class AppController:
         data_access: DataAccess | None = None,
         on_profile_deleted: Callable[[], Awaitable[None]] | None = None,
         on_profile_reload: Callable[[], Awaitable[None]] | None = None,
+        provider_profiles: ProviderProfiles | None = None,
+        analytics_repository: SqliteAnalyticsRepository | None = None,
     ) -> None:
         self._page = page
+        self._provider_profiles = provider_profiles
+        self._analytics_repository = analytics_repository
+        self._workspace_shell: WorkspaceShell | None = None
+        self._provider_page: ProviderPage | None = None
+        self._token_usage_page: TokenUsagePage | None = None
+        self._spending_page: SpendingPage | None = None
+        self._private_views_epoch = 0
+        self._analytics_request = 0
+        self._provider_ui_refresh: asyncio.Task[None] | None = None
         self._data_access = data_access
         self._auth_service = auth_service
         self._on_profile_deleted = on_profile_deleted
@@ -172,6 +191,15 @@ class AppController:
             ),
             on_storage_error=self._show_storage_error,
             **({"data_access": data_access} if data_access is not None else {}),
+            **(
+                {
+                    "provider_profiles": provider_profiles,
+                    "on_provider_settings": self.open_provider_settings,
+                    "present_content": self._present_home,
+                }
+                if provider_profiles is not None
+                else {}
+            ),
         )
         self._key_view: KeyEntryView | None = None
         self._pin_setup_view: PinSetupView | None = None
@@ -197,6 +225,8 @@ class AppController:
         self._security_epoch = 0
         self._suspending = False
         self._in_background = False
+        if provider_profiles is not None:
+            provider_profiles.set_on_change(self._providers_changed)
         self._system_lock_task: asyncio.Task[None] | None = None
         self._linux_watch_ready = False
         self._linux_watch_system = False
@@ -253,7 +283,7 @@ class AppController:
             else:
                 self._show_storage_error(result.message)
 
-    async def submit_key(self, api_key: str) -> None:
+    async def submit_key(self, api_key: str, *, allow_unverified: bool = False) -> None:
         view = self._key_view
         if (
             self._disposed
@@ -272,7 +302,11 @@ class AppController:
             view.show_message("")
             self._page.update()
 
-            result = await self._auth_service.start_setup(api_key)
+            result = (
+                await self._auth_service.start_setup(api_key, allow_unverified=True)
+                if allow_unverified
+                else await self._auth_service.start_setup(api_key)
+            )
             self._trace_app(
                 "key_result",
                 same_key_view=self._key_view is view,
@@ -298,8 +332,13 @@ class AppController:
             if result.status is AuthStatus.PIN_REQUIRED:
                 self._show_pin_login(result.message)
                 return
+            if result.status is AuthStatus.UNVERIFIED_KEY:
+                view.offer_unverified_save()
             view.show_message(result.message)
             self._page.update()
+
+    async def _save_unverified_key(self, api_key: str) -> None:
+        await self.submit_key(api_key, allow_unverified=True)
 
     async def confirm_pin_setup(self, pin: str, pending_setup_token: str) -> None:
         view = self._pin_setup_view
@@ -1125,6 +1164,9 @@ class AppController:
         await finish_worker(drain())
 
     def _lock_auth_access(self) -> None:
+        if self._provider_profiles is not None:
+            self._provider_profiles.deactivate()
+        self._clear_application_pages()
         lock = getattr(self._auth_service, "lock_access", None)
         if callable(lock):
             lock()
@@ -2049,6 +2091,12 @@ class AppController:
         """Linux-проверка и неиспользованный grant не переживают смену языка."""
         self.cancel_profile_deletion()
         self._chat_controller.handle_language_change()
+        if self._workspace_shell is not None:
+            self._workspace_shell.sync_language()
+        for view in (self._provider_page, self._token_usage_page, self._spending_page):
+            if view is not None:
+                view.sync_language()
+        self._refresh_provider_presentations()
         if self._pin_protection_panel is not None:
             self._pin_protection_panel.refresh(self._protection_snapshot())
         if (
@@ -2068,6 +2116,9 @@ class AppController:
             self._page.update()
 
     def handle_page_resize(self, event: ft.PageResizeEvent) -> None:
+        if self._workspace_shell is not None:
+            self._workspace_shell.resize(event.width)
+            self._page.update()
         panel = self._pin_protection_panel
         if (
             not self._disposed
@@ -2177,6 +2228,8 @@ class AppController:
         self._key_view = None
         self._pin_setup_view = None
         self._pin_login_view = None
+        if self._provider_profiles is not None:
+            await self._provider_profiles.activate(api_key, key_validity, key_limit)
         if present_workspace:
             await self._chat_controller.activate(api_key, key_validity, key_limit)
         else:
@@ -2228,6 +2281,7 @@ class AppController:
         self._pin_setup_view = None
         self._key_view = KeyEntryView(
             self.submit_key,
+            on_save_unverified=self._save_unverified_key,
             replacement=bool(
                 getattr(self._auth_service, "key_replacement_pending", False)
             ),
@@ -2334,6 +2388,275 @@ class AppController:
         )
         self._replace_page(view.control)
 
+    def _private_pages_available(self) -> bool:
+        return (
+            self._provider_profiles is not None
+            and self._provider_profiles.active
+            and not self._disposed
+            and not self._closing
+            and not self._suspending
+            and not self._in_background
+        )
+
+    def _present_home(self, control: ft.Control) -> None:
+        if not self._private_pages_available():
+            return
+        if self._workspace_shell is None:
+            self._provider_page = ProviderPage(
+                on_check=self._check_provider_key,
+                on_save=self._save_provider_key,
+                on_refresh=self._refresh_provider,
+                on_default=self._select_default_provider,
+            )
+            self._token_usage_page = TokenUsagePage(on_filter=self._load_token_usage)
+            self._spending_page = SpendingPage(on_filter=self._load_spending)
+            self._workspace_shell = WorkspaceShell(
+                self._page,
+                control,
+                self._provider_page.control,
+                self._token_usage_page.control,
+                self._spending_page.control,
+                on_navigate=self._navigate_application,
+            )
+            self._refresh_provider_presentations()
+            self._replace_page(self._workspace_shell.control)
+            if getattr(self._page, "views", None):
+                self._page.views[0].can_pop = False
+                self._page.views[0].on_confirm_pop = self._application_back
+                self._page.update()
+        else:
+            self._workspace_shell.set_home(control)
+            self._page.update()
+
+    async def _navigate_application(self, target: WorkspacePage) -> bool:
+        epoch = self._private_views_epoch
+        if not self._private_pages_available():
+            return False
+        if not await self._chat_controller.prepare_navigation():
+            return False
+        if epoch != self._private_views_epoch or not self._private_pages_available():
+            return False
+        if self._provider_page is not None:
+            self._provider_page.conceal_keys()
+        if target is WorkspacePage.HOME:
+            await self._chat_controller.resume_home()
+        elif target is WorkspacePage.PROVIDERS:
+            self._refresh_provider_presentations()
+        elif target is WorkspacePage.TOKENS and self._token_usage_page is not None:
+            await self._load_token_usage(self._token_usage_page.filters)
+        elif target is WorkspacePage.SPENDING and self._spending_page is not None:
+            await self._load_spending(self._spending_page.filters)
+        return epoch == self._private_views_epoch and self._private_pages_available()
+
+    async def open_provider_settings(self) -> None:
+        shell = self._workspace_shell
+        if shell is not None and self._private_pages_available():
+            await shell.select(WorkspacePage.PROVIDERS)
+
+    async def _application_back(self, _event: ft.Event) -> None:
+        shell = self._workspace_shell
+        if shell is None or not self._private_pages_available():
+            return
+        if shell.selected_page is not WorkspacePage.HOME:
+            await shell.select(WorkspacePage.HOME)
+            if getattr(self._page, "views", None):
+                await self._page.views[0].confirm_pop(False)
+            return
+        if await self._chat_controller.handle_application_back():
+            if getattr(self._page, "views", None):
+                await self._page.views[0].confirm_pop(False)
+            return
+        if getattr(self._page, "views", None):
+            await self._page.views[0].confirm_pop(
+                await self._chat_controller.flush_drafts()
+            )
+
+    async def _check_provider_key(
+        self, provider: ProviderId, candidate: str
+    ) -> ProviderCheckResult:
+        profiles = self._provider_profiles
+        epoch = self._private_views_epoch
+        if profiles is None or not self._private_pages_available():
+            return ProviderCheckResult(False)
+        result = await profiles.check(provider, candidate)
+        if epoch != self._private_views_epoch or not self._private_pages_available():
+            return ProviderCheckResult(False)
+        return ProviderCheckResult(result.save_allowed, result.authorization_confirmed)
+
+    async def _save_provider_key(
+        self, provider: ProviderId, candidate: str, allow_unverified: bool
+    ) -> bool:
+        profiles = self._provider_profiles
+        epoch = self._private_views_epoch
+        async with self._operation_lock:
+            if (
+                profiles is None
+                or not self._private_pages_available()
+                or epoch != self._private_views_epoch
+            ):
+                return False
+            await profiles.save(provider, candidate, allow_unverified=allow_unverified)
+        if epoch == self._private_views_epoch and self._private_pages_available():
+            await self._chat_controller.refresh_provider_state()
+            return True
+        return False
+
+    async def _select_default_provider(self, provider: ProviderId) -> None:
+        profiles = self._provider_profiles
+        epoch = self._private_views_epoch
+        async with self._operation_lock:
+            if (
+                profiles is None
+                or not self._private_pages_available()
+                or epoch != self._private_views_epoch
+            ):
+                return
+            await profiles.set_default(provider)
+        if self._private_pages_available():
+            await self._chat_controller.refresh_provider_state()
+
+    async def _refresh_provider(self, provider: ProviderId) -> None:
+        profiles = self._provider_profiles
+        if profiles is not None and self._private_pages_available():
+            await profiles.refresh(provider, validate_key=True)
+
+    def _refresh_provider_presentations(self) -> None:
+        profiles, view = self._provider_profiles, self._provider_page
+        if profiles is None or view is None or not self._private_pages_available():
+            return
+        view.set_default(profiles.default_provider)
+        for provider in ProviderId:
+            state = profiles.state(provider)
+            balance = state.balance
+            status = {
+                KeyValidityState.VALID: "connected",
+                KeyValidityState.INVALID: "invalid",
+                KeyValidityState.RESTRICTED: "restricted",
+            }.get(state.key_validity, "unverified")
+            if not state.has_saved_key:
+                status = "not_configured"
+            elif state.subscription_active is False:
+                status = "subscription_required"
+            elif state.warning:
+                status = "warning"
+            balance_status = {
+                AccountBalanceState.CURRENT: "ready",
+                AccountBalanceState.LOADING: "loading",
+                AccountBalanceState.STALE: "stale",
+            }.get(balance.state, "unavailable")
+            if balance.state is AccountBalanceState.UNAVAILABLE:
+                balance_status = (
+                    {
+                        CreditsStatus.UNAUTHORIZED: "invalid",
+                        CreditsStatus.RESTRICTED: "restricted",
+                        CreditsStatus.SUBSCRIPTION_REQUIRED: "subscription_required",
+                        CreditsStatus.INSUFFICIENT_FUNDS: "insufficient_funds",
+                        CreditsStatus.NETWORK_ERROR: "network_error",
+                        CreditsStatus.TIMEOUT: "network_error",
+                        CreditsStatus.TLS_ERROR: "network_error",
+                    }.get(balance.error, "unavailable")
+                    if balance.error is not None
+                    else "unavailable"
+                )
+            if balance.warning and balance.state is AccountBalanceState.CURRENT:
+                balance_status = "warning"
+            view.set_provider(
+                ProviderPresentation(
+                    provider,
+                    has_saved_key=state.has_saved_key,
+                    status=status,
+                    balance_amount=balance.balance_amount,
+                    balance_status=balance_status,
+                    checked_at=balance.fetched_at or state.checked_at,
+                    key_limit_remaining=state.key_limit.remaining,
+                )
+            )
+
+    def _providers_changed(self) -> None:
+        if not self._private_pages_available():
+            return
+        self._refresh_provider_presentations()
+        if self._workspace_shell is None:
+            # Activation owns the initial Home presentation. A concurrent
+            # refresh could supersede that render before activate() returns.
+            return
+        if (
+            self._provider_ui_refresh is not None
+            and not self._provider_ui_refresh.done()
+        ):
+            return
+        epoch = self._private_views_epoch
+
+        async def refresh() -> None:
+            try:
+                if (
+                    epoch == self._private_views_epoch
+                    and self._private_pages_available()
+                ):
+                    await self._chat_controller.refresh_provider_state()
+            except Exception:
+                # Account metadata failure must not replace the open chat.
+                pass
+
+        self._provider_ui_refresh = asyncio.create_task(refresh())
+
+    async def _load_token_usage(self, filters: AnalyticsFilter) -> None:
+        await self._load_analytics(self._token_usage_page, filters)
+
+    async def _load_spending(self, filters: AnalyticsFilter) -> None:
+        await self._load_analytics(self._spending_page, filters)
+
+    async def _load_analytics(
+        self, view: TokenUsagePage | SpendingPage | None, filters: AnalyticsFilter
+    ) -> None:
+        repository = self._analytics_repository
+        if view is None or repository is None or not self._private_pages_available():
+            return
+        epoch = self._private_views_epoch
+        self._analytics_request += 1
+        request = self._analytics_request
+        view.set_loading(True)
+        try:
+            attempts = await asyncio.to_thread(repository.list_attempts)
+            snapshot = await asyncio.to_thread(build_analytics, attempts, filters)
+            if (
+                epoch == self._private_views_epoch
+                and request == self._analytics_request
+                and self._private_pages_available()
+            ):
+                view.set_snapshot(snapshot)
+        except Exception:
+            if epoch == self._private_views_epoch and self._private_pages_available():
+                view.show_error(tr("analytics.load_failed"))
+        finally:
+            if epoch == self._private_views_epoch and self._private_pages_available():
+                view.set_loading(False)
+
+    def _clear_application_pages(self) -> None:
+        self._private_views_epoch += 1
+        self._analytics_request += 1
+        task = self._provider_ui_refresh
+        if task is not None and not task.done():
+            try:
+                current = asyncio.current_task()
+            except RuntimeError:
+                current = None
+            if task is not current:
+                task.cancel()
+        self._provider_ui_refresh = None
+        for view in (self._provider_page, self._token_usage_page, self._spending_page):
+            if view is not None:
+                view.clear_private()
+        if self._workspace_shell is not None:
+            self._workspace_shell.clear_private()
+        self._workspace_shell = None
+        self._provider_page = None
+        self._token_usage_page = None
+        self._spending_page = None
+        if getattr(self._page, "views", None):
+            self._page.views[0].can_pop = True
+            self._page.views[0].on_confirm_pop = None
+
     def _replace_page(self, control: ft.Control) -> None:
         if self._disposed or self._closing:
             return
@@ -2356,6 +2679,7 @@ class AppController:
         cancel_code_issue: bool = True,
         preserve_protection_intent: bool = False,
     ) -> None:
+        self._clear_application_pages()
         if not preserve_protection_intent:
             self._cancel_protection_intent()
         self._pin_protection_shield = None

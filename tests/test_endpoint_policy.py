@@ -62,10 +62,11 @@ class EndpointPolicyTests(unittest.TestCase):
             with self.subTest(path=path.name):
                 content = path.read_text(encoding="utf-8")
                 self.assertNotIn("ChatCompletionsClient(", content)
+                self.assertNotIn("ProviderRouter(", content)
                 self.assertNotIn("MessageSendingService(", content)
 
         main_source = (SRC_ROOT / "main.py").read_text(encoding="utf-8")
-        self.assertEqual(main_source.count("ChatCompletionsClient()"), 1)
+        self.assertEqual(main_source.count("ProviderRouter()"), 1)
         self.assertEqual(main_source.count("MessageSendingService("), 1)
 
 

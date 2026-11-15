@@ -39,18 +39,25 @@ from storage.request_attempts import (
 )
 from storage.request_attempts import validate_request_attempts_schema
 from storage.secure_credentials import (
+    ALL_PROVIDER_STORAGE_NAMES,
     API_KEY_STORAGE_NAME,
     REGISTRATION_ID_STORAGE_NAME,
     SecureStorageBackend,
 )
 
-PROFILE_ALIASES = (
+LEGACY_PROFILE_ALIASES = (
     API_KEY_STORAGE_NAME,
     DATA_KEY_ALIAS,
     DATA_BINDING_ALIAS,
     DATA_INITIALIZATION_ALIAS,
     REGISTRATION_ID_STORAGE_NAME,
 )
+PROFILE_ALIASES = (
+    *LEGACY_PROFILE_ALIASES[:-1],
+    *(name for name in ALL_PROVIDER_STORAGE_NAMES if name != API_KEY_STORAGE_NAME),
+    REGISTRATION_ID_STORAGE_NAME,
+)
+
 _MAX_METADATA_BYTES = 128 * 1024
 
 
@@ -1061,7 +1068,12 @@ class ProfileDeletion:
                 raise ProfileDeletionError()
         removed = intent["removed"]
         if removed != list(PROFILE_ALIASES[: len(removed)]):
-            raise ProfileDeletionError()
+            if removed != list(LEGACY_PROFILE_ALIASES):
+                raise ProfileDeletionError()
+            # An old complete credential ACK may precede file removal. Keep
+            # its four prefix ACKs and replay registration after the new exact
+            # aliases. No secret or registration is recreated.
+            intent["removed"] = list(LEGACY_PROFILE_ALIASES[:-1])
         metadata = scope["metadata"]
         if (
             set(metadata) != {"schema", "registration_id", "database", "coordinates"}
@@ -1121,11 +1133,11 @@ class ProfileDeletion:
         temporary = self.intent_path.with_name(self.intent_path.name + ".write")
         main_exists = self._identity(self.intent_path) is not None
         writing_exists = self._identity(temporary) is not None
-        main = (
-            self._validate_intent(self._read_json(self.intent_path))
-            if main_exists
-            else None
+        raw_main = self._read_json(self.intent_path) if main_exists else None
+        legacy_progress = raw_main is not None and raw_main.get("removed") == list(
+            LEGACY_PROFILE_ALIASES
         )
+        main = self._validate_intent(raw_main) if raw_main is not None else None
         writing = (
             self._validate_intent(self._read_json(temporary))
             if writing_exists
@@ -1156,6 +1168,8 @@ class ProfileDeletion:
                 self._sync_directory()
         if main is None:
             raise ProfileDeletionError()
+        if legacy_progress:
+            self._write_intent(main)
         return main
 
     async def _namespace(self, intent: dict[str, Any]) -> None:

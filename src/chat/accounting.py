@@ -20,6 +20,7 @@ from chat.models import (
     maximum_pricing,
 )
 from i18n import tr
+from providers.models import Currency, ProviderId
 from storage.access_context import repository_session
 
 if TYPE_CHECKING:
@@ -66,6 +67,26 @@ class ChatBudget:
     cost_reserved_usd: Decimal
     state: BudgetState
     updated_at: datetime
+    provider_id: ProviderId = ProviderId.OPENROUTER
+    currency: Currency = Currency.USD
+    cost_limit: Decimal | None = None
+    cost_used: Decimal = ZERO
+    cost_reserved: Decimal = ZERO
+
+    def __post_init__(self) -> None:
+        if self.currency is not Currency.USD and (
+            self.cost_limit_usd is not None
+            or self.cost_used_usd != ZERO
+            or self.cost_reserved_usd != ZERO
+        ):
+            raise ValueError("non_usd_money_in_usd_fields")
+        if self.currency is Currency.USD:
+            if self.cost_limit is None:
+                object.__setattr__(self, "cost_limit", self.cost_limit_usd)
+            if self.cost_used == ZERO:
+                object.__setattr__(self, "cost_used", self.cost_used_usd)
+            if self.cost_reserved == ZERO:
+                object.__setattr__(self, "cost_reserved", self.cost_reserved_usd)
 
 
 @dataclass(frozen=True)
@@ -73,6 +94,12 @@ class RemainingBudget:
     tokens: int | None
     cost_usd: Decimal | None
     blocked_by_unknown_accounting: bool
+    cost: Decimal | None = None
+    currency: Currency = Currency.USD
+
+    def __post_init__(self) -> None:
+        if self.currency is Currency.USD and self.cost is None:
+            object.__setattr__(self, "cost", self.cost_usd)
 
 
 @dataclass(frozen=True)
@@ -95,6 +122,23 @@ class TurnRecord:
     request_sent: bool
     created_at: datetime
     updated_at: datetime
+    provider_id: ProviderId = ProviderId.OPENROUTER
+    currency: Currency = Currency.USD
+    cost: Decimal | None = None
+    reserved_cost: Decimal = ZERO
+    usage_source: str = "unknown"
+    cost_source: str = "unknown"
+
+    def __post_init__(self) -> None:
+        if self.currency is not Currency.USD and (
+            self.cost_usd is not None or self.reserved_cost_usd != ZERO
+        ):
+            raise ValueError("non_usd_money_in_usd_fields")
+        if self.currency is Currency.USD:
+            if self.cost is None:
+                object.__setattr__(self, "cost", self.cost_usd)
+            if self.reserved_cost == ZERO:
+                object.__setattr__(self, "reserved_cost", self.reserved_cost_usd)
 
 
 @dataclass(frozen=True)
@@ -105,27 +149,52 @@ class BudgetReservation:
     reserved_tokens: int
     reserved_cost_usd: Decimal
     created_at: datetime
+    reserved_cost: Decimal = ZERO
+    currency: Currency = Currency.USD
+
+    def __post_init__(self) -> None:
+        if self.currency is not Currency.USD and self.reserved_cost_usd != ZERO:
+            raise ValueError("non_usd_money_in_usd_fields")
+        if self.currency is Currency.USD and self.reserved_cost == ZERO:
+            object.__setattr__(self, "reserved_cost", self.reserved_cost_usd)
 
 
 @dataclass(frozen=True)
 class ChatLimitConfiguration:
     token_limit: int
     max_completion_tokens: int
-    cost_limit_usd: Decimal
+    cost_limit_usd: Decimal | None
+    cost_limit: Decimal = ZERO
+    currency: Currency = Currency.USD
+
+    def __post_init__(self) -> None:
+        if (
+            self.currency is Currency.USD
+            and self.cost_limit == ZERO
+            and self.cost_limit_usd is not None
+        ):
+            object.__setattr__(self, "cost_limit", self.cost_limit_usd)
+        if self.currency is not Currency.USD and self.cost_limit_usd is not None:
+            raise ValueError("non_usd_money_in_usd_fields")
 
 
 @dataclass(frozen=True)
 class ModelPriceChange:
     confirmed: PriceComponents
     current: PriceComponents
+    currency: Currency = Currency.USD
 
 
 def parse_chat_limit_input(
     mode: ChatMode,
     token_limit: str,
     max_completion_tokens: str,
-    cost_limit_usd: str | None,
+    cost_limit: str | None = None,
+    *,
+    currency: Currency = Currency.USD,
+    cost_limit_usd: str | None = None,
 ) -> ChatLimitConfiguration:
+    cost_limit = cost_limit if cost_limit is not None else cost_limit_usd
     if not isinstance(mode, ChatMode):
         raise ValueError(tr("service.mode_unknown"))
     if not isinstance(token_limit, str) or not isinstance(
@@ -133,7 +202,7 @@ def parse_chat_limit_input(
         str,
     ):
         raise ValueError(tr("service.limit_tokens_text"))
-    if cost_limit_usd is not None and not isinstance(cost_limit_usd, str):
+    if cost_limit is not None and not isinstance(cost_limit, str):
         raise ValueError(tr("service.limit_money_text"))
     normalized_token_limit = _parse_ascii_positive_int(
         token_limit,
@@ -145,10 +214,10 @@ def parse_chat_limit_input(
     )
     normalized_cost: Decimal | None = None
     if mode is ChatMode.PAID:
-        if cost_limit_usd is None or not cost_limit_usd.strip():
+        if cost_limit is None or not cost_limit.strip():
             raise ValueError(tr("service.paid_limit_required"))
         try:
-            normalized_cost = Decimal(cost_limit_usd.strip())
+            normalized_cost = Decimal(cost_limit.strip())
         except (ArithmeticError, ValueError) as error:
             raise ValueError(tr("service.money_number")) from error
     cost = validate_limit_configuration(
@@ -160,7 +229,9 @@ def parse_chat_limit_input(
     return ChatLimitConfiguration(
         token_limit=normalized_token_limit,
         max_completion_tokens=normalized_completion_limit,
-        cost_limit_usd=cost,
+        cost_limit_usd=cost if currency is Currency.USD else None,
+        cost_limit=cost,
+        currency=currency,
     )
 
 
@@ -168,7 +239,7 @@ def validate_limit_configuration(
     mode: ChatMode,
     token_limit: int,
     max_completion_tokens: int,
-    cost_limit_usd: Decimal | None,
+    cost_limit: Decimal | None,
 ) -> Decimal:
     if not isinstance(mode, ChatMode):
         raise ValueError(tr("service.mode_unknown"))
@@ -186,33 +257,35 @@ def validate_limit_configuration(
         raise ValueError(tr("service.completion_budget"))
 
     if mode is ChatMode.FREE:
-        if cost_limit_usd not in {None, ZERO}:
+        if cost_limit not in {None, ZERO}:
             raise ValueError(tr("service.free_money_zero"))
         return ZERO
-    if cost_limit_usd is None:
+    if cost_limit is None:
         raise ValueError(tr("service.paid_budget_required"))
-    if not isinstance(cost_limit_usd, Decimal):
+    if not isinstance(cost_limit, Decimal):
         raise ValueError(tr("service.money_decimal"))
-    if not cost_limit_usd.is_finite() or cost_limit_usd <= 0:
+    if not cost_limit.is_finite() or cost_limit <= 0:
         raise ValueError(tr("service.money_positive"))
-    return cost_limit_usd
+    return cost_limit
 
 
 def calculate_remaining_budget(budget: ChatBudget) -> RemainingBudget:
     if not budget.limits_configured or budget.token_limit is None:
-        return RemainingBudget(None, None, False)
+        return RemainingBudget(None, None, False, currency=budget.currency)
     token_remaining = max(
         0,
         budget.token_limit - budget.total_tokens_used - budget.reserved_tokens,
     )
     cost_remaining = (
         None
-        if budget.cost_limit_usd is None
-        else budget.cost_limit_usd - budget.cost_used_usd - budget.cost_reserved_usd
+        if budget.cost_limit is None
+        else budget.cost_limit - budget.cost_used - budget.cost_reserved
     )
     return RemainingBudget(
         tokens=token_remaining,
-        cost_usd=cost_remaining,
+        cost_usd=cost_remaining if budget.currency is Currency.USD else None,
+        cost=cost_remaining,
+        currency=budget.currency,
         blocked_by_unknown_accounting=(budget.state is BudgetState.ACCOUNTING_UNKNOWN),
     )
 
@@ -268,7 +341,7 @@ def model_price_change(chat: Chat, current: CatalogModel) -> ModelPriceChange | 
             strict=True,
         )
     )
-    return ModelPriceChange(confirmed, live) if increased else None
+    return ModelPriceChange(confirmed, live, chat.currency) if increased else None
 
 
 def confirmed_pricing(chat: Chat) -> tuple[PriceComponents, ...]:
@@ -310,8 +383,9 @@ class BudgetRepository(Protocol):
         chat_id: str,
         token_limit: int,
         max_completion_tokens: int,
-        cost_limit_usd: Decimal,
+        cost_limit: Decimal | None = None,
         *,
+        cost_limit_usd: Decimal | None = None,
         cost_increase_confirmed: bool,
         updated_at: datetime,
     ) -> ChatBudget: ...
@@ -344,7 +418,8 @@ class ChatBudgetService:
         *,
         token_limit: int,
         max_completion_tokens: int,
-        cost_limit_usd: Decimal | None,
+        cost_limit_usd: Decimal | None = None,
+        cost_limit: Decimal | None = None,
         cost_increase_confirmed: bool = False,
         updated_at: datetime | None = None,
     ) -> ChatBudget:
@@ -361,7 +436,7 @@ class ChatBudgetService:
             mode,
             token_limit,
             max_completion_tokens,
-            cost_limit_usd,
+            cost_limit if cost_limit is not None else cost_limit_usd,
         )
         if mode is ChatMode.PAID and not cost_increase_confirmed:
             raise ValueError(tr("service.money_confirmation_required"))
@@ -382,7 +457,8 @@ class ChatBudgetService:
         *,
         token_limit: int,
         max_completion_tokens: int,
-        cost_limit_usd: Decimal | None,
+        cost_limit_usd: Decimal | None = None,
+        cost_limit: Decimal | None = None,
         cost_increase_confirmed: bool = False,
         updated_at: datetime | None = None,
     ) -> ChatBudget:
@@ -399,7 +475,7 @@ class ChatBudgetService:
             mode,
             token_limit,
             max_completion_tokens,
-            cost_limit_usd,
+            cost_limit if cost_limit is not None else cost_limit_usd,
         )
         return await asyncio.to_thread(
             self._repository.set_chat_limits,

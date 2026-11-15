@@ -356,13 +356,51 @@ def _message_metadata(
         )
         if model:
             parts.append((tr("meta.model"), model))
-    if turn is not None and turn.accounting_status is AccountingStatus.FINAL:
+    if turn is not None:
         if turn.prompt_tokens is not None:
-            parts.append((tr("meta.prompt_tokens"), number(turn.prompt_tokens)))
+            parts.append(
+                (
+                    tr(
+                        "workspace.estimated_input"
+                        if turn.usage_source == "estimated"
+                        else "meta.prompt_tokens"
+                    ),
+                    number(turn.prompt_tokens),
+                )
+            )
         if turn.completion_tokens is not None:
-            parts.append((tr("meta.completion_tokens"), number(turn.completion_tokens)))
+            parts.append(
+                (
+                    tr(
+                        "workspace.estimated_output"
+                        if turn.usage_source == "estimated"
+                        else "meta.completion_tokens"
+                    ),
+                    number(turn.completion_tokens),
+                )
+            )
         if turn.total_tokens is not None:
-            parts.append((tr("meta.total"), number(turn.total_tokens)))
-        if turn.cost_usd is not None:
-            parts.append((tr("meta.cost"), money(turn.cost_usd)))
+            parts.append(
+                (
+                    tr(
+                        "workspace.estimated_total"
+                        if turn.usage_source == "estimated"
+                        else "meta.total"
+                    ),
+                    number(turn.total_tokens),
+                )
+            )
+        if turn.cost is not None:
+            parts.append(
+                (
+                    tr(
+                        "workspace.estimated_cost"
+                        if turn.cost_source == "estimated"
+                        else "meta.cost"
+                    ),
+                    money(turn.cost, turn.currency),
+                )
+            )
+        elif turn.request_sent and turn.accounting_status is AccountingStatus.UNKNOWN:
+            parts.append((tr("meta.cost"), tr("analytics.unknown")))
     return parts

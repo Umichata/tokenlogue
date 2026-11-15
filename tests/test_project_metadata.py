@@ -14,6 +14,7 @@ EXPECTED_PRODUCTION_DEPENDENCIES = {
     "pycryptodomex==3.23.0",
     "cffi==2.0.0",
     "pycparser==3.11",
+    "tzdata==2026.6",
 }
 EXPECTED_DEV_DEPENDENCIES = {
     "flet-cli==0.86.5",
@@ -30,6 +31,7 @@ EXPECTED_APP_EXCLUDES = {
     "api/__pycache__",
     "auth/__pycache__",
     "chat/__pycache__",
+    "providers/__pycache__",
     "storage/__pycache__",
     "ui/__pycache__",
 }
@@ -67,7 +69,7 @@ class ProjectMetadataTests(unittest.TestCase):
         self.assertEqual(flet["artifact"], "tokenlogue")
         self.assertEqual(flet["org"], "io.github.umichata")
         self.assertEqual(flet["bundle_id"], "io.github.umichata.tokenlogue")
-        self.assertEqual(flet["build_number"], 43)
+        self.assertEqual(flet["build_number"], 44)
         self.assertEqual(flet["company"], "Umichata")
         self.assertEqual(flet["copyright"], "Copyright © 2026 Viktor Zemkov")
 

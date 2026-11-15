@@ -27,7 +27,7 @@ from chat.service import ChatService  # noqa: E402
 from storage.chat_repository import SqliteChatRepository  # noqa: E402
 from storage.database import AuthDatabase  # noqa: E402
 
-TEST_CREDENTIAL = "catalog-test-credential"
+TEST_CREDENTIAL = "sk-or-v1-catalog-test-credential"
 
 
 class MutableClock:

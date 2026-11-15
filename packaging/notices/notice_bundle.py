@@ -10,8 +10,14 @@ from typing import Any
 
 PLATFORMS = {"android", "linux"}
 REQUIRED_COMPONENTS = {
-    "android": {"libffi-runtime", "dart-bridge", "katex-fonts", "material-icons"},
-    "linux": {"material-icons"},
+    "android": {
+        "libffi-runtime",
+        "dart-bridge",
+        "katex-fonts",
+        "material-icons",
+        "tzdata",
+    },
+    "linux": {"material-icons", "tzdata"},
 }
 DIRECTORY = "packaging/notices"
 

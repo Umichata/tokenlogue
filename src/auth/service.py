@@ -30,6 +30,7 @@ from auth.pin_policy import (
     sample_clock,
 )
 from i18n import number, tr
+from providers.models import ProviderId, detect_key
 
 if TYPE_CHECKING:
     from platform_security.device_recovery import RecoveryProvider
@@ -79,14 +80,19 @@ class AuthService:
         self._pending_key: str | None = None
         self._pending_registration_id: str | None = None
         self._pending_key_limit = KeyLimitInfo.unknown()
+        self._pending_key_validity = KeyValidityState.UNKNOWN
 
     async def initialize(self) -> AuthResult:
         """Определяет первый экран и исправляет несогласованное состояние."""
         return await self._run_exclusive(self._initialize)
 
-    async def start_setup(self, api_key: str) -> AuthResult:
+    async def start_setup(
+        self, api_key: str, *, allow_unverified: bool = False
+    ) -> AuthResult:
         """Проверяет ключ и начинает выбор PIN без записи на диск."""
-        return await self._run_exclusive(lambda: self._start_setup(api_key))
+        return await self._run_exclusive(
+            lambda: self._start_setup(api_key, allow_unverified=allow_unverified)
+        )
 
     def suggest_pin(self) -> str:
         """Предлагает случайный PIN без привязки к регистрации и без сохранения."""
@@ -364,6 +370,7 @@ class AuthService:
         self._pending_key = None
         self._pending_registration_id = None
         self._pending_key_limit = KeyLimitInfo.unknown()
+        self._pending_key_validity = KeyValidityState.UNKNOWN
 
     async def _initialize(self) -> AuthResult:
         try:
@@ -403,7 +410,9 @@ class AuthService:
 
         return await self._reset_inconsistent_state()
 
-    async def _start_setup(self, api_key: str) -> AuthResult:
+    async def _start_setup(
+        self, api_key: str, *, allow_unverified: bool = False
+    ) -> AuthResult:
         self.cancel_pending_setup()
         generation = self._setup_generation
         normalized_key = api_key.strip()
@@ -443,10 +452,30 @@ class AuthService:
             return AuthResult(AuthStatus.SERVICE_ERROR, tr("service.key_check_failed"))
         if generation != self._setup_generation:
             return _expired_setup()
-        if not validation.accepted:
+        unverified = (
+            detect_key(normalized_key) is ProviderId.VSEGPT
+            and validation.save_allowed
+            and not validation.accepted
+        )
+        if unverified and not allow_unverified:
+            return AuthResult(
+                AuthStatus.UNVERIFIED_KEY,
+                (
+                    _validation_error(validation.status).message + "\n"
+                    if validation.status is not KeyValidationStatus.UNVERIFIED
+                    else ""
+                )
+                + tr("providers.unverified_help"),
+            )
+        if not validation.accepted and not (unverified and allow_unverified):
             return _validation_error(validation.status)
         key_validity, key_limit = interpret_key_validation(validation)
-        if key_validity is not KeyValidityState.VALID:
+        if unverified and allow_unverified:
+            key_validity, key_limit = (
+                KeyValidityState.UNVERIFIED,
+                KeyLimitInfo.unknown(),
+            )
+        if key_validity not in {KeyValidityState.VALID, KeyValidityState.UNVERIFIED}:
             return AuthResult(
                 AuthStatus.INVALID_RESPONSE,
                 tr("service.response_format"),
@@ -474,9 +503,12 @@ class AuthService:
         self._pending_key = normalized_key
         self._pending_registration_id = secrets.token_urlsafe(REGISTRATION_ID_BYTES)
         self._pending_key_limit = key_limit
+        self._pending_key_validity = key_validity
         return AuthResult(
             AuthStatus.PIN_CHOICE_REQUIRED,
-            _validated_key_message(key_limit),
+            tr("providers.unverified_help")
+            if unverified
+            else _validated_key_message(key_limit),
             pending_setup_token=self._pending_registration_id,
             key_validity=key_validity,
             key_limit=key_limit,
@@ -487,7 +519,10 @@ class AuthService:
             self._pending_key is None
             or self._pending_registration_id is None
             or pending_setup_token != self._pending_registration_id
-            or self._pending_key_limit.state is KeyLimitState.UNKNOWN
+            or (
+                self._pending_key_limit.state is KeyLimitState.UNKNOWN
+                and detect_key(self._pending_key or "") is not ProviderId.VSEGPT
+            )
         ):
             return _expired_setup()
 
@@ -500,6 +535,7 @@ class AuthService:
         api_key = self._pending_key
         registration_id = self._pending_registration_id
         key_limit = self._pending_key_limit
+        key_validity = self._pending_key_validity
         persistence_started = False
         protection_started = False
         try:
@@ -534,7 +570,7 @@ class AuthService:
                 AuthStatus.AUTHENTICATED,
                 tr("service.protection_ready"),
                 api_key=api_key,
-                key_validity=KeyValidityState.VALID,
+                key_validity=key_validity,
                 key_limit=key_limit,
             )
         except Exception:

@@ -8,6 +8,7 @@ import flet as ft
 
 from auth.pin import is_valid_pin
 from i18n import LocalizedText, fresh_text, tr
+from providers.models import ProviderId, detect_key, provider_spec
 from ui.branding import AuthHeader, BrandLoader
 from ui.styles import (
     ERROR_COLOR,
@@ -35,14 +36,20 @@ class KeyEntryView:
     """Форма безопасного ввода и проверки OpenRouter API-ключа."""
 
     def __init__(
-        self, on_submit: AsyncTextCallback, *, replacement: bool = False
+        self,
+        on_submit: AsyncTextCallback,
+        *,
+        replacement: bool = False,
+        on_save_unverified: AsyncTextCallback | None = None,
     ) -> None:
         self._on_submit = on_submit
+        self._on_save_unverified = on_save_unverified
+        self._unverified_value: str | None = None
         self._busy = False
         self.key_field = _SecretTextField(
             **input_style(),
-            label=tr("auth.api_key"),
-            hint_text=tr("auth.key_hint"),
+            label=tr("providers.key"),
+            hint_text=tr("providers.key_hint"),
             password=True,
             can_reveal_password=True,
             autocorrect=False,
@@ -56,6 +63,7 @@ class KeyEntryView:
             on_submit=self._handle_submit,
         )
         self.message = ft.Text(visible=False)
+        self.detected_provider = ft.Text(tr("providers.enter_key"), color=MUTED_COLOR)
         self.progress = BrandLoader(size=26, active=False)
         self.submit_button = ft.Button(
             tr("auth.check_key"),
@@ -64,23 +72,31 @@ class KeyEntryView:
             disabled=True,
             on_click=self._handle_click,
         )
+        self.unverified_button = ft.Button(
+            tr("providers.save_unverified"),
+            style=secondary_button_style(),
+            visible=False,
+            on_click=self._save_unverified,
+        )
         self.header = AuthHeader()
         self.control = build_auth_screen(
             [
                 ft.Text(
-                    tr("polish.key_title"),
+                    tr("providers.title"),
                     theme_style=ft.TextThemeStyle.HEADLINE_MEDIUM,
                 ),
                 ft.Text(
                     tr("auth.replacement_instructions")
                     if replacement
-                    else tr("auth.key_instructions"),
+                    else tr("providers.description"),
                     color=MUTED_COLOR,
                 ),
                 self.key_field,
+                self.detected_provider,
                 self.message,
                 ft.Row(alignment=ft.MainAxisAlignment.CENTER, controls=[self.progress]),
                 self.submit_button,
+                self.unverified_button,
             ],
             header=self.header,
         )
@@ -100,17 +116,28 @@ class KeyEntryView:
         await self._on_submit(value)
 
     def _key_changed(self, _event: ft.Event[ft.TextField]) -> None:
+        self._unverified_value = None
+        self.unverified_button.visible = False
         self._apply_key_state()
-        self.submit_button.update()
+        self.control.update()
 
     def _apply_key_state(self) -> None:
         value = self.key_field.value
-        has_value = isinstance(value, str) and bool(value.strip())
+        provider = detect_key(value) if isinstance(value, str) else None
+        has_value = provider is not None
         self.submit_button.disabled = self._busy or not has_value
+        self.detected_provider.value = (
+            tr("providers.detected", provider=provider_spec(provider).name)
+            if provider is not None
+            else tr("providers.unknown_prefix")
+            if isinstance(value, str) and value.strip()
+            else tr("providers.enter_key")
+        )
 
     def set_busy(self, busy: bool) -> None:
         self._busy = busy
         self.key_field.disabled = busy
+        self.unverified_button.disabled = busy
         self.progress.set_active(busy)
         self._apply_key_state()
 
@@ -121,7 +148,30 @@ class KeyEntryView:
 
     def clear_key(self) -> None:
         self.key_field.value = ""
+        self._unverified_value = None
+        self.unverified_button.visible = False
         self._apply_key_state()
+
+    def offer_unverified_save(self) -> None:
+        value = self.key_field.value
+        if (
+            isinstance(value, str)
+            and detect_key(value) is ProviderId.VSEGPT
+            and self._on_save_unverified is not None
+        ):
+            self._unverified_value = value.strip()
+            self.unverified_button.visible = True
+
+    async def _save_unverified(self, _event: ft.Event[ft.Button]) -> None:
+        value = self.key_field.value
+        if (
+            not self._busy
+            and self._on_save_unverified is not None
+            and isinstance(value, str)
+            and value.strip() == self._unverified_value
+            and detect_key(value) is ProviderId.VSEGPT
+        ):
+            await self._on_save_unverified(value)
 
     def dispose(self) -> None:
         self.clear_key()

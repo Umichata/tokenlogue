@@ -19,12 +19,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 import main as composition  # noqa: E402
 from app import AppController  # noqa: E402
 from storage.secure_credentials import FletSecureCredentials  # noqa: E402
+from tests.provider_fakes import FakeProviderRouter  # noqa: E402
 from tests.test_app_lifecycle import AndroidPage  # noqa: E402
-from tests.test_message_sending import (  # noqa: E402
-    FakeCatalogClient,
-    FakeCompletionClient,
-    FakeKeyValidator,
-)
 from tests.test_secure_credentials import FakeSecureStorage  # noqa: E402
 
 
@@ -65,18 +61,8 @@ class AndroidCompositionTests(unittest.IsolatedAsyncioTestCase):
                         ),
                         patch.object(
                             composition,
-                            "OpenRouterClient",
-                            return_value=FakeKeyValidator(),
-                        ),
-                        patch.object(
-                            composition,
-                            "ModelCatalogClient",
-                            return_value=FakeCatalogClient(()),
-                        ),
-                        patch.object(
-                            composition,
-                            "ChatCompletionsClient",
-                            return_value=FakeCompletionClient([]),
+                            "ProviderRouter",
+                            return_value=FakeProviderRouter(),
                         ),
                         patch.object(composition, "AppController", side_effect=capture),
                     ):

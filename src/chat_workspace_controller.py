@@ -480,6 +480,7 @@ class ChatWorkspaceController:
                 token_limit,
                 max_completion_tokens,
                 cost_limit_usd,
+                currency=state.chat.currency,
             )
         except ValueError as error:
             dialog.form.show_error(localized_error_text(error))
@@ -488,17 +489,18 @@ class ChatWorkspaceController:
         if (
             state.chat.mode is ChatMode.PAID
             and state.budget.limits_configured
-            and state.budget.cost_limit_usd is not None
-            and configuration.cost_limit_usd > state.budget.cost_limit_usd
+            and state.budget.cost_limit is not None
+            and configuration.cost_limit > state.budget.cost_limit
         ):
             self._pending_limit_configuration = configuration
             dialog.form.set_busy(True)
             self._page.show_dialog(
                 build_cost_increase_dialog(
-                    state.budget.cost_limit_usd,
-                    configuration.cost_limit_usd,
+                    state.budget.cost_limit,
+                    configuration.cost_limit,
                     self.confirm_cost_increase,
                     self.cancel_cost_increase,
+                    currency=state.budget.currency,
                 )
             )
             return

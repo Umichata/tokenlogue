@@ -73,7 +73,7 @@ class PreferencesStartupTests(unittest.IsolatedAsyncioTestCase):
                     application, "AuthDatabase", side_effect=unavailable_database
                 ) as database,
                 patch.object(application, "FletSecureCredentials") as secure,
-                patch.object(application, "OpenRouterClient") as network,
+                patch.object(application, "ProviderRouter") as network,
             ):
                 await application.main(cast(ft.Page, page))
                 self.assertEqual(observations, [("en", False)])

@@ -11,6 +11,7 @@ from string import Formatter
 from typing import Any
 
 from preferences import PreferencesStore
+from providers.models import Currency
 
 
 def _load_catalogues() -> dict[str, dict[str, str]]:
@@ -180,8 +181,13 @@ class _Number:
         return text.replace(".", ",") if _language == "ru" else text
 
 
-def money(value: Decimal | int | str) -> LocalizedText:
-    return tr("money.value", amount=_Number(value))
+def money(
+    value: Decimal | int | str, currency: Currency | str = Currency.USD
+) -> LocalizedText:
+    unit = Currency(currency)
+    if unit is Currency.USD:
+        return tr("money.value", amount=_Number(value))
+    return tr("money.currency", amount=_Number(value), currency=unit.value)
 
 
 def display_model_name(model_id: str, name: str) -> str:

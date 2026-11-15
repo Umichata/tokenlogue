@@ -7,6 +7,8 @@ from datetime import datetime
 from decimal import Decimal
 from enum import Enum
 
+from providers.models import Currency, PriceUnit, ProviderId
+
 PRICE_PER_MILLION = Decimal("1000000")
 
 
@@ -100,6 +102,9 @@ class CatalogModel:
     pricing_is_complete: bool = True
     context_length: int | None = None
     provider_max_completion_tokens: int | None = None
+    provider_id: ProviderId = ProviderId.OPENROUTER
+    currency: Currency = Currency.USD
+    pricing_unit: PriceUnit = PriceUnit.TOKEN
 
     @property
     def base_pricing(self) -> PriceComponents:
@@ -163,6 +168,9 @@ class Chat:
     title_origin: str = "legacy"
     paid_without_confirmation: bool = False
     paid_policy_revision: str = ""
+    provider_id: ProviderId = ProviderId.OPENROUTER
+    currency: Currency = Currency.USD
+    pricing_unit: PriceUnit = PriceUnit.TOKEN
 
     @property
     def price_snapshot(self) -> PriceComponents:
@@ -198,6 +206,8 @@ def is_standard_text_chat_model(model: CatalogModel) -> bool:
         return False
     if not all(pricing.valid for pricing in model.all_pricing):
         return False
+    if model.provider_id is ProviderId.VSEGPT:
+        return True
     if model.id == FREE_ROUTER_MODEL.id:
         return True
     if model.id.startswith("openrouter/"):
@@ -215,17 +225,20 @@ def is_standard_text_chat_model(model: CatalogModel) -> bool:
 def is_free_model(model: CatalogModel) -> bool:
     return (
         is_standard_text_chat_model(model)
+        and model.pricing_unit is PriceUnit.TOKEN
         and model.pricing_is_complete
         and all(pricing.is_zero for pricing in model.all_pricing)
     )
 
 
 def is_paid_model(model: CatalogModel) -> bool:
-    return (
-        is_standard_text_chat_model(model)
-        and model.pricing_is_complete
-        and any(
-            value > 0 for pricing in model.all_pricing for value in pricing.values()
+    return is_standard_text_chat_model(model) and (
+        model.pricing_unit is PriceUnit.UNKNOWN
+        or (
+            model.pricing_is_complete
+            and any(
+                value > 0 for pricing in model.all_pricing for value in pricing.values()
+            )
         )
     )
 

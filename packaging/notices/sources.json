@@ -204,6 +204,50 @@
           "ru": "Декларация исходного архива шрифтов Flutter и авторские права Google приведены полностью. Шрифт Linux совпадает с исходным файлом. Эти тексты дополняют остальные уведомления Linux."
         }
       }
+    },
+    {
+      "id": "tzdata",
+      "version": "2026.6",
+      "platforms": [
+        "android",
+        "linux"
+      ],
+      "source": {
+        "url": "https://files.pythonhosted.org/packages/0a/66/9a06c2227fedfd4919f0eaaa8b94377d9730882a7e4f95823c9a331ab5e1/tzdata-2026.6-py2.py3-none-any.whl",
+        "archive_sha256": "0a10eec6e13ef16b627fabed9a5f2ba61a62b1c67f327305f4e7e412a70b4aec",
+        "archive_size": 348210,
+        "version_or_commit": "2026.6",
+        "metadata_url": "https://pypi.org/pypi/tzdata/json",
+        "source_url": "https://github.com/python/tzdata"
+      },
+      "files": [
+        {
+          "input": "inputs/tzdata-2026.6-LICENSE.txt",
+          "output": "licenses/tzdata-2026.6-LICENSE.txt",
+          "size": 625,
+          "sha256": "df58f69ea88683035d720b5375bcef0cf5aeaa98a1d098d572e0992c378deb46",
+          "source_member": "tzdata-2026.6.dist-info/licenses/LICENSE",
+          "transformation": "none, original wheel-member bytes"
+        },
+        {
+          "input": "inputs/tzdata-2026.6-LICENSE-APACHE.txt",
+          "output": "licenses/tzdata-2026.6-LICENSE-APACHE.txt",
+          "size": 11357,
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+          "source_member": "tzdata-2026.6.dist-info/licenses/licenses/LICENSE_APACHE",
+          "transformation": "none, original wheel-member bytes"
+        }
+      ],
+      "notes": {
+        "android": {
+          "en": "Original Apache 2.0 license and IANA public-domain notice for tzdata 2026.6. The pure Python package supplies time zone rules when the operating system provides no TZif directory.",
+          "ru": "Оригинальная лицензия Apache 2.0 и уведомление IANA об общественном достоянии для tzdata 2026.6. Пакет предоставляет правила часовых поясов, когда в системе нет каталога TZif."
+        },
+        "linux": {
+          "en": "Original Apache 2.0 license and IANA public-domain notice for tzdata 2026.6. The pure Python package supplies time zone rules when the operating system provides no TZif directory.",
+          "ru": "Оригинальная лицензия Apache 2.0 и уведомление IANA об общественном достоянии для tzdata 2026.6. Пакет предоставляет правила часовых поясов, когда в системе нет каталога TZif."
+        }
+      }
     }
   ]
 }

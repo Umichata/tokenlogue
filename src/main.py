@@ -10,9 +10,8 @@ from typing import TYPE_CHECKING
 
 import flet as ft
 
-from api.chat_completions import ChatCompletionsClient
-from api.models import ModelCatalogClient, ModelCatalogService
-from api.openrouter import OpenRouterClient
+from api.models import ModelCatalogService
+from api.provider_router import ProviderRouter
 from app import AppController
 from auth.service import AuthService
 from chat.accounting import ChatBudgetService
@@ -25,6 +24,8 @@ from platform_security.local_protection import SCREEN_CONTRACT, DeviceProtection
 from platform_security.protection_trace import protection_trace_from_environment
 from platform_security.windows_session import WindowsSessionAdapter
 from preferences import PreferencesStore
+from providers.session import ProviderProfiles
+from storage.analytics_repository import SqliteAnalyticsRepository
 from storage.chat_repository import SqliteChatRepository
 from storage.data_access import DataAccess
 from storage.data_protection import (
@@ -261,7 +262,8 @@ async def main(page: ft.Page) -> None:
         recovery = linux_recovery
     elif recovery is not None and not await recovery.supports_recovery():
         recovery = None
-    key_validator = OpenRouterClient()
+    key_validator = ProviderRouter()
+    provider_profiles = ProviderProfiles(credentials, key_validator)
     auth_service = AuthService(
         key_validator,
         credentials,
@@ -275,15 +277,20 @@ async def main(page: ft.Page) -> None:
     drafts = ChatDraftService(SqliteDraftRepository(database.path, access=access))
     chat_service = ChatService(chat_repository)
     budget_service = ChatBudgetService(message_repository)
-    catalog_client = ModelCatalogClient()
+    catalog_client = key_validator
     catalog_service = ModelCatalogService(catalog_client)
-    completion_client = ChatCompletionsClient()
+    completion_client = key_validator
     sending_service = MessageSendingService(
         chat_service,
         message_repository,
         completion_client,
         catalog_client,
         key_validator,
+    )
+
+    sending_service.set_credential_current_check(provider_profiles.key_is_current)
+    sending_service.set_credential_revision_reader(
+        provider_profiles.credential_revision
     )
 
     async def reload_profile() -> None:
@@ -307,6 +314,8 @@ async def main(page: ft.Page) -> None:
         data_access=access,
         on_profile_deleted=deleted_profile,
         on_profile_reload=reload_profile,
+        provider_profiles=provider_profiles,
+        analytics_repository=SqliteAnalyticsRepository(database.path, access=access),
     )
     if page.platform is ft.PagePlatform.LINUX:
         # This store is outside the portable profile. Importing it only on Linux
@@ -377,7 +386,7 @@ async def main(page: ft.Page) -> None:
                     if protection_trace is not None:
                         protection_trace.close()
                     closers = []
-                    for client in (key_validator, catalog_client, completion_client):
+                    for client in (key_validator,):
                         close = getattr(client, "aclose", None)
                         if callable(close):
                             work = close()

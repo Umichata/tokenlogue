@@ -38,6 +38,7 @@ from chat.budget_consent import (
     BudgetConsentBasis,
     BudgetConsentRevoked,
     BudgetWarning,
+    UnknownPriceConsent,
     budget_version,
     budget_warning,
     chat_prices,
@@ -63,6 +64,7 @@ from chat.models import (
 from chat.paid_consent import PaidConsent, PaidConsentRevoked
 from chat.service import ChatService
 from i18n import tr
+from providers.models import Currency, PriceUnit, ProviderId, detect_key
 from storage.access_context import (
     await_task_completion,
     finish_worker,
@@ -104,11 +106,12 @@ class MessageRepository(Protocol):
         paid_policy_revision: str | None = None,
         budget_basis: BudgetConsentBasis | None = None,
         budget_consent: BudgetConsent | None = None,
+        unknown_price_consent: UnknownPriceConsent | None = None,
     ) -> ChatDraft | None: ...
 
     def restore_unsent_draft(self, turn_id: str, draft: ChatDraft) -> None: ...
 
-    def mark_request_sent(self, turn_id: str, updated_at: datetime) -> None: ...
+    def mark_request_sent(self, turn_id: str, updated_at: datetime) -> int | None: ...
 
     def finalize_known_turn(
         self,
@@ -121,10 +124,16 @@ class MessageRepository(Protocol):
         actual_model_id: str | None,
         generation_id: str | None,
         finish_reason: str | None,
-        prompt_tokens: int,
-        completion_tokens: int,
-        total_tokens: int,
-        cost_usd: Decimal,
+        prompt_tokens: int | None,
+        completion_tokens: int | None,
+        total_tokens: int | None,
+        cost: Decimal | None = None,
+        cost_usd: Decimal | None = None,
+        usage_source: str = "api",
+        cost_source: str = "api",
+        cached_tokens: int | None = None,
+        reasoning_tokens: int | None = None,
+        attempt_sequence: int | None = None,
         error_type: ChatErrorType | None,
         generated_title: str | None,
         updated_at: datetime,
@@ -163,6 +172,7 @@ class MessageRepository(Protocol):
         finish_reason: str | None,
         error_type: ChatErrorType,
         updated_at: datetime,
+        attempt_sequence: int | None = None,
     ) -> None: ...
 
     def get_turn(self, turn_id: str) -> TurnRecord | None: ...
@@ -192,7 +202,7 @@ class ChatPreflight:
     estimated_prompt_tokens: int
     effective_max_completion_tokens: int
     reserved_tokens: int
-    reserved_cost_usd: Decimal
+    reserved_cost_usd: Decimal | None
     provider_price_limit: ProviderPriceLimit
     fresh_key_validity: KeyValidityState
     fresh_key_limit: KeyLimitInfo
@@ -200,6 +210,8 @@ class ChatPreflight:
     remaining_cost_after_reservation: Decimal | None
     budget_warning: BudgetWarning | None = None
     budget_consent_basis: BudgetConsentBasis | None = field(default=None, repr=False)
+    reserved_cost: Decimal = Decimal("0")
+    unknown_pricing: bool = False
 
 
 @dataclass(frozen=True)
@@ -222,6 +234,14 @@ class MessageSendPreview:
 
     budget_warning: BudgetWarning | None = None
     budget_consent_basis: BudgetConsentBasis | None = field(default=None, repr=False)
+    reserved_cost: Decimal | None = None
+    currency: Currency = Currency.USD
+    provider_id: ProviderId = ProviderId.OPENROUTER
+    unknown_pricing: bool = False
+
+    def __post_init__(self) -> None:
+        if self.currency is Currency.USD and self.reserved_cost is None:
+            object.__setattr__(self, "reserved_cost", self.reserved_cost_usd)
 
     @property
     def allowed(self) -> bool:
@@ -284,6 +304,9 @@ class MessageSendingService:
         self._draft_backup: ContextVar[ChatDraft | None] = ContextVar(
             f"send_draft_backup_{id(self)}", default=None
         )
+        self._attempt_sequence: ContextVar[int | None] = ContextVar(
+            f"send_attempt_{id(self)}", default=None
+        )
         self._completion_client = completion_client
         self._catalog_client = catalog_client
         self._key_validator = key_validator
@@ -292,6 +315,19 @@ class MessageSendingService:
         self._uuid_factory = uuid_factory
         self._chat_locks: dict[str, asyncio.Lock] = {}
         self._budget_consent_scope = object()
+        self._credential_current_check: Callable[[ProviderId, str], bool] | None = None
+        self._credential_revision_reader: Callable[[ProviderId], object] | None = None
+
+    def set_credential_current_check(
+        self, callback: Callable[[ProviderId, str], bool]
+    ) -> None:
+        """Revoke a replaced credential before HTTP, preserving dispatched work."""
+        self._credential_current_check = callback
+
+    def set_credential_revision_reader(
+        self, callback: Callable[[ProviderId], object]
+    ) -> None:
+        self._credential_revision_reader = callback
 
     @repository_session("_messages")
     async def preview_message(
@@ -399,9 +435,24 @@ class MessageSendingService:
             or preview.budget_warning is None
             or basis is None
             or basis.scope is not self._budget_consent_scope
+            or preview.unknown_pricing
         ):
             raise BudgetConsentRevoked()
         return BudgetConsent(basis)
+
+    def confirm_unknown_price(self, preview: MessageSendPreview) -> UnknownPriceConsent:
+        """Mint a distinct one-shot acknowledgement; automatic paid opt-in is insufficient."""
+        basis = preview.budget_consent_basis
+        if (
+            not preview.allowed
+            or not preview.unknown_pricing
+            or preview.budget_warning is None
+            or basis is None
+            or not basis.unknown_pricing
+            or basis.scope is not self._budget_consent_scope
+        ):
+            raise BudgetConsentRevoked()
+        return UnknownPriceConsent(basis)
 
     @repository_session("_messages")
     async def send_message(
@@ -415,6 +466,7 @@ class MessageSendingService:
         paid_confirmed: bool = False,
         paid_consent: PaidConsent | None = None,
         budget_consent: BudgetConsent | None = None,
+        unknown_price_consent: UnknownPriceConsent | None = None,
         on_request_finished: Callable[[], None] | None = None,
         dispatch_guard: DispatchGuard | None = None,
         on_reserved: ReservationCallback | None = None,
@@ -427,6 +479,10 @@ class MessageSendingService:
             or (
                 budget_consent is not None
                 and not isinstance(budget_consent, BudgetConsent)
+            )
+            or (
+                unknown_price_consent is not None
+                and not isinstance(unknown_price_consent, UnknownPriceConsent)
             )
             or (
                 draft_revision is not None
@@ -461,6 +517,7 @@ class MessageSendingService:
                 paid_confirmed=paid_confirmed,
                 paid_consent=paid_consent,
                 budget_consent=budget_consent,
+                unknown_price_consent=unknown_price_consent,
                 on_request_finished=on_request_finished,
                 dispatch_guard=dispatch_guard,
                 on_reserved=on_reserved,
@@ -478,6 +535,7 @@ class MessageSendingService:
         paid_confirmed: bool = False,
         paid_consent: PaidConsent | None = None,
         budget_consent: BudgetConsent | None = None,
+        unknown_price_consent: UnknownPriceConsent | None = None,
         on_request_finished: Callable[[], None] | None = None,
         dispatch_guard: DispatchGuard | None = None,
         on_reserved: ReservationCallback | None = None,
@@ -488,6 +546,10 @@ class MessageSendingService:
             or (
                 budget_consent is not None
                 and not isinstance(budget_consent, BudgetConsent)
+            )
+            or (
+                unknown_price_consent is not None
+                and not isinstance(unknown_price_consent, UnknownPriceConsent)
             )
         ):
             return _local_failure(ChatErrorType.TURN_NOT_RETRYABLE)
@@ -526,6 +588,7 @@ class MessageSendingService:
                 paid_confirmed=paid_confirmed,
                 paid_consent=paid_consent,
                 budget_consent=budget_consent,
+                unknown_price_consent=unknown_price_consent,
                 on_request_finished=on_request_finished,
                 dispatch_guard=dispatch_guard,
                 on_reserved=on_reserved,
@@ -549,7 +612,8 @@ class MessageSendingService:
         if chat is None:
             raise KeyError(tr("service.chat_missing"))
         models = await self._catalog_client.fetch_models(api_key)
-        current = _find_model(models, chat.requested_model_id)
+        self._assert_credential_current(chat, api_key)
+        current = _find_model(models, chat.requested_model_id, chat.provider_id)
         if current is None:
             raise ValueError(tr("service.model_missing"))
         if not current.pricing_is_complete:
@@ -581,6 +645,7 @@ class MessageSendingService:
         paid_confirmed: bool,
         paid_consent: PaidConsent | None,
         budget_consent: BudgetConsent | None = None,
+        unknown_price_consent: UnknownPriceConsent | None = None,
         on_request_finished: Callable[[], None] | None = None,
         dispatch_guard: DispatchGuard | None,
         on_reserved: ReservationCallback | None,
@@ -593,6 +658,7 @@ class MessageSendingService:
         )
         token = self._completion_lease.set(lease)
         draft_token = self._draft_backup.set(None)
+        attempt_token = self._attempt_sequence.set(None)
         try:
             return await self._send_authorized(
                 chat_id,
@@ -606,6 +672,7 @@ class MessageSendingService:
                 paid_confirmed=paid_confirmed,
                 paid_consent=paid_consent,
                 budget_consent=budget_consent,
+                unknown_price_consent=unknown_price_consent,
                 on_request_finished=on_request_finished,
                 dispatch_guard=dispatch_guard,
                 on_reserved=on_reserved,
@@ -614,6 +681,7 @@ class MessageSendingService:
         finally:
             self._completion_lease.reset(token)
             self._draft_backup.reset(draft_token)
+            self._attempt_sequence.reset(attempt_token)
             if lease is not None:
                 lease.close()
 
@@ -631,6 +699,7 @@ class MessageSendingService:
         paid_confirmed: bool,
         paid_consent: PaidConsent | None,
         budget_consent: BudgetConsent | None = None,
+        unknown_price_consent: UnknownPriceConsent | None = None,
         on_request_finished: Callable[[], None] | None = None,
         dispatch_guard: DispatchGuard | None,
         on_reserved: ReservationCallback | None,
@@ -649,6 +718,7 @@ class MessageSendingService:
                 retry_turn_id=turn_id if retry else None,
             )
             self._assert_dispatch_current(paid_consent, dispatch_guard)
+            self._assert_credential_current(preflight.chat, api_key)
         except _PreflightFailure as error:
             return _local_failure(
                 error.error_type,
@@ -659,11 +729,27 @@ class MessageSendingService:
             )
 
         basis = preflight.budget_consent_basis
+        if preflight.unknown_pricing:
+            if (
+                budget_consent is not None
+                or unknown_price_consent is None
+                or basis is None
+                or not unknown_price_consent.matches(basis)
+            ):
+                return _budget_confirmation_failure(
+                    preflight, turn_id if retry else None
+                )
+        elif unknown_price_consent is not None:
+            return _budget_confirmation_failure(preflight, turn_id if retry else None)
         if budget_consent is not None and (
             basis is None or not budget_consent.matches(basis)
         ):
             return _budget_confirmation_failure(preflight, turn_id if retry else None)
-        if preflight.budget_warning is not None and budget_consent is None:
+        if (
+            preflight.budget_warning is not None
+            and budget_consent is None
+            and unknown_price_consent is None
+        ):
             return _budget_confirmation_failure(preflight, turn_id if retry else None)
 
         timestamp = _as_utc(self._now())
@@ -672,7 +758,11 @@ class MessageSendingService:
             user_message_id=user_message_id,
             chat_id=chat_id,
             reserved_tokens=preflight.reserved_tokens,
-            reserved_cost_usd=preflight.reserved_cost_usd,
+            reserved_cost_usd=preflight.reserved_cost
+            if preflight.chat.currency is Currency.USD
+            else Decimal("0"),
+            reserved_cost=preflight.reserved_cost,
+            currency=preflight.chat.currency,
             created_at=timestamp,
         )
         reservation_task = asyncio.create_task(
@@ -688,6 +778,7 @@ class MessageSendingService:
                 else None,
                 budget_basis=basis,
                 budget_consent=budget_consent,
+                unknown_price_consent=unknown_price_consent,
             )
         )
         try:
@@ -740,7 +831,7 @@ class MessageSendingService:
             )
         )
         try:
-            await asyncio.shield(mark_sent_task)
+            self._attempt_sequence.set(await asyncio.shield(mark_sent_task))
         except asyncio.CancelledError:
             marked_sent = False
             try:
@@ -776,6 +867,7 @@ class MessageSendingService:
         try:
             await self._validate_saved_consent(paid_consent)
             self._assert_dispatch_current(paid_consent, dispatch_guard)
+            self._assert_credential_current(preflight.chat, api_key)
         except _PreflightFailure as error:
             await self._release_without_http(
                 turn_id, error.error_type, request_marked=True
@@ -858,10 +950,14 @@ class MessageSendingService:
         chat = await self._chat_service.get_chat(chat_id)
         if chat is None:
             raise _PreflightFailure(ChatErrorType.INVALID_REQUEST)
+        self._assert_credential_current(chat, api_key)
         budget = await asyncio.to_thread(self._messages.get_chat_budget, chat_id)
         if budget is None or not budget.limits_configured:
             raise _PreflightFailure(ChatErrorType.LIMITS_NOT_CONFIGURED)
-        if budget.state is BudgetState.ACCOUNTING_UNKNOWN:
+        if (
+            budget.state is BudgetState.ACCOUNTING_UNKNOWN
+            and chat.provider_id is not ProviderId.VSEGPT
+        ):
             raise _PreflightFailure(ChatErrorType.ACCOUNTING_UNKNOWN)
         if budget.token_limit is None or budget.max_completion_tokens is None:
             raise _PreflightFailure(ChatErrorType.LIMITS_NOT_CONFIGURED)
@@ -880,7 +976,17 @@ class MessageSendingService:
 
         current_key_validity = key_validity
         current_key_limit = key_limit
-        if chat.mode is ChatMode.PAID:
+        if chat.mode is ChatMode.PAID and chat.provider_id is ProviderId.VSEGPT:
+            # Balance access is optional and the public catalogue cannot prove
+            # authentication. Explicitly saved UNVERIFIED credentials may try
+            # their first real request only through the usual send action.
+            if current_key_validity not in {
+                KeyValidityState.VALID,
+                KeyValidityState.UNVERIFIED,
+            }:
+                raise _PreflightFailure(ChatErrorType.KEY_NOT_VALID)
+            current_key_limit = KeyLimitInfo.unknown()
+        elif chat.mode is ChatMode.PAID:
             if not paid_mode_allowed(current_key_validity, current_key_limit):
                 raise _PreflightFailure(ChatErrorType.KEY_NOT_VALID)
             validation: KeyValidationResult
@@ -902,8 +1008,17 @@ class MessageSendingService:
             raise _PreflightFailure(ChatErrorType.KEY_NOT_VALID)
 
         model = await self._resolve_current_model(chat, api_key)
-        pricing: tuple[PriceComponents, ...]
-        if chat.requested_model_id == FREE_ROUTER_MODEL.id:
+        pricing: tuple[PriceComponents, ...] | None
+        unknown_pricing = chat.provider_id is ProviderId.VSEGPT and (
+            model.pricing_unit is not PriceUnit.TOKEN or not model.pricing_is_complete
+        )
+        if unknown_pricing:
+            pricing = None
+            price_limit = ProviderPriceLimit.zero()
+        elif (
+            chat.provider_id is ProviderId.OPENROUTER
+            and chat.requested_model_id == FREE_ROUTER_MODEL.id
+        ):
             pricing = (PriceComponents(),)
             price_limit = ProviderPriceLimit.zero()
         elif chat.mode is ChatMode.FREE:
@@ -942,16 +1057,28 @@ class MessageSendingService:
                 pricing=pricing,
                 key_limit=current_key_limit,
                 apply_chat_cost_limit=False,
+                allow_unknown_accounting=unknown_pricing,
             )
         except RequestPlanError as error:
             raise _PreflightFailure(error.error_type) from None
         context = plan.context.materialize()
-        # Complete pricing was checked before the pure planning step.
-        assert plan.reserved_cost_usd is not None
+        estimated_cost = plan.reserved_cost
+        if estimated_cost is None and not unknown_pricing:
+            raise _PreflightFailure(ChatErrorType.MODEL_PRICE_UNSAFE)
+        reservation_cost = (
+            max(
+                Decimal("0"),
+                budget.cost_limit - budget.cost_used - budget.cost_reserved,
+            )
+            if unknown_pricing and budget.cost_limit is not None
+            else estimated_cost
+        )
+        if reservation_cost is None:
+            raise _PreflightFailure(ChatErrorType.LIMITS_NOT_CONFIGURED)
         basis = None
         warning = None
         if chat.mode is ChatMode.PAID:
-            warning = budget_warning(budget, plan.reserved_cost_usd)
+            warning = budget_warning(budget, estimated_cost)
             request_payload = json.dumps(
                 {
                     "messages": [
@@ -967,6 +1094,12 @@ class MessageSendingService:
                         str(current_key_limit.state),
                         str(current_key_limit.remaining),
                     ],
+                    "provider_id": chat.provider_id,
+                    "currency": chat.currency,
+                    "unknown_pricing": unknown_pricing,
+                    "credential": hashlib.sha256(
+                        api_key.strip().encode("utf-8")
+                    ).hexdigest(),
                 },
                 ensure_ascii=False,
                 separators=(",", ":"),
@@ -979,13 +1112,27 @@ class MessageSendingService:
                 budget_version(budget),
                 chat_prices(chat),
                 hashlib.sha256(request_payload.encode("utf-8")).hexdigest(),
-                plan.reserved_cost_usd,
+                estimated_cost if chat.currency is Currency.USD else None,
                 plan.remaining_cost_after_reservation
-                if plan.remaining_cost_after_reservation is not None
-                else Decimal("0"),
+                if chat.currency is Currency.USD
+                else None,
                 plan.reserved_tokens,
                 self._budget_consent_scope,
                 retry_turn_id,
+                provider_id=chat.provider_id,
+                currency=chat.currency,
+                estimated_cost=estimated_cost,
+                projected_remaining=plan.remaining_cost_after_reservation,
+                unknown_pricing=unknown_pricing,
+                credential_sha256=hashlib.sha256(
+                    api_key.strip().encode("utf-8")
+                ).hexdigest(),
+                credential_revision=(
+                    self._credential_revision_reader(chat.provider_id)
+                    if self._credential_revision_reader is not None
+                    else None
+                ),
+                session_epoch=self._access.epoch if self._access is not None else None,
             )
         return ChatPreflight(
             chat=chat,
@@ -994,7 +1141,9 @@ class MessageSendingService:
             estimated_prompt_tokens=context.estimated_prompt_tokens,
             effective_max_completion_tokens=plan.effective_max_completion_tokens,
             reserved_tokens=plan.reserved_tokens,
-            reserved_cost_usd=plan.reserved_cost_usd,
+            reserved_cost_usd=estimated_cost if chat.currency is Currency.USD else None,
+            reserved_cost=reservation_cost,
+            unknown_pricing=unknown_pricing,
             provider_price_limit=price_limit,
             fresh_key_validity=current_key_validity,
             fresh_key_limit=current_key_limit,
@@ -1009,13 +1158,32 @@ class MessageSendingService:
         chat: Chat,
         api_key: str,
     ) -> CatalogModel:
-        if chat.requested_model_id == FREE_ROUTER_MODEL.id:
+        if (
+            chat.provider_id is ProviderId.OPENROUTER
+            and chat.requested_model_id == FREE_ROUTER_MODEL.id
+        ):
             return FREE_ROUTER_MODEL
         models = await self._catalog_client.fetch_models(api_key)
-        model = _find_model(models, chat.requested_model_id)
+        model = _find_model(models, chat.requested_model_id, chat.provider_id)
         if model is None:
             raise _PreflightFailure(ChatErrorType.MODEL_UNAVAILABLE)
+        if model.currency != chat.currency:
+            raise _PreflightFailure(ChatErrorType.MODEL_UNAVAILABLE)
         return model
+
+    def _assert_credential_current(self, chat: Chat, api_key: str) -> None:
+        detected = detect_key(api_key)
+        if detected is not None and detected is not chat.provider_id:
+            raise _PreflightFailure(ChatErrorType.KEY_NOT_VALID)
+        if self._credential_current_check is not None:
+            try:
+                current = (
+                    self._credential_current_check(chat.provider_id, api_key) is True
+                )
+            except Exception:
+                current = False
+            if not current:
+                raise _PreflightFailure(ChatErrorType.INTERRUPTED)
 
     async def _use_current_price_snapshot(
         self, chat: Chat, model: CatalogModel
@@ -1085,11 +1253,11 @@ class MessageSendingService:
             timestamp = _as_utc(self._now())
             if result.error_type is ChatErrorType.AUTHENTICATION:
                 self._publish_key_validity(KeyValidityState.INVALID)
-            if result.has_complete_usage:
-                assert result.prompt_tokens is not None
-                assert result.completion_tokens is not None
-                assert result.total_tokens is not None
-                assert result.cost_usd is not None
+            if (
+                result.successful
+                or result.has_token_usage
+                or result.cost_amount is not None
+            ):
                 await finish_worker(
                     asyncio.to_thread(
                         self._messages.finalize_known_turn,
@@ -1104,7 +1272,16 @@ class MessageSendingService:
                         prompt_tokens=result.prompt_tokens,
                         completion_tokens=result.completion_tokens,
                         total_tokens=result.total_tokens,
-                        cost_usd=result.cost_usd,
+                        cost=result.cost_amount,
+                        usage_source=result.usage_source
+                        if result.has_token_usage
+                        else "unknown",
+                        cost_source="api"
+                        if result.cost_amount is not None
+                        else "unknown",
+                        cached_tokens=result.cached_tokens,
+                        reasoning_tokens=result.reasoning_tokens,
+                        attempt_sequence=self._attempt_sequence.get(),
                         error_type=result.error_type,
                         generated_title=(
                             _title_from_message(user_text)
@@ -1128,6 +1305,7 @@ class MessageSendingService:
                         error_type=result.error_type
                         or ChatErrorType.ACCOUNTING_UNKNOWN,
                         updated_at=timestamp,
+                        attempt_sequence=self._attempt_sequence.get(),
                     )
                 )
             else:
@@ -1139,9 +1317,11 @@ class MessageSendingService:
                         timestamp,
                     )
                 )
+                if result.error_type is ChatErrorType.AUTHENTICATION:
+                    await self._restore_unsent_draft(turn_id)
             return SendMessageResult(
                 turn_id=turn_id,
-                successful=result.successful and result.has_complete_usage,
+                successful=result.successful,
                 truncated=result.truncated,
                 content=result.content,
                 error_type=result.error_type,
@@ -1159,7 +1339,12 @@ class MessageSendingService:
                 key_validity_update=(
                     KeyValidityState.INVALID
                     if result.error_type is ChatErrorType.AUTHENTICATION
-                    else preflight.fresh_key_validity
+                    else (
+                        KeyValidityState.VALID
+                        if result.successful
+                        and preflight.chat.provider_id is ProviderId.VSEGPT
+                        else preflight.fresh_key_validity
+                    )
                 ),
                 key_limit_update=(
                     KeyLimitInfo.unknown()
@@ -1253,6 +1438,7 @@ class MessageSendingService:
                         finish_reason=None,
                         error_type=ChatErrorType.ACCOUNTING_UNKNOWN,
                         updated_at=_as_utc(self._now()),
+                        attempt_sequence=self._attempt_sequence.get(),
                     )
                 )
             except Exception:
@@ -1266,10 +1452,18 @@ class MessageSendingService:
 def _find_model(
     models: tuple[CatalogModel, ...] | None,
     model_id: str,
+    provider_id: ProviderId = ProviderId.OPENROUTER,
 ) -> CatalogModel | None:
     if models is None:
         return None
-    return next((model for model in models if model.id == model_id), None)
+    return next(
+        (
+            model
+            for model in models
+            if model.id == model_id and model.provider_id is provider_id
+        ),
+        None,
+    )
 
 
 def _title_from_message(message: str) -> str:
@@ -1336,6 +1530,10 @@ def _preview_from_preflight(preflight: ChatPreflight) -> MessageSendPreview:
         budget_consent_basis=preflight.budget_consent_basis,
         key_validity_update=preflight.fresh_key_validity,
         key_limit_update=preflight.fresh_key_limit,
+        reserved_cost=None if preflight.unknown_pricing else preflight.reserved_cost,
+        currency=preflight.chat.currency,
+        provider_id=preflight.chat.provider_id,
+        unknown_pricing=preflight.unknown_pricing,
     )
 
 

@@ -11,6 +11,7 @@ from enum import Enum
 from typing import Protocol
 
 from api.openrouter import CreditsResult, CreditsStatus
+from providers.models import Currency, ProviderId, provider_spec
 
 
 class CreditsReader(Protocol):
@@ -30,6 +31,16 @@ class AccountBalanceSnapshot:
     balance_usd: Decimal | None = field(default=None, repr=False)
     fetched_at: datetime | None = None
     error: CreditsStatus | None = None
+    balance_amount: Decimal | None = field(default=None, repr=False)
+    currency: Currency = Currency.USD
+    provider_id: ProviderId = ProviderId.OPENROUTER
+    warning: bool = False
+
+    def __post_init__(self) -> None:
+        if self.currency is Currency.USD and self.balance_amount is None:
+            object.__setattr__(self, "balance_amount", self.balance_usd)
+        if self.currency is not Currency.USD and self.balance_usd is not None:
+            raise ValueError("balance_currency_mismatch")
 
 
 class AccountBalanceService:
@@ -61,18 +72,27 @@ class AccountBalanceService:
         """Reading an old successful value must never present it as current."""
         return self._aged_snapshot()
 
-    def begin_session(self) -> None:
+    def begin_session(self, provider_id: ProviderId = ProviderId.OPENROUTER) -> None:
         self._generation += 1
         self._request += 1
         self._active = True
-        self._publish(AccountBalanceSnapshot())
+        self._publish(
+            AccountBalanceSnapshot(
+                provider_id=provider_id, currency=provider_spec(provider_id).currency
+            )
+        )
 
     def invalidate(self) -> None:
         """Forget amounts and revoke all outstanding reads without storing a key."""
         self._active = False
         self._generation += 1
         self._request += 1
-        self._publish(AccountBalanceSnapshot())
+        self._publish(
+            AccountBalanceSnapshot(
+                provider_id=self._snapshot.provider_id,
+                currency=self._snapshot.currency,
+            )
+        )
 
     def expire_if_needed(self) -> AccountBalanceSnapshot:
         aged = self._aged_snapshot()
@@ -117,12 +137,21 @@ class AccountBalanceService:
             result = CreditsResult(CreditsStatus.NETWORK_ERROR)
         if not self._is_current(ticket):
             return
-        if result.status is CreditsStatus.SUCCESS and result.balance_usd is not None:
+        if (
+            result.status is CreditsStatus.SUCCESS
+            and result.balance_amount is not None
+            and result.provider_id is self._snapshot.provider_id
+            and result.currency is self._snapshot.currency
+        ):
             self._publish(
                 AccountBalanceSnapshot(
                     AccountBalanceState.CURRENT,
                     result.balance_usd,
                     self._clock(),
+                    balance_amount=result.balance_amount,
+                    currency=result.currency,
+                    provider_id=result.provider_id,
+                    warning=result.warning,
                 )
             )
         else:
@@ -135,7 +164,7 @@ class AccountBalanceService:
                 previous,
                 state=(
                     AccountBalanceState.STALE
-                    if previous.balance_usd is not None
+                    if previous.balance_amount is not None
                     else AccountBalanceState.UNAVAILABLE
                 ),
                 error=error,

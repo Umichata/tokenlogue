@@ -13,6 +13,20 @@
 
 Tokenlogue protects access to locally stored conversations with an app PIN and a separate encryption key. The same protection principles apply on Linux and Android.
 
+<a id="en-provider-security"></a>
+## <img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Provider keys and analytics in current source builds
+
+This section applies to the current source application and new local builds. Existing published Preview downloads remain the earlier OpenRouter release. See the [current-source guide](user-guide.md#en-local-flow) for the new four-page workflow.
+
+OpenRouter and VSEGPT keys are separate entries in platform secure storage, outside preferences and readable database fields. Both can coexist in one protected profile. Providers settings never load a saved key into the editor. The reveal action shows only the candidate you have entered. Locking clears entered keys, revealed values and visible analytics on every private page. Input suggestions and keyboard learning are disabled for key fields where the platform supports those controls.
+
+The `sk-or-v1-` and `sk-or-vv-` prefixes choose fixed OpenRouter and VSEGPT HTTPS endpoints respectively. Recognition is local and is not proof of authorization or funds. A mismatch is rejected before a provider check. Keys are not tried on the other service, authenticated redirects do not forward them to another host, and failures do not trigger automatic provider switching or resend the conversation elsewhere. A public model catalogue response alone does not validate a key. Saving an unverified recognized key is explicit and does not bypass PIN setup or send a paid check request.
+
+Each chat stays bound to its provider and currency. A missing key stops sending from that chat until its provider is configured. Replacing a key leaves the previous saved key in place after a failed candidate check and does not reset PIN or move history to another service. Balance access restrictions do not by themselves invalidate a chat key. An unknown charge after dispatch stays uncertain. Local estimates and an account balance difference do not prove a request's final charge.
+
+Token and spending pages read the local request journal for saved chats on this device. Provider/model IDs, timestamps, currencies, usage, costs and their provenance remain accounting metadata rather than encrypted conversation content. API usage, estimates and unknown values are distinguished. USD and RUB are not combined. Deleting a chat removes its related journal and changes the statistics. Profile deletion removes both provider keys, all related statistics and provider caches. It does not revoke either remote key or erase activity held by either service.
+
+
 <img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/frame-top.svg" width="100%" alt="">
 
 | Protection element | What it does |
@@ -119,9 +133,9 @@ After verification, choose a new app PIN, repeat it and select `Save new PIN`. C
 <a id="-what-is-encrypted"></a>
 ## <img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Encryption and storage
 
-Tokenlogue encrypts saved chat titles, user and model messages, and drafts. A random encryption key is stored separately in platform secure storage. It is not derived from the four-digit PIN or OpenRouter key. Linux needs an available, unlocked Secret Service such as GNOME Keyring.
+Tokenlogue encrypts saved chat titles, user and model messages, and drafts. A random encryption key is stored separately in platform secure storage. It is not derived from the four-digit PIN or provider API key. Linux needs an available, unlocked Secret Service such as GNOME Keyring.
 
-Dates, model identifiers, chat modes, token counts, budgets and accounting states remain readable. This is encryption of selected database fields. It does not encrypt the whole database or device, and it is not end-to-end encryption with OpenRouter. Sending transmits the necessary messages and context to OpenRouter and the selected model provider. Check their data policies before sending private information.
+Dates, provider and model identifiers, currencies, chat modes, token counts, budgets and accounting states remain readable. This is encryption of selected database fields. It does not encrypt the whole database or device, and it is not end-to-end encryption with a remote provider. Sending transmits the necessary messages and context to the service bound to the chat and its selected model provider. Check their data policies before sending private information.
 
 If secure storage or the encryption key is unavailable, conversations stay closed. After a temporary storage failure, restore access to the system key store and retry the existing PIN. Do not delete the database or reset device security to dismiss the error.
 
@@ -144,12 +158,12 @@ Locking clears the visible workspace and closes new access. It does not promise 
 
 Read the dialog, type the displayed phrase `DELETE PROFILE` exactly, then choose `Delete profile`. `Keep profile` cancels before acceptance. The phrase confirms intent, not identity. Changing language or closing an unconfirmed dialog cancels it.
 
-Deletion removes the profile's local API key, PIN, recovery code, encryption key, chats, messages, drafts, limits and spending records. The new profile cannot recover the old conversations. Language and panel layout choices remain. External exports and backups are untouched. Secure physical erasure of all device copies is not guaranteed.
+Deletion removes the profile's local provider API keys, PIN, recovery code, encryption key, chats, messages, drafts, limits and spending records. The new profile cannot recover the old conversations. Language and panel layout choices remain. External exports and backups are untouched. Secure physical erasure of all device copies is not guaranteed.
 
 On Linux, Tokenlogue may first make its own supported data folder private. A failure before deletion starts keeps the profile. If permissions were already restricted, the folder stays private. Do not manually remove files or change permissions to bypass an error.
 
 Once deletion has begun, it must finish. If storage fails, chats stay closed. Use `Finish deletion` or restart to continue. New setup opens only after removal is complete. Enter a key and choose a new PIN for the empty profile.
 
-Deleting locally does not revoke your key at OpenRouter, delete that account, cancel submitted requests or refund charges. Use `Replace OpenRouter key` after sign-in when you want to change keys and keep conversations.
+Deleting locally does not revoke provider keys, delete remote accounts, cancel submitted requests or refund charges. In current source builds, use `Providers` after sign-in to replace a key and keep conversations. The published OpenRouter preview uses `Replace OpenRouter key` in `⋮`.
 
 <p align="left"><a href="https://github.com/Umichata/tokenlogue/blob/main/docs/user-guide.md#english"><img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/buttons/en-4a1e7eca97e9.svg" alt="User guide" width="105" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/blob/main/docs/linux-appimage.md#english"><img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/buttons/en-96c04f670a21.svg" alt="Linux" width="65" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/blob/main/docs/android.md#english"><img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/buttons/en-46463edb13a7.svg" alt="Android" width="83" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/blob/main/README.md#english"><img src="https://raw.githubusercontent.com/Umichata/tokenlogue/main/docs/assets/ui/buttons/en-2e5a16e1977a.svg" alt="Tokenlogue" width="109" height="28"></a></p>

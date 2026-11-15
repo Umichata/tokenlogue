@@ -30,6 +30,19 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 NOTICES_MODULE = "packaging/notices/notice_bundle.py"
 NOTICES_ASSETS = "src/assets/third-party-notices"
 OWN_FILES = (
+    "src/api/provider_router.py",
+    "src/api/vsegpt.py",
+    "src/chat/analytics.py",
+    "src/locales/en-providers-analytics.json",
+    "src/locales/ru-providers-analytics.json",
+    "src/providers/__init__.py",
+    "src/providers/models.py",
+    "src/providers/session.py",
+    "src/storage/analytics_repository.py",
+    "src/storage/provider_schema.py",
+    "src/ui/analytics_pages.py",
+    "src/ui/provider_page.py",
+    "src/ui/workspace_shell.py",
     "packaging/android/build_apk.py",
     "packaging/android/build_paths.py",
     "packaging/android/package_stage.py",
@@ -364,6 +377,7 @@ def check_configuration(repo: Path, environment: dict[str, str]) -> None:
             "pycryptodomex==3.23.0",
             "cffi==2.0.0",
             "pycparser==3.11",
+            "tzdata==2026.6",
         }
         or android.get("dependencies") != ["msgpack==1.1.2"]
         or android.get("min_sdk_version") != 24

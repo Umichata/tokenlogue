@@ -263,7 +263,19 @@ class PaidChatPolicyTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(result.successful, result.error_type)
         turn = self.messages.get_turn(result.turn_id)
         assert turn is not None
-        self.assertGreaterEqual(turn.reserved_cost_usd, Decimal("0.5"))
+        # A finalized turn holds no reserve. The immutable dispatch journal
+        # retains the original amount used for this price-change guard.
+        from storage.analytics_repository import SqliteAnalyticsRepository
+
+        attempt = next(
+            item
+            for item in SqliteAnalyticsRepository(
+                self.messages.path, self.messages.access
+            ).list_attempts()
+            if item.turn_id == result.turn_id
+        )
+        assert attempt.reserved_cost is not None
+        self.assertGreaterEqual(attempt.reserved_cost, Decimal("0.5"))
         current = self.chat("a")
         self.assertEqual(current.request_price, Decimal("0.5"))
         self.assertEqual(current.paid_policy_revision, token.revision)

@@ -14,7 +14,6 @@ from chat.accounting import (
     ChatBudget,
     ModelPriceChange,
     TurnRecord,
-    format_decimal_usd,
 )
 from chat.models import (
     CatalogModel,
@@ -24,8 +23,9 @@ from chat.models import (
 )
 from chat.sending import MessageSendPreview
 from i18n import display_model_name, fresh_text, money, number, tr
+from providers.models import Currency, provider_spec
 from ui.branding import BrandHeader, BrandLoader
-from ui.chat_metrics import display_usd
+from ui.chat_metrics import display_money
 from ui.styles import (
     ERROR_COLOR,
     MUTED_COLOR,
@@ -50,9 +50,11 @@ class ChatLimitsForm:
         *,
         initial_budget: ChatBudget | None = None,
         submit_label: str | None = None,
+        currency: Currency = Currency.USD,
     ) -> None:
         self._mode = mode
         self._on_submit = on_submit
+        currency = initial_budget.currency if initial_budget is not None else currency
         initial_token_limit = (
             initial_budget.token_limit if initial_budget is not None else None
         )
@@ -88,14 +90,20 @@ class ChatLimitsForm:
         ]
         if mode is ChatMode.PAID:
             suggested = (
-                initial_budget.cost_limit_usd
-                if initial_budget is not None
-                and initial_budget.cost_limit_usd is not None
+                initial_budget.cost_limit
+                if initial_budget is not None and initial_budget.cost_limit is not None
                 else SUGGESTED_PAID_COST_LIMIT_USD
+                if currency is Currency.USD
+                else None
             )
+            suggested_text = format(suggested, "f") if suggested is not None else ""
+            if "." in suggested_text:
+                suggested_text = suggested_text.rstrip("0").rstrip(".")
             self.cost_limit = ft.TextField(
-                label=tr("limits.money"),
-                value=format_decimal_usd(suggested),
+                label=tr("limits.money")
+                if currency is Currency.USD
+                else tr("workspace.money_limit", currency=currency.value),
+                value=suggested_text,
                 keyboard_type=ft.KeyboardType.NUMBER,
                 **input_style(),
             )
@@ -103,7 +111,7 @@ class ChatLimitsForm:
                 [
                     self.cost_limit,
                     ft.Text(
-                        tr("limits.money_help"),
+                        tr("workspace.money_help", currency=currency.value),
                         size=12,
                         color=MUTED_COLOR,
                     ),
@@ -180,7 +188,9 @@ class NewChatLimitsView:
             if mode is ChatMode.FREE
             else tr("limits.create_paid")
         )
-        self.form = ChatLimitsForm(mode, on_submit, submit_label=submit_label)
+        self.form = ChatLimitsForm(
+            mode, on_submit, submit_label=submit_label, currency=model.currency
+        )
         controls: list[ft.Control] = [
             ft.Text(
                 tr("limits.configure"), theme_style=ft.TextThemeStyle.HEADLINE_MEDIUM
@@ -197,7 +207,11 @@ class NewChatLimitsView:
                     border_radius=12,
                     padding=12,
                     content=ft.Text(
-                        tr("limits.paid_warning"),
+                        tr(
+                            "workspace.paid_warning",
+                            provider=provider_spec(model.provider_id).name,
+                            currency=model.currency.value,
+                        ),
                         color=WARNING_COLOR,
                     ),
                 )
@@ -226,6 +240,7 @@ class ChatLimitsDialog:
             chat.mode,
             on_submit,
             initial_budget=budget,
+            currency=budget.currency,
         )
         self.control = ft.AlertDialog(
             modal=True,
@@ -281,14 +296,18 @@ def build_paid_request_dialog(
                 ),
                 detail_row(
                     tr("paid.reserve_maximum"),
-                    _money_or_unknown(preview.reserved_cost_usd),
+                    _money_or_unknown(preview.reserved_cost, preview.currency),
                 ),
                 detail_row(
                     tr("paid.remaining"),
-                    _money_or_unknown(preview.remaining_cost_after_reservation),
+                    _money_or_unknown(
+                        preview.remaining_cost_after_reservation, preview.currency
+                    ),
                 ),
                 ft.Text(
-                    tr("paid.estimate_help"),
+                    tr("workspace.unknown_price_warning")
+                    if preview.unknown_pricing
+                    else tr("paid.estimate_help"),
                     size=12,
                     color=MUTED_COLOR,
                 ),
@@ -334,9 +353,9 @@ def build_price_reconfirmation_dialog(
             tight=True,
             controls=[
                 ft.Text(tr("paid.old_prices")),
-                *_price_component_rows(change.confirmed),
+                *_price_component_rows(change.confirmed, change.currency),
                 ft.Text(tr("paid.current_prices")),
-                *_price_component_rows(change.current),
+                *_price_component_rows(change.current, change.currency),
                 ft.Text(
                     tr("paid.confirm_required"),
                     color=WARNING_COLOR,
@@ -386,17 +405,28 @@ def build_budget_warning_dialog(
     primary.padding = ft.Padding.symmetric(horizontal=16, vertical=12)
     content: list[ft.Control] = [
         ft.Text(preview.model_name or tr("paid.model"), weight=ft.FontWeight.BOLD),
-        detail_row(tr("budget_warning.remaining"), display_usd(warning.remaining_usd)),
+        detail_row(
+            tr("budget_warning.remaining"),
+            _display_or_unknown(warning.remaining, warning.currency),
+        ),
         detail_row(
             tr("budget_warning.estimate"),
-            display_usd(warning.estimated_cost_usd, upper_bound=True),
+            _display_or_unknown(
+                warning.estimated_cost, warning.currency, upper_bound=True
+            ),
         ),
         detail_row(
-            tr("budget_warning.projected"), display_usd(warning.projected_remaining_usd)
+            tr("budget_warning.projected"),
+            _display_or_unknown(warning.projected_remaining, warning.currency),
         ),
-        ft.Text(tr("budget_warning.help"), color=MUTED_COLOR),
+        ft.Text(
+            tr("workspace.unknown_price_warning")
+            if warning.unknown_pricing
+            else tr("budget_warning.help"),
+            color=WARNING_COLOR if warning.unknown_pricing else MUTED_COLOR,
+        ),
     ]
-    if warning.projected_remaining_usd <= 0:
+    if warning.projected_remaining is not None and warning.projected_remaining <= 0:
         content.append(
             ft.Text(
                 tr(
@@ -452,6 +482,8 @@ def build_cost_increase_dialog(
     new_value: Decimal,
     on_confirm: AsyncCallback,
     on_cancel: Callable[[], None],
+    *,
+    currency: Currency = Currency.USD,
 ) -> ft.AlertDialog:
     async def handle_confirm(_event: ft.Event[ft.Button]) -> None:
         await on_confirm()
@@ -468,8 +500,8 @@ def build_cost_increase_dialog(
         content=ft.Column(
             tight=True,
             controls=[
-                detail_row(tr("paid.old_limit"), money(old_value)),
-                detail_row(tr("paid.new_limit"), money(new_value)),
+                detail_row(tr("paid.old_limit"), money(old_value, currency)),
+                detail_row(tr("paid.new_limit"), money(new_value, currency)),
             ],
         ),
         actions=[
@@ -511,7 +543,7 @@ def build_release_unknown_dialog(
             tr(
                 "reserve.release_body",
                 tokens=number(turn.reserved_tokens),
-                amount=money(turn.reserved_cost_usd),
+                amount=money(turn.reserved_cost, turn.currency),
             )
         ),
         actions=[
@@ -533,22 +565,26 @@ def build_release_unknown_dialog(
     )
 
 
-def _price_component_rows(pricing: PriceComponents) -> list[ft.Control]:
+def _price_component_rows(
+    pricing: PriceComponents, currency: Currency = Currency.USD
+) -> list[ft.Control]:
     return [
-        detail_row(tr("price.prompt_million"), money_million(pricing.prompt)),
-        detail_row(tr("price.completion_million"), money_million(pricing.completion)),
-        detail_row(tr("price.request"), money(pricing.request)),
+        detail_row(tr("price.prompt_million"), money_million(pricing.prompt, currency)),
+        detail_row(
+            tr("price.completion_million"), money_million(pricing.completion, currency)
+        ),
+        detail_row(tr("price.request"), money(pricing.request, currency)),
         detail_row(
             tr("price.reasoning_million"),
-            money_million(pricing.internal_reasoning),
+            money_million(pricing.internal_reasoning, currency),
         ),
         detail_row(
             tr("price.cache_read_million"),
-            money_million(pricing.input_cache_read),
+            money_million(pricing.input_cache_read, currency),
         ),
         detail_row(
             tr("price.cache_write_million"),
-            money_million(pricing.input_cache_write),
+            money_million(pricing.input_cache_write, currency),
         ),
     ]
 
@@ -557,9 +593,19 @@ def _number_or_unknown(value: int | None) -> str:
     return "—" if value is None else number(value)
 
 
-def _money_or_unknown(value: Decimal | None) -> str:
-    return "—" if value is None else money(value)
+def _money_or_unknown(value: Decimal | None, currency: Currency = Currency.USD) -> str:
+    return "—" if value is None else money(value, currency)
 
 
-def money_million(value: Decimal) -> str:
-    return money(value * Decimal(1_000_000))
+def _display_or_unknown(
+    value: Decimal | None, currency: Currency, *, upper_bound: bool = False
+) -> str:
+    return (
+        tr("analytics.unknown")
+        if value is None
+        else display_money(value, currency, upper_bound=upper_bound)
+    )
+
+
+def money_million(value: Decimal, currency: Currency = Currency.USD) -> str:
+    return money(value * Decimal(1_000_000), currency)

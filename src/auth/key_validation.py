@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from api.openrouter import KeyValidationResult, KeyValidationStatus
 from auth.models import KeyLimitInfo, KeyValidityState
+from providers.models import ProviderId
 
 
 def interpret_key_validation(
@@ -14,8 +15,18 @@ def interpret_key_validation(
         return KeyValidityState.INVALID, KeyLimitInfo.unknown()
     if validation.status is KeyValidationStatus.RESTRICTED:
         return KeyValidityState.RESTRICTED, KeyLimitInfo.unknown()
+    if validation.status is KeyValidationStatus.UNVERIFIED:
+        return KeyValidityState.UNVERIFIED, KeyLimitInfo.unknown()
+    if (
+        validation.provider_id is ProviderId.VSEGPT
+        and validation.save_allowed
+        and not validation.accepted
+    ):
+        return KeyValidityState.UNVERIFIED, KeyLimitInfo.unknown()
     if not validation.accepted:
         return KeyValidityState.UNKNOWN, KeyLimitInfo.unknown()
+    if validation.provider_id is ProviderId.VSEGPT:
+        return KeyValidityState.VALID, KeyLimitInfo.unknown()
 
     if validation.status is KeyValidationStatus.ACCEPTED_WITHOUT_LIMIT:
         if validation.limit_remaining is None:

@@ -11,11 +11,13 @@ from pathlib import Path
 
 from storage.database_connections import database_lock
 from storage.field_cipher import CiphertextError
+from storage.provider_schema import ensure_provider_schema, has_provider_schema
 from storage.request_attempts import (
     TABLE as REQUEST_ATTEMPTS_TABLE,
 )
 from storage.request_attempts import (
     create_request_attempts_schema,
+    request_attempts_are_extended,
     validate_request_attempts_schema,
 )
 
@@ -68,10 +70,14 @@ def plaintext_evidence(path: Path) -> str:
                     "AND name NOT LIKE 'sqlite_%'"
                 )
             }
+            if has_provider_schema(connection):
+                ensure_provider_schema(expected)
             evidence_tables = TABLES
             if REQUEST_ATTEMPTS_TABLE in tables:
                 validate_request_attempts_schema(connection)
-                create_request_attempts_schema(expected)
+                create_request_attempts_schema(
+                    expected, legacy=not request_attempts_are_extended(connection)
+                )
                 evidence_tables = (*TABLES, REQUEST_ATTEMPTS_TABLE)
             if (
                 tables != set(evidence_tables)

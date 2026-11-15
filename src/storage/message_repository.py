@@ -32,6 +32,7 @@ from chat.metrics import LastRequestMetrics, LastRequestState
 from chat.models import ChatMode, Message, MessageRole, MessageStatus
 from chat.paid_consent import PaidConsentRevoked
 from i18n import tr
+from providers.models import Currency, ProviderId
 from storage.chat_preferences import policy_from_read, with_new_prices
 from storage.chat_repository import _chat_from_row
 from storage.database_connections import (
@@ -41,10 +42,12 @@ from storage.database_connections import (
 from storage.database_connections import (
     connection as protected_connection,
 )
+from storage.provider_schema import ensure_provider_schema
 from storage.request_attempts import (
     ensure_request_attempts,
     has_request_attempts,
     record_request_attempt,
+    request_attempts_are_extended,
     synchronize_request_attempt,
 )
 
@@ -83,15 +86,18 @@ class SqliteMessageRepository:
         chat_id: str,
         token_limit: int,
         max_completion_tokens: int,
-        cost_limit_usd: Decimal,
+        cost_limit: Decimal | None = None,
         *,
+        cost_limit_usd: Decimal | None = None,
         cost_increase_confirmed: bool,
         updated_at: datetime,
     ) -> ChatBudget:
+        cost_limit = cost_limit if cost_limit is not None else cost_limit_usd
         _require_identifier(chat_id, tr("service.label.chat"))
         _require_positive_int(token_limit, tr("service.label.token_budget"))
         _require_positive_int(max_completion_tokens, tr("service.label.completion"))
-        _require_decimal(cost_limit_usd, tr("service.label.money_budget"))
+        _require_decimal(cost_limit, tr("service.label.money_budget"))
+        assert isinstance(cost_limit, Decimal)
         _require_bool(cost_increase_confirmed, tr("service.label.money_confirmation"))
         with self._connection("write", chat_id=chat_id) as connection:
             connection.execute("BEGIN IMMEDIATE")
@@ -111,13 +117,13 @@ class SqliteMessageRepository:
             minimum_tokens = current.total_tokens_used + current.reserved_tokens
             if token_limit < minimum_tokens:
                 raise BudgetConflictError(tr("service.tokens_below_used"))
-            minimum_cost = current.cost_used_usd + current.cost_reserved_usd
-            if cost_limit_usd < minimum_cost:
+            minimum_cost = current.cost_used + current.cost_reserved
+            if cost_limit < minimum_cost:
                 raise BudgetConflictError(tr("service.money_below_used"))
             if (
                 mode is ChatMode.PAID
-                and current.cost_limit_usd is not None
-                and cost_limit_usd > current.cost_limit_usd
+                and current.cost_limit is not None
+                and cost_limit > current.cost_limit
                 and not cost_increase_confirmed
             ):
                 raise BudgetConflictError(tr("service.money_increase_confirmation"))
@@ -126,9 +132,9 @@ class SqliteMessageRepository:
                 token_limit=token_limit,
                 total_used=current.total_tokens_used,
                 reserved_tokens=current.reserved_tokens,
-                cost_limit=cost_limit_usd,
-                cost_used=current.cost_used_usd,
-                cost_reserved=current.cost_reserved_usd,
+                cost_limit=cost_limit,
+                cost_used=current.cost_used,
+                cost_reserved=current.cost_reserved,
                 accounting_unknown=(current.state is BudgetState.ACCOUNTING_UNKNOWN),
             )
             connection.execute(
@@ -137,7 +143,7 @@ class SqliteMessageRepository:
                 SET limits_configured = 1,
                     token_limit = ?,
                     max_completion_tokens = ?,
-                    cost_limit_usd = ?,
+                    cost_limit = ?,
                     state = ?,
                     updated_at = ?
                 WHERE chat_id = ?
@@ -145,7 +151,7 @@ class SqliteMessageRepository:
                 (
                     token_limit,
                     max_completion_tokens,
-                    _decimal_text(cost_limit_usd),
+                    _decimal_text(cost_limit),
                     state.value,
                     _datetime_text(updated_at),
                     chat_id,
@@ -169,6 +175,7 @@ class SqliteMessageRepository:
         paid_policy_revision: str | None = None,
         budget_basis: BudgetConsentBasis | None = None,
         budget_consent: BudgetConsent | None = None,
+        unknown_price_consent: BudgetConsent | None = None,
     ) -> ChatDraft | None:
         if not isinstance(reservation, BudgetReservation):
             raise ValueError(tr("service.reserve_object_invalid"))
@@ -178,9 +185,7 @@ class SqliteMessageRepository:
         _require_nonnegative_int(
             reservation.reserved_tokens, tr("service.label.token_reserve")
         )
-        _require_decimal(
-            reservation.reserved_cost_usd, tr("service.label.money_reserve")
-        )
+        _require_decimal(reservation.reserved_cost, tr("service.label.money_reserve"))
         _require_text(content, tr("service.label.message_text"))
         _require_identifier(requested_model_id, tr("service.label.model"))
         _require_bool(retry, tr("service.label.retry"))
@@ -213,7 +218,24 @@ class SqliteMessageRepository:
                     raise PaidConsentRevoked()
             if not budget.limits_configured:
                 raise BudgetConflictError(tr("service.limits_unconfigured"))
-            if budget.state is BudgetState.ACCOUNTING_UNKNOWN:
+            unknown_authorized = False
+            if unknown_price_consent is not None:
+                from chat.budget_consent import UnknownPriceConsent
+
+                if (
+                    not isinstance(unknown_price_consent, UnknownPriceConsent)
+                    or budget_basis is None
+                    or not budget_basis.unknown_pricing
+                    or budget_consent is not None
+                ):
+                    raise BudgetConsentRevoked()
+                unknown_authorized = True
+            if reservation.currency != budget.currency:
+                raise BudgetConflictError("reservation_currency_mismatch")
+            if (
+                budget.state is BudgetState.ACCOUNTING_UNKNOWN
+                and not unknown_authorized
+            ):
                 raise BudgetConflictError(tr("service.previous_unknown"))
             if budget.token_limit is None:
                 raise BudgetConflictError(tr("service.token_budget_missing"))
@@ -222,11 +244,11 @@ class SqliteMessageRepository:
             )
             if reservation.reserved_tokens > token_remaining:
                 raise BudgetConflictError(tr("service.token_budget_insufficient"))
-            new_cost_reserved = budget.cost_reserved_usd + reservation.reserved_cost_usd
+            new_cost_reserved = budget.cost_reserved + reservation.reserved_cost
             if mode is ChatMode.PAID:
-                if budget.cost_limit_usd is None:
+                if budget.cost_limit is None:
                     raise BudgetConflictError(tr("service.money_budget_missing"))
-                current_warning = budget_warning(budget, reservation.reserved_cost_usd)
+                current_warning = budget_warning(budget, reservation.reserved_cost)
                 if budget_basis is not None:
                     chat_row = connection.execute(
                         "SELECT * FROM chats WHERE id = ?", (reservation.chat_id,)
@@ -237,20 +259,49 @@ class SqliteMessageRepository:
                         budget_basis.chat_id != reservation.chat_id
                         or budget_basis.model_id != requested_model_id
                         or current_chat.requested_model_id != requested_model_id
-                        or not current_chat.pricing_snapshot_complete
+                        or (
+                            not current_chat.pricing_snapshot_complete
+                            and not unknown_authorized
+                        )
                         or budget_basis.text_sha256 != text_digest(content)
                         or budget_basis.draft_revision != draft_revision
                         or budget_basis.retry_turn_id
                         != (reservation.turn_id if retry else None)
                         or budget_basis.limits_version != budget_version(budget)
                         or budget_basis.pricing != chat_prices(current_chat)
-                        or budget_basis.estimated_cost_usd
-                        != reservation.reserved_cost_usd
+                        or (
+                            not unknown_authorized
+                            and getattr(
+                                budget_basis,
+                                "estimated_cost",
+                                budget_basis.estimated_cost_usd,
+                            )
+                            != reservation.reserved_cost
+                        )
+                        or (
+                            unknown_authorized
+                            and reservation.reserved_cost
+                            != max(
+                                Decimal("0"),
+                                budget.cost_limit
+                                - budget.cost_used
+                                - budget.cost_reserved,
+                            )
+                        )
+                        or getattr(budget_basis, "provider_id", budget.provider_id)
+                        != budget.provider_id
+                        or getattr(budget_basis, "currency", budget.currency)
+                        != budget.currency
                         or budget_basis.reserved_tokens != reservation.reserved_tokens
-                        or budget_basis.projected_remaining_usd
-                        != budget.cost_limit_usd
-                        - budget.cost_used_usd
-                        - new_cost_reserved
+                        or (
+                            not unknown_authorized
+                            and getattr(
+                                budget_basis,
+                                "projected_remaining",
+                                budget_basis.projected_remaining_usd,
+                            )
+                            != budget.cost_limit - budget.cost_used - new_cost_reserved
+                        )
                     ):
                         raise BudgetConsentRevoked()
                     if draft_revision is not None:
@@ -263,7 +314,10 @@ class SqliteMessageRepository:
                         )
                         if stored_revision != draft_revision:
                             raise BudgetConsentRevoked()
-                if budget_consent is not None:
+                if unknown_price_consent is not None:
+                    assert budget_basis is not None
+                    unknown_price_consent.consume(budget_basis)
+                elif budget_consent is not None:
                     if (
                         not isinstance(budget_consent, BudgetConsent)
                         or budget_basis is None
@@ -273,11 +327,12 @@ class SqliteMessageRepository:
                 elif current_warning is not None:
                     raise BudgetConsentRevoked()
                 if (
-                    budget.cost_used_usd + new_cost_reserved > budget.cost_limit_usd
+                    budget.cost_used + new_cost_reserved > budget.cost_limit
                     and budget_consent is None
+                    and not unknown_authorized
                 ):
                     raise BudgetConflictError(tr("service.money_budget_insufficient"))
-            elif reservation.reserved_cost_usd != 0:
+            elif reservation.reserved_cost != 0:
                 raise BudgetConflictError(tr("service.free_cannot_reserve_money"))
             new_reserved_tokens = budget.reserved_tokens + reservation.reserved_tokens
             reservation_state = _calculate_state(
@@ -285,10 +340,10 @@ class SqliteMessageRepository:
                 token_limit=budget.token_limit,
                 total_used=budget.total_tokens_used,
                 reserved_tokens=new_reserved_tokens,
-                cost_limit=budget.cost_limit_usd,
-                cost_used=budget.cost_used_usd,
+                cost_limit=budget.cost_limit,
+                cost_used=budget.cost_used,
                 cost_reserved=new_cost_reserved,
-                accounting_unknown=False,
+                accounting_unknown=budget.state is BudgetState.ACCOUNTING_UNKNOWN,
             )
 
             if retry:
@@ -298,17 +353,19 @@ class SqliteMessageRepository:
                     """
                     INSERT INTO turns (
                         id, chat_id, status, requested_model_id,
-                        reserved_tokens, reserved_cost_usd,
+                        reserved_tokens, reserved_cost,provider_id,currency,
                         accounting_status, request_sent, created_at, updated_at
                     )
-                    VALUES (?, ?, 'pending', ?, ?, ?, 'reserved', 0, ?, ?)
+                    VALUES (?, ?, 'pending', ?, ?, ?, ?, ?, 'reserved', 0, ?, ?)
                     """,
                     (
                         reservation.turn_id,
                         reservation.chat_id,
                         requested_model_id,
                         reservation.reserved_tokens,
-                        _decimal_text(reservation.reserved_cost_usd),
+                        _decimal_text(reservation.reserved_cost),
+                        budget.provider_id.value,
+                        budget.currency.value,
                         _datetime_text(reservation.created_at),
                         _datetime_text(reservation.created_at),
                     ),
@@ -373,7 +430,7 @@ class SqliteMessageRepository:
                 """
                 UPDATE chat_budgets
                 SET reserved_tokens = reserved_tokens + ?,
-                    cost_reserved_usd = ?,
+                    cost_reserved = ?,
                     state = ?,
                     updated_at = ?
                 WHERE chat_id = ?
@@ -440,7 +497,7 @@ class SqliteMessageRepository:
                 ),
             )
 
-    def mark_request_sent(self, turn_id: str, updated_at: datetime) -> None:
+    def mark_request_sent(self, turn_id: str, updated_at: datetime) -> int:
         _require_identifier(turn_id, tr("service.label.turn"))
         with self._connection("reserve", record_id=turn_id) as connection:
             connection.execute("BEGIN IMMEDIATE")
@@ -455,7 +512,9 @@ class SqliteMessageRepository:
             )
             if cursor.rowcount != 1:
                 raise BudgetConflictError(tr("service.turn_inactive"))
-            record_request_attempt(connection, turn_id, _datetime_text(updated_at))
+            return record_request_attempt(
+                connection, turn_id, _datetime_text(updated_at)
+            )
 
     def finalize_known_turn(
         self,
@@ -468,60 +527,124 @@ class SqliteMessageRepository:
         actual_model_id: str | None,
         generation_id: str | None,
         finish_reason: str | None,
-        prompt_tokens: int,
-        completion_tokens: int,
-        total_tokens: int,
-        cost_usd: Decimal,
+        prompt_tokens: int | None,
+        completion_tokens: int | None,
+        total_tokens: int | None,
+        cost: Decimal | None = None,
+        cost_usd: Decimal | None = None,
+        usage_source: str = "api",
+        cost_source: str = "api",
+        cached_tokens: int | None = None,
+        reasoning_tokens: int | None = None,
+        attempt_sequence: int | None = None,
         error_type: ChatErrorType | None,
         generated_title: str | None,
         updated_at: datetime,
     ) -> None:
+        """Save known usage independently of money, once for this dispatch.
+
+        A response without cost is still a response. Its monetary reservation
+        stays held until explicit reconciliation; unknown never means free.
+        """
+        cost = cost if cost is not None else cost_usd
         _require_identifier(turn_id, tr("service.label.turn"))
         _require_identifier(assistant_message_id, tr("service.label.message"))
+        _require_bool(successful, tr("service.label.result_status"))
+        _require_identifier(requested_model_id, tr("service.label.model"))
+        for value in (
+            prompt_tokens,
+            completion_tokens,
+            total_tokens,
+            cached_tokens,
+            reasoning_tokens,
+        ):
+            if value is not None:
+                _require_nonnegative_int(value, tr("service.label.total_tokens"))
+        if cost is not None:
+            _require_decimal(cost, tr("service.label.result_cost"))
+        if usage_source not in {"api", "estimated", "unknown"} or cost_source not in {
+            "api",
+            "estimated",
+            "unknown",
+        }:
+            raise ValueError("accounting_source_invalid")
         if content is not None:
             _require_text(
                 content, tr("service.label.assistant_response"), allow_empty=True
             )
-        _require_bool(successful, tr("service.label.result_status"))
-        _require_identifier(requested_model_id, tr("service.label.model"))
-        for value, label in (
-            (prompt_tokens, tr("service.label.prompt_tokens")),
-            (completion_tokens, tr("service.label.completion_tokens")),
-            (total_tokens, tr("service.label.total_tokens")),
-        ):
-            _require_nonnegative_int(value, label)
-        _require_decimal(cost_usd, tr("service.label.result_cost"))
-        safe_total = max(total_tokens, prompt_tokens + completion_tokens)
         with self._connection("finish", record_id=turn_id) as connection:
             connection.execute("BEGIN IMMEDIATE")
+            if attempt_sequence is not None:
+                latest = connection.execute(
+                    "SELECT MAX(sequence) FROM chat_request_attempts WHERE turn_id=?",
+                    (turn_id,),
+                ).fetchone()[0]
+                if latest != attempt_sequence:
+                    return
+            existing = connection.execute(
+                "SELECT status FROM turns WHERE id=?", (turn_id,)
+            ).fetchone()
+            if existing is not None and existing["status"] != TurnStatus.PENDING.value:
+                return
             turn, budget, mode = self._load_active_turn(connection, turn_id)
-            new_reserved_tokens = budget.reserved_tokens - turn.reserved_tokens
-            new_reserved_cost = budget.cost_reserved_usd - turn.reserved_cost_usd
+            if cost_usd is not None and turn.currency is not Currency.USD:
+                raise ValueError("usd_cost_for_non_usd_attempt")
+            usage_complete = (
+                all(
+                    value is not None
+                    for value in (prompt_tokens, completion_tokens, total_tokens)
+                )
+                and usage_source == "api"
+            )
+            cost_complete = cost is not None and cost_source == "api"
+            new_reserved_tokens = budget.reserved_tokens - (
+                turn.reserved_tokens if usage_complete else 0
+            )
+            new_reserved_cost = budget.cost_reserved - (
+                turn.reserved_cost if cost_complete else Decimal("0")
+            )
             if new_reserved_tokens < 0 or new_reserved_cost < 0:
                 raise BudgetConflictError(tr("service.reserve_corrupt"))
-            new_prompt = budget.prompt_tokens_used + prompt_tokens
-            new_completion = budget.completion_tokens_used + completion_tokens
-            new_total = budget.total_tokens_used + safe_total
-            new_cost = budget.cost_used_usd + cost_usd
+            api_usage = usage_source == "api"
+            new_prompt = budget.prompt_tokens_used + (
+                (prompt_tokens or 0) if api_usage else 0
+            )
+            new_completion = budget.completion_tokens_used + (
+                (completion_tokens or 0) if api_usage else 0
+            )
+            new_total = budget.total_tokens_used + (
+                max(total_tokens or 0, (prompt_tokens or 0) + (completion_tokens or 0))
+                if api_usage
+                else 0
+            )
+            new_cost = budget.cost_used + (
+                cost if cost_complete and cost is not None else Decimal("0")
+            )
+            accounting = (
+                AccountingStatus.FINAL
+                if usage_complete and cost_complete
+                else AccountingStatus.UNKNOWN
+            )
+            other_unknown = (
+                connection.execute(
+                    "SELECT 1 FROM turns WHERE chat_id=? AND id!=? AND accounting_status='unknown' LIMIT 1",
+                    (turn.chat_id, turn_id),
+                ).fetchone()
+                is not None
+            )
             state = _calculate_state(
                 mode=mode,
                 token_limit=budget.token_limit,
                 total_used=new_total,
                 reserved_tokens=new_reserved_tokens,
-                cost_limit=budget.cost_limit_usd,
+                cost_limit=budget.cost_limit,
                 cost_used=new_cost,
                 cost_reserved=new_reserved_cost,
-                accounting_unknown=False,
+                accounting_unknown=accounting is AccountingStatus.UNKNOWN
+                or other_unknown,
             )
             connection.execute(
-                """
-                UPDATE chat_budgets
-                SET prompt_tokens_used = ?, completion_tokens_used = ?,
-                    total_tokens_used = ?, reserved_tokens = ?,
-                    cost_used_usd = ?, cost_reserved_usd = ?,
-                    state = ?, updated_at = ?
-                WHERE chat_id = ?
-                """,
+                "UPDATE chat_budgets SET prompt_tokens_used=?,completion_tokens_used=?,total_tokens_used=?,reserved_tokens=?,cost_used=?,cost_reserved=?,state=?,updated_at=? WHERE chat_id=?",
                 (
                     new_prompt,
                     new_completion,
@@ -535,14 +658,7 @@ class SqliteMessageRepository:
                 ),
             )
             connection.execute(
-                """
-                UPDATE turns
-                SET status = ?, actual_model_id = ?, generation_id = ?,
-                    finish_reason = ?, prompt_tokens = ?, completion_tokens = ?,
-                    total_tokens = ?, cost_usd = ?, accounting_status = 'final',
-                    error_type = ?, updated_at = ?
-                WHERE id = ?
-                """,
+                "UPDATE turns SET status=?,actual_model_id=?,generation_id=?,finish_reason=?,prompt_tokens=?,completion_tokens=?,total_tokens=?,cost=?,usage_source=?,cost_source=?,cached_tokens=?,reasoning_tokens=?,accounting_status=?,error_type=?,reserved_tokens=?,reserved_cost=?,updated_at=? WHERE id=?",
                 (
                     TurnStatus.SENT.value if successful else TurnStatus.FAILED.value,
                     actual_model_id,
@@ -564,19 +680,27 @@ class SqliteMessageRepository:
                     ),
                     prompt_tokens,
                     completion_tokens,
-                    safe_total,
-                    _decimal_text(cost_usd),
+                    total_tokens,
+                    str(cost) if cost is not None else None,
+                    usage_source
+                    if any(
+                        v is not None
+                        for v in (prompt_tokens, completion_tokens, total_tokens)
+                    )
+                    else "unknown",
+                    cost_source if cost is not None else "unknown",
+                    cached_tokens,
+                    reasoning_tokens,
+                    accounting.value,
                     error_type.value if error_type else None,
+                    0 if usage_complete else turn.reserved_tokens,
+                    str(Decimal("0") if cost_complete else turn.reserved_cost),
                     _datetime_text(updated_at),
                     turn_id,
                 ),
             )
             connection.execute(
-                """
-                UPDATE messages
-                SET status = ?, updated_at = ?
-                WHERE chat_id = ? AND turn_id = ? AND role = 'user'
-                """,
+                "UPDATE messages SET status=?,updated_at=? WHERE chat_id=? AND turn_id=? AND role='user'",
                 (
                     MessageStatus.SENT.value
                     if successful
@@ -598,7 +722,7 @@ class SqliteMessageRepository:
                     actual_model_id=actual_model_id,
                     prompt_tokens=prompt_tokens,
                     completion_tokens=completion_tokens,
-                    total_tokens=safe_total,
+                    total_tokens=total_tokens,
                     updated_at=updated_at,
                 )
             if successful and generated_title:
@@ -624,7 +748,7 @@ class SqliteMessageRepository:
                     )
             else:
                 connection.execute(
-                    "UPDATE chats SET updated_at = ? WHERE id = ?",
+                    "UPDATE chats SET updated_at=? WHERE id=?",
                     (_datetime_text(updated_at), turn.chat_id),
                 )
 
@@ -721,83 +845,38 @@ class SqliteMessageRepository:
         finish_reason: str | None,
         error_type: ChatErrorType,
         updated_at: datetime,
+        prompt_tokens: int | None = None,
+        completion_tokens: int | None = None,
+        total_tokens: int | None = None,
+        usage_source: str = "api",
+        cost: Decimal | None = None,
+        cost_source: str = "unknown",
+        cached_tokens: int | None = None,
+        reasoning_tokens: int | None = None,
+        attempt_sequence: int | None = None,
     ) -> None:
-        _require_identifier(turn_id, tr("service.label.turn"))
-        _require_identifier(assistant_message_id, tr("service.label.message"))
-        if partial_content is not None:
-            _require_text(
-                partial_content, tr("service.label.partial_response"), allow_empty=True
-            )
-        _require_identifier(requested_model_id, tr("service.label.model"))
-        with self._connection("finish", record_id=turn_id) as connection:
-            connection.execute("BEGIN IMMEDIATE")
-            turn, _budget, _mode = self._load_active_turn(connection, turn_id)
-            connection.execute(
-                """
-                UPDATE turns
-                SET status = 'failed', actual_model_id = ?, generation_id = ?,
-                    finish_reason = ?, accounting_status = 'unknown',
-                    error_type = ?, updated_at = ?
-                WHERE id = ?
-                """,
-                (
-                    actual_model_id,
-                    encrypt_value(
-                        connection,
-                        generation_id,
-                        table="turns",
-                        field="generation_id",
-                        record_id=turn_id,
-                        chat_id=turn.chat_id,
-                    ),
-                    encrypt_value(
-                        connection,
-                        finish_reason,
-                        table="turns",
-                        field="finish_reason",
-                        record_id=turn_id,
-                        chat_id=turn.chat_id,
-                    ),
-                    error_type.value,
-                    _datetime_text(updated_at),
-                    turn_id,
-                ),
-            )
-            connection.execute(
-                """
-                UPDATE messages
-                SET status = 'failed', updated_at = ?
-                WHERE chat_id = ? AND turn_id = ? AND role = 'user'
-                """,
-                (_datetime_text(updated_at), turn.chat_id, turn_id),
-            )
-            if partial_content is not None:
-                self._upsert_assistant_message(
-                    connection,
-                    turn=turn,
-                    message_id=assistant_message_id,
-                    content=partial_content,
-                    successful=False,
-                    requested_model_id=requested_model_id,
-                    actual_model_id=actual_model_id,
-                    prompt_tokens=None,
-                    completion_tokens=None,
-                    total_tokens=None,
-                    updated_at=updated_at,
-                )
-            connection.execute(
-                """
-                UPDATE chat_budgets
-                SET state = 'accounting_unknown', updated_at = ?
-                WHERE chat_id = ?
-                """,
-                (_datetime_text(updated_at), turn.chat_id),
-            )
-            connection.execute(
-                "UPDATE chats SET updated_at = ? WHERE id = ?",
-                (_datetime_text(updated_at), turn.chat_id),
-            )
-            synchronize_request_attempt(connection, turn_id)
+        self.finalize_known_turn(
+            turn_id,
+            assistant_message_id=assistant_message_id,
+            content=partial_content,
+            successful=False,
+            requested_model_id=requested_model_id,
+            actual_model_id=actual_model_id,
+            generation_id=generation_id,
+            finish_reason=finish_reason,
+            prompt_tokens=prompt_tokens,
+            completion_tokens=completion_tokens,
+            total_tokens=total_tokens,
+            cost=cost,
+            usage_source=usage_source,
+            cost_source=cost_source,
+            cached_tokens=cached_tokens,
+            reasoning_tokens=reasoning_tokens,
+            attempt_sequence=attempt_sequence,
+            error_type=error_type,
+            generated_title=None,
+            updated_at=updated_at,
+        )
 
     def release_unknown_reservation(
         self,
@@ -836,6 +915,211 @@ class SqliteMessageRepository:
                 turn.error_type or ChatErrorType.ACCOUNTING_UNKNOWN,
                 AccountingStatus.RELEASED,
                 updated_at,
+            )
+
+    def update_attempt_accounting(
+        self,
+        sequence: int,
+        *,
+        updated_at: datetime,
+        actual_model_id: str | None = None,
+        prompt_tokens: int | None = None,
+        completion_tokens: int | None = None,
+        total_tokens: int | None = None,
+        cost: Decimal | None = None,
+        usage_source: str = "api",
+        cost_source: str = "api",
+        cached_tokens: int | None = None,
+        reasoning_tokens: int | None = None,
+    ) -> None:
+        """Refine one immutable dispatch, applying only its accounting delta.
+
+        A delayed result for a previous retry cannot replace the current turn.
+        Replaying the same refinement produces zero budget delta.
+        """
+        _require_positive_int(sequence, "attempt")
+        for value in (
+            prompt_tokens,
+            completion_tokens,
+            total_tokens,
+            cached_tokens,
+            reasoning_tokens,
+        ):
+            if value is not None:
+                _require_nonnegative_int(value, "usage")
+        if cost is not None:
+            _require_decimal(cost, "cost")
+        if usage_source not in {"api", "estimated", "unknown"} or cost_source not in {
+            "api",
+            "estimated",
+            "unknown",
+        }:
+            raise ValueError("accounting_source_invalid")
+        with self._connection("write") as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            ensure_request_attempts(connection)
+            row = connection.execute(
+                "SELECT * FROM chat_request_attempts WHERE sequence=?", (sequence,)
+            ).fetchone()
+            if row is None:
+                raise KeyError("attempt_missing")
+            if row["status"] == TurnStatus.PENDING.value:
+                raise BudgetConflictError("attempt_still_active")
+            prior = dict(row)
+            newer = dict(row)
+            for name, value in (
+                ("actual_model_id", actual_model_id),
+                ("prompt_tokens", prompt_tokens),
+                ("completion_tokens", completion_tokens),
+                ("total_tokens", total_tokens),
+                ("cost", str(cost) if cost is not None else None),
+                ("cached_tokens", cached_tokens),
+                ("reasoning_tokens", reasoning_tokens),
+            ):
+                if value is not None:
+                    if (
+                        name == "cost"
+                        and prior["cost_source"] == "api"
+                        and cost_source != "api"
+                    ):
+                        continue
+                    if (
+                        name.endswith("tokens")
+                        and prior["usage_source"] == "api"
+                        and usage_source != "api"
+                    ):
+                        continue
+                    newer[name] = value
+            if any(
+                value is not None
+                for value in (prompt_tokens, completion_tokens, total_tokens)
+            ) and (prior["usage_source"] != "api" or usage_source == "api"):
+                newer["usage_source"] = usage_source
+            if cost is not None and (
+                prior["cost_source"] != "api" or cost_source == "api"
+            ):
+                newer["cost_source"] = cost_source
+            complete_usage = newer["usage_source"] == "api" and all(
+                newer[name] is not None
+                for name in ("prompt_tokens", "completion_tokens", "total_tokens")
+            )
+            complete_cost = newer["cost_source"] == "api" and newer["cost"] is not None
+            newer["accounting_status"] = (
+                "final" if complete_usage and complete_cost else "unknown"
+            )
+            fields = (
+                "actual_model_id",
+                "prompt_tokens",
+                "completion_tokens",
+                "total_tokens",
+                "cost",
+                "usage_source",
+                "cost_source",
+                "cached_tokens",
+                "reasoning_tokens",
+                "accounting_status",
+            )
+            if all(prior[name] == newer[name] for name in fields):
+                return
+            connection.execute(
+                "UPDATE chat_request_attempts SET "
+                + ",".join(name + "=?" for name in fields)
+                + " WHERE sequence=?",
+                tuple(newer[name] for name in fields) + (sequence,),
+            )
+            budget_row = connection.execute(
+                "SELECT * FROM chat_budgets WHERE chat_id=?", (row["chat_id"],)
+            ).fetchone()
+            assert budget_row is not None
+            budget = _budget_from_row(budget_row)
+
+            def token(record: dict, name: str) -> int:
+                if record["usage_source"] != "api":
+                    return 0
+                if name == "total_tokens":
+                    return max(
+                        int(record[name] or 0),
+                        int(record["prompt_tokens"] or 0)
+                        + int(record["completion_tokens"] or 0),
+                    )
+                return int(record[name] or 0)
+
+            delta_tokens = [
+                token(newer, name) - token(prior, name)
+                for name in ("prompt_tokens", "completion_tokens", "total_tokens")
+            ]
+
+            def amount(record: dict) -> Decimal:
+                return (
+                    Decimal(str(record["cost"]))
+                    if record["cost_source"] == "api" and record["cost"] is not None
+                    else Decimal("0")
+                )
+
+            used_cost = budget.cost_used + amount(newer) - amount(prior)
+            held_tokens = budget.reserved_tokens
+            held_cost = budget.cost_reserved
+            latest = connection.execute(
+                "SELECT MAX(sequence) FROM chat_request_attempts WHERE turn_id=?",
+                (row["turn_id"],),
+            ).fetchone()[0]
+            turn_row = connection.execute(
+                "SELECT * FROM turns WHERE id=?", (row["turn_id"],)
+            ).fetchone()
+            if latest == sequence and turn_row is not None and turn_row["request_sent"]:
+                turn = _turn_from_row(turn_row)
+                if complete_usage:
+                    held_tokens -= turn.reserved_tokens
+                if complete_cost:
+                    held_cost -= turn.reserved_cost
+                connection.execute(
+                    "UPDATE turns SET "
+                    + ",".join(name + "=?" for name in fields)
+                    + ",reserved_tokens=?,reserved_cost=?,updated_at=? WHERE id=?",
+                    tuple(newer[name] for name in fields)
+                    + (
+                        0 if complete_usage else turn.reserved_tokens,
+                        str(Decimal("0") if complete_cost else turn.reserved_cost),
+                        _datetime_text(updated_at),
+                        turn.id,
+                    ),
+                )
+            if held_tokens < 0 or held_cost < 0:
+                raise BudgetConflictError(tr("service.reserve_corrupt"))
+            unknown = (
+                connection.execute(
+                    "SELECT 1 FROM chat_request_attempts WHERE chat_id=? AND accounting_status='unknown' LIMIT 1",
+                    (row["chat_id"],),
+                ).fetchone()
+                is not None
+            )
+            mode_row = connection.execute(
+                "SELECT mode FROM chats WHERE id=?", (row["chat_id"],)
+            ).fetchone()
+            assert mode_row is not None
+            state = _calculate_state(
+                mode=ChatMode(str(mode_row["mode"])),
+                token_limit=budget.token_limit,
+                total_used=budget.total_tokens_used + delta_tokens[2],
+                reserved_tokens=held_tokens,
+                cost_limit=budget.cost_limit,
+                cost_used=used_cost,
+                cost_reserved=held_cost,
+                accounting_unknown=unknown,
+            )
+            connection.execute(
+                "UPDATE chat_budgets SET prompt_tokens_used=?,completion_tokens_used=?,total_tokens_used=?,cost_used=?,reserved_tokens=?,cost_reserved=?,state=?,updated_at=? WHERE chat_id=?",
+                (
+                    budget.prompt_tokens_used + delta_tokens[0],
+                    budget.completion_tokens_used + delta_tokens[1],
+                    budget.total_tokens_used + delta_tokens[2],
+                    str(used_cost),
+                    held_tokens,
+                    str(held_cost),
+                    state.value,
+                    _datetime_text(updated_at),
+                    row["chat_id"],
+                ),
             )
 
     def get_turn(self, turn_id: str) -> TurnRecord | None:
@@ -971,7 +1255,8 @@ class SqliteMessageRepository:
                 actual_model_id = NULL, generation_id = NULL,
                 finish_reason = NULL, prompt_tokens = NULL,
                 completion_tokens = NULL, total_tokens = NULL,
-                cost_usd = NULL, reserved_tokens = ?, reserved_cost_usd = ?,
+                cost = NULL, reserved_tokens = ?, reserved_cost = ?,
+                usage_source='unknown',cost_source='unknown',cached_tokens=NULL,reasoning_tokens=NULL,
                 accounting_status = 'reserved', error_type = NULL,
                 request_sent = 0, updated_at = ?
             WHERE id = ?
@@ -979,7 +1264,7 @@ class SqliteMessageRepository:
             (
                 requested_model_id,
                 reservation.reserved_tokens,
-                _decimal_text(reservation.reserved_cost_usd),
+                _decimal_text(reservation.reserved_cost),
                 _datetime_text(reservation.created_at),
                 reservation.turn_id,
             ),
@@ -1043,7 +1328,7 @@ class SqliteMessageRepository:
         updated_at: datetime,
     ) -> None:
         new_tokens = budget.reserved_tokens - turn.reserved_tokens
-        new_cost = budget.cost_reserved_usd - turn.reserved_cost_usd
+        new_cost = budget.cost_reserved - turn.reserved_cost
         if new_tokens < 0 or new_cost < 0:
             raise BudgetConflictError(tr("service.reserve_corrupt"))
         has_other_unknown = (
@@ -1062,15 +1347,15 @@ class SqliteMessageRepository:
             token_limit=budget.token_limit,
             total_used=budget.total_tokens_used,
             reserved_tokens=new_tokens,
-            cost_limit=budget.cost_limit_usd,
-            cost_used=budget.cost_used_usd,
+            cost_limit=budget.cost_limit,
+            cost_used=budget.cost_used,
             cost_reserved=new_cost,
             accounting_unknown=has_other_unknown,
         )
         connection.execute(
             """
             UPDATE chat_budgets
-            SET reserved_tokens = ?, cost_reserved_usd = ?,
+            SET reserved_tokens = ?, cost_reserved = ?,
                 state = ?, updated_at = ?
             WHERE chat_id = ?
             """,
@@ -1201,7 +1486,51 @@ class SqliteMessageRepository:
         with protected_connection(
             self.path, self.access, operation, chat_id=chat_id, record_id=record_id
         ) as connection:
+            if operation != "read":
+                connection.execute("BEGIN IMMEDIATE")
+                ensure_provider_schema(connection)
+                connection.commit()
             yield connection
+            if operation != "read":
+                _synchronize_legacy_money(
+                    connection, chat_id=chat_id, record_id=record_id
+                )
+
+
+def _synchronize_legacy_money(
+    connection: sqlite3.Connection, *, chat_id: str = "", record_id: str = ""
+) -> None:
+    if not chat_id and record_id:
+        row = connection.execute(
+            "SELECT chat_id FROM turns WHERE id=?", (record_id,)
+        ).fetchone()
+        if row is not None:
+            chat_id = str(row[0])
+    where = " WHERE chat_id=?" if chat_id else ""
+    parameters = (chat_id,) if chat_id else ()
+    connection.execute(
+        "UPDATE chat_budgets SET cost_limit_usd=CASE WHEN currency='USD' THEN cost_limit ELSE NULL END,cost_used_usd=CASE WHEN currency='USD' THEN cost_used ELSE '0' END,cost_reserved_usd=CASE WHEN currency='USD' THEN cost_reserved ELSE '0' END"
+        + where,
+        parameters,
+    )
+    turn_where = " WHERE id=?" if record_id else where
+    turn_parameters = (record_id,) if record_id else parameters
+    connection.execute(
+        "UPDATE turns SET cost_usd=CASE WHEN currency='USD' THEN cost ELSE NULL END,reserved_cost_usd=CASE WHEN currency='USD' THEN reserved_cost ELSE '0' END"
+        + turn_where,
+        turn_parameters,
+    )
+    if has_request_attempts(connection) and request_attempts_are_extended(connection):
+        attempt_where = (
+            " WHERE sequence=(SELECT MAX(sequence) FROM chat_request_attempts WHERE turn_id=?)"
+            if record_id
+            else where
+        )
+        connection.execute(
+            "UPDATE chat_request_attempts SET cost_usd=CASE WHEN currency='USD' THEN cost ELSE NULL END"
+            + attempt_where,
+            turn_parameters if record_id else parameters,
+        )
 
 
 def _budget_from_row(row: sqlite3.Row) -> ChatBudget:
@@ -1214,9 +1543,44 @@ def _budget_from_row(row: sqlite3.Row) -> ChatBudget:
         completion_tokens_used=int(row["completion_tokens_used"]),
         total_tokens_used=int(row["total_tokens_used"]),
         reserved_tokens=int(row["reserved_tokens"]),
-        cost_limit_usd=_optional_decimal(row["cost_limit_usd"]),
-        cost_used_usd=Decimal(str(row["cost_used_usd"])),
-        cost_reserved_usd=Decimal(str(row["cost_reserved_usd"])),
+        cost_limit_usd=_optional_decimal(
+            row["cost_limit"]
+            if "cost_limit" in row.keys() and row["currency"] == "USD"
+            else row["cost_limit_usd"]
+        ),
+        cost_used_usd=Decimal(
+            str(
+                row["cost_used"]
+                if "cost_used" in row.keys() and row["currency"] == "USD"
+                else row["cost_used_usd"]
+            )
+        ),
+        cost_reserved_usd=Decimal(
+            str(
+                row["cost_reserved"]
+                if "cost_reserved" in row.keys() and row["currency"] == "USD"
+                else row["cost_reserved_usd"]
+            )
+        ),
+        provider_id=ProviderId(str(row["provider_id"]))
+        if "provider_id" in row.keys()
+        else ProviderId.OPENROUTER,
+        currency=Currency(str(row["currency"]))
+        if "currency" in row.keys()
+        else Currency.USD,
+        cost_limit=_optional_decimal(
+            row["cost_limit"] if "cost_limit" in row.keys() else row["cost_limit_usd"]
+        ),
+        cost_used=Decimal(
+            str(row["cost_used"] if "cost_used" in row.keys() else row["cost_used_usd"])
+        ),
+        cost_reserved=Decimal(
+            str(
+                row["cost_reserved"]
+                if "cost_reserved" in row.keys()
+                else row["cost_reserved_usd"]
+            )
+        ),
         state=BudgetState(str(row["state"])),
         updated_at=_parse_datetime(str(row["updated_at"])),
     )
@@ -1239,6 +1603,28 @@ def _turn_from_row(row: sqlite3.Row) -> TurnRecord:
         cost_usd=_optional_decimal(row["cost_usd"]),
         reserved_tokens=int(row["reserved_tokens"]),
         reserved_cost_usd=Decimal(str(row["reserved_cost_usd"])),
+        provider_id=ProviderId(str(row["provider_id"]))
+        if "provider_id" in row.keys()
+        else ProviderId.OPENROUTER,
+        currency=Currency(str(row["currency"]))
+        if "currency" in row.keys()
+        else Currency.USD,
+        cost=_optional_decimal(
+            row["cost"] if "cost" in row.keys() else row["cost_usd"]
+        ),
+        reserved_cost=Decimal(
+            str(
+                row["reserved_cost"]
+                if "reserved_cost" in row.keys()
+                else row["reserved_cost_usd"]
+            )
+        ),
+        usage_source=str(row["usage_source"])
+        if "usage_source" in row.keys()
+        else "unknown",
+        cost_source=str(row["cost_source"])
+        if "cost_source" in row.keys()
+        else "unknown",
         accounting_status=AccountingStatus(str(row["accounting_status"])),
         error_type=error_type,
         request_sent=bool(row["request_sent"]),
@@ -1263,10 +1649,29 @@ def _last_request_from_row(row: sqlite3.Row) -> LastRequestMetrics:
     return LastRequestMetrics(
         state=state,
         turn_id=str(row["turn_id"]),
-        prompt_tokens=_optional_int(row["prompt_tokens"]) if final else None,
-        completion_tokens=_optional_int(row["completion_tokens"]) if final else None,
-        total_tokens=_optional_int(row["total_tokens"]) if final else None,
-        cost_usd=_optional_decimal(row["cost_usd"]) if final else None,
+        prompt_tokens=_optional_int(row["prompt_tokens"]),
+        completion_tokens=_optional_int(row["completion_tokens"]),
+        total_tokens=_optional_int(row["total_tokens"]),
+        cost_usd=_optional_decimal(row["cost_usd"]),
+        cost=_optional_decimal(
+            row["cost"] if "cost" in row.keys() else row["cost_usd"]
+        ),
+        currency=Currency(str(row["currency"]))
+        if "currency" in row.keys()
+        else Currency.USD,
+        provider_id=ProviderId(str(row["provider_id"]))
+        if "provider_id" in row.keys()
+        else ProviderId.OPENROUTER,
+        usage_source=str(row["usage_source"])
+        if "usage_source" in row.keys()
+        else "api"
+        if final
+        else "unknown",
+        cost_source=str(row["cost_source"])
+        if "cost_source" in row.keys()
+        else "api"
+        if final
+        else "unknown",
         sent_at=sent_at,
         attempt_sequence=int(row["sequence"]),
     )
