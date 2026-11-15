@@ -12,7 +12,7 @@ from typing import Protocol
 
 from auth.access import free_mode_allowed, paid_mode_allowed
 from auth.models import KeyLimitInfo, KeyValidityState
-from chat.accounting import validate_limit_configuration
+from chat.accounting import ChatLimitConfiguration, validate_limit_configuration
 from chat.models import (
     FREE_ROUTER_MODEL,
     CatalogModel,
@@ -31,7 +31,13 @@ from storage.access_context import finish_worker, repository_session
 
 class ChatRepository(Protocol):
     def set_paid_without_confirmation(
-        self, chat_id: str, enabled: bool, revision: str, updated_at: datetime
+        self,
+        chat_id: str,
+        enabled: bool,
+        revision: str,
+        updated_at: datetime,
+        *,
+        expected_revision: int | None = None,
     ) -> bool: ...
     def create_chat(self, chat: Chat) -> None: ...
 
@@ -95,6 +101,8 @@ class ChatService:
             self._paid_epochs.get(chat.id, 0),
             self._paid_scope,
             getattr(getattr(self._repository, "access", None), "epoch", None),
+            provider_id=chat.provider_id,
+            connection_revision=chat.connection_revision,
         )
 
     def paid_consent_is_current(self, consent: PaidConsent) -> bool:
@@ -113,10 +121,14 @@ class ChatService:
             and chat.mode is ChatMode.PAID
             and chat.paid_without_confirmation is True
             and chat.paid_policy_revision == consent.revision
+            and chat.provider_id is consent.provider_id
+            and chat.connection_revision == consent.connection_revision
         )
 
     @repository_session("_repository")
-    async def set_paid_without_confirmation(self, chat_id: str, enabled: bool) -> Chat:
+    async def set_paid_without_confirmation(
+        self, chat_id: str, enabled: bool, *, expected_revision: int | None = None
+    ) -> Chat:
         _require_identifier(chat_id, tr("service.label.chat"))
         if type(enabled) is not bool:
             raise ValueError(tr("service.paid_confirmation_invalid"))
@@ -134,6 +146,11 @@ class ChatService:
                 enabled,
                 secrets.token_hex(16),
                 _as_utc(self._now()),
+                **(
+                    {"expected_revision": expected_revision}
+                    if expected_revision is not None
+                    else {}
+                ),
             )
             if not changed:
                 raise KeyError(tr("service.chat_missing"))
@@ -146,6 +163,77 @@ class ChatService:
             # A cancelled owner must not release consent while its SQLite worker
             # can still commit. The counted fence also covers post-write readback.
             return await finish_worker(change_and_readback())
+        finally:
+            remaining = self._paid_changes_pending[chat_id] - 1
+            if remaining:
+                self._paid_changes_pending[chat_id] = remaining
+            else:
+                del self._paid_changes_pending[chat_id]
+
+    @repository_session("_repository")
+    async def switch_connection(
+        self,
+        chat_id: str,
+        *,
+        expected_revision: int,
+        mode: ChatMode,
+        model: CatalogModel,
+        catalog: ModelCatalog,
+        key_validity: KeyValidityState,
+        key_limit: KeyLimitInfo,
+        configuration: ChatLimitConfiguration,
+        dispatch_guard: Callable[[], bool] | None = None,
+    ) -> Chat:
+        """Validate an explicit selection, then atomically replace its connection."""
+        _require_identifier(chat_id, tr("service.label.chat"))
+        self._paid_epochs[chat_id] = self._paid_epochs.get(chat_id, 0) + 1
+        self._paid_changes_pending[chat_id] = (
+            self._paid_changes_pending.get(chat_id, 0) + 1
+        )
+        try:
+            current = await asyncio.to_thread(self._repository.get_chat, chat_id)
+            if current is None:
+                raise KeyError(tr("service.chat_missing"))
+            if current.connection_revision != expected_revision or (
+                dispatch_guard is not None and dispatch_guard() is not True
+            ):
+                raise ChatPolicyError("chat_connection_changed")
+            if current.provider_id is model.provider_id:
+                return current
+            selected = validate_model_for_mode(
+                mode,
+                model,
+                catalog=catalog,
+                key_validity=key_validity,
+                key_limit=key_limit,
+                paid_confirmed=True,
+            )
+            validate_limit_configuration(
+                mode,
+                configuration.token_limit,
+                configuration.max_completion_tokens,
+                configuration.cost_limit,
+            )
+            if selected.currency is not configuration.currency:
+                raise ChatPolicyError("connection_currency_mismatch")
+            switch = getattr(self._repository, "switch_connection", None)
+            if not callable(switch):
+                raise ChatPolicyError("connection_switch_unavailable")
+            result = await finish_worker(
+                asyncio.to_thread(
+                    switch,
+                    chat_id,
+                    expected_revision=expected_revision,
+                    mode=mode,
+                    model=selected,
+                    configuration=configuration,
+                    updated_at=_as_utc(self._now()),
+                    dispatch_guard=dispatch_guard,
+                )
+            )
+            if not isinstance(result, Chat):
+                raise ChatPolicyError("connection_switch_unavailable")
+            return result
         finally:
             remaining = self._paid_changes_pending[chat_id] - 1
             if remaining:

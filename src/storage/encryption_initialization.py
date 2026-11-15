@@ -11,7 +11,13 @@ from pathlib import Path
 
 from storage.database_connections import database_lock
 from storage.field_cipher import CiphertextError
-from storage.provider_schema import ensure_provider_schema, has_provider_schema
+from storage.provider_schema import (
+    MONETARY_TABLE,
+    ensure_provider_schema,
+    has_chat_connection_schema,
+    has_provider_schema,
+    validate_monetary_schema,
+)
 from storage.request_attempts import (
     TABLE as REQUEST_ATTEMPTS_TABLE,
 )
@@ -71,14 +77,27 @@ def plaintext_evidence(path: Path) -> str:
                 )
             }
             if has_provider_schema(connection):
-                ensure_provider_schema(expected)
-            evidence_tables = TABLES
+                ensure_provider_schema(
+                    expected, chat_connections=has_chat_connection_schema(connection)
+                )
+            if MONETARY_TABLE in tables:
+                validate_monetary_schema(connection)
+            evidence_tables = (
+                (*TABLES, MONETARY_TABLE) if MONETARY_TABLE in tables else TABLES
+            )
             if REQUEST_ATTEMPTS_TABLE in tables:
                 validate_request_attempts_schema(connection)
                 create_request_attempts_schema(
-                    expected, legacy=not request_attempts_are_extended(connection)
+                    expected,
+                    legacy=not request_attempts_are_extended(connection),
+                    connection_revision=any(
+                        row[1] == "connection_revision"
+                        for row in connection.execute(
+                            f"PRAGMA table_info({REQUEST_ATTEMPTS_TABLE})"
+                        )
+                    ),
                 )
-                evidence_tables = (*TABLES, REQUEST_ATTEMPTS_TABLE)
+                evidence_tables = (*evidence_tables, REQUEST_ATTEMPTS_TABLE)
             if (
                 tables != set(evidence_tables)
                 or connection.execute(

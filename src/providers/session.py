@@ -18,6 +18,7 @@ from chat.account_balance import (
     AccountBalanceSnapshot,
     has_authenticated_vsegpt_balance,
 )
+from providers.credentials import masked_key_display
 from providers.models import ProviderId, detect_key, provider_spec
 from storage.secure_credentials import FletSecureCredentials
 
@@ -36,6 +37,7 @@ class ProviderSessionExpired(RuntimeError):
 class ProviderState:
     provider_id: ProviderId
     has_saved_key: bool = False
+    key_display: str | None = None
     key_validity: KeyValidityState = KeyValidityState.UNKNOWN
     key_limit: KeyLimitInfo = field(default_factory=KeyLimitInfo.unknown)
     balance: AccountBalanceSnapshot = field(default_factory=AccountBalanceSnapshot)
@@ -99,11 +101,17 @@ class ProviderProfiles:
 
     def state(self, provider: ProviderId) -> ProviderState:
         return replace(
-            self._states[provider], balance=self._balances[provider].snapshot
+            self._states[provider],
+            balance=self._balances[provider].snapshot,
+            key_display=self.key_display(provider),
         )
 
     def key_for(self, provider: ProviderId) -> str | None:
         return self._keys.get(provider) if self._active else None
+
+    def key_display(self, provider: ProviderId) -> str | None:
+        """No additional storage read or copy of the credential leaves this boundary."""
+        return masked_key_display(provider, self.key_for(provider))
 
     def key_is_current(self, provider: ProviderId, key: str) -> bool:
         current = self.key_for(provider)

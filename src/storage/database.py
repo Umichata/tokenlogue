@@ -6,6 +6,7 @@ import os
 import sqlite3
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
 from auth.models import LoginAttemptState, PinRecord, StoredAuthState
@@ -588,19 +589,24 @@ def _recover_interrupted_turns(connection: sqlite3.Connection) -> None:
     from storage.request_attempts import recover_request_attempts
 
     timestamp = "strftime('%Y-%m-%dT%H:%M:%f+00:00', 'now')"
-    connection.execute(
-        f"""
-        UPDATE turns
-        SET status = 'failed',
-            accounting_status = CASE
-                WHEN reserved_tokens > 0 THEN 'unknown'
-                ELSE 'released'
-            END,
-            error_type = 'interrupted',
-            updated_at = {timestamp}
-        WHERE status = 'pending'
-        """
+    columns = {row[1] for row in connection.execute("PRAGMA table_info(turns)")}
+    money_column = (
+        "reserved_cost" if "reserved_cost" in columns else "reserved_cost_usd"
     )
+    for row in connection.execute(
+        f"SELECT id,reserved_tokens,{money_column} FROM turns WHERE status='pending'"
+    ).fetchall():
+        try:
+            money = Decimal(str(row[2]))
+            money_held = not money.is_finite() or money != 0
+        except (InvalidOperation, ValueError):
+            # Corrupt/unknown metadata cannot prove the absence of a reservation.
+            money_held = True
+        accounting = "unknown" if row[1] > 0 or money_held else "released"
+        connection.execute(
+            f"UPDATE turns SET status='failed',accounting_status=?,error_type='interrupted',updated_at={timestamp} WHERE id=?",
+            (accounting, row[0]),
+        )
     connection.execute(
         f"""
         UPDATE messages

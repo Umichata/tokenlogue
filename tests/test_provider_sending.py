@@ -35,6 +35,7 @@ from chat.models import ChatMode  # noqa: E402
 from chat.sending import MessageSendingService  # noqa: E402
 from chat.service import ChatService  # noqa: E402
 from chat_controller import ChatSessionController  # noqa: E402
+from providers.credentials import masked_key_display  # noqa: E402
 from providers.models import Currency, PriceUnit, ProviderId  # noqa: E402
 from storage.chat_repository import SqliteChatRepository  # noqa: E402
 from storage.database import AuthDatabase  # noqa: E402
@@ -70,6 +71,9 @@ class FakeProviderProfiles:
 
     def key_for(self, provider: ProviderId) -> str | None:
         return self.keys.get(provider)
+
+    def key_display(self, provider: ProviderId) -> str | None:
+        return masked_key_display(provider, self.key_for(provider))
 
     def key_validity_for(self, provider: ProviderId) -> KeyValidityState:
         return self.validity[provider]

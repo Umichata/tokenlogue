@@ -26,6 +26,7 @@ from chat.accounting import (
     BudgetReservation,
     BudgetState,
     ChatBudget,
+    ChatLimitConfiguration,
     ModelPriceChange,
     TurnRecord,
     confirmed_pricing,
@@ -57,6 +58,7 @@ from chat.models import (
     Chat,
     ChatMode,
     Message,
+    ModelCatalog,
     PriceComponents,
     ProviderPriceLimit,
     is_free_model,
@@ -191,6 +193,9 @@ class MessageRepository(Protocol):
         cache_write_price: Decimal,
         overrides_json: str,
         updated_at: datetime,
+        expected_connection_revision: int | None = None,
+        expected_provider_id: ProviderId | None = None,
+        expected_model_id: str | None = None,
     ) -> None: ...
 
 
@@ -328,6 +333,54 @@ class MessageSendingService:
         self, callback: Callable[[ProviderId], object]
     ) -> None:
         self._credential_revision_reader = callback
+
+    def chat_operation_in_progress(self, chat_id: str) -> bool:
+        lock = self._chat_locks.get(chat_id)
+        return lock is not None and lock.locked()
+
+    @repository_session("_messages")
+    async def switch_chat_connection(
+        self,
+        chat_id: str,
+        *,
+        expected_revision: int,
+        mode: ChatMode,
+        model: CatalogModel,
+        catalog: ModelCatalog,
+        key_validity: KeyValidityState,
+        key_limit: KeyLimitInfo,
+        configuration: ChatLimitConfiguration,
+        dispatch_guard: DispatchGuard | None = None,
+    ) -> Chat:
+        """Use exactly the dispatch lock, then repeat checks in SQLite."""
+        lock = self._chat_locks.setdefault(chat_id, asyncio.Lock())
+        if lock.locked():
+            raise RuntimeError(tr("service.error.turn_active"))
+        async with lock:
+            if dispatch_guard is not None and dispatch_guard() is not True:
+                raise RuntimeError(tr("service.error.interrupted"))
+            return await self._chat_service.switch_connection(
+                chat_id,
+                expected_revision=expected_revision,
+                mode=mode,
+                model=model,
+                catalog=catalog,
+                key_validity=key_validity,
+                key_limit=key_limit,
+                configuration=configuration,
+                dispatch_guard=dispatch_guard,
+            )
+
+    async def _assert_connection_current(self, chat: Chat) -> None:
+        current = await self._chat_service.get_chat(chat.id)
+        if current is None or (
+            current.connection_revision != chat.connection_revision
+            or current.provider_id is not chat.provider_id
+            or current.currency is not chat.currency
+            or current.requested_model_id != chat.requested_model_id
+            or current.mode is not chat.mode
+        ):
+            raise _PreflightFailure(ChatErrorType.INTERRUPTED)
 
     @repository_session("_messages")
     async def preview_message(
@@ -576,13 +629,24 @@ class MessageSendingService:
                 turn_id=turn_id,
             )
         async with lock:
+            current = await self._chat_service.get_chat(turn.chat_id)
+            if current is None:
+                return _local_failure(ChatErrorType.INVALID_REQUEST, turn_id=turn_id)
+            changed_connection = (
+                turn.connection_revision != current.connection_revision
+                or turn.provider_id is not current.provider_id
+                or turn.currency is not current.currency
+            )
+            retry_of_turn_id = turn_id if changed_connection else None
+            next_turn_id = str(self._uuid_factory()) if changed_connection else turn_id
             return await self._send_locked(
                 turn.chat_id,
                 user_message.content,
                 api_key=api_key,
                 key_validity=key_validity,
                 key_limit=key_limit,
-                turn_id=turn_id,
+                turn_id=next_turn_id,
+                retry_of_turn_id=retry_of_turn_id,
                 user_message_id=user_message.id,
                 retry=True,
                 paid_confirmed=paid_confirmed,
@@ -612,6 +676,7 @@ class MessageSendingService:
         if chat is None:
             raise KeyError(tr("service.chat_missing"))
         models = await self._catalog_client.fetch_models(api_key)
+        await self._assert_connection_current(chat)
         self._assert_credential_current(chat, api_key)
         current = _find_model(models, chat.requested_model_id, chat.provider_id)
         if current is None:
@@ -629,6 +694,9 @@ class MessageSendingService:
             cache_write_price=current.input_cache_write_price_per_token,
             overrides_json=_pricing_overrides_json(current.pricing_overrides),
             updated_at=_as_utc(self._now()),
+            expected_connection_revision=chat.connection_revision,
+            expected_provider_id=chat.provider_id,
+            expected_model_id=chat.requested_model_id,
         )
 
     async def _send_locked(
@@ -650,6 +718,7 @@ class MessageSendingService:
         dispatch_guard: DispatchGuard | None,
         on_reserved: ReservationCallback | None,
         draft_revision: int | None = None,
+        retry_of_turn_id: str | None = None,
     ) -> SendMessageResult:
         lease = (
             self._access.completion("send", chat_id, turn_id)
@@ -677,6 +746,7 @@ class MessageSendingService:
                 dispatch_guard=dispatch_guard,
                 on_reserved=on_reserved,
                 draft_revision=draft_revision,
+                retry_of_turn_id=retry_of_turn_id,
             )
         finally:
             self._completion_lease.reset(token)
@@ -704,6 +774,7 @@ class MessageSendingService:
         dispatch_guard: DispatchGuard | None,
         on_reserved: ReservationCallback | None,
         draft_revision: int | None = None,
+        retry_of_turn_id: str | None = None,
     ) -> SendMessageResult:
         try:
             preflight = await self._preflight(
@@ -715,7 +786,7 @@ class MessageSendingService:
                 paid_confirmed=paid_confirmed,
                 paid_consent=paid_consent,
                 draft_revision=draft_revision,
-                retry_turn_id=turn_id if retry else None,
+                retry_turn_id=(retry_of_turn_id or turn_id) if retry else None,
             )
             self._assert_dispatch_current(paid_consent, dispatch_guard)
             self._assert_credential_current(preflight.chat, api_key)
@@ -763,6 +834,9 @@ class MessageSendingService:
             else Decimal("0"),
             reserved_cost=preflight.reserved_cost,
             currency=preflight.chat.currency,
+            provider_id=preflight.chat.provider_id,
+            connection_revision=preflight.chat.connection_revision,
+            retry_of_turn_id=retry_of_turn_id,
             created_at=timestamp,
         )
         reservation_task = asyncio.create_task(
@@ -804,7 +878,7 @@ class MessageSendingService:
                     paid_confirmed=paid_confirmed,
                     paid_consent=paid_consent,
                     draft_revision=draft_revision,
-                    retry_turn_id=turn_id if retry else None,
+                    retry_turn_id=(retry_of_turn_id or turn_id) if retry else None,
                 )
             except _PreflightFailure as error:
                 return _local_failure(
@@ -866,6 +940,7 @@ class MessageSendingService:
 
         try:
             await self._validate_saved_consent(paid_consent)
+            await self._assert_connection_current(preflight.chat)
             self._assert_dispatch_current(paid_consent, dispatch_guard)
             self._assert_credential_current(preflight.chat, api_key)
         except _PreflightFailure as error:
@@ -1121,6 +1196,7 @@ class MessageSendingService:
                 retry_turn_id,
                 provider_id=chat.provider_id,
                 currency=chat.currency,
+                connection_revision=chat.connection_revision,
                 estimated_cost=estimated_cost,
                 projected_remaining=plan.remaining_cost_after_reservation,
                 unknown_pricing=unknown_pricing,
@@ -1134,6 +1210,8 @@ class MessageSendingService:
                 ),
                 session_epoch=self._access.epoch if self._access is not None else None,
             )
+        await self._assert_connection_current(chat)
+        self._assert_credential_current(chat, api_key)
         return ChatPreflight(
             chat=chat,
             model=model,
@@ -1216,7 +1294,11 @@ class MessageSendingService:
                 cache_write_price=model.input_cache_write_price_per_token,
                 overrides_json=_pricing_overrides_json(model.pricing_overrides),
                 updated_at=_as_utc(self._now()),
+                expected_connection_revision=chat.connection_revision,
+                expected_provider_id=chat.provider_id,
+                expected_model_id=chat.requested_model_id,
             )
+        await self._assert_connection_current(chat)
         return current
 
     async def _validate_saved_consent(self, consent: PaidConsent | None) -> None:

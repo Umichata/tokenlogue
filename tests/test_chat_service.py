@@ -62,11 +62,22 @@ class MemoryChatRepository:
         return self.chats.get(chat_id)
 
     def set_paid_without_confirmation(
-        self, chat_id: str, enabled: bool, revision: str, updated_at: datetime
+        self,
+        chat_id: str,
+        enabled: bool,
+        revision: str,
+        updated_at: datetime,
+        *,
+        expected_revision: int | None = None,
     ) -> bool:
         chat = self.chats.get(chat_id)
         if chat is None:
             return False
+        if (
+            expected_revision is not None
+            and chat.connection_revision != expected_revision
+        ):
+            raise ValueError("chat_connection_changed")
         self.chats[chat_id] = replace(
             chat,
             paid_without_confirmation=enabled,

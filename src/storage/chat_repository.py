@@ -3,14 +3,18 @@
 from __future__ import annotations
 
 import json
+import secrets
 import sqlite3
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
+from dataclasses import replace
 from datetime import UTC, datetime
 from decimal import Decimal
 from pathlib import Path
 
+from chat.accounting import ChatLimitConfiguration
 from chat.models import (
+    CatalogModel,
     Chat,
     ChatMode,
     Message,
@@ -19,7 +23,8 @@ from chat.models import (
     PriceComponents,
 )
 from i18n import tr
-from providers.models import Currency, ProviderId
+from providers.models import Currency, ProviderId, provider_spec
+from storage.chat_monetary import budget_row, refresh_active_projection, write_money
 from storage.chat_preferences import (
     PaidPolicy,
     encode_stored,
@@ -166,7 +171,13 @@ class SqliteChatRepository:
         return cursor.rowcount == 1
 
     def set_paid_without_confirmation(
-        self, chat_id: str, enabled: bool, revision: str, updated_at: datetime
+        self,
+        chat_id: str,
+        enabled: bool,
+        revision: str,
+        updated_at: datetime,
+        *,
+        expected_revision: int | None = None,
     ) -> bool:
         _require_identifier(chat_id, tr("service.label.chat"))
         if type(enabled) is not bool:
@@ -174,11 +185,16 @@ class SqliteChatRepository:
         with self._connection("write", chat_id=chat_id) as connection:
             connection.execute("BEGIN IMMEDIATE")
             row = connection.execute(
-                "SELECT id,mode,pricing_overrides_json FROM chats WHERE id=?",
+                "SELECT id,mode,pricing_overrides_json,connection_revision FROM chats WHERE id=?",
                 (chat_id,),
             ).fetchone()
             if row is None:
                 return False
+            if (
+                expected_revision is not None
+                and row["connection_revision"] != expected_revision
+            ):
+                raise ValueError("chat_connection_changed")
             if row["mode"] != ChatMode.PAID.value:
                 raise ValueError(tr("service.paid_model_required"))
             cipher = getattr(connection, "cipher", None)
@@ -193,6 +209,168 @@ class SqliteChatRepository:
                 (encoded, _serialize_datetime(updated_at), chat_id),
             )
         return True
+
+    def switch_connection(
+        self,
+        chat_id: str,
+        *,
+        expected_revision: int,
+        mode: ChatMode,
+        model: CatalogModel,
+        configuration: ChatLimitConfiguration,
+        updated_at: datetime,
+        dispatch_guard: Callable[[], bool] | None = None,
+    ) -> Chat:
+        from storage.message_repository import BudgetConflictError
+        from storage.request_attempts import has_request_attempts
+
+        _require_identifier(chat_id, tr("service.label.chat"))
+        if type(expected_revision) is not int or expected_revision < 0:
+            raise ValueError("connection_revision_invalid")
+        if not isinstance(model, CatalogModel) or not isinstance(mode, ChatMode):
+            raise ValueError("connection_model_invalid")
+        if (
+            configuration.currency is not provider_spec(model.provider_id).currency
+            or model.currency is not configuration.currency
+        ):
+            raise BudgetConflictError("connection_currency_mismatch")
+        with self._connection("write", chat_id=chat_id) as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            current_row = connection.execute(
+                "SELECT * FROM chats WHERE id=?", (chat_id,)
+            ).fetchone()
+            if current_row is None:
+                raise KeyError(tr("service.chat_missing"))
+            current = _chat_from_row(current_row)
+            if current.connection_revision != expected_revision:
+                raise BudgetConflictError("chat_connection_changed")
+            if dispatch_guard is not None and dispatch_guard() is not True:
+                raise BudgetConflictError("chat_connection_changed")
+            if current.provider_id is model.provider_id:
+                return current
+            blocked = (
+                connection.execute(
+                    "SELECT 1 FROM turns WHERE chat_id=? AND (status='pending' OR accounting_status IN ('reserved','unknown')) LIMIT 1",
+                    (chat_id,),
+                ).fetchone()
+                is not None
+            )
+            if has_request_attempts(connection):
+                blocked = (
+                    blocked
+                    or connection.execute(
+                        "SELECT 1 FROM chat_request_attempts WHERE chat_id=? AND accounting_status IN ('reserved','unknown') LIMIT 1",
+                        (chat_id,),
+                    ).fetchone()
+                    is not None
+                )
+            shared = connection.execute(
+                "SELECT * FROM chat_budgets WHERE chat_id=?", (chat_id,)
+            ).fetchone()
+            assert shared is not None
+            if (
+                blocked
+                or shared["reserved_tokens"]
+                or any(
+                    Decimal(row[0]) != 0
+                    for row in connection.execute(
+                        "SELECT cost_reserved FROM chat_monetary_budgets WHERE chat_id=?",
+                        (chat_id,),
+                    )
+                )
+            ):
+                raise BudgetConflictError(tr("service.previous_unknown"))
+            if (
+                shared["token_limit"] is not None
+                and configuration.token_limit != shared["token_limit"]
+            ):
+                raise BudgetConflictError("shared_token_limit_changed")
+            if (
+                configuration.token_limit <= 0
+                or not 16
+                <= configuration.max_completion_tokens
+                <= configuration.token_limit
+            ):
+                raise BudgetConflictError("connection_limits_invalid")
+            target = budget_row(connection, chat_id, model.provider_id)
+            assert target is not None
+            cost_used = Decimal(target["cost_used"])
+            prior_limit = (
+                Decimal(target["cost_limit"])
+                if target["cost_limit"] is not None
+                else None
+            )
+            cost_limit = configuration.cost_limit
+            if not cost_limit.is_finite() or cost_limit < 0:
+                raise BudgetConflictError("connection_money_limit_invalid")
+            if mode is ChatMode.FREE:
+                if cost_limit != 0:
+                    raise BudgetConflictError(tr("service.free_cannot_reserve_money"))
+                cost_limit = prior_limit if prior_limit is not None else Decimal("0")
+            elif cost_limit < cost_used and cost_limit != prior_limit:
+                raise BudgetConflictError(tr("service.money_below_used"))
+            prices = json.loads(_serialize_overrides(model.pricing_overrides))
+            cipher = getattr(connection, "cipher", None)
+            stored_prices = (
+                encode_stored(
+                    prices, PaidPolicy(False, secrets.token_hex(16)), cipher, chat_id
+                )
+                if isinstance(cipher, FieldCipher)
+                else _serialize_overrides(model.pricing_overrides)
+            )
+            if dispatch_guard is not None and dispatch_guard() is not True:
+                raise BudgetConflictError("chat_connection_changed")
+            cursor = connection.execute(
+                "UPDATE chats SET mode=?,requested_model_id=?,requested_model_name=?,"
+                "prompt_price_per_token=?,completion_price_per_token=?,request_price=?,internal_reasoning_price_per_token=?,"
+                "input_cache_read_price_per_token=?,input_cache_write_price_per_token=?,pricing_overrides_json=?,pricing_snapshot_complete=?,"
+                "provider_id=?,currency=?,connection_revision=connection_revision+1,updated_at=? WHERE id=? AND connection_revision=?",
+                (
+                    mode.value,
+                    model.id,
+                    model.name,
+                    str(model.prompt_price_per_token),
+                    str(model.completion_price_per_token),
+                    str(model.request_price),
+                    str(model.internal_reasoning_price_per_token),
+                    str(model.input_cache_read_price_per_token),
+                    str(model.input_cache_write_price_per_token),
+                    stored_prices,
+                    int(model.pricing_is_complete),
+                    model.provider_id.value,
+                    model.currency.value,
+                    _serialize_datetime(updated_at),
+                    chat_id,
+                    expected_revision,
+                ),
+            )
+            if cursor.rowcount != 1:
+                raise BudgetConflictError("chat_connection_changed")
+            write_money(
+                connection,
+                chat_id,
+                model.provider_id,
+                model.currency,
+                cost_limit=cost_limit,
+                cost_used=cost_used,
+                cost_reserved=Decimal(target["cost_reserved"]),
+                updated_at=_serialize_datetime(updated_at),
+            )
+            connection.execute(
+                "UPDATE chat_budgets SET limits_configured=1,token_limit=?,max_completion_tokens=?,updated_at=? WHERE chat_id=?",
+                (
+                    configuration.token_limit,
+                    configuration.max_completion_tokens,
+                    _serialize_datetime(updated_at),
+                    chat_id,
+                ),
+            )
+            refresh_active_projection(connection, chat_id)
+            final_row = connection.execute(
+                "SELECT * FROM chats WHERE id=?", (chat_id,)
+            ).fetchone()
+            assert final_row is not None
+            return _chat_from_row(final_row)
 
     def create_message(self, message: Message) -> None:
         """Подготавливает локальную запись сообщения для следующего этапа."""
@@ -269,7 +447,64 @@ class SqliteChatRepository:
                 """,
                 (chat_id,),
             ).fetchall()
-        return [_message_from_row(row) for row in rows]
+            messages = [_message_from_row(row) for row in rows]
+            if not any(
+                row[1] == "retry_of_turn_id"
+                for row in connection.execute("PRAGMA table_info(turns)")
+            ):
+                return messages
+            turns = {
+                str(row["id"]): row
+                for row in connection.execute(
+                    "SELECT * FROM turns WHERE chat_id=? ORDER BY created_at,rowid",
+                    (chat_id,),
+                )
+            }
+            replaced = {
+                str(row["retry_of_turn_id"])
+                for row in turns.values()
+                if row["retry_of_turn_id"] is not None
+            }
+            users = {
+                message.turn_id: message
+                for message in messages
+                if message.role is MessageRole.USER
+            }
+            virtual: dict[str, Message] = {}
+            for turn_id, turn in turns.items():
+                if turn_id in replaced or turn["retry_of_turn_id"] is None:
+                    continue
+                source = str(turn["retry_of_turn_id"])
+                seen = {turn_id}
+                while source not in seen:
+                    seen.add(source)
+                    if source in users:
+                        virtual[turn_id] = replace(
+                            users[source],
+                            turn_id=turn_id,
+                            requested_model_id=str(turn["requested_model_id"]),
+                            status=MessageStatus(str(turn["status"])),
+                        )
+                        break
+                    parent = turns.get(source)
+                    if parent is None or parent["retry_of_turn_id"] is None:
+                        break
+                    source = str(parent["retry_of_turn_id"])
+            projected: list[Message] = []
+            inserted: set[str] = set()
+            for message in messages:
+                if message.turn_id in replaced:
+                    continue
+                if message.turn_id in virtual and message.turn_id not in inserted:
+                    projected.append(virtual[message.turn_id])
+                    inserted.add(message.turn_id)
+                projected.append(message)
+            projected.extend(
+                message
+                for turn_id, message in virtual.items()
+                if turn_id not in inserted
+            )
+            return projected
 
     @contextmanager
     def _connection(
@@ -321,6 +556,9 @@ def _chat_from_row(row: sqlite3.Row) -> Chat:
         currency=Currency(str(row["currency"]))
         if "currency" in row.keys()
         else Currency.USD,
+        connection_revision=int(row["connection_revision"])
+        if "connection_revision" in row.keys()
+        else 0,
         title_origin=str(row["title_origin"])
         if "title_origin" in row.keys()
         else "legacy",
@@ -434,6 +672,17 @@ def _insert_budget(
             "ready" if limits_configured else "unconfigured",
             _serialize_datetime(chat.updated_at),
         ),
+    )
+
+    write_money(
+        connection,
+        chat.id,
+        chat.provider_id,
+        chat.currency,
+        cost_limit=cost_limit_usd,
+        cost_used=Decimal("0"),
+        cost_reserved=Decimal("0"),
+        updated_at=_serialize_datetime(chat.updated_at),
     )
 
 

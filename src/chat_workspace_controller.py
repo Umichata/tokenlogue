@@ -67,6 +67,7 @@ class _WorkspaceOperation:
     session: int
     generation: int
     chat_id: str
+    connection_revision: int
 
 
 class ChatWorkspaceController:
@@ -91,6 +92,7 @@ class ChatWorkspaceController:
         self._limits_dialog: ChatLimitsDialog | None = None
         self._pending_limit_configuration: ChatLimitConfiguration | None = None
         self._limits_chat_id: str | None = None
+        self._limits_operation: _WorkspaceOperation | None = None
         self._pending_send: _PendingSend | None = None
         self._pending_preview: MessageSendPreview | None = None
         self._unknown_turn_id: str | None = None
@@ -148,11 +150,26 @@ class ChatWorkspaceController:
         view: ChatWorkspaceView,
         state: ActiveChatState | None,
     ) -> None:
-        previous_id = self._state.chat.id if self._state is not None else None
-        current_id = state.chat.id if state is not None else None
-        if previous_id != current_id:
+        previous = (
+            (self._state.chat.id, self._state.chat.connection_revision)
+            if self._state is not None
+            else None
+        )
+        current = (
+            (state.chat.id, state.chat.connection_revision)
+            if state is not None
+            else None
+        )
+        if previous != current:
             self._generation += 1
             self._clear_estimate_context()
+            if (
+                previous is not None
+                and current is not None
+                and previous[0] == current[0]
+            ):
+                self.dismiss_dialogs()
+                self._pending_send = None
         if self._view is not view:
             self._estimate_view_revision += 1
         self._view = view
@@ -353,6 +370,13 @@ class ChatWorkspaceController:
             self._generation += 1
             self._estimate_worker.invalidate()
 
+    def invalidate_connection_context(self) -> None:
+        """Revoke previews, editor estimates and dialog callbacks for this route."""
+        self._generation += 1
+        self.dismiss_dialogs()
+        self._pending_send = None
+        self._clear_estimate_context()
+
     async def set_paid_without_confirmation(self, chat_id: str, enabled: bool) -> None:
         if not _is_identifier(chat_id) or type(enabled) is not bool:
             return
@@ -389,7 +413,7 @@ class ChatWorkspaceController:
         failed = False
         try:
             updated = await self._interaction.save_paid_without_confirmation(
-                chat_id, enabled
+                chat_id, enabled, expected_revision=operation.connection_revision
             )
         except Exception:
             failed = True
@@ -449,6 +473,7 @@ class ChatWorkspaceController:
             return
         self._set_state(state)
         self._limits_chat_id = chat_id
+        self._limits_operation = operation
         self._limits_dialog = ChatLimitsDialog(
             state.chat,
             state.budget,
@@ -472,6 +497,8 @@ class ChatWorkspaceController:
             or chat_id is None
             or state.chat.id != chat_id
             or self._interaction.busy
+            or self._limits_operation is None
+            or not self._operation_matches(self._limits_operation)
         ):
             return
         try:
@@ -541,8 +568,8 @@ class ChatWorkspaceController:
         chat_id = self._limits_chat_id
         if dialog is None or chat_id is None:
             return
-        operation = self._capture_operation(chat_id)
-        if operation is None:
+        operation = self._limits_operation
+        if operation is None or not self._operation_matches(operation):
             return
         dialog.form.set_busy(True)
         dialog.form.show_error("")
@@ -552,6 +579,7 @@ class ChatWorkspaceController:
                 chat_id,
                 configuration,
                 cost_increase_confirmed=cost_increase_confirmed,
+                expected_revision=operation.connection_revision,
             )
         except Exception as error:
             if self._operation_matches(operation) and self._limits_dialog is dialog:
@@ -565,6 +593,7 @@ class ChatWorkspaceController:
         if self._limits_dialog is dialog:
             self._limits_dialog = None
             self._limits_chat_id = None
+            self._limits_operation = None
             self._page.pop_dialog()
         await self._refresh_workspace(False)
 
@@ -573,6 +602,7 @@ class ChatWorkspaceController:
             return
         self._limits_dialog = None
         self._limits_chat_id = None
+        self._limits_operation = None
         self._pending_limit_configuration = None
         self._page.pop_dialog()
 
@@ -932,7 +962,12 @@ class ChatWorkspaceController:
     ) -> None:
         if not self._active or session != self._session_generation:
             return
-        operation = _WorkspaceOperation(session, generation, pending.chat_id)
+        operation = _WorkspaceOperation(
+            session,
+            generation,
+            pending.chat_id,
+            outcome.state.chat.connection_revision if outcome.state is not None else -1,
+        )
         if generation != self._generation:
             if self._pending_send is pending:
                 self._pending_send = None
@@ -1054,13 +1089,17 @@ class ChatWorkspaceController:
             self._page.pop_dialog()
         self._limits_dialog = None
         self._limits_chat_id = None
+        self._limits_operation = None
         self._pending_limit_configuration = None
         self._pending_preview = None
         self._unknown_turn_id = None
 
     def _capture_operation(self, chat_id: str) -> _WorkspaceOperation | None:
         operation = _WorkspaceOperation(
-            self._session_generation, self._generation, chat_id
+            self._session_generation,
+            self._generation,
+            chat_id,
+            self._state.chat.connection_revision if self._state is not None else 0,
         )
         return operation if self._operation_matches(operation) else None
 
@@ -1071,6 +1110,7 @@ class ChatWorkspaceController:
             and self._generation == operation.generation
             and self._state is not None
             and self._state.chat.id == operation.chat_id
+            and self._state.chat.connection_revision == operation.connection_revision
             and self._view is not None
         )
 

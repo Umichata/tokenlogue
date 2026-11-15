@@ -14,6 +14,7 @@ import tomllib
 import unittest
 from pathlib import Path
 from unittest.mock import patch
+from urllib.parse import unquote, urlsplit
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 APPIMAGE_DIR = PROJECT_ROOT / "packaging" / "linux" / "appimage"
@@ -468,18 +469,49 @@ class AppImagePackagingTests(unittest.TestCase):
     def test_documentation_describes_platform_requirements_and_links_both_languages(
         self,
     ) -> None:
-        english = (APPIMAGE_DIR / "README.md").read_text(encoding="utf-8").lower()
-        russian = (APPIMAGE_DIR / "README.ru.md").read_text(encoding="utf-8").lower()
+        english = (APPIMAGE_DIR / "README.md").read_text(encoding="utf-8")
+        russian = (APPIMAGE_DIR / "README.ru.md").read_text(encoding="utf-8")
         for requirement in ("x86-64-v2", "ubuntu 22.04", "secret service", "fuse"):
             with self.subTest(requirement=requirement):
-                self.assertIn(requirement, english)
-                self.assertIn(requirement, russian)
-        self.assertIn("not digitally signed", english)
-        self.assertIn("no automatic updater", english)
-        self.assertIn("linux-appimage.md#english", english)
-        self.assertIn("linux-appimage.ru.md#russian", russian)
-        self.assertIn('href="readme.ru.md"', english)
-        self.assertIn('href="readme.md"', russian)
+                self.assertIn(requirement, english.lower())
+                self.assertIn(requirement, russian.lower())
+        self.assertRegex(english.lower(), r"\b(?:unsigned|not digitally signed)\b")
+        self.assertIn("не подписана", russian.lower())
+        for document, language, guide, notices in (
+            (english, "english", "linux-appimage.md", "notices.md"),
+            (russian, "russian", "linux-appimage.ru.md", "notices.ru.md"),
+        ):
+            links = [urlsplit(link) for link in re.findall(r"\]\(([^)]+)\)", document)]
+            relative = {
+                (APPIMAGE_DIR / unquote(link.path)).resolve(): link.fragment
+                for link in links
+                if not link.scheme and not link.netloc and link.path
+            }
+            for target in (
+                PROJECT_ROOT / "docs" / guide,
+                APPIMAGE_DIR / notices,
+                PROJECT_ROOT
+                / "docs"
+                / (
+                    "source-materials.md"
+                    if language == "english"
+                    else "source-materials.ru.md"
+                ),
+            ):
+                self.assertIn(target, relative)
+                self.assertTrue(target.is_file())
+                fragment = relative[target]
+                if fragment:
+                    self.assertIn(
+                        f'id="{fragment}"', target.read_text(encoding="utf-8")
+                    )
+            selector = document.splitlines()[0]
+            self.assertIn("README.md#english", selector)
+            self.assertIn("README.ru.md#russian", selector)
+        installation = (PROJECT_ROOT / "docs" / "linux-appimage.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertRegex(installation.lower(), r"\bno automatic updater\b")
 
 
 class CryptoSelfTestStagingTests(unittest.TestCase):

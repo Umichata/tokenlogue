@@ -39,6 +39,7 @@ class RequestAttempt:
     reasoning_tokens: int | None = None
     reserved_cost: Decimal | None = None
     reserved_tokens: int | None = None
+    connection_revision: int = 0
 
     @property
     def model_id(self) -> str | None:

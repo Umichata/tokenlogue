@@ -126,6 +126,7 @@ class BudgetConsentBasis:
     credential_sha256: str = field(default="", repr=False)
     credential_revision: object = field(default=None, repr=False)
     session_epoch: int | None = field(default=None, repr=False)
+    connection_revision: int = 0
 
     def __post_init__(self) -> None:
         if self.currency is Currency.USD:

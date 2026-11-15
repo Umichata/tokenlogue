@@ -171,6 +171,7 @@ class Chat:
     provider_id: ProviderId = ProviderId.OPENROUTER
     currency: Currency = Currency.USD
     pricing_unit: PriceUnit = PriceUnit.TOKEN
+    connection_revision: int = 0
 
     @property
     def price_snapshot(self) -> PriceComponents:

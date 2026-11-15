@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import time
 from collections.abc import Awaitable, Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from enum import Enum
 from typing import Protocol
@@ -24,7 +24,14 @@ from chat.account_balance import (
     AccountBalanceState,
     CreditsReader,
 )
-from chat.accounting import ChatBudgetService, parse_chat_limit_input
+from chat.accounting import (
+    AccountingStatus,
+    ChatBudget,
+    ChatBudgetService,
+    ChatLimitConfiguration,
+    TurnStatus,
+    parse_chat_limit_input,
+)
 from chat.drafts import DRAFT_STORAGE_MESSAGE, ChatDraftService, DraftStorageError
 from chat.metrics import LastRequestState
 from chat.models import FREE_ROUTER_MODEL, CatalogModel, Chat, ChatMode, ModelCatalog
@@ -39,6 +46,7 @@ from chat_interaction_controller import (
 from chat_workspace_controller import ChatWorkspaceController
 from i18n import tr
 from platform_security.local_protection import ProtectionSnapshot
+from providers.credentials import masked_key_display
 from providers.models import ProviderId, detect_key
 from service_errors import localized_error_text
 from storage.data_access import DataAccess
@@ -50,6 +58,11 @@ from ui import (
     NewChatLimitsView,
     RenameChatDialog,
     build_delete_chat_dialog,
+)
+from ui.chat_connection_view import (
+    ProviderSwitchDialog,
+    build_connection_confirmation,
+    build_missing_provider_key_dialog,
 )
 
 AsyncCallback = Callable[[], Awaitable[None]]
@@ -71,6 +84,17 @@ class _ChatActionContext:
     request: int
     view: ChatWorkspaceView
     chat_id: str
+    connection_revision: int
+
+
+@dataclass(frozen=True)
+class _ConnectionChange:
+    session: int
+    request: int
+    chat: Chat
+    target: ProviderId | None = None
+    credential_revision: object = None
+    budget: ChatBudget | None = None
 
 
 @dataclass(frozen=True, eq=False)
@@ -91,6 +115,7 @@ class ProviderProfiles(Protocol):
     def key_limit_for(self, provider: ProviderId) -> KeyLimitInfo: ...
     def balance_for(self, provider: ProviderId) -> AccountBalanceSnapshot: ...
     def credential_revision(self, provider: ProviderId) -> object: ...
+    def key_display(self, provider: ProviderId) -> str | None: ...
     def apply_validation(
         self, provider: ProviderId, key: str, result: KeyValidationResult
     ) -> None: ...
@@ -128,12 +153,14 @@ class ChatSessionController:
         data_access: DataAccess | None = None,
         provider_profiles: ProviderProfiles | None = None,
         on_provider_settings: AsyncCallback | None = None,
+        on_provider_settings_for: Callable[[ProviderId], Awaitable[None]] | None = None,
         present_content: Callable[[ft.Control], None] | None = None,
     ) -> None:
         self._page = page
         self._data_access = data_access
         self._provider_profiles = provider_profiles
         self._on_provider_settings = on_provider_settings
+        self._on_provider_settings_for = on_provider_settings_for
         self._present_content = present_content
         self._navigation_hidden = False
         self._provider_tasks: set[asyncio.Task[None]] = set()
@@ -144,6 +171,8 @@ class ChatSessionController:
         self._chat_service = chat_service
         self._catalog_service = catalog_service
         self._drafts = drafts
+        self._budget_service = budget_service
+        self._sending_service = sending_service
         self._on_lock = on_lock
         self._on_replace_key = on_replace_key
         self._on_security = on_security
@@ -186,6 +215,11 @@ class ChatSessionController:
         self._delete_chat_id: str | None = None
         self._delete_dialog: ft.AlertDialog | None = None
         self._chat_dialog_context: _ChatActionContext | None = None
+        self._connection_change: _ConnectionChange | None = None
+        self._connection_dialog: ft.AlertDialog | None = None
+        self._provider_switch_dialog: ProviderSwitchDialog | None = None
+        self._connection_request = 0
+        self._connection_waiting_for_key = False
         self._dialog_request_pending = False
         self._dialog_request_id = 0
         self._disposed = False
@@ -305,6 +339,13 @@ class ChatSessionController:
             return False
         if not await self.flush_drafts():
             return False
+        if self._connection_change is not None and not self._connection_waiting_for_key:
+            self._discard_connection_change()
+            self._catalog = None
+            self._pending_mode = None
+            self._pending_model = None
+            self._new_limits_view = None
+            self._screen = _ChatScreen.WORKSPACE
         self._dismiss_chat_dialog()
         self._workspace_controller.cancel_confirmation_for_navigation()
         self._workspace_controller.cancel_cost_increase()
@@ -322,6 +363,25 @@ class ChatSessionController:
         if self._disposed or not self.session_active:
             return
         self._navigation_hidden = False
+        waiting = self._connection_change if self._connection_waiting_for_key else None
+        if waiting is not None:
+            self._connection_waiting_for_key = False
+            if self._connection_matches(waiting, credential=False):
+                self._screen = _ChatScreen.WORKSPACE
+                await self._show_workspace(expected_generation=self._session_generation)
+                if self._connection_matches(waiting, credential=False):
+                    configured = (
+                        waiting.target is not None
+                        and self._key_for_provider(waiting.target) is not None
+                    )
+                    self._show_connection_provider_choice(
+                        waiting,
+                        tr("connection.resume")
+                        if configured
+                        else tr("connection.choose_provider"),
+                    )
+                return
+            self._discard_connection_change()
         if self._workspace_view is not None and self._screen is _ChatScreen.WORKSPACE:
             self._workspace_view.restore_navigation()
             if self._provider_profiles is not None:
@@ -335,6 +395,9 @@ class ChatSessionController:
         """Consume local navigation surfaces before the platform leaves Home."""
         if self._disposed or not self.session_active:
             return False
+        if self._connection_dialog is not None:
+            await self.cancel_connection_change()
+            return True
         view = self._workspace_view
         if view is not None and getattr(view, "_menu_dialog", None) is not None:
             view.close_menu()
@@ -366,6 +429,16 @@ class ChatSessionController:
 
     async def refresh_provider_state(self) -> None:
         if self._provider_profiles is None or not self.session_active or self._disposed:
+            return
+        change = self._connection_change
+        if (
+            change is not None
+            and not self._connection_waiting_for_key
+            and change.target is not None
+            and change.credential_revision != self._provider_revision(change.target)
+        ):
+            await self.cancel_connection_change()
+            self._show_chat_action_error(tr("connection.stale"))
             return
         provider = self._current_provider()
         revision = self._provider_revision(provider)
@@ -402,6 +475,13 @@ class ChatSessionController:
         if self._provider_profiles is not None:
             return self._provider_profiles.key_for(provider)
         return self._session_api_key
+
+    def _key_display_for(self, provider: ProviderId) -> str | None:
+        profiles = self._provider_profiles
+        reader = getattr(profiles, "key_display", None)
+        if reader is not None:
+            return reader(provider)
+        return masked_key_display(provider, self._key_for_provider(provider))
 
     def _provider_revision(self, provider: ProviderId) -> object:
         if self._provider_profiles is not None:
@@ -461,6 +541,7 @@ class ChatSessionController:
     def deactivate(self) -> None:
         """Удаляет ключ и каталог из памяти, не изменяя SQLite."""
         self._session_generation += 1
+        self._discard_connection_change()
         self._workspace_request_id += 1
         self._session_api_key = None
         self._navigation_hidden = False
@@ -616,7 +697,351 @@ class ChatSessionController:
         await self._interaction.wait_idle()
         await self._drafts.discard_for_deletion()
 
+    def _connection_matches(
+        self, change: _ConnectionChange, *, credential: bool = True
+    ) -> bool:
+        state = self._workspace_state
+        return (
+            self._connection_change is change
+            and not self._disposed
+            and self.session_active
+            and change.session == self._session_generation
+            and change.request == self._connection_request
+            and self._selected_chat_id == change.chat.id
+            and state is not None
+            and state.chat.id == change.chat.id
+            and state.chat.connection_revision == change.chat.connection_revision
+            and state.chat.provider_id is change.chat.provider_id
+            and (
+                not credential
+                or change.target is None
+                or (
+                    self._key_for_provider(change.target) is not None
+                    and change.credential_revision
+                    == self._provider_revision(change.target)
+                )
+            )
+        )
+
+    def _close_connection_dialog(self) -> None:
+        dialog, self._connection_dialog = self._connection_dialog, None
+        selector, self._provider_switch_dialog = self._provider_switch_dialog, None
+        if selector is not None:
+            selector.dispose()
+        if dialog is not None:
+            dialog.open = False
+            try:
+                dialog.update()
+            except (RuntimeError, AssertionError):
+                pass
+
+    def _discard_connection_change(self) -> None:
+        self._connection_request += 1
+        self._connection_change = None
+        self._connection_waiting_for_key = False
+        self._close_connection_dialog()
+
+    async def cancel_connection_change(self) -> None:
+        if self._connection_change is None:
+            return
+        generation = self._session_generation
+        self._discard_connection_change()
+        self._invalidate_catalog_request()
+        self._catalog = None
+        self._pending_mode = None
+        self._pending_model = None
+        self._new_limits_view = None
+        self._screen = _ChatScreen.WORKSPACE
+        if self.session_active and not self._disposed:
+            await self._show_workspace(expected_generation=generation)
+
+    def _connection_block_reason(self, state: ActiveChatState) -> str:
+        if self._workspace_controller.busy or state.sending:
+            return tr("connection.wait_send")
+        if (
+            state.budget.reserved_tokens
+            or state.budget.cost_reserved
+            or any(
+                turn.status is TurnStatus.PENDING
+                or turn.accounting_status
+                in {AccountingStatus.RESERVED, AccountingStatus.UNKNOWN}
+                for turn in state.turns
+            )
+        ):
+            return tr("service.previous_unknown")
+        return ""
+
+    async def request_change_provider(self, chat_id: str) -> None:
+        if self._workspace_controller.busy or self._operation_lock.locked():
+            self._show_chat_action_error(tr("connection.wait_send"))
+            return
+        loaded = await self._load_chat_action(chat_id)
+        if loaded is None:
+            return
+        chat, origin = loaded
+        state = self._workspace_state
+        if state is None or state.chat.id != chat.id:
+            return
+        reason = self._connection_block_reason(state)
+        if reason:
+            self._show_chat_action_error(reason)
+            return
+        if not await self._workspace_controller.flush_editor():
+            return
+        if not self._chat_action_matches(origin):
+            return
+        self._discard_connection_change()
+        self._workspace_request_id += 1
+        self._cancel_estimate_metadata()
+        self._workspace_controller.invalidate_connection_context()
+        self._interaction.invalidate_connection_context(chat.id)
+        change = _ConnectionChange(
+            self._session_generation, self._connection_request, chat
+        )
+        self._connection_change = change
+        self._show_connection_provider_choice(change)
+
+    def _show_connection_provider_choice(
+        self, change: _ConnectionChange, message: str = ""
+    ) -> None:
+        if not self._connection_matches(change, credential=False):
+            return
+        self._close_connection_dialog()
+
+        async def choose(provider: ProviderId) -> None:
+            if self._connection_dialog is selector.control:
+                await self.select_connection_provider(provider)
+
+        async def cancel() -> None:
+            if self._connection_change is change:
+                await self.cancel_connection_change()
+
+        selector = ProviderSwitchDialog(
+            change.chat.provider_id, choose, cancel, message=message
+        )
+        self._provider_switch_dialog = selector
+        self._connection_dialog = selector.control
+        self._page.show_dialog(selector.control)
+        self._page.update()
+
+    async def select_connection_provider(self, provider: ProviderId) -> None:
+        change = self._connection_change
+        if (
+            not isinstance(provider, ProviderId)
+            or change is None
+            or not self._connection_matches(change, credential=False)
+        ):
+            return
+        if provider is change.chat.provider_id:
+            await self.cancel_connection_change()
+            return
+        if self._workspace_controller.busy or self._operation_lock.locked():
+            self._show_chat_action_error(tr("connection.wait_send"))
+            return
+        change = replace(
+            change,
+            target=provider,
+            credential_revision=self._provider_revision(provider),
+            budget=None,
+        )
+        self._connection_change = change
+        if self._key_for_provider(provider) is None:
+            self._close_connection_dialog()
+
+            async def configure(target: ProviderId) -> None:
+                if (
+                    self._connection_dialog is dialog
+                    and self._connection_matches(change, credential=False)
+                    and target is change.target
+                ):
+                    self._connection_waiting_for_key = True
+                    self._close_connection_dialog()
+                    if self._on_provider_settings_for is not None:
+                        await self._on_provider_settings_for(target)
+                    elif self._on_provider_settings is not None:
+                        await self._on_provider_settings()
+
+            async def cancel() -> None:
+                if self._connection_dialog is dialog:
+                    await self.cancel_connection_change()
+
+            dialog = build_missing_provider_key_dialog(provider, configure, cancel)
+            self._connection_dialog = dialog
+            self._page.show_dialog(dialog)
+            self._page.update()
+            return
+        self._close_connection_dialog()
+        self._creation_provider = provider
+        self._sync_provider_metadata(provider, publish_balance=False)
+        self._catalog = None
+        self._pending_mode = None
+        self._pending_model = None
+        self._new_limits_view = None
+        self._catalog_service.clear_cache()
+        self._show_catalog_loading()
+        key = self._key_for_provider(provider)
+        assert key is not None
+        task = asyncio.current_task()
+        self._catalog_task = task
+        try:
+            catalog = await self._catalog_service.get_catalog(key)
+            if not self._connection_matches(change):
+                return
+            budget = await self._budget_service.get_chat_budget(
+                change.chat.id, provider_id=provider
+            )
+        except asyncio.CancelledError:
+            return
+        except Exception:
+            if self._connection_matches(change):
+                await self.cancel_connection_change()
+                self._show_chat_action_error(tr("connection.catalog_unavailable"))
+            return
+        finally:
+            if self._catalog_task is task:
+                self._catalog_task = None
+        if not self._connection_matches(change):
+            return
+        if not catalog.available:
+            await self.cancel_connection_change()
+            self._show_chat_action_error(tr("connection.catalog_unavailable"))
+            return
+        self._connection_change = replace(change, budget=budget)
+        self._catalog = catalog
+        self._show_mode_selection()
+
+    async def _review_connection_change(
+        self, configuration: ChatLimitConfiguration
+    ) -> None:
+        change = self._connection_change
+        model, mode = self._pending_model, self._pending_mode
+        if (
+            change is None
+            or change.target is None
+            or change.budget is None
+            or model is None
+            or mode is None
+            or not self._connection_matches(change)
+        ):
+            return
+        if configuration.token_limit != change.budget.token_limit:
+            if self._new_limits_view is not None:
+                self._new_limits_view.form.show_error(tr("connection.shared_tokens"))
+                self._page.update()
+            return
+        self._close_connection_dialog()
+
+        async def confirm() -> None:
+            if self._connection_dialog is dialog:
+                await self._confirm_connection_change(change, configuration)
+
+        async def cancel() -> None:
+            if self._connection_dialog is dialog:
+                await self.cancel_connection_change()
+
+        shown_budget = replace(
+            change.budget,
+            limits_configured=True,
+            cost_limit=configuration.cost_limit,
+            cost_limit_usd=configuration.cost_limit
+            if configuration.currency.value == "USD"
+            else None,
+        )
+        dialog = build_connection_confirmation(
+            change.chat,
+            model,
+            mode,
+            configuration.currency,
+            configuration.cost_limit,
+            confirm,
+            cancel,
+            token_limit=configuration.token_limit,
+            budget=shown_budget,
+        )
+        self._connection_dialog = dialog
+        self._page.show_dialog(dialog)
+        self._page.update()
+
+    async def _confirm_connection_change(
+        self, change: _ConnectionChange, configuration: ChatLimitConfiguration
+    ) -> None:
+        model, mode, view = (
+            self._pending_model,
+            self._pending_mode,
+            self._new_limits_view,
+        )
+        if (
+            model is None
+            or mode is None
+            or view is None
+            or change.target is None
+            or self._operation_lock.locked()
+            or self._workspace_controller.busy
+            or not self._connection_matches(change)
+        ):
+            return
+        view.form.set_busy(True)
+        self._page.update()
+        async with self._operation_lock:
+            try:
+                key = self._key_for_provider(change.target)
+                if key is None:
+                    return
+                self._catalog_service.clear_cache()
+                catalog = await self._catalog_service.get_catalog(key)
+                if not self._connection_matches(change):
+                    return
+                # Reconfirm the exact selected model, including prices and
+                # constraints. Never substitute a same-ID model or new price.
+                if model not in (*catalog.free_models, *catalog.paid_models):
+                    raise ChatPolicyError(tr("service.model_missing"))
+                profiles = self._provider_profiles
+                chat = await self._sending_service.switch_chat_connection(
+                    change.chat.id,
+                    expected_revision=change.chat.connection_revision,
+                    model=model,
+                    mode=mode,
+                    catalog=catalog,
+                    key_validity=profiles.key_validity_for(change.target)
+                    if profiles is not None
+                    else self._key_validity,
+                    key_limit=profiles.key_limit_for(change.target)
+                    if profiles is not None
+                    else self._key_limit,
+                    configuration=configuration,
+                    dispatch_guard=lambda: self._connection_matches(change),
+                )
+            except (ChatPolicyError, ValueError, RuntimeError) as error:
+                if self._connection_matches(change):
+                    self._close_connection_dialog()
+                    view.form.set_busy(False)
+                    view.form.show_error(localized_error_text(error))
+                    self._page.update()
+                return
+            except Exception:
+                if self._connection_matches(change):
+                    self._close_connection_dialog()
+                    view.form.set_busy(False)
+                    view.form.show_error(tr("connection.change_failed"))
+                    self._page.update()
+                return
+        if not self._connection_matches(change):
+            return
+        self._discard_connection_change()
+        self._catalog = None
+        self._pending_mode = None
+        self._pending_model = None
+        self._new_limits_view = None
+        self._cancel_estimate_metadata()
+        self._workspace_controller.invalidate_connection_context()
+        self._interaction.invalidate_connection_context(chat.id)
+        self._selected_provider = chat.provider_id
+        self._screen = _ChatScreen.WORKSPACE
+        await self._show_workspace(expected_generation=change.session)
+        self._start_provider_refresh(chat.provider_id)
+
     async def request_new_chat(self) -> None:
+        self._discard_connection_change()
         if self._provider_profiles is not None:
             self._creation_provider = self._provider_profiles.default_provider
             if self._provider_profiles.key_for(self._creation_provider) is None:
@@ -673,6 +1098,9 @@ class ChatSessionController:
         self._show_mode_selection()
 
     async def cancel_new_chat(self) -> None:
+        if self._connection_change is not None:
+            await self.cancel_connection_change()
+            return
         generation = self._session_generation
         self._invalidate_catalog_request()
         self._catalog = None
@@ -683,6 +1111,11 @@ class ChatSessionController:
 
     async def select_chat_mode(self, mode: ChatMode) -> None:
         if not isinstance(mode, ChatMode):
+            return
+        if self._screen is not _ChatScreen.MODE_SELECTION:
+            return
+        change = self._connection_change
+        if change is not None and not self._connection_matches(change):
             return
         catalog = self._catalog
         if self._disposed or catalog is None or self._session_api_key is None:
@@ -700,11 +1133,24 @@ class ChatSessionController:
         self._pending_mode = mode
         self._pending_model = None
         models = catalog.free_models if mode is ChatMode.FREE else catalog.paid_models
+
+        async def choose(model: CatalogModel) -> None:
+            if (
+                self._catalog is catalog
+                and self._pending_mode is mode
+                and self._connection_change is change
+            ):
+                await self.select_chat_model(model)
+
+        async def cancel() -> None:
+            if self._catalog is catalog and self._connection_change is change:
+                await self.back_to_mode_selection()
+
         view = ModelSelectionView(
             mode,
             models,
-            on_select=self.select_chat_model,
-            on_cancel=self.back_to_mode_selection,
+            on_select=choose,
+            on_cancel=cancel,
         )
         self._screen = _ChatScreen.MODEL_SELECTION
         self._replace_page(view.control)
@@ -724,17 +1170,44 @@ class ChatSessionController:
             or self._catalog is None
             or self._pending_mode is None
             or self._session_api_key is None
+            or self._screen is not _ChatScreen.MODEL_SELECTION
         ):
             return
         if model.provider_id is not self._creation_provider:
             return
-        self._pending_model = model
-        self._new_limits_view = NewChatLimitsView(
-            self._pending_mode,
-            model,
-            self.submit_new_chat_limits,
-            self.back_to_model_selection,
+        change = self._connection_change
+        if change is not None and not self._connection_matches(change):
+            return
+        catalog, mode = self._catalog, self._pending_mode
+        candidates = (
+            catalog.free_models if mode is ChatMode.FREE else catalog.paid_models
         )
+        if model not in candidates:
+            return
+        self._pending_model = model
+
+        async def submit(total: str, completion: str, cost: str | None) -> None:
+            if (
+                self._new_limits_view is view
+                and self._pending_model is model
+                and self._connection_change is change
+            ):
+                await self.submit_new_chat_limits(total, completion, cost)
+
+        async def cancel() -> None:
+            if self._new_limits_view is view and self._connection_change is change:
+                await self.back_to_model_selection()
+
+        view = NewChatLimitsView(
+            mode,
+            model,
+            submit,
+            cancel,
+            initial_budget=change.budget if change is not None else None,
+            preserve_tokens=change is not None,
+            submit_label=tr("connection.review") if change is not None else None,
+        )
+        self._new_limits_view = view
         self._screen = _ChatScreen.LIMITS_SELECTION
         self._replace_page(self._new_limits_view.control)
 
@@ -746,11 +1219,21 @@ class ChatSessionController:
         self._pending_model = None
         self._new_limits_view = None
         models = catalog.free_models if mode is ChatMode.FREE else catalog.paid_models
+        change = self._connection_change
+
+        async def choose(model: CatalogModel) -> None:
+            if self._catalog is catalog and self._connection_change is change:
+                await self.select_chat_model(model)
+
+        async def cancel() -> None:
+            if self._catalog is catalog and self._connection_change is change:
+                await self.back_to_mode_selection()
+
         view = ModelSelectionView(
             mode,
             models,
-            on_select=self.select_chat_model,
-            on_cancel=self.back_to_mode_selection,
+            on_select=choose,
+            on_cancel=cancel,
         )
         self._screen = _ChatScreen.MODEL_SELECTION
         self._replace_page(view.control)
@@ -785,6 +1268,9 @@ class ChatSessionController:
         except ValueError as error:
             view.form.show_error(localized_error_text(error))
             self._page.update()
+            return
+        if self._connection_change is not None:
+            await self._review_connection_change(configuration)
             return
         view.form.set_busy(True)
         view.form.show_error("")
@@ -844,6 +1330,12 @@ class ChatSessionController:
             return
         if generation != self._session_generation or self._session_api_key is None:
             return
+        self._discard_connection_change()
+        self._invalidate_catalog_request()
+        self._catalog = None
+        self._pending_mode = None
+        self._pending_model = None
+        self._new_limits_view = None
         self._dismiss_chat_dialog()
         self._workspace_controller.cancel_confirmation_for_navigation()
         self._cancel_estimate_metadata()
@@ -860,6 +1352,9 @@ class ChatSessionController:
             and context.request == self._dialog_request_id
             and context.view is self._workspace_view
             and context.chat_id == self._selected_chat_id
+            and self._workspace_state is not None
+            and self._workspace_state.chat.connection_revision
+            == context.connection_revision
             and self._screen is _ChatScreen.WORKSPACE
         )
 
@@ -886,6 +1381,9 @@ class ChatSessionController:
             self._dialog_request_id,
             self._workspace_view,
             chat_id,
+            self._workspace_state.chat.connection_revision
+            if self._workspace_state is not None
+            else 0,
         )
         try:
             chat = await self._chat_service.get_chat(chat_id)
@@ -1610,8 +2108,6 @@ class ChatSessionController:
                 else self._selected_provider
             )
         )
-        if self._provider_profiles is not None:
-            self._sync_provider_metadata(self._selected_provider)
         interaction_state: ActiveChatState | None = None
         if selected is not None:
             try:
@@ -1629,6 +2125,9 @@ class ChatSessionController:
                 return
             if not self._workspace_request_matches(expected_generation, request_id):
                 return
+            selected = interaction_state.chat
+            chats = [selected if chat.id == selected.id else chat for chat in chats]
+            self._selected_provider = selected.provider_id
             try:
                 await self._drafts.load(selected.id)
             except DraftStorageError:
@@ -1641,6 +2140,8 @@ class ChatSessionController:
                 return
         if not self._workspace_request_matches(expected_generation, request_id):
             return
+        if self._provider_profiles is not None:
+            self._sync_provider_metadata(self._selected_provider)
         self._workspace_state = interaction_state
         if self._workspace_view is not None and self._screen is _ChatScreen.WORKSPACE:
             self._workspace_view.update_workspace(
@@ -1651,6 +2152,7 @@ class ChatSessionController:
                 key_limit=self._key_limit,
                 key_validation_in_progress=self._key_validation_in_progress,
                 provider_id=self._selected_provider,
+                key_display=self._key_display_for(self._selected_provider),
             )
             self._workspace_controller.bind(self._workspace_view, interaction_state)
             self._push_estimate_metadata()
@@ -1705,8 +2207,10 @@ class ChatSessionController:
                 key_limit=self._key_limit,
                 key_validation_in_progress=self._key_validation_in_progress,
                 provider_id=self._selected_provider,
+                key_display=self._key_display_for(self._selected_provider),
                 on_retry_key=self.request_key_revalidation,
                 on_replace_key=self.request_key_replacement,
+                on_change_provider=self.request_change_provider,
                 on_paid_confirmation_changed=paid_confirmation_changed,
                 protection_status=self._protection_status,
                 on_test_screen_lock=(
@@ -1813,6 +2317,10 @@ class ChatSessionController:
             if profiles is not None
             else self._key_limit,
             provider_id=provider,
+            connection_revision=self._workspace_state.chat.connection_revision
+            if self._workspace_state is not None
+            else 0,
+            credential_revision=revision,
             request_finished=(
                 lambda: self._start_provider_refresh(provider, after_response=True)
             )
@@ -2053,6 +2561,7 @@ class ChatSessionController:
             task.cancel()
 
     def _show_catalog_loading(self) -> None:
+        self._workspace_request_id += 1
         self._clear_workspace()
         self._screen = _ChatScreen.CATALOG_LOADING
         self._replace_page(CatalogLoadingView(self.cancel_new_chat).control)
@@ -2061,13 +2570,24 @@ class ChatSessionController:
         catalog = self._catalog
         if catalog is None:
             return
+        self._workspace_request_id += 1
+        change = self._connection_change
+
+        async def choose(mode: ChatMode) -> None:
+            if self._catalog is catalog and self._connection_change is change:
+                await self.select_chat_mode(mode)
+
+        async def cancel() -> None:
+            if self._catalog is catalog and self._connection_change is change:
+                await self.cancel_new_chat()
+
         self._clear_workspace()
         view = ModeSelectionView(
             catalog,
             key_validity=self._key_validity,
             key_limit=self._key_limit,
-            on_select=self.select_chat_mode,
-            on_cancel=self.cancel_new_chat,
+            on_select=choose,
+            on_cancel=cancel,
             provider_id=self._creation_provider,
         )
         self._screen = _ChatScreen.MODE_SELECTION

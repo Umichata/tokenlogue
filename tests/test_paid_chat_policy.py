@@ -15,12 +15,13 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from chat.accounting import ChatBudgetService  # noqa: E402
+from chat.accounting import ChatBudgetService, ChatLimitConfiguration  # noqa: E402
 from chat.drafts import ChatDraft, ChatDraftService  # noqa: E402
 from chat.errors import ChatErrorType  # noqa: E402
 from chat.models import FREE_ROUTER_MODEL, Chat, ChatMode  # noqa: E402
 from chat.sending import MessageSendingService  # noqa: E402
 from chat.service import ChatService  # noqa: E402
+from providers.models import Currency, ProviderId  # noqa: E402
 from storage.chat_repository import SqliteChatRepository  # noqa: E402
 from storage.data_access import DataAccess, DataAccessError  # noqa: E402
 from storage.database import AuthDatabase  # noqa: E402
@@ -126,6 +127,51 @@ class PaidChatPolicyTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(chat.paid_without_confirmation)
         self.assertEqual(chat.paid_policy_revision, token.revision)
         self.assertFalse(self.chat("b").paid_without_confirmation)
+
+    async def test_paid_permission_cannot_follow_provider_or_roundtrip_connection(self):
+        token = await self.enable()
+        original = self.chat("a")
+        self.assertTrue(self.service.paid_consent_matches(original, token))
+        other_provider = replace(
+            original,
+            provider_id=ProviderId.VSEGPT,
+            currency=Currency.RUB,
+            connection_revision=original.connection_revision + 1,
+        )
+        returned = replace(
+            original, connection_revision=original.connection_revision + 2
+        )
+        for current in (other_provider, returned):
+            with self.subTest(provider=current.provider_id):
+                self.assertFalse(self.service.paid_consent_matches(current, token))
+        self.assertEqual(token.provider_id, original.provider_id)
+        self.assertEqual(token.connection_revision, original.connection_revision)
+
+    async def test_stale_paid_setting_cannot_enable_the_new_connection(self):
+        token = await self.enable()
+        original = self.chat("a")
+        switched = self.chats.switch_connection(
+            "a",
+            expected_revision=original.connection_revision,
+            mode=ChatMode.PAID,
+            model=replace(
+                self.model, provider_id=ProviderId.VSEGPT, currency=Currency.RUB
+            ),
+            configuration=ChatLimitConfiguration(
+                100_000, 64, None, cost_limit=Decimal("100"), currency=Currency.RUB
+            ),
+            updated_at=fx.NOW,
+        )
+        self.assertFalse(switched.paid_without_confirmation)
+        with self.assertRaises(ValueError):
+            await self.service.set_paid_without_confirmation(
+                "a", True, expected_revision=original.connection_revision
+            )
+        current = self.chat("a")
+        self.assertEqual(current.provider_id, ProviderId.VSEGPT)
+        self.assertFalse(current.paid_without_confirmation)
+        self.assertEqual(current.connection_revision, switched.connection_revision)
+        self.assertFalse(self.service.paid_consent_matches(current, token))
 
     async def test_no_plaintext_permission_can_enable_protected_chat(self):
         values = [

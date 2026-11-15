@@ -239,7 +239,12 @@ class ChatMetricsStrip:
                     else tr("metrics.unknown"),
                     status=previous,
                 )
-        elif snapshot.mode is ChatMode.PAID:
+        elif (
+            snapshot.mode is ChatMode.PAID
+            or last.provider_id != snapshot.provider_id
+            or last.currency != snapshot.currency
+            or last.connection_revision != snapshot.connection_revision
+        ):
             previous = (
                 display_money(last.cost, last.currency)
                 if last.cost is not None

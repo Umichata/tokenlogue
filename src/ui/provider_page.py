@@ -85,6 +85,9 @@ class _ProviderCard:
         self.detected = ft.Text("", color=MUTED_COLOR)
         self.status = ft.Text(tr("providers.status.not_configured"))
         self.saved = ft.Text(tr("providers.no_saved_key"), color=MUTED_COLOR)
+        self.shared_key_notice = ft.Text(
+            tr("connection.shared_key", provider=name), color=MUTED_COLOR, size=12
+        )
         self.message = ft.Text("", color=WARNING_COLOR, selectable=True)
         self.balance = ft.Text("", selectable=True)
         self.balance_note = ft.Text("", size=12, color=MUTED_COLOR)
@@ -106,6 +109,7 @@ class _ProviderCard:
                 controls=[
                     ft.Text(provider_spec(provider_id).name, size=21),
                     self.saved,
+                    self.shared_key_notice,
                     self.status,
                     ft.Row(controls=[self.key_field, self.reveal], spacing=4),
                     self.detected,

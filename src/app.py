@@ -194,6 +194,7 @@ class AppController:
                 {
                     "provider_profiles": provider_profiles,
                     "on_provider_settings": self.open_provider_settings,
+                    "on_provider_settings_for": self.open_provider_settings,
                     "present_content": self._present_home,
                 }
                 if provider_profiles is not None
@@ -2460,9 +2461,11 @@ class AppController:
             await self._load_spending(self._spending_page.filters)
         return epoch == self._private_views_epoch and self._private_pages_available()
 
-    async def open_provider_settings(self) -> None:
+    async def open_provider_settings(self, provider: ProviderId | None = None) -> None:
         shell = self._workspace_shell
         if shell is not None and self._private_pages_available():
+            if provider is not None and self._provider_page is not None:
+                await self._provider_page.set_filter(provider)
             await shell.select(WorkspacePage.PROVIDERS)
 
     async def _application_back(self, _event: ft.Event) -> None:

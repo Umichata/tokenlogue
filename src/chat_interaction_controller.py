@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import secrets
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from types import TracebackType
@@ -35,6 +36,8 @@ class ChatSessionContext:
     key_validity: KeyValidityState
     key_limit: KeyLimitInfo
     provider_id: ProviderId = ProviderId.OPENROUTER
+    connection_revision: int = 0
+    credential_revision: object = field(default=None, repr=False)
     request_finished: Callable[[], None] | None = field(
         default=None, repr=False, compare=False
     )
@@ -148,6 +151,10 @@ class ChatInteractionController:
         async with self._operation_lock:
             pass
 
+    def invalidate_connection_context(self, chat_id: str) -> None:
+        if self._active_chat_id == chat_id:
+            self._generation += 1
+
     async def select_chat(self, chat_id: str) -> ActiveChatState:
         _require_identifier(chat_id, tr("service.label.chat"))
         if not self._active:
@@ -158,24 +165,34 @@ class ChatInteractionController:
 
     async def load_state(self, chat_id: str) -> ActiveChatState:
         _require_identifier(chat_id, tr("service.label.chat"))
-        chat, messages, budget, turns, last_request = await asyncio.gather(
-            self._chat_service.get_chat(chat_id),
-            self._chat_service.list_messages(chat_id),
-            self._budget_service.get_chat_budget(chat_id),
-            self._budget_service.list_chat_turns(chat_id),
-            self._budget_service.get_last_request(chat_id),
-        )
-        if chat is None:
-            raise KeyError(tr("service.chat_missing"))
-        return ActiveChatState(
-            chat=chat,
-            messages=tuple(messages),
-            turns=tuple(turns),
-            budget=budget,
-            remaining=calculate_remaining_budget(budget),
-            sending=self.busy,
-            last_request=last_request,
-        )
+        for _ in range(2):
+            chat = await self._chat_service.get_chat(chat_id)
+            if chat is None:
+                raise KeyError(tr("service.chat_missing"))
+            messages, budget, turns, last_request = await asyncio.gather(
+                self._chat_service.list_messages(chat_id),
+                self._budget_service.get_chat_budget(
+                    chat_id, provider_id=chat.provider_id
+                ),
+                self._budget_service.list_chat_turns(chat_id),
+                self._budget_service.get_last_request(chat_id),
+            )
+            current = await self._chat_service.get_chat(chat_id)
+            if current is not None and (
+                current.connection_revision == chat.connection_revision
+                and current.provider_id is chat.provider_id
+                and current.currency is chat.currency
+            ):
+                return ActiveChatState(
+                    chat=current,
+                    messages=tuple(messages),
+                    turns=tuple(turns),
+                    budget=budget,
+                    remaining=calculate_remaining_budget(budget),
+                    sending=self.busy,
+                    last_request=last_request,
+                )
+        raise RuntimeError(tr("service.active_chat_changed"))
 
     async def preview_message(
         self,
@@ -207,7 +224,7 @@ class ChatInteractionController:
                     else {}
                 ),
             )
-        if not self._matches(chat_id, generation):
+        if not self._matches(chat_id, generation, session):
             return _stale_preview(chat_id)
         self._apply_key_state(
             preview.key_validity_update, preview.key_limit_update, session
@@ -234,7 +251,7 @@ class ChatInteractionController:
                 key_limit=session.key_limit,
                 paid_consent=paid_consent,
             )
-        if chat_id is None or not self._matches(chat_id, generation):
+        if chat_id is None or not self._matches(chat_id, generation, session):
             return _stale_preview(preview.chat_id, turn_id=turn_id)
         self._apply_key_state(
             preview.key_validity_update, preview.key_limit_update, session
@@ -260,7 +277,7 @@ class ChatInteractionController:
         )
 
     async def save_paid_without_confirmation(
-        self, chat_id: str, enabled: bool
+        self, chat_id: str, enabled: bool, *, expected_revision: int | None = None
     ) -> ActiveChatState:
         _require_identifier(chat_id, tr("service.label.chat"))
         if (
@@ -272,7 +289,9 @@ class ChatInteractionController:
         # Changing permission cancels any earlier pending financial decision.
         self._generation += 1
         generation = self._generation
-        await self._chat_service.set_paid_without_confirmation(chat_id, enabled)
+        await self._chat_service.set_paid_without_confirmation(
+            chat_id, enabled, expected_revision=expected_revision
+        )
         if not self._matches(chat_id, generation):
             raise RuntimeError(tr("service.session_inactive"))
         return await self.load_state(chat_id)
@@ -329,9 +348,8 @@ class ChatInteractionController:
 
         def current_dispatch() -> bool:
             return (
-                self._matches(chat_id, generation)
+                self._matches(chat_id, generation, session)
                 and self._session_generation == session_generation
-                and self._session_provider() is not None
             )
 
         async def reserved(turn_id: str) -> None:
@@ -364,7 +382,7 @@ class ChatInteractionController:
                 if not current_dispatch():
                     return InteractionOutcome(False, _missing_session_result(), None)
                 raise
-        if not self._matches(chat_id, generation):
+        if not self._matches(chat_id, generation, session):
             if (
                 session.apply_key_state is not None
                 and session_generation == self._session_generation
@@ -432,10 +450,7 @@ class ChatInteractionController:
                 await on_reserved(reserved_turn_id)
 
         def current_dispatch() -> bool:
-            return (
-                self._matches(chat_id, generation)
-                and self._session_provider() is not None
-            )
+            return self._matches(chat_id, generation, session)
 
         async with self._operation_lock:
             try:
@@ -456,7 +471,7 @@ class ChatInteractionController:
                         False, _missing_session_result(turn_id), None
                     )
                 raise
-        if not self._matches(chat_id, generation):
+        if not self._matches(chat_id, generation, session):
             if (
                 session.apply_key_state is not None
                 and session_generation == self._session_generation
@@ -476,6 +491,7 @@ class ChatInteractionController:
         configuration: ChatLimitConfiguration,
         *,
         cost_increase_confirmed: bool,
+        expected_revision: int | None = None,
     ) -> ActiveChatState:
         _require_identifier(chat_id, tr("service.label.chat"))
         if not isinstance(configuration, ChatLimitConfiguration):
@@ -486,6 +502,17 @@ class ChatInteractionController:
             raise RuntimeError(tr("service.limits_during_send"))
         generation = self._generation
         async with self._operation_lock:
+            chat = await self._chat_service.get_chat(chat_id)
+            if (
+                chat is None
+                or chat.currency is not configuration.currency
+                or (
+                    expected_revision is not None
+                    and chat.connection_revision != expected_revision
+                )
+            ):
+                raise RuntimeError(tr("service.active_chat_changed"))
+            expected_revision = chat.connection_revision
             current = await self._budget_service.get_chat_budget(chat_id)
             operation = (
                 self._budget_service.update_chat_limits
@@ -498,6 +525,8 @@ class ChatInteractionController:
                 max_completion_tokens=configuration.max_completion_tokens,
                 cost_limit=configuration.cost_limit,
                 cost_increase_confirmed=cost_increase_confirmed,
+                expected_revision=expected_revision,
+                currency=configuration.currency,
             )
         if not self._matches(chat_id, generation):
             raise RuntimeError(tr("service.active_chat_changed"))
@@ -545,12 +574,30 @@ class ChatInteractionController:
         if not self._matches(chat_id, generation):
             raise RuntimeError(tr("service.active_chat_changed"))
 
-    def _matches(self, chat_id: str, generation: int) -> bool:
+    def _matches(
+        self,
+        chat_id: str,
+        generation: int,
+        session: ChatSessionContext | None = None,
+    ) -> bool:
+        current = self._session_provider()
         return (
             self._active
             and self._active_chat_id == chat_id
             and self._generation == generation
-            and self._session_provider() is not None
+            and current is not None
+            and (
+                session is None
+                or (
+                    current.provider_id is session.provider_id
+                    and current.connection_revision == session.connection_revision
+                    and current.credential_revision == session.credential_revision
+                    and secrets.compare_digest(
+                        current.api_key.encode("utf-8"),
+                        session.api_key.encode("utf-8"),
+                    )
+                )
+            )
         )
 
     def _apply_key_state(

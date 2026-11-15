@@ -28,10 +28,12 @@ from chat.metrics import (  # noqa: E402
 )
 from chat.models import ChatMode  # noqa: E402
 from i18n import set_language, tr  # noqa: E402
+from providers.models import Currency, ProviderId  # noqa: E402
 from tests import test_chat_menu as fixtures  # noqa: E402
 from ui.chat_metrics import (  # noqa: E402
     ChatMetricsStrip,
     DraftEstimateLine,
+    display_money,
     display_usd,
 )
 from ui.message_composer import MessageComposer  # noqa: E402
@@ -469,6 +471,44 @@ class ChatMetricsUiTests(unittest.IsolatedAsyncioTestCase):
         strip.set_metrics(replace(self.metrics(), key_limit=KeyLimitInfo.unknown()))
         self.assertEqual(strip.metadata.value, "Key limit unavailable")
         self.assertNotIn("$0", strip.metadata.value)
+
+    async def test_switch_to_free_preserves_historical_cost_and_currency(self):
+        for language in ("en", "ru"):
+            set_language(language)
+            for provider, currency, revision in (
+                (ProviderId.VSEGPT, Currency.RUB, 1),
+                (ProviderId.OPENROUTER, Currency.USD, 0),
+            ):
+                with self.subTest(language=language, provider=provider):
+                    strip = ChatMetricsStrip()
+                    last = LastRequestMetrics(
+                        LastRequestState.FINAL,
+                        total_tokens=45,
+                        cost=Decimal("12.3456"),
+                        provider_id=provider,
+                        currency=currency,
+                        connection_revision=revision,
+                    )
+                    strip.set_metrics(
+                        replace(
+                            self.metrics(),
+                            mode=ChatMode.FREE,
+                            connection_revision=2,
+                            last_request=last,
+                        )
+                    )
+                    rendered = strip.values.value
+                    assert isinstance(rendered, str)
+                    self.assertIn(
+                        display_money(Decimal("12.3456"), currency),
+                        rendered,
+                    )
+                    if currency is Currency.RUB:
+                        self.assertNotIn(
+                            display_money(Decimal("12.3456"), Currency.USD),
+                            rendered,
+                        )
+                    self.assertFalse(strip.metadata.visible)
 
     async def test_key_limit_states_are_visible_and_distinct_in_both_languages(self):
         for language, expected in (

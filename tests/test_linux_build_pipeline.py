@@ -14,6 +14,7 @@ import textwrap
 import unittest
 from pathlib import Path
 from unittest.mock import patch
+from urllib.parse import unquote, urlsplit
 
 import yaml
 
@@ -439,9 +440,36 @@ class LinuxBuildPipelineTests(unittest.TestCase):
             "x86-64-v2",
             "Secret Service",
             "unsigned",
-            "source-materials.md#english",
         ):
             self.assertIn(phrase, documentation)
+        for suffix in (".md", ".ru.md"):
+            target = PROJECT_ROOT / "docs" / ("source-materials" + suffix)
+            for source in (
+                PROJECT_ROOT / ("README" + suffix),
+                APPIMAGE_DIR / ("README" + suffix),
+            ):
+                links = [
+                    urlsplit(link)
+                    for link in re.findall(
+                        r"\]\(([^)]+)\)", source.read_text(encoding="utf-8")
+                    )
+                ]
+                matches = [
+                    link
+                    for link in links
+                    if not link.scheme
+                    and not link.netloc
+                    and (source.parent / unquote(link.path)).resolve() == target
+                ]
+                self.assertTrue(
+                    matches, f"Missing source-materials link in {source.name}"
+                )
+                self.assertTrue(target.is_file())
+                for link in matches:
+                    if link.fragment:
+                        self.assertIn(
+                            f'id="{link.fragment}"', target.read_text(encoding="utf-8")
+                        )
 
 
 class ShellSyntaxCoverageTests(unittest.TestCase):

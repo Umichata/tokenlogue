@@ -31,6 +31,7 @@ from chat.models import (  # noqa: E402
 from chat.sending import MessageSendingService  # noqa: E402
 from chat.service import ChatService  # noqa: E402
 from chat_controller import ChatSessionController  # noqa: E402
+from providers.models import ProviderId  # noqa: E402
 from tests.draft_fakes import MemoryDraftRepository  # noqa: E402
 
 
@@ -153,8 +154,13 @@ class FakeBudgetService:
     def __init__(self) -> None:
         self.budgets: dict[str, ChatBudget] = {}
 
-    async def get_chat_budget(self, chat_id: str) -> ChatBudget:
-        return self.budgets.setdefault(chat_id, _budget(chat_id, configured=False))
+    async def get_chat_budget(
+        self, chat_id: str, *, provider_id: ProviderId | None = None
+    ) -> ChatBudget:
+        budget = self.budgets.setdefault(chat_id, _budget(chat_id, configured=False))
+        if provider_id is not None and budget.provider_id is not provider_id:
+            raise ValueError("fixture_provider_mismatch")
+        return budget
 
     async def list_chat_turns(self, chat_id: str) -> list[object]:
         return []

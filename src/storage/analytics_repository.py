@@ -101,4 +101,7 @@ def _attempt(row: sqlite3.Row, *, legacy_turn: bool = False) -> RequestAttempt:
         reasoning_tokens=int(row["reasoning_tokens"])
         if "reasoning_tokens" in columns and row["reasoning_tokens"] is not None
         else None,
+        connection_revision=int(row["connection_revision"])
+        if "connection_revision" in columns
+        else 0,
     )

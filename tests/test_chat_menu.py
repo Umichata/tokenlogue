@@ -20,6 +20,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from auth.models import KeyLimitInfo, KeyLimitState, KeyValidityState  # noqa: E402
 from chat.accounting import BudgetState, RemainingBudget  # noqa: E402
+from chat.metrics import ChatMetricsSnapshot  # noqa: E402
 from chat.models import Chat, ChatMode  # noqa: E402
 from chat_interaction_controller import ActiveChatState  # noqa: E402
 from i18n import (  # noqa: E402
@@ -29,7 +30,7 @@ from i18n import (  # noqa: E402
     tr,
 )
 from preferences import PreferencesStore  # noqa: E402
-from providers.models import ProviderId  # noqa: E402
+from providers.models import Currency, ProviderId  # noqa: E402
 from tests.test_chat_view import FakePage, _chat, _state  # noqa: E402
 from ui.chat_view import ChatWorkspaceView  # noqa: E402
 
@@ -79,6 +80,9 @@ class ChatMenuTests(unittest.IsolatedAsyncioTestCase):
             "key_validity": KeyValidityState.VALID,
             "key_limit": KeyLimitInfo.from_validated_remaining(None),
             "key_validation_in_progress": False,
+            "key_display": "••••",
+            "on_retry_key": callback("key"),
+            "on_replace_key": callback("replace"),
             **kwargs,
         }
         return ChatWorkspaceView(
@@ -96,8 +100,6 @@ class ChatMenuTests(unittest.IsolatedAsyncioTestCase):
             on_configure_limits=callback("configure"),
             on_edit_limits=callback("limits"),
             on_release_unknown=callback("release"),
-            on_retry_key=callback("key"),
-            on_replace_key=callback("replace"),
             on_draft_change=callback("draft"),
             **options,
         )
@@ -119,6 +121,7 @@ class ChatMenuTests(unittest.IsolatedAsyncioTestCase):
                 "key_limit", KeyLimitInfo.from_validated_remaining(None)
             ),
             key_validation_in_progress=kwargs.get("key_validation_in_progress", False),
+            key_display=kwargs.get("key_display", "••••"),
         )
 
     async def test_both_layouts_keep_button_order_and_one_line_full_title_tooltip(
@@ -310,6 +313,7 @@ class ChatMenuTests(unittest.IsolatedAsyncioTestCase):
                 key_limit=KeyLimitInfo.unknown(),
                 key_validation_in_progress=False,
                 provider_id=ProviderId.VSEGPT,
+                key_display="••••",
             )
             await view.open_menu()
             assert view._key_panel is not None
@@ -329,6 +333,7 @@ class ChatMenuTests(unittest.IsolatedAsyncioTestCase):
                 key_limit=KeyLimitInfo.from_validated_remaining(Decimal("7.89")),
                 key_validation_in_progress=False,
                 provider_id=ProviderId.OPENROUTER,
+                key_display="••••",
             )
             self.assertIs(view._key_panel, panel)
             self.assertTrue(panel.limit_row.visible)
@@ -504,7 +509,11 @@ class ChatMenuTests(unittest.IsolatedAsyncioTestCase):
                                 self.assertTrue(button.visible)
                                 self.assertFalse(button.disabled)
                                 self.assertIn(
-                                    tr("key.replace"), texts(self.page.dialogs[-1])
+                                    tr(
+                                        "connection.configure_key",
+                                        provider="OpenRouter",
+                                    ),
+                                    texts(self.page.dialogs[-1]),
                                 )
                                 self.assertIsInstance(button.content, ft.Text)
                                 assert isinstance(button.content, ft.Text)
@@ -567,7 +576,10 @@ class ChatMenuTests(unittest.IsolatedAsyncioTestCase):
         self.assertIs(view._menu_dialog, original_dialog)
         self.assertIs(view._menu_list, original_list)
         self.assertIn(button, original_parent.controls)
-        self.assertIn(tr("key.replace"), texts(self.page.dialogs[-1]))
+        self.assertIn(
+            tr("connection.configure_key", provider="OpenRouter"),
+            texts(self.page.dialogs[-1]),
+        )
         await cast(Callable[[ft.Event], Awaitable[None]], old_callback)(
             ft.Event(name="click", control=button)
         )
@@ -664,6 +676,169 @@ class ChatMenuTests(unittest.IsolatedAsyncioTestCase):
                     self.assertIsNone(self.page.drawer)
                 view.dispose()
                 self.page.dialogs.clear()
+
+    async def test_chat_connection_uses_selected_provider_and_only_a_safe_label(self):
+        async def change(chat_id: str):
+            self.calls.append(("provider", (chat_id,)))
+
+        view = self.view(
+            provider_id=ProviderId.VSEGPT,
+            key_display="•••• 7A2F",
+            on_change_provider=change,
+        )
+        view.restore_editor("Keep this draft")
+        await view.open_menu()
+        dialog = self.page.dialogs[-1]
+        self.assertIn("OpenRouter", texts(dialog))
+        self.assertIn(
+            tr("connection.masked_key", provider="OpenRouter", mask="•••• 7A2F"),
+            texts(dialog),
+        )
+        self.assertIn(
+            tr("connection.configure_key", provider="OpenRouter"), texts(dialog)
+        )
+        switch = view.change_provider_button
+        assert switch is not None
+        old_callback = switch.on_click
+        assert old_callback is not None
+        # A new provider for the same ID invalidates every old menu callback.
+        other = replace(self.chat, provider_id=ProviderId.VSEGPT, currency=Currency.RUB)
+        self.update(view, other, _state(other), key_display="•••• 9B3C")
+        self.assertFalse(view.menu_open)
+        result = cast(Callable[[ft.Event], Awaitable[None]], old_callback)(
+            ft.Event(name="click", control=switch)
+        )
+        if inspect.isawaitable(result):
+            await result
+        self.assertFalse(self.calls)
+        await view.open_menu()
+        dialog = self.page.dialogs[-1]
+        self.assertIn(
+            tr("connection.masked_key", provider="VSEGPT", mask="•••• 9B3C"),
+            texts(dialog),
+        )
+        assert view._key_panel is not None
+        self.assertFalse(view._key_panel.limit_row.visible)
+        self.assertEqual(view.editor_value, "Keep this draft")
+        assert view.change_provider_button is not None
+        await self.click(view.change_provider_button)
+        self.assertEqual(self.calls, [("provider", (self.chat.id,))])
+
+    async def test_missing_key_and_malformed_display_do_not_expose_a_credential(self):
+        for display in (None, "sk-or-v1-ABCDEFGH7A2F"):
+            view = self.view(key_display=display)
+            await view.open_menu()
+            dialog = self.page.dialogs[-1]
+            joined = " ".join(texts(dialog))
+            self.assertNotIn("sk-or-v1-ABCDEFGH7A2F", joined)
+            if display is None:
+                self.assertIn(tr("connection.no_key"), texts(dialog))
+            view.dispose()
+            self.assertIsNone(view._key_display)
+            self.assertNotIn("7A2F", " ".join(texts(dialog)))
+
+    async def test_mask_refresh_is_provider_local_and_dispose_clears_old_controls(self):
+        view = self.view(key_display="•••• 7A2F")
+        await view.open_menu()
+        dialog = self.page.dialogs[-1]
+        self.update(view, self.chat, _state(self.chat), key_display="•••• 4D8E")
+        self.assertNotIn("7A2F", " ".join(texts(dialog)))
+        self.assertIn("4D8E", " ".join(texts(dialog)))
+        view.dispose()
+        self.assertNotIn("4D8E", " ".join(texts(dialog)))
+
+    async def test_metrics_from_same_chat_old_connection_cannot_reappear(self):
+        view = self.view()
+        state = _state(self.chat)
+        current = ChatMetricsSnapshot(
+            self.chat.id, self.chat.mode, state.remaining, state.last_request
+        )
+        assert view.metrics_strip is not None
+        with patch.object(view.metrics_strip, "set_metrics") as apply:
+            view.set_metrics(
+                replace(current, provider_id=ProviderId.VSEGPT, currency=Currency.RUB)
+            )
+            view.set_metrics(replace(current, currency=Currency.RUB))
+            view.set_metrics(replace(current, connection_revision=1))
+            apply.assert_not_called()
+            view.set_metrics(current)
+            apply.assert_called_once_with(current)
+
+    async def test_new_connection_rebinds_paid_toggle_and_chat_actions_without_losing_draft(
+        self,
+    ):
+        async def paid_setting(chat_id, enabled):
+            self.calls.append(("paid", (chat_id, enabled)))
+
+        chat = replace(self.chat, mode=ChatMode.PAID, paid_without_confirmation=True)
+        view = self.view(chat, _state(chat), on_paid_confirmation_changed=paid_setting)
+        view.restore_editor("Exact draft survives")
+        old_checkbox = view.paid_confirmation_checkbox
+        old_rename = view.rename_button
+        assert old_checkbox is not None and old_checkbox.on_change is not None
+        old_change = old_checkbox.on_change
+        target = replace(
+            chat,
+            provider_id=ProviderId.VSEGPT,
+            currency=Currency.RUB,
+            paid_without_confirmation=False,
+        )
+        self.update(view, target, _state(target), key_display="•••• 9B3C")
+        checkbox = view.paid_confirmation_checkbox
+        assert checkbox is not None and checkbox.on_change is not None
+        self.assertIsNot(checkbox, old_checkbox)
+        self.assertFalse(checkbox.value)
+        await cast(Callable[[ft.Event], Awaitable[None]], old_change)(
+            ft.Event(name="change", control=old_checkbox)
+        )
+        assert old_rename is not None
+        await self.click(old_rename)
+        self.assertFalse(self.calls)
+        checkbox.value = True
+        await cast(Callable[[ft.Event], Awaitable[None]], checkbox.on_change)(
+            ft.Event(name="change", control=checkbox)
+        )
+        self.assertEqual(self.calls, [("paid", (chat.id, True))])
+        self.assertEqual(view.editor_value, "Exact draft survives")
+        assert view.rename_button is not None
+        await self.click(view.rename_button)
+        self.assertEqual(self.calls[-1], ("rename", (chat.id,)))
+
+    async def test_old_connection_refresh_cannot_clear_new_connection_busy_state(self):
+        starts = [asyncio.Event(), asyncio.Event()]
+        releases = [asyncio.Event(), asyncio.Event()]
+        calls = 0
+
+        async def refresh():
+            nonlocal calls
+            index = calls
+            calls += 1
+            starts[index].set()
+            await releases[index].wait()
+
+        view = self.view(on_retry_key=refresh)
+        await view.open_menu()
+        old_button = view.retry_key_button
+        assert old_button is not None
+        old = asyncio.create_task(self.click(old_button))
+        await starts[0].wait()
+        target = replace(
+            self.chat, provider_id=ProviderId.VSEGPT, currency=Currency.RUB
+        )
+        self.update(view, target, _state(target), key_display="•••• 9B3C")
+        await view.open_menu()
+        new_button = view.retry_key_button
+        assert new_button is not None
+        self.assertFalse(new_button.disabled)
+        new = asyncio.create_task(self.click(new_button))
+        await starts[1].wait()
+        releases[0].set()
+        await old
+        self.assertTrue(new_button.disabled)
+        self.assertTrue(view._key_refresh_in_progress)
+        releases[1].set()
+        await new
+        self.assertFalse(view._key_refresh_in_progress)
 
 
 if __name__ == "__main__":

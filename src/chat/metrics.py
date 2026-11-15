@@ -37,6 +37,7 @@ class LastRequestMetrics:
     provider_id: ProviderId = ProviderId.OPENROUTER
     usage_source: str = "unknown"
     cost_source: str = "unknown"
+    connection_revision: int = 0
 
     def __post_init__(self) -> None:
         if self.currency is Currency.USD and self.cost is None:
@@ -58,6 +59,7 @@ class ChatMetricsSnapshot:
     )
     provider_id: ProviderId = ProviderId.OPENROUTER
     currency: Currency = Currency.USD
+    connection_revision: int = 0
 
 
 def build_chat_metrics(
@@ -71,7 +73,11 @@ def build_chat_metrics(
     account_balance: AccountBalanceSnapshot | None = None,
 ) -> ChatMetricsSnapshot:
     """Keep account API snapshots separate from chat and key budgets."""
-    if chat.id != budget.chat_id:
+    if (
+        chat.id != budget.chat_id
+        or chat.provider_id != budget.provider_id
+        or chat.currency != budget.currency
+    ):
         raise ValueError("chat_metrics_snapshot_mismatch")
     return ChatMetricsSnapshot(
         chat_id=chat.id,
@@ -87,4 +93,5 @@ def build_chat_metrics(
         account_balance=account_balance or AccountBalanceSnapshot(),
         provider_id=chat.provider_id,
         currency=chat.currency,
+        connection_revision=chat.connection_revision,
     )

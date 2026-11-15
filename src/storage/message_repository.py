@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import sqlite3
-from collections.abc import Iterator
+from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 from datetime import UTC, datetime
 from decimal import Decimal
@@ -33,6 +33,13 @@ from chat.models import ChatMode, Message, MessageRole, MessageStatus
 from chat.paid_consent import PaidConsentRevoked
 from i18n import tr
 from providers.models import Currency, ProviderId
+from storage.chat_monetary import (
+    budget_row as _connection_budget_row,
+)
+from storage.chat_monetary import (
+    refresh_active_projection,
+    write_money,
+)
 from storage.chat_preferences import policy_from_read, with_new_prices
 from storage.chat_repository import _chat_from_row
 from storage.database_connections import (
@@ -63,13 +70,12 @@ class SqliteMessageRepository:
         self.path = Path(database_path)
         self.access = access
 
-    def get_chat_budget(self, chat_id: str) -> ChatBudget | None:
+    def get_chat_budget(
+        self, chat_id: str, *, provider_id: ProviderId | None = None
+    ) -> ChatBudget | None:
         _require_identifier(chat_id, tr("service.label.chat"))
         with self._connection() as connection:
-            row = connection.execute(
-                "SELECT * FROM chat_budgets WHERE chat_id = ?",
-                (chat_id,),
-            ).fetchone()
+            row = _connection_budget_row(connection, chat_id, provider_id)
         return _budget_from_row(row) if row is not None else None
 
     def get_chat_mode(self, chat_id: str) -> ChatMode | None:
@@ -91,6 +97,8 @@ class SqliteMessageRepository:
         cost_limit_usd: Decimal | None = None,
         cost_increase_confirmed: bool,
         updated_at: datetime,
+        expected_revision: int | None = None,
+        currency: Currency | None = None,
     ) -> ChatBudget:
         cost_limit = cost_limit if cost_limit is not None else cost_limit_usd
         _require_identifier(chat_id, tr("service.label.chat"))
@@ -112,13 +120,24 @@ class SqliteMessageRepository:
             ).fetchone()
             if row is None:
                 raise KeyError(tr("service.chat_missing"))
+            active = connection.execute(
+                "SELECT connection_revision,currency FROM chats WHERE id=?", (chat_id,)
+            ).fetchone()
+            assert active is not None
+            if (
+                expected_revision is not None
+                and active["connection_revision"] != expected_revision
+            ) or (currency is not None and active["currency"] != currency.value):
+                raise BudgetConflictError("chat_connection_changed")
             mode = ChatMode(str(row["mode"]))
-            current = _budget_from_row(row)
+            current_row = _connection_budget_row(connection, chat_id)
+            assert current_row is not None
+            current = _budget_from_row(current_row)
             minimum_tokens = current.total_tokens_used + current.reserved_tokens
             if token_limit < minimum_tokens:
                 raise BudgetConflictError(tr("service.tokens_below_used"))
             minimum_cost = current.cost_used + current.cost_reserved
-            if cost_limit < minimum_cost:
+            if mode is ChatMode.PAID and cost_limit < minimum_cost:
                 raise BudgetConflictError(tr("service.money_below_used"))
             if (
                 mode is ChatMode.PAID
@@ -157,6 +176,21 @@ class SqliteMessageRepository:
                     chat_id,
                 ),
             )
+            write_money(
+                connection,
+                chat_id,
+                current.provider_id,
+                current.currency,
+                cost_limit=(
+                    current.cost_limit
+                    if mode is ChatMode.FREE and current.cost_limit is not None
+                    else cost_limit
+                ),
+                cost_used=current.cost_used,
+                cost_reserved=current.cost_reserved,
+                updated_at=_datetime_text(updated_at),
+            )
+            refresh_active_projection(connection, chat_id)
             updated = connection.execute(
                 "SELECT * FROM chat_budgets WHERE chat_id = ?",
                 (chat_id,),
@@ -206,8 +240,25 @@ class SqliteMessageRepository:
             ).fetchone()
             if row is None:
                 raise KeyError(tr("service.chat_missing"))
-            budget = _budget_from_row(row)
+            budget_data = _connection_budget_row(connection, reservation.chat_id)
+            assert budget_data is not None
+            budget = _budget_from_row(budget_data)
             mode = ChatMode(str(row["mode"]))
+            current_row = connection.execute(
+                "SELECT * FROM chats WHERE id=?", (reservation.chat_id,)
+            ).fetchone()
+            assert current_row is not None
+            current_chat = _chat_from_row(current_row)
+            if (
+                current_chat.connection_revision != reservation.connection_revision
+                or (
+                    reservation.provider_id is not None
+                    and current_chat.provider_id is not reservation.provider_id
+                )
+                or current_chat.currency is not reservation.currency
+                or current_chat.requested_model_id != requested_model_id
+            ):
+                raise BudgetConflictError("chat_connection_changed")
             if paid_policy_revision is not None:
                 policy = policy_from_read(str(row["pricing_overrides_json"]))
                 if (
@@ -266,7 +317,13 @@ class SqliteMessageRepository:
                         or budget_basis.text_sha256 != text_digest(content)
                         or budget_basis.draft_revision != draft_revision
                         or budget_basis.retry_turn_id
-                        != (reservation.turn_id if retry else None)
+                        != (
+                            (reservation.retry_of_turn_id or reservation.turn_id)
+                            if retry
+                            else None
+                        )
+                        or budget_basis.connection_revision
+                        != current_chat.connection_revision
                         or budget_basis.limits_version != budget_version(budget)
                         or budget_basis.pricing != chat_prices(current_chat)
                         or (
@@ -353,10 +410,10 @@ class SqliteMessageRepository:
                     """
                     INSERT INTO turns (
                         id, chat_id, status, requested_model_id,
-                        reserved_tokens, reserved_cost,provider_id,currency,
+                        reserved_tokens, reserved_cost,provider_id,currency,connection_revision,
                         accounting_status, request_sent, created_at, updated_at
                     )
-                    VALUES (?, ?, 'pending', ?, ?, ?, ?, ?, 'reserved', 0, ?, ?)
+                    VALUES (?, ?, 'pending', ?, ?, ?, ?, ?, ?, 'reserved', 0, ?, ?)
                     """,
                     (
                         reservation.turn_id,
@@ -366,6 +423,7 @@ class SqliteMessageRepository:
                         _decimal_text(reservation.reserved_cost),
                         budget.provider_id.value,
                         budget.currency.value,
+                        current_chat.connection_revision,
                         _datetime_text(reservation.created_at),
                         _datetime_text(reservation.created_at),
                     ),
@@ -442,6 +500,16 @@ class SqliteMessageRepository:
                     _datetime_text(reservation.created_at),
                     reservation.chat_id,
                 ),
+            )
+            write_money(
+                connection,
+                reservation.chat_id,
+                budget.provider_id,
+                budget.currency,
+                cost_limit=budget.cost_limit,
+                cost_used=budget.cost_used,
+                cost_reserved=new_cost_reserved,
+                updated_at=_datetime_text(reservation.created_at),
             )
         return consumed_draft
 
@@ -656,6 +724,16 @@ class SqliteMessageRepository:
                     _datetime_text(updated_at),
                     turn.chat_id,
                 ),
+            )
+            write_money(
+                connection,
+                turn.chat_id,
+                turn.provider_id,
+                turn.currency,
+                cost_limit=budget.cost_limit,
+                cost_used=new_cost,
+                cost_reserved=new_reserved_cost,
+                updated_at=_datetime_text(updated_at),
             )
             connection.execute(
                 "UPDATE turns SET status=?,actual_model_id=?,generation_id=?,finish_reason=?,prompt_tokens=?,completion_tokens=?,total_tokens=?,cost=?,usage_source=?,cost_source=?,cached_tokens=?,reasoning_tokens=?,accounting_status=?,error_type=?,reserved_tokens=?,reserved_cost=?,updated_at=? WHERE id=?",
@@ -895,10 +973,9 @@ class SqliteMessageRepository:
             turn = _turn_from_row(row)
             if turn.accounting_status is not AccountingStatus.UNKNOWN:
                 raise BudgetConflictError(tr("service.reserve_not_unknown"))
-            budget_row = connection.execute(
-                "SELECT * FROM chat_budgets WHERE chat_id = ?",
-                (turn.chat_id,),
-            ).fetchone()
+            budget_row = _connection_budget_row(
+                connection, turn.chat_id, turn.provider_id
+            )
             assert budget_row is not None
             budget = _budget_from_row(budget_row)
             mode_row = connection.execute(
@@ -1027,9 +1104,9 @@ class SqliteMessageRepository:
                 + " WHERE sequence=?",
                 tuple(newer[name] for name in fields) + (sequence,),
             )
-            budget_row = connection.execute(
-                "SELECT * FROM chat_budgets WHERE chat_id=?", (row["chat_id"],)
-            ).fetchone()
+            budget_row = _connection_budget_row(
+                connection, str(row["chat_id"]), ProviderId(str(row["provider_id"]))
+            )
             assert budget_row is not None
             budget = _budget_from_row(budget_row)
 
@@ -1107,6 +1184,16 @@ class SqliteMessageRepository:
                 cost_reserved=held_cost,
                 accounting_unknown=unknown,
             )
+            write_money(
+                connection,
+                str(row["chat_id"]),
+                ProviderId(str(row["provider_id"])),
+                Currency(str(row["currency"])),
+                cost_limit=budget.cost_limit,
+                cost_used=used_cost,
+                cost_reserved=held_cost,
+                updated_at=_datetime_text(updated_at),
+            )
             connection.execute(
                 "UPDATE chat_budgets SET prompt_tokens_used=?,completion_tokens_used=?,total_tokens_used=?,cost_used=?,reserved_tokens=?,cost_reserved=?,state=?,updated_at=? WHERE chat_id=?",
                 (
@@ -1168,14 +1255,26 @@ class SqliteMessageRepository:
     def get_user_message_for_turn(self, turn_id: str) -> Message | None:
         _require_identifier(turn_id, tr("service.label.turn"))
         with self._connection() as connection:
-            row = connection.execute(
-                """
-                SELECT * FROM messages
-                WHERE turn_id = ? AND role = 'user'
-                """,
-                (turn_id,),
-            ).fetchone()
-        return _message_from_row(row) if row is not None else None
+            seen: set[str] = set()
+            while turn_id not in seen:
+                seen.add(turn_id)
+                row = connection.execute(
+                    "SELECT * FROM messages WHERE turn_id=? AND role='user'", (turn_id,)
+                ).fetchone()
+                if row is not None:
+                    return _message_from_row(row)
+                columns = {
+                    row[1] for row in connection.execute("PRAGMA table_info(turns)")
+                }
+                if "retry_of_turn_id" not in columns:
+                    return None
+                parent = connection.execute(
+                    "SELECT retry_of_turn_id FROM turns WHERE id=?", (turn_id,)
+                ).fetchone()
+                if parent is None or parent[0] is None:
+                    return None
+                turn_id = str(parent[0])
+        return None
 
     def update_price_snapshot(
         self,
@@ -1189,6 +1288,9 @@ class SqliteMessageRepository:
         cache_write_price: Decimal,
         overrides_json: str,
         updated_at: datetime,
+        expected_connection_revision: int | None = None,
+        expected_provider_id: ProviderId | None = None,
+        expected_model_id: str | None = None,
     ) -> None:
         _require_identifier(chat_id, tr("service.label.chat"))
         for value, label in (
@@ -1203,6 +1305,20 @@ class SqliteMessageRepository:
         _require_text(overrides_json, tr("service.label.overrides"))
         with self._connection("write", chat_id=chat_id) as connection:
             connection.execute("BEGIN IMMEDIATE")
+            current = connection.execute(
+                "SELECT * FROM chats WHERE id=?", (chat_id,)
+            ).fetchone()
+            if current is None:
+                raise KeyError(tr("service.chat_missing"))
+            if (
+                expected_connection_revision is not None
+                and current["connection_revision"] != expected_connection_revision
+                or expected_provider_id is not None
+                and current["provider_id"] != expected_provider_id.value
+                or expected_model_id is not None
+                and current["requested_model_id"] != expected_model_id
+            ):
+                raise BudgetConflictError("chat_connection_changed")
             overrides_json = with_new_prices(connection, chat_id, overrides_json)
             cursor = connection.execute(
                 """
@@ -1236,6 +1352,47 @@ class SqliteMessageRepository:
         reservation: BudgetReservation,
         requested_model_id: str,
     ) -> None:
+        if reservation.retry_of_turn_id is not None:
+            prior = connection.execute(
+                "SELECT * FROM turns WHERE id=? AND chat_id=?",
+                (reservation.retry_of_turn_id, reservation.chat_id),
+            ).fetchone()
+            if (
+                prior is None
+                or prior["status"] != "failed"
+                or prior["accounting_status"] != "released"
+            ):
+                raise BudgetConflictError(tr("service.turn_not_ready"))
+            if (
+                connection.execute(
+                    "SELECT 1 FROM turns WHERE retry_of_turn_id=? LIMIT 1",
+                    (reservation.retry_of_turn_id,),
+                ).fetchone()
+                is not None
+            ):
+                raise BudgetConflictError(tr("service.turn_not_ready"))
+            current = connection.execute(
+                "SELECT provider_id,currency,connection_revision FROM chats WHERE id=?",
+                (reservation.chat_id,),
+            ).fetchone()
+            assert current is not None
+            connection.execute(
+                "INSERT INTO turns(id,chat_id,status,requested_model_id,reserved_tokens,reserved_cost,provider_id,currency,connection_revision,retry_of_turn_id,accounting_status,request_sent,created_at,updated_at) VALUES(?,?,'pending',?,?,?,?,?,?,?,'reserved',0,?,?)",
+                (
+                    reservation.turn_id,
+                    reservation.chat_id,
+                    requested_model_id,
+                    reservation.reserved_tokens,
+                    str(reservation.reserved_cost),
+                    current["provider_id"],
+                    current["currency"],
+                    current["connection_revision"],
+                    reservation.retry_of_turn_id,
+                    _datetime_text(reservation.created_at),
+                    _datetime_text(reservation.created_at),
+                ),
+            )
+            return
         row = connection.execute(
             "SELECT * FROM turns WHERE id = ? AND chat_id = ?",
             (reservation.turn_id, reservation.chat_id),
@@ -1302,10 +1459,7 @@ class SqliteMessageRepository:
                 pass
         if turn.status is not TurnStatus.PENDING:
             raise BudgetConflictError(tr("service.turn_inactive"))
-        budget_row = connection.execute(
-            "SELECT * FROM chat_budgets WHERE chat_id = ?",
-            (turn.chat_id,),
-        ).fetchone()
+        budget_row = _connection_budget_row(connection, turn.chat_id, turn.provider_id)
         mode_row = connection.execute(
             "SELECT mode FROM chats WHERE id = ?",
             (turn.chat_id,),
@@ -1366,6 +1520,16 @@ class SqliteMessageRepository:
                 _datetime_text(updated_at),
                 turn.chat_id,
             ),
+        )
+        write_money(
+            connection,
+            turn.chat_id,
+            turn.provider_id,
+            turn.currency,
+            cost_limit=budget.cost_limit,
+            cost_used=budget.cost_used,
+            cost_reserved=new_cost,
+            updated_at=_datetime_text(updated_at),
         )
         connection.execute(
             """
@@ -1495,6 +1659,17 @@ class SqliteMessageRepository:
                 _synchronize_legacy_money(
                     connection, chat_id=chat_id, record_id=record_id
                 )
+                affected = chat_id
+                if not affected and record_id:
+                    row = connection.execute(
+                        "SELECT chat_id FROM turns WHERE id=?", (record_id,)
+                    ).fetchone()
+                    affected = str(row[0]) if row else ""
+                for row in connection.execute(
+                    "SELECT id FROM chats" + (" WHERE id=?" if affected else ""),
+                    (affected,) if affected else (),
+                ).fetchall():
+                    refresh_active_projection(connection, str(row[0]))
 
 
 def _synchronize_legacy_money(
@@ -1533,7 +1708,7 @@ def _synchronize_legacy_money(
         )
 
 
-def _budget_from_row(row: sqlite3.Row) -> ChatBudget:
+def _budget_from_row(row: Mapping) -> ChatBudget:
     return ChatBudget(
         chat_id=str(row["chat_id"]),
         limits_configured=bool(row["limits_configured"]),
@@ -1603,6 +1778,12 @@ def _turn_from_row(row: sqlite3.Row) -> TurnRecord:
         cost_usd=_optional_decimal(row["cost_usd"]),
         reserved_tokens=int(row["reserved_tokens"]),
         reserved_cost_usd=Decimal(str(row["reserved_cost_usd"])),
+        connection_revision=int(row["connection_revision"])
+        if "connection_revision" in row.keys()
+        else 0,
+        retry_of_turn_id=_optional_str(row["retry_of_turn_id"])
+        if "retry_of_turn_id" in row.keys()
+        else None,
         provider_id=ProviderId(str(row["provider_id"]))
         if "provider_id" in row.keys()
         else ProviderId.OPENROUTER,
@@ -1648,6 +1829,9 @@ def _last_request_from_row(row: sqlite3.Row) -> LastRequestMetrics:
     final = state is LastRequestState.FINAL
     return LastRequestMetrics(
         state=state,
+        connection_revision=int(row["connection_revision"])
+        if "connection_revision" in row.keys()
+        else 0,
         turn_id=str(row["turn_id"]),
         prompt_tokens=_optional_int(row["prompt_tokens"]),
         completion_tokens=_optional_int(row["completion_tokens"]),

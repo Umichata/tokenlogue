@@ -18,8 +18,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from auth.models import KeyLimitInfo, PinRecord
 from chat.accounting import BudgetReservation
 from chat.errors import ChatErrorType
-from chat.metrics import LastRequestState, build_chat_metrics
+from chat.metrics import LastRequestMetrics, LastRequestState, build_chat_metrics
 from chat.models import Chat, ChatMode
+from providers.models import Currency, ProviderId
 from storage.chat_repository import SqliteChatRepository
 from storage.data_access import DataAccess, DataAccessError
 from storage.database import AuthDatabase
@@ -157,6 +158,40 @@ class ChatMetricsTests(unittest.TestCase):
         budget = self.messages.get_chat_budget("paid")
         assert budget is not None
         self.assertEqual(budget.total_tokens_used, 100)
+
+    def test_current_budget_identity_is_distinct_from_historical_request(self):
+        budget = self.messages.get_chat_budget("paid")
+        assert budget is not None
+        current = replace(
+            chat(),
+            provider_id=ProviderId.VSEGPT,
+            currency=Currency.RUB,
+            connection_revision=1,
+        )
+        last = LastRequestMetrics(
+            LastRequestState.FINAL,
+            provider_id=ProviderId.OPENROUTER,
+            currency=Currency.USD,
+            cost=Decimal("0.0123"),
+            connection_revision=0,
+        )
+        with self.assertRaises(ValueError):
+            build_chat_metrics(current, budget, last)
+        matching = replace(
+            budget,
+            provider_id=ProviderId.VSEGPT,
+            currency=Currency.RUB,
+            cost_limit_usd=None,
+            cost_used_usd=Decimal("0"),
+            cost_reserved_usd=Decimal("0"),
+            cost_limit=Decimal("180"),
+        )
+        metrics = build_chat_metrics(current, matching, last)
+        self.assertEqual(metrics.remaining.currency, Currency.RUB)
+        self.assertEqual(metrics.last_request.cost, Decimal("0.0123"))
+        self.assertEqual(metrics.last_request.currency, Currency.USD)
+        self.assertEqual(metrics.last_request.connection_revision, 0)
+        self.assertEqual(metrics.connection_revision, 1)
 
     def test_failed_final_usage_is_still_actual_usage(self) -> None:
         self.sent_final("failed", successful=False)

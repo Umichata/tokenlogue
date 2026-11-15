@@ -34,6 +34,7 @@ from storage.database_connections import (
     owned_database_identity,
     retire_database,
 )
+from storage.provider_schema import MONETARY_TABLE, validate_monetary_schema
 from storage.request_attempts import (
     TABLE as REQUEST_ATTEMPTS_TABLE,
 )
@@ -761,6 +762,12 @@ class ProfileDeletion:
             }
             if version == 7:
                 expected.add("content_protection")
+            if MONETARY_TABLE in tables:
+                try:
+                    validate_monetary_schema(connection)
+                except (ValueError, sqlite3.Error):
+                    raise ProfileDeletionError("metadata_invalid") from None
+                expected.add(MONETARY_TABLE)
             if REQUEST_ATTEMPTS_TABLE in tables:
                 try:
                     validate_request_attempts_schema(connection)

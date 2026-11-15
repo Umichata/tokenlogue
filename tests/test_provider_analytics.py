@@ -18,6 +18,7 @@ from chat.accounting import (  # noqa: E402
     AccountingStatus,
     BudgetReservation,
     ChatBudget,
+    ChatLimitConfiguration,
     TurnRecord,
 )
 from chat.analytics import (  # noqa: E402
@@ -26,7 +27,7 @@ from chat.analytics import (  # noqa: E402
     build_analytics,
 )
 from chat.errors import ChatErrorType  # noqa: E402
-from chat.models import Chat, ChatMode  # noqa: E402
+from chat.models import CatalogModel, Chat, ChatMode  # noqa: E402
 from providers.models import Currency, ProviderId  # noqa: E402
 from storage.analytics_repository import SqliteAnalyticsRepository  # noqa: E402
 from storage.chat_repository import SqliteChatRepository  # noqa: E402
@@ -132,6 +133,87 @@ class AnalyticsProjectionTests(unittest.TestCase):
             {"shared/model", "vsegpt/archived"},
         )
         self.assertEqual(all_time.undated_requests, 0)
+
+    def test_one_chat_roundtrip_keeps_dispatch_scopes_and_undated_cost_separate(self):
+        records = [
+            attempt(
+                1,
+                requested_model_id="shared/model",
+                sent_at=NOW,
+                chronology_known=True,
+                total_tokens=11,
+                usage_source="api",
+                cost=Decimal("0.11"),
+                cost_source="api",
+                connection_revision=0,
+            ),
+            attempt(
+                2,
+                provider_id=ProviderId.VSEGPT,
+                currency=Currency.RUB,
+                requested_model_id="shared/model",
+                sent_at=NOW,
+                chronology_known=True,
+                total_tokens=29,
+                usage_source="api",
+                cost=Decimal("12.34"),
+                cost_source="api",
+                connection_revision=1,
+            ),
+            attempt(
+                3,
+                requested_model_id="shared/model",
+                sent_at=NOW,
+                chronology_known=True,
+                total_tokens=17,
+                usage_source="api",
+                cost=Decimal("0.17"),
+                cost_source="api",
+                connection_revision=2,
+            ),
+            attempt(
+                4,
+                provider_id=ProviderId.VSEGPT,
+                currency=Currency.RUB,
+                requested_model_id="shared/model",
+                cost=Decimal("3"),
+                cost_source="api",
+                connection_revision=1,
+            ),
+        ]
+        snapshot = build_analytics(
+            records,
+            AnalyticsFilter(period="all", timezone_name="UTC"),
+            NOW,
+        )
+        self.assertEqual(
+            {row.provider_id: row.total_tokens for row in snapshot.usage_rows},
+            {ProviderId.OPENROUTER: 28, ProviderId.VSEGPT: 29},
+        )
+        panels = {panel.currency: panel for panel in snapshot.spending}
+        self.assertEqual(panels[Currency.USD].confirmed_total, Decimal("0.28"))
+        self.assertEqual(panels[Currency.RUB].confirmed_total, Decimal("12.34"))
+        self.assertEqual(panels[Currency.RUB].undated_confirmed_total, Decimal("3"))
+        self.assertEqual(panels[Currency.RUB].undated_requests, 1)
+        for provider, expected in (
+            (ProviderId.OPENROUTER, 2),
+            (ProviderId.VSEGPT, 1),
+        ):
+            filtered = build_analytics(
+                records,
+                AnalyticsFilter(
+                    provider_id=provider,
+                    model_id="shared/model",
+                    model_provider_id=provider,
+                    timezone_name="UTC",
+                ),
+                NOW,
+            )
+            self.assertEqual(sum(row.requests for row in filtered.usage_rows), expected)
+            self.assertEqual(
+                {(row.provider_id, row.model_id) for row in filtered.models},
+                {(provider, "shared/model")},
+            )
 
     def test_all_view_distinguishes_equal_model_ids_by_provider_identity(self):
         records = self.provider_history()
@@ -451,6 +533,8 @@ class ProviderJournalTests(unittest.TestCase):
         return currency
 
     def reserve(self, currency=Currency.USD, *, retry=False):
+        current = self.chats.get_chat("chat")
+        assert current is not None
         self.messages.reserve_turn(
             BudgetReservation(
                 "turn",
@@ -463,7 +547,7 @@ class ProviderJournalTests(unittest.TestCase):
                 currency=currency,
             ),
             content="synthetic",
-            requested_model_id="requested-original" if not retry else "retry-model",
+            requested_model_id=current.requested_model_id,
             retry=retry,
         )
         self.messages.mark_request_sent("turn", NOW)
@@ -512,6 +596,124 @@ class ProviderJournalTests(unittest.TestCase):
                 (None, "0"),
             )
 
+    def test_connection_roundtrip_keeps_history_and_refines_actual_provider_ledger(
+        self,
+    ):
+        self.create()
+        self.reserve()
+        self.finish(cost=Decimal("0.25"))
+        first = self.analytics.list_attempts()[0]
+        last = self.messages.get_last_request("chat")
+        model = CatalogModel(
+            "requested-original",
+            "Synthetic model",
+            Decimal("0"),
+            Decimal("0"),
+            request_price=Decimal("1"),
+            provider_id=ProviderId.VSEGPT,
+            currency=Currency.RUB,
+        )
+        changed = self.chats.switch_connection(
+            "chat",
+            expected_revision=0,
+            mode=ChatMode.PAID,
+            model=model,
+            configuration=ChatLimitConfiguration(
+                10000, 100, None, cost_limit=Decimal("100"), currency=Currency.RUB
+            ),
+            updated_at=NOW,
+        )
+        self.assertEqual(self.analytics.list_attempts(), [first])
+        self.assertEqual(self.messages.get_last_request("chat"), last)
+        self.assertEqual(last.currency, Currency.USD)
+        self.assertEqual(changed.connection_revision, 1)
+
+        def dispatch(turn_id, provider, currency, revision, amount):
+            self.messages.reserve_turn(
+                BudgetReservation(
+                    turn_id,
+                    turn_id + "-message",
+                    "chat",
+                    100,
+                    Decimal("5") if currency is Currency.USD else Decimal("0"),
+                    NOW,
+                    reserved_cost=Decimal("5"),
+                    currency=currency,
+                    provider_id=provider,
+                    connection_revision=revision,
+                ),
+                content="Synthetic next request",
+                requested_model_id="requested-original",
+                retry=False,
+            )
+            sequence = self.messages.mark_request_sent(turn_id, NOW)
+            self.messages.finalize_known_turn(
+                turn_id,
+                assistant_message_id=turn_id + "-reply",
+                content="Synthetic answer",
+                successful=True,
+                requested_model_id="requested-original",
+                actual_model_id="actual",
+                generation_id=None,
+                finish_reason=None,
+                prompt_tokens=7,
+                completion_tokens=3,
+                total_tokens=10,
+                cost=Decimal(amount),
+                error_type=None,
+                generated_title=None,
+                updated_at=NOW,
+                attempt_sequence=sequence,
+            )
+            return sequence
+
+        vsegpt_attempt = dispatch(
+            "vsegpt-turn", ProviderId.VSEGPT, Currency.RUB, 1, "3"
+        )
+        self.chats.switch_connection(
+            "chat",
+            expected_revision=1,
+            mode=ChatMode.PAID,
+            model=replace(
+                model, provider_id=ProviderId.OPENROUTER, currency=Currency.USD
+            ),
+            configuration=ChatLimitConfiguration(
+                10000, 100, Decimal("100"), cost_limit=Decimal("100")
+            ),
+            updated_at=NOW,
+        )
+        last = self.messages.get_last_request("chat")
+        self.assertEqual(last.provider_id, ProviderId.VSEGPT)
+        self.assertEqual(last.currency, Currency.RUB)
+        self.assertEqual(last.connection_revision, 1)
+        dispatch("returned-turn", ProviderId.OPENROUTER, Currency.USD, 2, "0.5")
+        self.messages.update_attempt_accounting(
+            vsegpt_attempt, updated_at=NOW, cost=Decimal("4")
+        )
+        rows = self.analytics.list_attempts()
+        self.assertEqual(rows[0], first)
+        self.assertEqual([row.connection_revision for row in rows], [0, 1, 2])
+        self.assertEqual(
+            [(row.provider_id, row.currency) for row in rows],
+            [
+                (ProviderId.OPENROUTER, Currency.USD),
+                (ProviderId.VSEGPT, Currency.RUB),
+                (ProviderId.OPENROUTER, Currency.USD),
+            ],
+        )
+        snapshot = build_analytics(rows, AnalyticsFilter(timezone_name="UTC"), NOW)
+        self.assertEqual(
+            {panel.currency: panel.confirmed_total for panel in snapshot.spending},
+            {Currency.USD: Decimal("0.75"), Currency.RUB: Decimal("4")},
+        )
+        self.assertEqual(self.budget().cost_used, Decimal("0.75"))
+        vsegpt_budget = self.messages.get_chat_budget(
+            "chat", provider_id=ProviderId.VSEGPT
+        )
+        assert vsegpt_budget is not None
+        self.assertEqual(vsegpt_budget.cost_used, Decimal("4"))
+        self.assertEqual(self.budget().total_tokens_used, 30)
+
     def test_result_replay_and_late_refinement_are_idempotent_and_keep_send_time(self):
         self.create()
         self.reserve()
@@ -545,6 +747,13 @@ class ProviderJournalTests(unittest.TestCase):
         self.reserve()
         self.messages.release_known_failure("turn", ChatErrorType.PAYMENT_REQUIRED, NOW)
         first = self.analytics.list_attempts()[0]
+        # Change only mutable fixture metadata. The recorded dispatch keeps its
+        # original requested model independently of the current chat and retry.
+        with sqlite3.connect(self.path) as database:
+            database.execute(
+                "UPDATE chats SET requested_model_id=? WHERE id=?",
+                ("retry-model", "chat"),
+            )
         self.reserve(retry=True)
         self.finish(cost=Decimal("99"), attempt_sequence=first.sequence)
         self.assertEqual(self.turn().status.value, "pending")

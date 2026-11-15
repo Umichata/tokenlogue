@@ -179,18 +179,37 @@ class NewChatLimitsView:
         model: CatalogModel,
         on_submit: LimitSubmitCallback,
         on_cancel: AsyncCallback,
+        *,
+        initial_budget: ChatBudget | None = None,
+        preserve_tokens: bool = False,
+        submit_label: str | None = None,
     ) -> None:
+        if initial_budget is not None and (
+            initial_budget.provider_id is not model.provider_id
+            or initial_budget.currency is not model.currency
+        ):
+            raise ValueError("connection_budget_mismatch")
+
         async def handle_cancel(_event: ft.Event[ft.TextButton]) -> None:
             await on_cancel()
 
         submit_label = (
-            tr("limits.create_free")
-            if mode is ChatMode.FREE
-            else tr("limits.create_paid")
+            submit_label
+            if submit_label is not None
+            else (
+                tr("limits.create_free")
+                if mode is ChatMode.FREE
+                else tr("limits.create_paid")
+            )
         )
         self.form = ChatLimitsForm(
-            mode, on_submit, submit_label=submit_label, currency=model.currency
+            mode,
+            on_submit,
+            initial_budget=initial_budget,
+            submit_label=submit_label,
+            currency=model.currency,
         )
+        self.form.token_limit.read_only = preserve_tokens
         controls: list[ft.Control] = [
             ft.Text(
                 tr("limits.configure"), theme_style=ft.TextThemeStyle.HEADLINE_MEDIUM
@@ -218,6 +237,11 @@ class NewChatLimitsView:
             )
         controls.extend(
             [
+                *(
+                    [ft.Text(tr("connection.shared_tokens"), color=MUTED_COLOR)]
+                    if preserve_tokens
+                    else []
+                ),
                 self.form.control,
                 ft.TextButton(tr("common.back"), on_click=handle_cancel),
             ]

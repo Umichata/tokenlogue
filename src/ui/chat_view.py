@@ -26,6 +26,7 @@ from i18n import (
 )
 from platform_security.local_protection import ProtectionSnapshot
 from preferences import PreferencesStore
+from providers.credentials import safe_key_display
 from providers.models import Currency, PriceUnit, ProviderId, provider_spec
 from ui.branding import BrandHeader, BrandLoader
 from ui.chat_metrics import (
@@ -93,8 +94,10 @@ class ChatWorkspaceView:
         key_limit: KeyLimitInfo,
         key_validation_in_progress: bool,
         provider_id: ProviderId = ProviderId.OPENROUTER,
+        key_display: str | None = None,
         on_retry_key: AsyncCallback,
         on_replace_key: AsyncCallback,
+        on_change_provider: ChatCallback | None = None,
         on_security: AsyncCallback | None = None,
         on_delete_profile: AsyncCallback | None = None,
         on_draft_change: RenameCallback | None = None,
@@ -126,9 +129,11 @@ class ChatWorkspaceView:
         self._key_validity = key_validity
         self._key_limit = key_limit
         self._provider_id = provider_id
+        self._key_display = safe_key_display(key_display)
         self._key_validation_in_progress = key_validation_in_progress
         self._on_retry_key = on_retry_key
         self._on_replace_key = on_replace_key
+        self._on_change_provider = on_change_provider
         self._on_security = on_security
         self._on_test_screen_lock = on_test_screen_lock
         self._on_test_sleep = on_test_sleep
@@ -168,6 +173,7 @@ class ChatWorkspaceView:
         self._menu_container: ft.Container | None = None
         self._key_panel: _KeyStatusPanel | None = None
         self._key_refresh_in_progress = False
+        self._key_refresh_epoch = 0
         self._available_width = page.width or 420
         self._available_height = getattr(page, "height", None) or 700
         self.menu_button = ft.IconButton(
@@ -212,6 +218,7 @@ class ChatWorkspaceView:
         self.delete_button: ft.TextButton | None = None
         self._actions_chat_id: str | None = None
         self.limits_button: ft.Button | ft.TextButton | None = None
+        self.change_provider_button: ft.TextButton | None = None
         self.release_unknown_button: ft.Button | None = None
         self.message_history: MessageHistoryView | None = None
         self.composer: MessageComposer | None = None
@@ -247,6 +254,9 @@ class ChatWorkspaceView:
 
     def dispose(self) -> None:
         self._disposed = True
+        self._key_display = None
+        self._key_refresh_epoch += 1
+        self._key_refresh_in_progress = False
         self._drawer_open = False
         self._chat_generation += 1
         self.close_menu()
@@ -326,6 +336,7 @@ class ChatWorkspaceView:
         key_limit: KeyLimitInfo,
         key_validation_in_progress: bool,
         provider_id: ProviderId | None = None,
+        key_display: str | None = None,
     ) -> None:
         if self._disposed:
             return
@@ -333,19 +344,45 @@ class ChatWorkspaceView:
             self._selected_chat.id if self._selected_chat is not None else None
         )
         current_chat_id = selected_chat.id if selected_chat is not None else None
-        if previous_chat_id != current_chat_id:
+        previous_connection = (
+            (
+                self._selected_chat.provider_id,
+                getattr(self._selected_chat, "connection_revision", 0),
+            )
+            if self._selected_chat is not None
+            else None
+        )
+        current_connection = (
+            (
+                selected_chat.provider_id,
+                getattr(selected_chat, "connection_revision", 0),
+            )
+            if selected_chat is not None
+            else None
+        )
+        connection_changed = previous_connection != current_connection
+        if previous_chat_id != current_chat_id or connection_changed:
             self._chat_generation += 1
             self.close_menu()
+            self._key_refresh_epoch += 1
+            self._key_refresh_in_progress = False
+            if self.metrics_strip is not None:
+                self.metrics_strip.clear()
         self._chats = chats
         self._selected_chat = selected_chat
         self._interaction_state = interaction_state
         self._key_validity = key_validity
         self._key_limit = key_limit
+        self._key_display = safe_key_display(key_display)
         if provider_id is not None:
             self._provider_id = provider_id
         self._key_validation_in_progress = key_validation_in_progress
         self._new_chat_allowed = free_mode_allowed(key_validity)
-        self._sync_interaction_components(force=previous_chat_id != current_chat_id)
+        self._sync_interaction_components(
+            force=previous_chat_id != current_chat_id,
+            reset_connection=connection_changed,
+        )
+        self._sync_chat_actions(force=connection_changed)
         self._refresh_menu()
         self._render_layout()
 
@@ -365,6 +402,7 @@ class ChatWorkspaceView:
             self.rename_button,
             self.delete_button,
             self.limits_button,
+            self.change_provider_button,
             self.security_button,
         ):
             if button is not None:
@@ -394,6 +432,10 @@ class ChatWorkspaceView:
             or self.metrics_strip is None
             or self._selected_chat is None
             or snapshot.chat_id != self._selected_chat.id
+            or snapshot.provider_id is not self._selected_chat.provider_id
+            or snapshot.currency is not self._selected_chat.currency
+            or snapshot.connection_revision
+            != getattr(self._selected_chat, "connection_revision", 0)
         ):
             return
         self.metrics_strip.set_metrics(snapshot)
@@ -411,7 +453,9 @@ class ChatWorkspaceView:
         if self.message_history is not None:
             await self.message_history.scroll_to_end()
 
-    def _sync_interaction_components(self, *, force: bool) -> None:
+    def _sync_interaction_components(
+        self, *, force: bool, reset_connection: bool = False
+    ) -> None:
         state = self._interaction_state
         if self._selected_chat is None or state is None:
             if self.composer is not None:
@@ -429,11 +473,6 @@ class ChatWorkspaceView:
         if force or self.message_history is None or self.composer is None:
             if self.composer is not None:
                 self.composer.dispose()
-            if self.metrics_strip is not None:
-                self.metrics_strip.clear()
-            if self.paid_confirmation_help is not None:
-                self.paid_confirmation_help.dispose()
-                self.paid_confirmation_help = None
             chat_id = self._selected_chat.id
 
             async def draft_changed(text: str) -> None:
@@ -450,33 +489,10 @@ class ChatWorkspaceView:
                 enabled=self._sending_allowed(state),
                 on_change=draft_changed,
             )
-            self.paid_confirmation_checkbox = None
-            if (
-                self._selected_chat.mode is ChatMode.PAID
-                and self._on_paid_confirmation_changed is not None
-            ):
-                self.paid_confirmation_checkbox = ft.Checkbox(
-                    label=ft.Text(
-                        tr("metrics.without_confirmation"), width=185, no_wrap=False
-                    ),
-                    semantics_label=tr("metrics.without_confirmation"),
-                    tooltip=explanatory_tooltip(
-                        tr("metrics.without_confirmation_help")
-                    ),
-                    active_color=PRIMARY_COLOR,
-                    focus_color=ELEVATED_BACKGROUND,
-                    value=self._selected_chat.paid_without_confirmation,
-                    disabled=self._sending or self._paid_setting_pending,
-                    on_change=self._paid_confirmation_action(chat_id),
-                )
-                self.paid_confirmation_help = PaidConfirmationHelp(self._page)
-            self.metrics_strip = ChatMetricsStrip(
-                self.paid_confirmation_checkbox,
-                self.paid_confirmation_help.button
-                if self.paid_confirmation_help is not None
-                else None,
-            )
+            self._create_metrics_controls()
         else:
+            if reset_connection:
+                self._create_metrics_controls()
             self.message_history.set_messages(state.messages, state.turns)
             self.composer.set_enabled(self._sending_allowed(state))
             if (
@@ -487,6 +503,39 @@ class ChatWorkspaceView:
                     self._selected_chat.paid_without_confirmation
                 )
         self.set_sending(state.sending)
+
+    def _create_metrics_controls(self) -> None:
+        chat = self._selected_chat
+        assert chat is not None
+        if self.metrics_strip is not None:
+            self.metrics_strip.clear()
+        if self.paid_confirmation_help is not None:
+            self.paid_confirmation_help.dispose()
+        self.paid_confirmation_checkbox = None
+        self.paid_confirmation_help = None
+        if (
+            chat.mode is ChatMode.PAID
+            and self._on_paid_confirmation_changed is not None
+        ):
+            self.paid_confirmation_checkbox = ft.Checkbox(
+                label=ft.Text(
+                    tr("metrics.without_confirmation"), width=185, no_wrap=False
+                ),
+                semantics_label=tr("metrics.without_confirmation"),
+                tooltip=explanatory_tooltip(tr("metrics.without_confirmation_help")),
+                active_color=PRIMARY_COLOR,
+                focus_color=ELEVATED_BACKGROUND,
+                value=chat.paid_without_confirmation,
+                disabled=self._sending or self._paid_setting_pending,
+                on_change=self._paid_confirmation_action(chat.id),
+            )
+            self.paid_confirmation_help = PaidConfirmationHelp(self._page)
+        self.metrics_strip = ChatMetricsStrip(
+            self.paid_confirmation_checkbox,
+            self.paid_confirmation_help.button
+            if self.paid_confirmation_help is not None
+            else None,
+        )
 
     def _sending_allowed(self, state: ActiveChatState) -> bool:
         if self._paid_setting_pending:
@@ -684,10 +733,10 @@ class ChatWorkspaceView:
             self._page.drawer = self._build_drawer()
         self._apply_sidebar_visibility()
 
-    def _sync_chat_actions(self) -> None:
+    def _sync_chat_actions(self, *, force: bool = False) -> None:
         chat = self._selected_chat
         chat_id = chat.id if chat is not None else None
-        if chat_id == self._actions_chat_id:
+        if not force and chat_id == self._actions_chat_id:
             return
         self._actions_chat_id = chat_id
         self.rename_button = self.delete_button = None
@@ -1057,22 +1106,25 @@ class ChatWorkspaceView:
             ):
                 return
             # Отклоняем повторные нажатия до обновления состояния контроллера.
+            self._key_refresh_epoch += 1
+            refresh_epoch = self._key_refresh_epoch
             self._key_refresh_in_progress = True
             self._build_key_status_panel()
             self._update_menu_control()
             try:
                 await self._on_retry_key()
             finally:
-                self._key_refresh_in_progress = False
-                if not self._disposed and self._menu_dialog is not None:
-                    self._build_key_status_panel()
-                    self._update_menu_control()
+                if refresh_epoch == self._key_refresh_epoch:
+                    self._key_refresh_in_progress = False
+                    if not self._disposed and self._menu_dialog is not None:
+                        self._build_key_status_panel()
+                        self._update_menu_control()
 
         return invoke
 
     def _build_menu_controls(self) -> list[ft.Control]:
         controls: list[ft.Control] = [
-            ft.Text(tr("key.title"), weight=ft.FontWeight.BOLD),
+            ft.Text(tr("connection.title"), weight=ft.FontWeight.BOLD),
             self._build_key_status_panel(),
             ft.Divider(),
             LanguageSelector(),
@@ -1128,10 +1180,6 @@ class ChatWorkspaceView:
                     display_model_name(
                         chat.requested_model_id, chat.requested_model_name
                     ),
-                ),
-                detail_row(tr("meta.model_id"), chat.requested_model_id),
-                detail_row(
-                    tr("workspace.provider"), provider_spec(chat.provider_id).name
                 ),
             ]
         )
@@ -1392,6 +1440,7 @@ class ChatWorkspaceView:
         self._menu_list = None
         self._menu_container = None
         if self._key_panel is not None:
+            self._key_panel.clear_private()
             self._key_panel.loader.dispose()
         self._key_panel = None
         self._menu_revision += 1
@@ -1400,6 +1449,7 @@ class ChatWorkspaceView:
         self.screen_test_button = None
         self.delete_profile_button = None
         self.limits_button = None
+        self.change_provider_button = None
         if dialog is not None:
             # Закрываем именно своё окно, не снимая чужой диалог с вершины стека.
             dialog.open = False
@@ -1496,10 +1546,14 @@ class ChatWorkspaceView:
             self._key_panel = _KeyStatusPanel()
         panel = self._key_panel
         panel.update_status(
-            message=message,
+            message=message
+            if self._key_display is not None
+            else tr("connection.no_key"),
             color=color,
             limit=(self._key_limit.remaining if spec.supports_key_limit else None),
             currency=spec.currency,
+            provider_name=spec.name,
+            key_display=self._key_display,
             busy=self._key_validation_in_progress or self._key_refresh_in_progress,
             replacement_busy=self.key_replacement_busy,
             replacement_notice=(
@@ -1512,6 +1566,18 @@ class ChatWorkspaceView:
         )
         panel.refresh_button.on_click = self._refresh_key_action()
         panel.replace_button.on_click = self._menu_action(self._on_replace_key)
+        panel.replace_button.content = ft.Text(
+            tr("connection.configure_key", provider=spec.name), no_wrap=False
+        )
+        panel.change_provider_button.visible = (
+            self._selected_chat is not None and self._on_change_provider is not None
+        )
+        panel.change_provider_button.disabled = self._sending
+        if self._selected_chat is not None and self._on_change_provider is not None:
+            panel.change_provider_button.on_click = self._chat_action(
+                self._on_change_provider, self._selected_chat.id, menu=True
+            )
+        self.change_provider_button = panel.change_provider_button
         self.retry_key_button = panel.refresh_button
         self.replace_key_button = panel.replace_button
         return panel.control
@@ -1540,6 +1606,8 @@ class _KeyStatusPanel:
     """Сохраняет элементы статуса при обновлении открытого меню."""
 
     def __init__(self) -> None:
+        self.provider = detail_row(tr("connection.provider"), "")
+        self.identity = ft.Text()
         self.message = ft.Text()
         self.limit_row = detail_row(tr("key.available_limit"), "")
         self.loader = BrandLoader(size=26, active=False)
@@ -1558,12 +1626,17 @@ class _KeyStatusPanel:
             icon=ft.Icons.KEY,
         )
         self.replacement_notice = ft.Text(size=12, color=MUTED_COLOR, visible=False)
+        self.change_provider_button = ft.TextButton(
+            tr("connection.change_provider"), icon=ft.Icons.SWAP_HORIZ
+        )
         self.control = ft.Container(
             padding=8,
             border_radius=12,
             content=ft.Column(
                 tight=True,
                 controls=[
+                    self.provider,
+                    self.identity,
                     self.message,
                     self.limit_row,
                     self.progress,
@@ -1573,6 +1646,7 @@ class _KeyStatusPanel:
                         controls=[
                             self.refresh_button,
                             self.replace_button,
+                            self.change_provider_button,
                             self.replacement_notice,
                         ],
                     ),
@@ -1590,21 +1664,46 @@ class _KeyStatusPanel:
         replacement_busy: bool,
         replacement_notice: str,
         currency: Currency = Currency.USD,
+        provider_name: str = "",
+        key_display: str | None = None,
     ) -> None:
-        self.message.value = fresh_text(message)
+        name = self.provider.controls[1]
+        assert isinstance(name, ft.Text)
+        name.value = provider_name
+        self.identity.value = (
+            tr("connection.masked_key", provider=provider_name, mask=key_display)
+            if key_display is not None
+            else tr("connection.no_key")
+        )
+        self.message.value = fresh_text(message) if key_display is not None else ""
+        self.message.visible = key_display is not None
         self.message.color = color
         self.control.bgcolor = ft.Colors.with_opacity(0.12, color)
-        self.limit_row.visible = limit is not None
+        self.limit_row.visible = key_display is not None and limit is not None
         value = self.limit_row.controls[1]
         assert isinstance(value, ft.Text)
         value.value = _money_or_unknown(limit, currency)
         self.progress.visible = busy
         self.loader.set_active(busy)
-        self.refresh_button.disabled = busy
+        self.refresh_button.disabled = busy or key_display is None
         self.replace_button.visible = True
         self.replace_button.disabled = replacement_busy
         self.replacement_notice.value = fresh_text(replacement_notice)
         self.replacement_notice.visible = bool(replacement_notice)
+
+    def clear_private(self) -> None:
+        async def inactive(_event: ft.Event) -> None:
+            return None
+
+        self.identity.value = ""
+        self.message.value = ""
+        self.replacement_notice.value = ""
+        for button in (
+            self.refresh_button,
+            self.replace_button,
+            self.change_provider_button,
+        ):
+            button.on_click = inactive
 
 
 class RenameChatDialog:

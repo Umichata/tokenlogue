@@ -128,6 +128,8 @@ class TurnRecord:
     reserved_cost: Decimal = ZERO
     usage_source: str = "unknown"
     cost_source: str = "unknown"
+    connection_revision: int = 0
+    retry_of_turn_id: str | None = None
 
     def __post_init__(self) -> None:
         if self.currency is not Currency.USD and (
@@ -151,6 +153,9 @@ class BudgetReservation:
     created_at: datetime
     reserved_cost: Decimal = ZERO
     currency: Currency = Currency.USD
+    provider_id: ProviderId | None = None
+    connection_revision: int = 0
+    retry_of_turn_id: str | None = None
 
     def __post_init__(self) -> None:
         if self.currency is not Currency.USD and self.reserved_cost_usd != ZERO:
@@ -376,7 +381,9 @@ def _maximum_components(pricing: tuple[PriceComponents, ...]) -> PriceComponents
 class BudgetRepository(Protocol):
     def get_chat_mode(self, chat_id: str) -> ChatMode | None: ...
 
-    def get_chat_budget(self, chat_id: str) -> ChatBudget | None: ...
+    def get_chat_budget(
+        self, chat_id: str, *, provider_id: ProviderId | None = None
+    ) -> ChatBudget | None: ...
 
     def set_chat_limits(
         self,
@@ -388,6 +395,8 @@ class BudgetRepository(Protocol):
         cost_limit_usd: Decimal | None = None,
         cost_increase_confirmed: bool,
         updated_at: datetime,
+        expected_revision: int | None = None,
+        currency: Currency | None = None,
     ) -> ChatBudget: ...
 
     def release_unknown_reservation(
@@ -422,6 +431,8 @@ class ChatBudgetService:
         cost_limit: Decimal | None = None,
         cost_increase_confirmed: bool = False,
         updated_at: datetime | None = None,
+        expected_revision: int | None = None,
+        currency: Currency | None = None,
     ) -> ChatBudget:
         _require_identifier(chat_id, tr("service.label.chat"))
         if not isinstance(cost_increase_confirmed, bool):
@@ -448,6 +459,8 @@ class ChatBudgetService:
             normalized_cost,
             cost_increase_confirmed=cost_increase_confirmed,
             updated_at=_as_utc(updated_at or self._now()),
+            expected_revision=expected_revision,
+            currency=currency,
         )
 
     @repository_session("_repository")
@@ -461,6 +474,8 @@ class ChatBudgetService:
         cost_limit: Decimal | None = None,
         cost_increase_confirmed: bool = False,
         updated_at: datetime | None = None,
+        expected_revision: int | None = None,
+        currency: Currency | None = None,
     ) -> ChatBudget:
         _require_identifier(chat_id, tr("service.label.chat"))
         if not isinstance(cost_increase_confirmed, bool):
@@ -485,12 +500,20 @@ class ChatBudgetService:
             normalized_cost,
             cost_increase_confirmed=cost_increase_confirmed,
             updated_at=_as_utc(updated_at or self._now()),
+            expected_revision=expected_revision,
+            currency=currency,
         )
 
     @repository_session("_repository")
-    async def get_chat_budget(self, chat_id: str) -> ChatBudget:
+    async def get_chat_budget(
+        self, chat_id: str, *, provider_id: ProviderId | None = None
+    ) -> ChatBudget:
         _require_identifier(chat_id, tr("service.label.chat"))
-        budget = await asyncio.to_thread(self._repository.get_chat_budget, chat_id)
+        budget = await asyncio.to_thread(
+            self._repository.get_chat_budget,
+            chat_id,
+            **({"provider_id": provider_id} if provider_id is not None else {}),
+        )
         if budget is None:
             raise KeyError(tr("service.chat_missing"))
         return budget

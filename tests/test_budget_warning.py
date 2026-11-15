@@ -12,6 +12,7 @@ from datetime import UTC, datetime
 from decimal import Decimal
 from pathlib import Path
 from typing import TypedDict
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
@@ -190,6 +191,23 @@ class BudgetPermissionTests(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(self.client.calls, [])
                 self.assertEqual(self.messages.list_turns("paid"), [])
 
+    async def test_returned_connection_needs_new_review_with_identical_budget(self):
+        preview = await self.preview()
+        token = self.sender.confirm_budget_warning(preview)
+        original = self.chats.get_chat("paid")
+        assert original is not None
+        returned = replace(
+            original, connection_revision=original.connection_revision + 2
+        )
+        before = self.messages.get_chat_budget("paid")
+        with patch.object(self.chats, "get_chat", return_value=returned):
+            denied = await self.send(consent=token)
+        self.assertFalse(denied.successful)
+        self.assertIsNotNone(denied.budget_preview)
+        self.assertEqual(self.client.calls, [])
+        self.assertEqual(self.messages.list_turns("paid"), [])
+        self.assertEqual(self.messages.get_chat_budget("paid"), before)
+
     async def test_atomic_new_tiny_reservation_invalidates_and_returns_fresh_risk(self):
         preview = await self.preview()
         token = self.sender.confirm_budget_warning(preview)
@@ -198,8 +216,9 @@ class BudgetPermissionTests(unittest.IsolatedAsyncioTestCase):
         def racing_reserve(*args, **kwargs):
             with sqlite3.connect(self.database.path) as connection:
                 connection.execute(
-                    "UPDATE chat_budgets SET cost_reserved=?, cost_reserved_usd=? WHERE chat_id='paid'",
-                    ("0.000000000000000000001", "0.000000000000000000001"),
+                    "UPDATE chat_monetary_budgets SET cost_reserved=? "
+                    "WHERE chat_id=? AND provider_id=? AND currency=?",
+                    ("0.000000000000000000001", "paid", "openrouter", "USD"),
                 )
             return original(*args, **kwargs)
 

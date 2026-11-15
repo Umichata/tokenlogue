@@ -12,7 +12,13 @@ from pathlib import Path
 
 from storage.database_connections import database_lock
 from storage.field_cipher import FORMAT_VERSION, CiphertextError, FieldCipher
-from storage.provider_schema import ensure_provider_schema, has_provider_schema
+from storage.provider_schema import (
+    MONETARY_TABLE,
+    ensure_provider_schema,
+    has_chat_connection_schema,
+    has_provider_schema,
+    validate_monetary_schema,
+)
 from storage.request_attempts import (
     TABLE as REQUEST_ATTEMPTS_TABLE,
 )
@@ -94,6 +100,8 @@ def _verify_protected_database(
         ):
             raise CiphertextError()
         _integrity(connection)
+        if has_chat_connection_schema(connection):
+            validate_monetary_schema(connection)
         if has_request_attempts(connection):
             validate_request_attempts_schema(connection)
         for table in TABLES:
@@ -201,6 +209,8 @@ def _schema(
     include_request_attempts: bool = False,
     provider_schema: bool = False,
     legacy_attempts: bool = False,
+    chat_connections: bool = False,
+    attempt_connection_revision: bool = True,
 ) -> None:
     from storage import database
 
@@ -222,9 +232,13 @@ def _schema(
         "database_id TEXT NOT NULL,key_id TEXT NOT NULL,format_version INTEGER NOT NULL,marker TEXT NOT NULL)"
     )
     if provider_schema:
-        ensure_provider_schema(connection)
+        ensure_provider_schema(connection, chat_connections=chat_connections)
     if include_request_attempts:
-        create_request_attempts_schema(connection, legacy=legacy_attempts)
+        create_request_attempts_schema(
+            connection,
+            legacy=legacy_attempts,
+            connection_revision=attempt_connection_revision,
+        )
 
 
 def _cleanup_previous(journal: Path, database: Path, cipher: FieldCipher) -> None:
@@ -312,10 +326,14 @@ def migrate_database(
                     "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
                 )
             }
-            copy_tables = TABLES
+            if MONETARY_TABLE in actual_tables:
+                validate_monetary_schema(source)
+            copy_tables = (
+                (*TABLES, MONETARY_TABLE) if MONETARY_TABLE in actual_tables else TABLES
+            )
             if REQUEST_ATTEMPTS_TABLE in actual_tables:
                 validate_request_attempts_schema(source)
-                copy_tables = (*TABLES, REQUEST_ATTEMPTS_TABLE)
+                copy_tables = (*copy_tables, REQUEST_ATTEMPTS_TABLE)
             if (
                 actual_tables != set(copy_tables)
                 or source.execute(
@@ -343,6 +361,14 @@ def migrate_database(
                 destination,
                 include_request_attempts=REQUEST_ATTEMPTS_TABLE in copy_tables,
                 provider_schema=has_provider_schema(source),
+                chat_connections=has_chat_connection_schema(source),
+                attempt_connection_revision=REQUEST_ATTEMPTS_TABLE in actual_tables
+                and any(
+                    row[1] == "connection_revision"
+                    for row in source.execute(
+                        f"PRAGMA table_info({REQUEST_ATTEMPTS_TABLE})"
+                    )
+                ),
                 legacy_attempts=REQUEST_ATTEMPTS_TABLE in copy_tables
                 and not request_attempts_are_extended(source),
             )
