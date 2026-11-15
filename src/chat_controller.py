@@ -383,6 +383,11 @@ class ChatSessionController:
             if await self.prepare_navigation():
                 await self._on_provider_settings()
 
+    @property
+    def current_provider(self) -> ProviderId:
+        """Service of the current chat or the active new-chat context."""
+        return self._current_provider()
+
     def _current_provider(self) -> ProviderId:
         if self._screen in {
             _ChatScreen.CATALOG_LOADING,
@@ -1645,6 +1650,7 @@ class ChatSessionController:
                 key_validity=self._key_validity,
                 key_limit=self._key_limit,
                 key_validation_in_progress=self._key_validation_in_progress,
+                provider_id=self._selected_provider,
             )
             self._workspace_controller.bind(self._workspace_view, interaction_state)
             self._push_estimate_metadata()
@@ -1698,6 +1704,7 @@ class ChatSessionController:
                 key_validity=self._key_validity,
                 key_limit=self._key_limit,
                 key_validation_in_progress=self._key_validation_in_progress,
+                provider_id=self._selected_provider,
                 on_retry_key=self.request_key_revalidation,
                 on_replace_key=self.request_key_replacement,
                 on_paid_confirmation_changed=paid_confirmation_changed,
@@ -2061,6 +2068,7 @@ class ChatSessionController:
             key_limit=self._key_limit,
             on_select=self.select_chat_mode,
             on_cancel=self.cancel_new_chat,
+            provider_id=self._creation_provider,
         )
         self._screen = _ChatScreen.MODE_SELECTION
         self._replace_page(view.control)

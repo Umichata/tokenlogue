@@ -15,6 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from i18n import configure_localization, localize_tree, set_language, tr  # noqa: E402
 from preferences import PreferencesStore  # noqa: E402
+from providers.models import ProviderId  # noqa: E402
 from tests.test_chat_menu import walk  # noqa: E402
 from ui.auth_view import KeyEntryView, PinLoginView, PinSetupView  # noqa: E402
 from ui.branding import AuthHeader  # noqa: E402
@@ -26,6 +27,33 @@ class AuthSurfaceContractTests(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
         configure_localization(PreferencesStore())
         self.addCleanup(configure_localization, PreferencesStore())
+
+    async def test_initial_key_entry_is_universal_but_replacement_is_fixed(self):
+        submit = AsyncMock()
+        universal = KeyEntryView(submit)
+        replacement = KeyEntryView(
+            submit, replacement=True, provider_id=ProviderId.VSEGPT
+        )
+        for key, name in (
+            ("sk-or-v1-local-candidate", "OpenRouter"),
+            ("sk-or-vv-local-candidate", "VSEGPT"),
+            ("sk-or-visLOCAL_TEST", "VSEGPT"),
+        ):
+            universal.key_field.value = key
+            universal._apply_key_state()
+            self.assertFalse(universal.submit_button.disabled)
+            self.assertIn(name, str(universal.detected_provider.value))
+        replacement.key_field.value = "sk-or-v1-wrong-service"
+        replacement._apply_key_state()
+        self.assertTrue(replacement.submit_button.disabled)
+        self.assertNotIn("OpenRouter", str(replacement.detected_provider.value))
+        await replacement._submit_value()
+        submit.assert_not_awaited()
+        replacement.key_field.value = "sk-or-visLOCAL_TEST"
+        replacement._apply_key_state()
+        self.assertFalse(replacement.submit_button.disabled)
+        await replacement._submit_value()
+        submit.assert_awaited_once_with("sk-or-visLOCAL_TEST")
 
     async def test_shared_header_keeps_shield_last_and_notice_outside_pin_form(self):
         show_details = AsyncMock()

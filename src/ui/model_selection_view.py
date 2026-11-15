@@ -69,6 +69,8 @@ class ModeSelectionView:
         key_limit: KeyLimitInfo,
         on_select: ModeCallback,
         on_cancel: AsyncCallback,
+        *,
+        provider_id: ProviderId | None = None,
     ) -> None:
         async def select_free(_event: ft.Event[ft.Button]) -> None:
             await on_select(ChatMode.FREE)
@@ -80,17 +82,20 @@ class ModeSelectionView:
             await on_cancel()
 
         choices = catalog.paid_models or catalog.free_models
-        provider_id = choices[0].provider_id if choices else ProviderId.OPENROUTER
+        provider_id = provider_id or (
+            choices[0].provider_id if choices else ProviderId.OPENROUTER
+        )
         paid_enabled = (
             paid_mode_allowed(key_validity, key_limit, provider_id)
             and catalog.available
             and bool(catalog.paid_models)
         )
-        currency = choices[0].currency if choices else Currency.USD
+        currency = provider_spec(provider_id).currency
         limit_notice, limit_notice_color = key_access_mode_notice(
             key_validity,
             key_limit,
             currency,
+            provider_id=provider_id,
         )
         self.free_button = ft.Button(
             tr("mode.choose_free"),
@@ -299,9 +304,14 @@ def filter_models(
 
 
 def key_limit_mode_notice(
-    key_limit: KeyLimitInfo, currency: Currency = Currency.USD
+    key_limit: KeyLimitInfo,
+    currency: Currency = Currency.USD,
+    *,
+    provider_id: ProviderId = ProviderId.OPENROUTER,
 ) -> tuple[str, str]:
     """Описывает лимит ключа, не называя его балансом аккаунта."""
+    if not provider_spec(provider_id).supports_key_limit:
+        return "", MUTED_COLOR
     if key_limit.state is KeyLimitState.EXHAUSTED:
         return (
             tr("key.exhausted_notice"),
@@ -338,6 +348,8 @@ def key_access_mode_notice(
     key_validity: KeyValidityState,
     key_limit: KeyLimitInfo,
     currency: Currency = Currency.USD,
+    *,
+    provider_id: ProviderId = ProviderId.OPENROUTER,
 ) -> tuple[str, str]:
     """Показывает валидность отдельно от расходного лимита."""
     if key_validity is KeyValidityState.INVALID:
@@ -355,7 +367,12 @@ def key_access_mode_notice(
             tr("key.checking_notice"),
             WARNING_COLOR,
         )
-    return key_limit_mode_notice(key_limit, currency)
+    if key_validity is KeyValidityState.UNVERIFIED:
+        return (
+            tr("metrics.key_unverified", provider=provider_spec(provider_id).name),
+            WARNING_COLOR,
+        )
+    return key_limit_mode_notice(key_limit, currency, provider_id=provider_id)
 
 
 def _additional_price_controls(model: CatalogModel) -> list[ft.Control]:

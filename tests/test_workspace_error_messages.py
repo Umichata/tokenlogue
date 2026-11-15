@@ -44,8 +44,8 @@ class WorkspaceErrorMessageTests(unittest.TestCase):
         for text in messages(ChatErrorType.CONTEXT_LENGTH_EXCEEDED):
             with self.subTest(text=text):
                 self.assertIn("оценке", text)
-                self.assertIn("истори", text)
-                self.assertIn("окно модели", text)
+                self.assertEqual(getattr(text, "key", None), "service.context_estimate")
+                self.assertIn("контекст", text)
                 self.assertNotIn("увелич", text.lower())
 
     def test_budget_explains_remaining_total_chat_limit(self) -> None:
@@ -55,9 +55,13 @@ class WorkspaceErrorMessageTests(unittest.TestCase):
         ):
             for text in messages(error):
                 with self.subTest(error=error, text=text):
-                    self.assertIn("остат", text)
-                    self.assertIn("общ", text)
-                    self.assertIn("чата", text)
+                    self.assertEqual(
+                        getattr(text, "key", None),
+                        "service.token_budget_short"
+                        if error is ChatErrorType.TOKEN_LIMIT_EXCEEDED
+                        else "service.money_budget_short",
+                    )
+                    self.assertIn("чат", text)
                     self.assertNotIn("окно модели", text)
                     self.assertNotIn("максимум ответа", text)
 

@@ -13,7 +13,7 @@ from chat.estimates import DraftEstimate, EstimateState
 from chat.metrics import ChatMetricsSnapshot, LastRequestState
 from chat.models import ChatMode
 from i18n import money, number, tr
-from providers.models import Currency
+from providers.models import Currency, provider_spec
 from ui.styles import (
     BORDER_COLOR,
     MUTED_COLOR,
@@ -79,9 +79,7 @@ class ChatMetricsStrip:
         self.metadata = ft.Text(
             size=12, color=MUTED_COLOR, selectable=False, visible=False
         )
-        self.account = ft.Text(
-            tr("metrics.account_unavailable"), size=12, color=MUTED_COLOR
-        )
+        self.account = ft.Text("", size=12, color=MUTED_COLOR)
         self.pending = ft.Text(
             tr("metrics.preparing"), size=12, color=WARNING_COLOR, visible=False
         )
@@ -174,31 +172,35 @@ class ChatMetricsStrip:
         self.pending.value = tr("metrics.preparing")
         if snapshot is None:
             return
+        spec = provider_spec(snapshot.provider_id)
         account = snapshot.account_balance
+        matching_account = (
+            account.provider_id == snapshot.provider_id
+            and account.currency == snapshot.currency
+        )
         amount = (
             display_money(account.balance_amount, account.currency)
-            if account.balance_amount is not None
-            and account.provider_id == snapshot.provider_id
-            and account.currency == snapshot.currency
+            if account.balance_amount is not None and matching_account
             else None
         )
-        if account.state is AccountBalanceState.LOADING:
+        if matching_account and account.state is AccountBalanceState.LOADING:
             self.account.value = (
-                tr("metrics.account_updating", amount=amount)
+                tr("metrics.account_updating", amount=amount, provider=spec.name)
                 if amount is not None
-                else tr("metrics.account_loading")
+                else tr("metrics.account_loading", provider=spec.name)
             )
         elif amount is None:
-            self.account.value = tr("metrics.account_unavailable")
+            self.account.value = tr("metrics.account_unavailable", provider=spec.name)
         else:
             self.account.value = tr(
                 "metrics.account_stale"
                 if account.state is AccountBalanceState.STALE
                 else "metrics.account_current",
                 amount=amount,
+                provider=spec.name,
             )
-        account_help = tr("metrics.account_help")
-        if account.fetched_at is not None:
+        account_help = tr("metrics.account_help", provider=spec.name)
+        if matching_account and account.fetched_at is not None:
             account_help = tr(
                 "metrics.account_time",
                 description=account_help,
@@ -281,7 +283,10 @@ class ChatMetricsStrip:
             )
             self.values.tooltip = explanatory_tooltip(tr("metrics.paid_help"))
             key_limit = snapshot.key_limit
-            if (
+            if not spec.supports_key_limit:
+                metadata = ""
+                explanation = ""
+            elif (
                 key_limit.state
                 in {
                     KeyLimitState.AVAILABLE,
@@ -300,7 +305,7 @@ class ChatMetricsStrip:
                     else "metrics.key_exhausted",
                     amount=amount,
                 )
-                explanation = tr("metrics.key_help")
+                explanation = tr("metrics.key_help", provider=spec.name)
             elif key_limit.state is KeyLimitState.NOT_SET:
                 metadata = tr("metrics.key_not_set")
                 explanation = tr("metrics.key_not_set_help")
@@ -308,7 +313,7 @@ class ChatMetricsStrip:
                 metadata = tr("metrics.key_unavailable")
                 explanation = tr("metrics.key_unavailable_help")
             self.metadata.value = metadata
-            self.metadata.visible = True
+            self.metadata.visible = spec.supports_key_limit
             help_text = tr(
                 "metrics.key_details", value=metadata, description=explanation
             )
@@ -318,8 +323,12 @@ class ChatMetricsStrip:
                     description=help_text,
                     time=snapshot.metadata_updated_at.isoformat(timespec="seconds"),
                 )
-            self.metadata.tooltip = explanatory_tooltip(help_text)
-            self.compact_header.visible = True
+            self.metadata.tooltip = (
+                explanatory_tooltip(help_text) if self.metadata.visible else None
+            )
+            self.compact_header.visible = (
+                self._checkbox is not None or self.metadata.visible
+            )
         else:
             remaining = (
                 number(snapshot.remaining.tokens)

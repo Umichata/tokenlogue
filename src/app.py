@@ -149,7 +149,6 @@ class AppController:
         self._token_usage_page: TokenUsagePage | None = None
         self._spending_page: SpendingPage | None = None
         self._private_views_epoch = 0
-        self._analytics_request = 0
         self._provider_ui_refresh: asyncio.Task[None] | None = None
         self._data_access = data_access
         self._auth_service = auth_service
@@ -1903,6 +1902,14 @@ class AppController:
             or not self._chat_controller.session_active
         ):
             return
+        if (
+            self._provider_page is not None
+            and self._workspace_shell is not None
+            and self._private_pages_available()
+        ):
+            await self._provider_page.set_filter(self._chat_controller.current_provider)
+            await self._workspace_shell.select(WorkspacePage.PROVIDERS)
+            return
         self._cancel_protection_intent()
         protected = bool(getattr(self._auth_service, "data_protection_enabled", False))
         if protected and not self._chat_controller.session_active:
@@ -2279,12 +2286,17 @@ class AppController:
         self._clear_secret_controls()
         self._pin_login_view = None
         self._pin_setup_view = None
+        replacing = bool(getattr(self._auth_service, "key_replacement_pending", False))
+        replacement_provider = (
+            self._provider_profiles.default_provider
+            if self._provider_profiles is not None
+            else self._chat_controller.current_provider
+        )
         self._key_view = KeyEntryView(
             self.submit_key,
             on_save_unverified=self._save_unverified_key,
-            replacement=bool(
-                getattr(self._auth_service, "key_replacement_pending", False)
-            ),
+            replacement=replacing,
+            provider_id=replacement_provider if replacing else None,
         )
         if message:
             self._key_view.show_message(message, success=success)
@@ -2602,7 +2614,7 @@ class AppController:
                     balance_amount=balance.balance_amount,
                     balance_status=balance_status,
                     checked_at=balance.fetched_at or state.checked_at,
-                    key_limit_remaining=state.key_limit.remaining,
+                    key_limit=state.key_limit,
                 )
             )
 
@@ -2647,28 +2659,30 @@ class AppController:
         if view is None or repository is None or not self._private_pages_available():
             return
         epoch = self._private_views_epoch
-        self._analytics_request += 1
-        request = self._analytics_request
-        view.set_loading(True)
+        request = view.begin_load(filters)
+
+        def current() -> bool:
+            return (
+                epoch == self._private_views_epoch
+                and self._private_pages_available()
+                and view in (self._token_usage_page, self._spending_page)
+                and view.is_current_load(request, filters)
+            )
+
         try:
             attempts = await asyncio.to_thread(repository.list_attempts)
             snapshot = await asyncio.to_thread(build_analytics, attempts, filters)
-            if (
-                epoch == self._private_views_epoch
-                and request == self._analytics_request
-                and self._private_pages_available()
-            ):
+            if current():
                 view.set_snapshot(snapshot)
         except Exception:
-            if epoch == self._private_views_epoch and self._private_pages_available():
+            if current():
                 view.show_error(tr("analytics.load_failed"))
         finally:
-            if epoch == self._private_views_epoch and self._private_pages_available():
+            if current():
                 view.set_loading(False)
 
     def _clear_application_pages(self) -> None:
         self._private_views_epoch += 1
-        self._analytics_request += 1
         task = self._provider_ui_refresh
         if task is not None and not task.done():
             try:

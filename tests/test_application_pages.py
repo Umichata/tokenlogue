@@ -6,6 +6,8 @@ import asyncio
 import sys
 import threading
 import unittest
+from datetime import UTC, datetime
+from decimal import Decimal
 from pathlib import Path
 from types import SimpleNamespace
 from typing import cast
@@ -27,7 +29,7 @@ from auth.contracts import KeyValidator  # noqa: E402
 from auth.models import InitialRoute, KeyLimitInfo, KeyValidityState  # noqa: E402
 from auth.service import AuthService  # noqa: E402
 from chat.account_balance import AccountBalanceSnapshot  # noqa: E402
-from chat.analytics import AnalyticsFilter  # noqa: E402
+from chat.analytics import AnalyticsFilter, RequestAttempt  # noqa: E402
 from chat.drafts import ChatDraftService  # noqa: E402
 from chat.models import ChatMode  # noqa: E402
 from chat.sending import MessageSendingService  # noqa: E402
@@ -274,6 +276,176 @@ class ApplicationPagesTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(tokens._body.controls, [])
         self.assertFalse(tokens.progress.visible)
 
+    def deferred_analytics_reads(self):
+        reads = asyncio.Queue()
+
+        async def to_thread(function, *args):
+            if function == self.analytics.list_attempts:
+                future = asyncio.get_running_loop().create_future()
+                reads.put_nowait(future)
+                return await future
+            return function(*args)
+
+        return patch("app.asyncio.to_thread", side_effect=to_thread), reads
+
+    def provider_history(self):
+        now = datetime.now(UTC)
+        return [
+            RequestAttempt(
+                1,
+                "old-openrouter-turn",
+                self.chat_id,
+                requested_model_id="shared/model",
+                sent_at=now,
+                chronology_known=True,
+                total_tokens=11,
+                usage_source="api",
+                cost=Decimal("0.0123"),
+                cost_source="api",
+            ),
+            RequestAttempt(
+                2,
+                "old-vsegpt-turn",
+                "vsegpt-chat",
+                provider_id=ProviderId.VSEGPT,
+                currency=Currency.RUB,
+                requested_model_id="shared/model",
+                sent_at=now,
+                chronology_known=True,
+                total_tokens=29,
+                usage_source="api",
+                cost=Decimal("12.34"),
+                cost_source="api",
+            ),
+        ]
+
+    async def test_analytics_pages_load_independently_and_keep_their_filters(self):
+        tokens, spending = self.app._token_usage_page, self.app._spending_page
+        assert tokens is not None and spending is not None
+        deferred, reads = self.deferred_analytics_reads()
+        token_filter = AnalyticsFilter(period="all", provider_id=ProviderId.OPENROUTER)
+        spending_filter = AnalyticsFilter(period="30d", provider_id=ProviderId.VSEGPT)
+        with deferred:
+            first = asyncio.create_task(self.app._load_token_usage(token_filter))
+            token_read = await reads.get()
+            second = asyncio.create_task(self.app._load_spending(spending_filter))
+            spending_read = await reads.get()
+            spending_read.set_result(self.provider_history())
+            await second
+            self.assertTrue(tokens.progress.visible)
+            self.assertFalse(spending.progress.visible)
+            token_read.set_result(self.provider_history())
+            await first
+        assert tokens._snapshot is not None and spending._snapshot is not None
+        self.assertEqual(tokens.filters, token_filter)
+        self.assertEqual(spending.filters, spending_filter)
+        self.assertEqual(
+            [r.provider_id for r in tokens._snapshot.usage_rows],
+            [ProviderId.OPENROUTER],
+        )
+        self.assertEqual(
+            [p.currency for p in spending._snapshot.spending], [Currency.RUB]
+        )
+        self.assertFalse(tokens.progress.visible)
+
+    async def test_late_success_error_and_finally_cannot_replace_new_filter_or_busy(
+        self,
+    ):
+        tokens = self.app._token_usage_page
+        assert tokens is not None
+        deferred, reads = self.deferred_analytics_reads()
+        first_filter = AnalyticsFilter(period="all", provider_id=ProviderId.OPENROUTER)
+        next_filter = AnalyticsFilter(period="30d", provider_id=ProviderId.VSEGPT)
+        with deferred:
+            for stale_failure in (False, True):
+                old = asyncio.create_task(self.app._load_token_usage(first_filter))
+                old_read = await reads.get()
+                new = asyncio.create_task(self.app._load_token_usage(next_filter))
+                new_read = await reads.get()
+                if stale_failure:
+                    old_read.set_exception(OSError("synthetic local read failure"))
+                else:
+                    old_read.set_result(self.provider_history())
+                await old
+                self.assertTrue(tokens.progress.visible)
+                self.assertEqual(tokens.error.value, "")
+                self.assertEqual(tokens.filters, next_filter)
+                new_read.set_result(self.provider_history())
+                await new
+                assert tokens._snapshot is not None
+                self.assertEqual(tokens._snapshot.filters, next_filter)
+                self.assertEqual(
+                    [row.provider_id for row in tokens._snapshot.usage_rows],
+                    [ProviderId.VSEGPT],
+                )
+                self.assertFalse(tokens.progress.visible)
+
+            old = asyncio.create_task(self.app._load_token_usage(first_filter))
+            old_read = await reads.get()
+            new = asyncio.create_task(self.app._load_token_usage(next_filter))
+            new_read = await reads.get()
+            new_read.set_exception(OSError("synthetic latest read failure"))
+            await new
+            self.assertEqual(tokens.error.value, tr("analytics.load_failed"))
+            self.assertFalse(tokens.progress.visible)
+            old_read.set_result(self.provider_history())
+            await old
+            self.assertEqual(tokens.error.value, tr("analytics.load_failed"))
+            self.assertEqual(tokens.filters, next_filter)
+
+    async def test_analytics_model_identity_and_navigation_do_not_change_keys_or_chat(
+        self,
+    ):
+        tokens, spending = self.app._token_usage_page, self.app._spending_page
+        assert tokens is not None and spending is not None
+        home = self.home()
+        assert home.composer is not None
+        home.composer.message_field.value = "Retained draft"
+        previous_default = self.profiles.default_provider
+        previous_chat = self.fx.chat_repository.get_chat(self.chat_id)
+        keys = {provider: self.profiles.key_for(provider) for provider in ProviderId}
+        with patch.object(
+            self.analytics, "list_attempts", return_value=self.provider_history()
+        ):
+            await self.shell().select(WorkspacePage.TOKENS)
+            tokens.period.value = "30d"
+            await tokens._filters_changed(None)
+            choices = [option for option in tokens.model.options if option.key]
+            self.assertEqual(len(choices), 2)
+            self.assertNotEqual(choices[0].key, choices[1].key)
+            for option in choices:
+                assert option.key is not None
+                tokens.model.value = option.key
+                await tokens._filters_changed(None)
+                assert tokens._snapshot is not None
+                self.assertEqual(len(tokens._snapshot.usage_rows), 1)
+                self.assertIn(
+                    tokens._snapshot.usage_rows[0].provider_id.value, option.key
+                )
+            tokens.model.value = choices[0].key
+            await tokens._filters_changed(None)
+            await tokens._provider_changed(ProviderId.VSEGPT)
+            self.assertIsNone(tokens.filters.model_id)
+            self.assertEqual(tokens.filters.period, "30d")
+            token_filter = tokens.filters
+            await self.shell().select(WorkspacePage.SPENDING)
+            spending.period.value = "all"
+            await spending._provider_changed(ProviderId.OPENROUTER)
+            spending_filter = spending.filters
+            await self.shell().select(WorkspacePage.TOKENS)
+            self.assertEqual(tokens.filters, token_filter)
+            await self.shell().select(WorkspacePage.SPENDING)
+            self.assertEqual(spending.filters, spending_filter)
+            await self.shell().select(WorkspacePage.HOME)
+        self.assertIs(self.home(), home)
+        self.assertEqual(home.editor_value, "Retained draft")
+        self.assertEqual(self.profiles.default_provider, previous_default)
+        self.assertEqual(
+            {provider: self.profiles.key_for(provider) for provider in ProviderId}, keys
+        )
+        self.assertEqual(self.fx.chat_repository.get_chat(self.chat_id), previous_chat)
+        self.assertEqual(self.client.calls, 0)
+
     async def test_android_back_resolves_page_dialog_drawer_then_exit(self):
         shell = self.shell()
         event = ft.Event(
@@ -369,6 +541,30 @@ class ApplicationPagesTests(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(card.key_field.value, "")
                 self.assertTrue(card.key_field.password)
 
+    async def test_menu_key_replacement_opens_current_provider_without_auth_reset(self):
+        home = self.home()
+        assert home.composer is not None
+        home.composer.message_field.value = "Keep this draft"
+        profiles = self.app._provider_profiles
+        assert profiles is not None
+        await profiles.set_default(ProviderId.VSEGPT)
+        with patch.object(
+            self.auth, "reset_authentication", new_callable=AsyncMock
+        ) as reset:
+            await self.app.request_reset()
+            reset.assert_not_awaited()
+        providers = self.app._provider_page
+        assert providers is not None
+        self.assertEqual(self.shell().selected_page, WorkspacePage.PROVIDERS)
+        self.assertIs(providers.provider_filter.value, ProviderId.OPENROUTER)
+        self.assertFalse(providers.cards[ProviderId.VSEGPT].control.visible)
+        self.assertIsNone(self.app._key_view)
+        self.assertTrue(self.app._chat_controller.session_active)
+        await self.shell().select(WorkspacePage.HOME)
+        self.assertIs(self.home(), home)
+        self.assertEqual(home.composer.message_field.value, "Keep this draft")
+        self.assertEqual(profiles.default_provider, ProviderId.VSEGPT)
+
     async def test_language_change_on_analytics_translates_retained_home_and_preserves_draft(
         self,
     ):
@@ -416,7 +612,11 @@ class ApplicationPagesTests(unittest.IsolatedAsyncioTestCase):
                 self.app._refresh_provider_presentations()
             self.assertEqual(
                 providers.cards[ProviderId.VSEGPT].balance_note.value,
-                tr(f"providers.balance_status.{label}"),
+                tr(
+                    f"providers.balance_status.{label}.vsegpt"
+                    if label == "disabled"
+                    else f"providers.balance_status.{label}"
+                ),
             )
             self.assertNotEqual(
                 providers.cards[ProviderId.VSEGPT].status.value,

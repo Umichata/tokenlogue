@@ -868,7 +868,10 @@ class ChatUiIntegrationTests(unittest.IsolatedAsyncioTestCase):
         view = controller._workspace_view
         assert view is not None and view.composer is not None
         self.assertIsNot(view, previous)
-        self.assertIn("остатка общего лимита токенов", view.composer.status.value)
+        self.assertEqual(
+            getattr(view.composer.status.value, "key", None),
+            "service.token_budget_short",
+        )
         self.assertFalse(view.composer.busy)
         self.assertEqual(client.calls, 0)
         self.assertEqual(self.message_repository.list_turns(chat_id), [])
@@ -1403,7 +1406,7 @@ class ChatUiIntegrationTests(unittest.IsolatedAsyncioTestCase):
         assert controller._workspace_view is not None
         assert controller._workspace_view.composer is not None
         payment_message = controller._workspace_view.composer.status.value
-        self.assertIn("недостатке средств", payment_message)
+        self.assertEqual(getattr(payment_message, "key", None), "service.error.payment")
         self.assertNotIn(TEST_CREDENTIAL, payment_message)
 
         free_id = await self._create_chat(

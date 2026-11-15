@@ -43,7 +43,12 @@ from chat.models import (  # noqa: E402
 from chat.sending import MessageSendPreview  # noqa: E402
 from i18n import configure_localization, localize_tree, set_language  # noqa: E402
 from preferences import PreferencesStore  # noqa: E402
-from providers.models import Currency, PriceUnit, ProviderId  # noqa: E402
+from providers.models import (  # noqa: E402
+    Currency,
+    PriceUnit,
+    ProviderId,
+    provider_spec,
+)
 from tests import test_chat_menu as menu_fixtures  # noqa: E402
 from tests.test_chat_components import _message, _turn  # noqa: E402
 from tests.test_chat_menu import walk  # noqa: E402
@@ -159,7 +164,148 @@ class WorkspacePagesTests(unittest.IsolatedAsyncioTestCase):
         self.providers.sync_language()
         self.assertEqual(card.key_field.value, "sk-or-vv-fake-ui-candidate")
         self.assertTrue(card.key_field.password)
-        self.assertIn("Detected VSEGPT", str(card.detected.value))
+        self.assertEqual(card.key_field.label, "VSEGPT key")
+        self.assertEqual(card.detected.value, "")
+
+    async def test_provider_view_filter_is_separate_from_default_and_candidates(self):
+        select_default = AsyncMock()
+        self.providers._on_default = select_default
+        default = self.providers.default_selector.value
+        key = "sk-or-vis-local-private-candidate"
+        card = self.type_key(ProviderId.VSEGPT, key)
+        reveal = cast(Callable[[ft.Event], None], card.reveal.on_click)
+        reveal(ft.Event(name="click", control=card.reveal))
+        for selected in (ProviderId.OPENROUTER, ProviderId.VSEGPT, None):
+            await self.providers.set_filter(selected)
+            self.assertEqual(self.providers.provider_filter.value, selected)
+            for provider, item in self.providers.cards.items():
+                self.assertEqual(
+                    item.control.visible, selected is None or selected is provider
+                )
+            self.assertTrue(card.key_field.password)
+            self.assertEqual(card.key_field.value, key)
+            self.assertEqual(self.providers.default_selector.value, default)
+        self.check.assert_not_awaited()
+        self.save.assert_not_awaited()
+        select_default.assert_not_awaited()
+
+    async def test_each_form_has_only_its_own_provider_hints_and_errors(self):
+        for language in ("ru", "en"):
+            set_language(language)
+            self.providers.sync_language()
+            for provider, other, candidate in (
+                (ProviderId.OPENROUTER, "VSEGPT", "sk-or-vis-local-candidate"),
+                (ProviderId.VSEGPT, "OpenRouter", "sk-or-v1-local-candidate"),
+            ):
+                card = self.type_key(provider, candidate)
+                self.assertIn(
+                    provider.name.replace("OPENROUTER", "OpenRouter"),
+                    str(card.key_field.label),
+                )
+                for text in (
+                    card.key_field.label,
+                    card.key_field.hint_text,
+                    card.detected.value,
+                ):
+                    self.assertNotIn(other, str(text))
+                self.assertTrue(card.check.disabled)
+                await self.providers.check_candidate(provider)
+        self.check.assert_not_awaited()
+
+    async def test_check_and_save_stay_on_captured_card_during_filter_changes(self):
+        started, finish = asyncio.Event(), asyncio.Event()
+
+        async def delayed(provider, candidate):
+            self.assertIs(provider, ProviderId.VSEGPT)
+            self.assertEqual(candidate, "sk-or-vis-local-candidate")
+            started.set()
+            await finish.wait()
+            return ProviderCheckResult(True, False)
+
+        self.providers._on_check = delayed
+        card = self.type_key(ProviderId.VSEGPT, "sk-or-vis-local-candidate")
+        task = asyncio.create_task(self.providers.check_candidate(ProviderId.VSEGPT))
+        await started.wait()
+        await self.providers.set_filter(ProviderId.OPENROUTER)
+        finish.set()
+        await task
+        self.assertFalse(card.control.visible)
+        self.assertTrue(card.result and card.result.save_allowed)
+        self.assertIsNone(self.providers.cards[ProviderId.OPENROUTER].result)
+        await self.providers.save_candidate(ProviderId.VSEGPT)
+        self.save.assert_awaited_once_with(
+            ProviderId.VSEGPT, "sk-or-vis-local-candidate", True
+        )
+
+    async def test_candidate_revision_rejects_late_result_and_clears_hidden_card(self):
+        started, finish = asyncio.Event(), asyncio.Event()
+
+        async def delayed(*_args):
+            started.set()
+            await finish.wait()
+            return ProviderCheckResult(True, True, "old candidate result")
+
+        self.providers._on_check = delayed
+        card = self.type_key(ProviderId.VSEGPT, "sk-or-vis-previous-candidate")
+        task = asyncio.create_task(self.providers.check_candidate(ProviderId.VSEGPT))
+        await started.wait()
+        self.type_key(ProviderId.VSEGPT, "sk-or-vv-current-candidate")
+        finish.set()
+        await task
+        self.assertIsNone(card.result)
+        self.assertEqual(card.message.value, "")
+        await self.providers.set_filter(ProviderId.OPENROUTER)
+        self.providers.clear_private()
+        for item in self.providers.cards.values():
+            self.assertEqual(item.key_field.value, "")
+            self.assertIsNone(item.result)
+            self.assertIsNone(item.checked_value)
+            self.assertEqual(item.balance.value, "")
+        self.save.assert_not_awaited()
+
+    async def test_provider_money_distinguishes_balance_limit_and_capability(self):
+        set_language("en")
+        self.providers.set_provider(
+            ProviderPresentation(
+                ProviderId.OPENROUTER,
+                has_saved_key=True,
+                balance_amount=Decimal("123.45"),
+                key_limit=KeyLimitInfo.from_validated_remaining(Decimal("7.89")),
+            )
+        )
+        self.providers.set_provider(
+            ProviderPresentation(
+                ProviderId.VSEGPT,
+                has_saved_key=True,
+                balance_amount=Decimal("987.65"),
+                balance_status="restricted",
+            )
+        )
+        openrouter = self.providers.cards[ProviderId.OPENROUTER]
+        vsegpt = self.providers.cards[ProviderId.VSEGPT]
+        self.assertEqual(openrouter.balance.value, "OpenRouter balance: 123.45 USD")
+        self.assertEqual(openrouter.key_limit.value, "Key limit remaining: 7.89 USD")
+        self.assertTrue(openrouter.key_limit.visible)
+        self.assertEqual(vsegpt.balance.value, "VSEGPT balance: 987.65 RUB")
+        self.assertFalse(vsegpt.key_limit.visible)
+        self.assertEqual(vsegpt.key_limit.value, "")
+        self.assertNotIn("OpenRouter", str(vsegpt.balance_note.value))
+        values = []
+        for limit in (
+            KeyLimitInfo.unknown(),
+            KeyLimitInfo.from_validated_remaining(None),
+            KeyLimitInfo.from_validated_remaining(Decimal("0")),
+            KeyLimitInfo.from_validated_remaining(Decimal("-1.5")),
+        ):
+            self.providers.set_provider(
+                ProviderPresentation(ProviderId.OPENROUTER, key_limit=limit)
+            )
+            values.append(openrouter.key_limit.value)
+        self.assertEqual(len(set(values)), 4)
+        self.assertIn("unknown", str(values[0]))
+        self.assertIn("not set", str(values[1]))
+        self.assertIn("0 USD", str(values[2]))
+        self.assertIn("-1.5 USD", str(values[3]))
 
     async def test_shell_retains_home_and_does_not_steal_active_analytics(self):
         page = SimpleNamespace(
@@ -234,7 +380,8 @@ class WorkspacePagesTests(unittest.IsolatedAsyncioTestCase):
         for key in ("sk-or-vis-local-fixture", "sk-or-visLOCAL_TEST"):
             with self.subTest(key=key):
                 card = self.type_key(ProviderId.VSEGPT, "  " + key + "  ")
-                self.assertIn("VSEGPT", str(card.detected.value))
+                self.assertIn("VSEGPT", str(card.key_field.label))
+                self.assertEqual(card.detected.value, "")
                 self.assertFalse(card.check.disabled)
                 self.check.return_value = ProviderCheckResult(True, False)
                 await self.providers.check_candidate(ProviderId.VSEGPT)
@@ -312,11 +459,87 @@ class WorkspacePagesTests(unittest.IsolatedAsyncioTestCase):
                 page.sync_language()
                 self.assertTrue(page._body.controls)
 
+    async def test_each_analytics_filter_scopes_every_rendered_result_and_model(self):
+        rows = [
+            RequestAttempt(
+                1,
+                "or-turn",
+                "or-chat",
+                requested_model_id="shared/model",
+                total_tokens=11,
+                usage_source="api",
+                cost=Decimal("0.0123"),
+                cost_source="api",
+            ),
+            RequestAttempt(
+                2,
+                "vv-turn",
+                "vv-chat",
+                provider_id=ProviderId.VSEGPT,
+                currency=Currency.RUB,
+                requested_model_id="shared/model",
+                total_tokens=29,
+                usage_source="api",
+                cost=Decimal("12.34"),
+                cost_source="api",
+            ),
+        ]
+        for language in ("ru", "en"):
+            set_language(language)
+            for page_type in (TokenUsagePage, SpendingPage):
+                with self.subTest(language=language, page=page_type.__name__):
+                    selected_filters = []
+
+                    async def apply(filters):
+                        selected_filters.append(filters)
+                        page.set_snapshot(build_analytics(rows, filters))
+
+                    page = page_type(
+                        on_filter=apply, filters=AnalyticsFilter(period="all")
+                    )
+                    for provider in (
+                        None,
+                        ProviderId.OPENROUTER,
+                        ProviderId.VSEGPT,
+                        None,
+                    ):
+                        await page._provider_changed(provider)
+                        snapshot = page._snapshot
+                        assert snapshot is not None
+                        expected = set(ProviderId) if provider is None else {provider}
+                        self.assertEqual(
+                            {row.provider_id for row in snapshot.usage_rows}, expected
+                        )
+                        self.assertEqual(
+                            {choice.provider_id for choice in snapshot.models}, expected
+                        )
+                        self.assertEqual(page.provider.value, provider)
+                        self.assertEqual(page.filters.period, "all")
+                        self.assertEqual(len(page.model.options), len(expected) + 1)
+                        displayed = "\n".join(
+                            str(child.value)
+                            for child in walk(page._body)
+                            if isinstance(child, ft.Text)
+                        )
+                        for candidate in ProviderId:
+                            if candidate in expected:
+                                self.assertIn(provider_spec(candidate).name, displayed)
+                            else:
+                                self.assertNotIn(
+                                    provider_spec(candidate).name, displayed
+                                )
+                        if page_type is SpendingPage:
+                            self.assertEqual(
+                                {chart.currency for chart in page._charts},
+                                {str(provider_spec(p).currency) for p in expected},
+                            )
+                    self.assertEqual(len(selected_filters), 4)
+
     async def test_language_change_replaces_mounted_frozen_filter_options(self):
         page = SpendingPage(
             on_filter=AsyncMock(), filters=AnalyticsFilter(period="all")
         )
-        for selector in (page.period, page.provider, page.model):
+        for selector in (page.period, page.model):
             for option in selector.options:
                 object.__setattr__(option, "_frozen", True)
         set_language("en")
@@ -324,7 +547,9 @@ class WorkspacePagesTests(unittest.IsolatedAsyncioTestCase):
         page.sync_language()
         self.assertEqual(page.period.value, "all")
         self.assertEqual(page.period.options[0].text, "7 days")
-        self.assertEqual(page.provider.options[0].text, "All providers")
+        all_label = page.provider.control.segments[0].label
+        assert isinstance(all_label, ft.Text)
+        self.assertEqual(all_label.value, "All")
         self.assertEqual(page.model.options[0].text, "All models")
 
     async def test_analytics_money_display_rounds_without_losing_nonzero_amounts(self):
@@ -419,7 +644,7 @@ class WorkspacePagesTests(unittest.IsolatedAsyncioTestCase):
             if isinstance(item, ft.Text)
         )
         self.assertIn("50 RUB", labels)
-        self.assertIn("Cost is unknown", labels)
+        self.assertIn("Cost unavailable", labels)
         self.assertNotIn("0 RUB", labels.replace("50 RUB", ""))
         self.assertNotIn("USD", labels)
         form = ChatLimitsForm(ChatMode.PAID, AsyncMock(), currency=Currency.RUB)
@@ -448,7 +673,7 @@ class WorkspacePagesTests(unittest.IsolatedAsyncioTestCase):
             if isinstance(item, ft.Text)
         )
         self.assertIn("VSEGPT", labels)
-        self.assertIn("not a free model", labels)
+        self.assertIn("may charge", labels)
         self.assertNotIn("USD", labels)
         turn = replace(
             _turn(accounting_status=AccountingStatus.UNKNOWN, error_type=None),

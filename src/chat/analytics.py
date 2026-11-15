@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 from collections import defaultdict
 from collections.abc import Iterable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, date, datetime, timedelta, tzinfo
 from decimal import Decimal
 from pathlib import Path
@@ -51,6 +51,7 @@ class AnalyticsFilter:
     provider_id: str | None = None
     model_id: str | None = None
     timezone_name: str | None = None
+    model_provider_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -172,31 +173,49 @@ def build_analytics(
     # Defensive identity deduplication: a repeated projection/result cannot
     # manufacture another dispatch. Actual retries have distinct sequences.
     unique = {item.sequence: item for item in attempts}
-    records = list(unique.values())
-    choices = tuple(
-        ModelChoice(provider, model)
-        for provider, model in sorted(
-            {(item.provider_id, item.model_id) for item in records},
-            key=lambda value: (value[0], value[1] or ""),
-        )
-    )
-    matching = [
+    records = [
         item
-        for item in records
-        if (filters.provider_id is None or item.provider_id == filters.provider_id)
-        and (filters.model_id is None or item.model_id == filters.model_id)
+        for item in unique.values()
+        if filters.provider_id is None or item.provider_id == filters.provider_id
     ]
-    dated = [day for item in matching if (day := _day(item, zone)) is not None]
+    dated = [day for item in records if (day := _day(item, zone)) is not None]
     if filters.period == "all":
         start = min(dated, default=end)
         end = max(end, max(dated, default=end))
     else:
         start = end - timedelta(days=6 if filters.period == "7d" else 29)
-    selected = [
+    period_records = [
         item
-        for item in matching
+        for item in records
         if ((day := _day(item, zone)) is None and filters.period == "all")
         or (day is not None and start <= day <= end)
+    ]
+    # Model choices use the same provider and period scope as the projection.
+    # Preserve the provider identity even when two services share a model ID.
+    choices = tuple(
+        ModelChoice(provider, model)
+        for provider, model in sorted(
+            {(item.provider_id, item.model_id) for item in period_records},
+            key=lambda value: (value[0], value[1] or ""),
+        )
+    )
+    if filters.model_id is not None and not any(
+        choice.model_id == filters.model_id
+        and (
+            filters.model_provider_id is None
+            or choice.provider_id == filters.model_provider_id
+        )
+        for choice in choices
+    ):
+        filters = replace(filters, model_id=None, model_provider_id=None)
+    selected = [
+        item
+        for item in period_records
+        if (filters.model_id is None or item.model_id == filters.model_id)
+        and (
+            filters.model_provider_id is None
+            or item.provider_id == filters.model_provider_id
+        )
     ]
     groups: dict[tuple[ProviderId, str | None], list[RequestAttempt]] = defaultdict(
         list

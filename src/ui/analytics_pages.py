@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from collections.abc import Awaitable, Callable
 from dataclasses import replace
 from decimal import ROUND_HALF_UP, Decimal, localcontext
@@ -15,11 +16,13 @@ from chat.analytics import (
     AnalyticsSnapshot,
     CurrencySpending,
     DailySpending,
+    ModelChoice,
     ModelUsage,
 )
 from i18n import localize_tree, number, tr
 from providers.models import ProviderId, provider_spec
 from ui.language_selector import LanguageSelector
+from ui.provider_filter import ProviderFilter
 from ui.styles import (
     BORDER_COLOR,
     ERROR_COLOR,
@@ -37,6 +40,10 @@ def _provider_name(provider_id: str) -> str:
         return provider_spec(provider_id).name
     except ValueError:
         return provider_id
+
+
+def _model_key(choice: ModelChoice) -> str:
+    return json.dumps([choice.provider_id, choice.model_id], ensure_ascii=True)
 
 
 def _tokens(value: int | None) -> str:
@@ -171,6 +178,9 @@ class _AnalyticsPage:
         self._kind = page_kind
         self._on_filter = on_filter
         self._snapshot: AnalyticsSnapshot | None = None
+        self._model_choices: dict[str, ModelChoice] = {}
+        self._filter_generation = 0
+        self._load_generation = 0
         self._cleared = False
         self._charts: list[DailyBarChart] = []
         self._usage_limit = 100
@@ -185,18 +195,11 @@ class _AnalyticsPage:
             on_select=self._filters_changed,
             col={"xs": 12, "md": 4},
         )
-        self.provider = ft.Dropdown(
-            label=tr("analytics.provider"),
-            value=self.filters.provider_id or "",
-            options=[
-                ft.DropdownOption(key="", text=str(tr("analytics.all_providers"))),
-                *[
-                    ft.DropdownOption(key=p.value, text=provider_spec(p).name)
-                    for p in ProviderId
-                ],
-            ],
-            on_select=self._filters_changed,
-            col={"xs": 12, "md": 4},
+        self.provider = ProviderFilter(
+            on_change=self._provider_changed,
+            value=ProviderId(self.filters.provider_id)
+            if self.filters.provider_id is not None
+            else None,
         )
         self.model = ft.Dropdown(
             label=tr("analytics.model"),
@@ -222,34 +225,90 @@ class _AnalyticsPage:
                     ],
                 ),
                 ft.Text(tr("analytics.scope"), color=MUTED_COLOR),
-                ft.ResponsiveRow(controls=[self.period, self.provider, self.model]),
+                self.provider.control,
+                ft.ResponsiveRow(controls=[self.period, self.model]),
                 self.progress,
                 self.error,
                 self._body,
             ],
         )
 
-    async def _filters_changed(self, _event: ft.Event) -> None:
+    async def _provider_changed(self, provider: ProviderId | None) -> None:
+        self.provider.set_value(provider)
+        await self._filters_changed(None)
+
+    async def _filters_changed(self, _event: ft.Event | None) -> None:
         if self._cleared:
             return
         period = self.period.value
         if period not in ("7d", "30d", "all"):
             return
+        choice = self._model_choices.get(self.model.value or "")
+        provider = self.provider.value
+        if (
+            choice is not None
+            and provider is not None
+            and choice.provider_id != provider
+        ):
+            choice = None
         self.filters = replace(
             self.filters,
             period=period,
-            provider_id=self.provider.value or None,
-            model_id=self.model.value or None,
+            provider_id=provider.value if provider is not None else None,
+            model_id=choice.model_id if choice else None,
+            model_provider_id=choice.provider_id.value if choice else None,
         )
+        self._set_model_choices(
+            tuple(
+                choice
+                for choice in self._model_choices.values()
+                if provider is None or choice.provider_id == provider
+            )
+        )
+        self._filter_generation += 1
+        generation = self._filter_generation
+        filters = self.filters
         self._usage_limit = 100
         self._day_limits.clear()
-        self.set_loading(True)
+        self._snapshot = None
+        self.error.value = ""
+        self._render()
+        self._update()
         try:
-            await self._on_filter(self.filters)
+            await self._on_filter(filters)
         except Exception:
-            self.show_error(tr("analytics.load_failed"))
-        finally:
-            self.set_loading(False)
+            if generation == self._filter_generation and filters == self.filters:
+                self.show_error(tr("analytics.load_failed"))
+
+    def begin_load(self, filters: AnalyticsFilter) -> int:
+        """A retained page owns its requests independently of the other page."""
+        self._load_generation += 1
+        if self._snapshot is not None and self._snapshot.filters != filters:
+            self._snapshot = None
+            self._render()
+        self.filters = filters
+        self.period.value = filters.period
+        self.provider.set_value(
+            ProviderId(filters.provider_id) if filters.provider_id is not None else None
+        )
+        self._set_model_choices(
+            tuple(
+                choice
+                for choice in self._model_choices.values()
+                if filters.provider_id is None
+                or choice.provider_id == filters.provider_id
+            )
+        )
+        self.error.value = ""
+        self.set_loading(True)
+        return self._load_generation
+
+    def is_current_load(self, generation: int, filters: AnalyticsFilter) -> bool:
+        return (
+            not self._cleared
+            and generation == self._load_generation
+            and filters == self.filters
+        )
 
     def set_loading(self, loading: bool) -> None:
         if not self._cleared:
@@ -267,19 +326,51 @@ class _AnalyticsPage:
         self._snapshot = snapshot
         self.filters = snapshot.filters
         self.period.value = snapshot.filters.period
-        self.provider.value = snapshot.filters.provider_id or ""
-        self.model.value = snapshot.filters.model_id or ""
-        model_ids = sorted(
-            {choice.model_id for choice in snapshot.models if choice.model_id}
+        self.provider.set_value(
+            ProviderId(snapshot.filters.provider_id)
+            if snapshot.filters.provider_id is not None
+            else None
         )
-        self.model.options = [
-            ft.DropdownOption(key="", text=str(tr("analytics.all_models"))),
-            *[ft.DropdownOption(key=model, text=model) for model in model_ids],
-        ]
+        self._set_model_choices(snapshot.models)
         self.error.value = ""
         self.progress.visible = False
         self._render()
         self._update()
+
+    def _set_model_choices(self, choices: tuple[ModelChoice, ...]) -> None:
+        self._model_choices = {
+            _model_key(choice): choice
+            for choice in choices
+            if choice.model_id is not None
+        }
+        self.model.options = [
+            ft.DropdownOption(key="", text=str(tr("analytics.all_models"))),
+            *[
+                ft.DropdownOption(
+                    key=key,
+                    text=str(
+                        tr(
+                            "analytics.model_label",
+                            provider=_provider_name(choice.provider_id),
+                            model=choice.model_id,
+                        )
+                    ),
+                )
+                for key, choice in self._model_choices.items()
+            ],
+        ]
+        self.model.value = next(
+            (
+                key
+                for key, choice in self._model_choices.items()
+                if choice.model_id == self.filters.model_id
+                and (
+                    self.filters.model_provider_id is None
+                    or choice.provider_id == self.filters.model_provider_id
+                )
+            ),
+            "",
+        )
 
     def _render(self) -> None:
         for chart in self._charts:
@@ -303,29 +394,65 @@ class _AnalyticsPage:
                 row.model_id or "",
             ),
         )
-        requests = sum(row.requests for row in rows)
-        api_requests = sum(row.api_usage_requests for row in rows)
-        unknown = sum(row.unknown_usage_requests for row in rows)
-        api_totals = [row.total_tokens for row in rows if row.total_tokens is not None]
-        controls: list[ft.Control] = [
-            surface(
-                ft.Row(
-                    wrap=True,
-                    spacing=24,
-                    controls=[
-                        _metric(tr("analytics.requests"), number(requests)),
-                        _metric(
-                            tr("analytics.api_total"),
-                            _tokens(sum(api_totals) if api_totals else None),
-                        ),
-                        _metric(tr("analytics.api_requests"), number(api_requests)),
-                        _metric(tr("analytics.unknown_requests"), number(unknown)),
-                    ],
-                ),
-                padding=16,
-            ),
-            ft.Text(tr("analytics.token_sources"), color=MUTED_COLOR),
-        ]
+        controls: list[ft.Control] = []
+        for provider in ProviderId:
+            provider_rows = [row for row in rows if row.provider_id == provider]
+            if not provider_rows:
+                continue
+            api_totals = [
+                row.total_tokens
+                for row in provider_rows
+                if row.total_tokens is not None
+            ]
+            controls.append(
+                surface(
+                    ft.Column(
+                        tight=True,
+                        spacing=8,
+                        controls=[
+                            ft.Text(provider_spec(provider).name, size=18),
+                            ft.Row(
+                                wrap=True,
+                                spacing=24,
+                                controls=[
+                                    _metric(
+                                        tr("analytics.requests"),
+                                        number(
+                                            sum(row.requests for row in provider_rows)
+                                        ),
+                                    ),
+                                    _metric(
+                                        tr("analytics.api_total"),
+                                        _tokens(
+                                            sum(api_totals) if api_totals else None
+                                        ),
+                                    ),
+                                    _metric(
+                                        tr("analytics.api_requests"),
+                                        number(
+                                            sum(
+                                                row.api_usage_requests
+                                                for row in provider_rows
+                                            )
+                                        ),
+                                    ),
+                                    _metric(
+                                        tr("analytics.unknown_requests"),
+                                        number(
+                                            sum(
+                                                row.unknown_usage_requests
+                                                for row in provider_rows
+                                            )
+                                        ),
+                                    ),
+                                ],
+                            ),
+                        ],
+                    ),
+                    padding=16,
+                )
+            )
+        controls.append(ft.Text(tr("analytics.token_sources"), color=MUTED_COLOR))
         if snapshot.undated_requests:
             controls.append(
                 ft.Text(
@@ -450,7 +577,18 @@ class _AnalyticsPage:
         chart = DailyBarChart(panel.days, currency)
         self._charts.append(chart)
         controls: list[ft.Control] = [
-            ft.Text(tr("analytics.currency_panel", currency=currency), size=21),
+            ft.Text(
+                tr(
+                    "analytics.currency_panel",
+                    currency=currency,
+                    provider=next(
+                        spec.name
+                        for provider in ProviderId
+                        if (spec := provider_spec(provider)).currency == panel.currency
+                    ),
+                ),
+                size=21,
+            ),
             ft.Row(
                 wrap=True,
                 spacing=24,
@@ -562,13 +700,7 @@ class _AnalyticsPage:
                 ft.DropdownOption(key=value, text=str(tr(f"analytics.period.{value}")))
                 for value in ("7d", "30d", "all")
             ]
-            self.provider.options = [
-                ft.DropdownOption(key="", text=str(tr("analytics.all_providers"))),
-                *[
-                    ft.DropdownOption(key=p.value, text=provider_spec(p).name)
-                    for p in ProviderId
-                ],
-            ]
+            self.provider.sync_language()
             self.model.options = [
                 ft.DropdownOption(
                     key=option.key,
@@ -582,14 +714,17 @@ class _AnalyticsPage:
 
     def clear_private(self) -> None:
         self._cleared = True
+        self._filter_generation += 1
+        self._load_generation += 1
         self._snapshot = None
+        self._model_choices.clear()
         for chart in self._charts:
             chart.clear()
         self._charts = []
         self._body.controls = []
         self.model.options = []
         self.model.value = ""
-        self.provider.value = ""
+        self.provider.set_value(None)
         self.error.value = ""
         self.progress.visible = False
         self.filters = AnalyticsFilter()

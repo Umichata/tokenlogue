@@ -452,9 +452,9 @@ class ChatMetricsUiTests(unittest.IsolatedAsyncioTestCase):
         set_language("en")
         strip = ChatMetricsStrip()
         strip.set_metrics(replace(self.metrics(), account_balance_usd=Decimal("99")))
-        self.assertIn("Chat available $0.73", strip.values.value)
+        self.assertIn("Chat remaining $0.73", strip.values.value)
         self.assertIn("Last request $0.0025", strip.values.value)
-        self.assertEqual(strip.metadata.value, "Key remaining $7.12")
+        self.assertEqual(strip.metadata.value, "Key limit remaining $7.12")
         self.assertNotIn("$7.12", strip.values.value)
         self.assertNotIn("$99", strip.metadata.value)
         self.assertNotIn("balance", strip.metadata.value)
@@ -462,12 +462,12 @@ class ChatMetricsUiTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(strip.values.selectable)
         tooltip = cast(ft.Tooltip, strip.metadata.tooltip)
         self.assertEqual(tooltip.trigger_mode, ft.TooltipTriggerMode.LONG_PRESS)
-        self.assertIn("Key remaining $7.12", tooltip.message)
+        self.assertIn("Key limit remaining $7.12", tooltip.message)
         self.assertIn("separate amounts", tooltip.message)
-        self.assertEqual(strip.account.value, "Balance unavailable")
+        self.assertEqual(strip.account.value, "OpenRouter balance unavailable")
         self.assertIn("2026-11-01", tooltip.message)
         strip.set_metrics(replace(self.metrics(), key_limit=KeyLimitInfo.unknown()))
-        self.assertEqual(strip.metadata.value, "Key data unavailable")
+        self.assertEqual(strip.metadata.value, "Key limit unavailable")
         self.assertNotIn("$0", strip.metadata.value)
 
     async def test_key_limit_states_are_visible_and_distinct_in_both_languages(self):
@@ -475,25 +475,25 @@ class ChatMetricsUiTests(unittest.IsolatedAsyncioTestCase):
             (
                 "en",
                 (
-                    "Key remaining $7.12",
-                    "Key remaining < $0.0001",
+                    "Key limit remaining $7.12",
+                    "Key limit remaining < $0.0001",
                     "Key limit exhausted · $0",
                     "Key limit exhausted · $-1.25",
                     "Key limit exhausted · below $0",
                     "Key limit not set",
-                    "Key data unavailable",
+                    "Key limit unavailable",
                 ),
             ),
             (
                 "ru",
                 (
-                    "Осталось по ключу 7,12 USD",
-                    "Осталось по ключу < 0,0001 USD",
+                    "Остаток лимита ключа 7,12 USD",
+                    "Остаток лимита ключа < 0,0001 USD",
                     "Лимит ключа исчерпан · 0 USD",
                     "Лимит ключа исчерпан · -1,25 USD",
                     "Лимит ключа исчерпан · ниже 0 USD",
                     "Лимит ключа не установлен",
-                    "Данные ключа недоступны",
+                    "Лимит ключа недоступен",
                 ),
             ),
         ):
@@ -523,9 +523,9 @@ class ChatMetricsUiTests(unittest.IsolatedAsyncioTestCase):
                     self.assertIn(label, help_text)
                     if key_limit.state is KeyLimitState.NOT_SET:
                         self.assertIn(
-                            "does not mean unlimited"
+                            "Available account funds"
                             if language == "en"
-                            else "не означает бесконечные",
+                            else "Доступные средства аккаунта",
                             help_text,
                         )
                     elif key_limit.state is KeyLimitState.UNKNOWN:
@@ -554,7 +554,7 @@ class ChatMetricsUiTests(unittest.IsolatedAsyncioTestCase):
                 metadata_updated_at=datetime(2026, 11, 1, 1, tzinfo=UTC),
             )
         )
-        self.assertEqual(strip.metadata.value, "Key remaining $37.5")
+        self.assertEqual(strip.metadata.value, "Key limit remaining $37.5")
         tooltip = cast(ft.Tooltip, strip.metadata.tooltip).message
         self.assertIn("2026-11-01T01:00:00+00:00", tooltip)
         self.assertNotIn(receipt, tooltip)
@@ -594,13 +594,14 @@ class ChatMetricsUiTests(unittest.IsolatedAsyncioTestCase):
         set_language("en")
         strip = ChatMetricsStrip()
         strip.set_metrics(replace(self.metrics(), mode=ChatMode.FREE))
-        self.assertIn("Tokens remaining 120", strip.values.value)
+        self.assertIn("Chat tokens remaining 120", strip.values.value)
         self.assertIn("Last request 45 tokens", strip.values.value)
         self.assertNotIn("100", strip.values.value)
         self.assertNotIn("$", strip.values.value)
         self.assertFalse(strip.metadata.visible)
         tooltip = cast(ft.Tooltip, strip.values.tooltip)
-        self.assertIn("not a global OpenRouter quota", tooltip.message)
+        self.assertIn("chat", tooltip.message)
+        self.assertNotIn("OpenRouter", tooltip.message)
 
     async def test_estimate_line_is_inside_compose_and_updates_without_replacing_field(
         self,

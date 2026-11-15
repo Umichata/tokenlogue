@@ -26,7 +26,7 @@ from i18n import (
 )
 from platform_security.local_protection import ProtectionSnapshot
 from preferences import PreferencesStore
-from providers.models import Currency, PriceUnit, provider_spec
+from providers.models import Currency, PriceUnit, ProviderId, provider_spec
 from ui.branding import BrandHeader, BrandLoader
 from ui.chat_metrics import (
     ChatMetricsStrip,
@@ -92,6 +92,7 @@ class ChatWorkspaceView:
         key_validity: KeyValidityState,
         key_limit: KeyLimitInfo,
         key_validation_in_progress: bool,
+        provider_id: ProviderId = ProviderId.OPENROUTER,
         on_retry_key: AsyncCallback,
         on_replace_key: AsyncCallback,
         on_security: AsyncCallback | None = None,
@@ -124,6 +125,7 @@ class ChatWorkspaceView:
         self._on_release_unknown = on_release_unknown
         self._key_validity = key_validity
         self._key_limit = key_limit
+        self._provider_id = provider_id
         self._key_validation_in_progress = key_validation_in_progress
         self._on_retry_key = on_retry_key
         self._on_replace_key = on_replace_key
@@ -323,6 +325,7 @@ class ChatWorkspaceView:
         key_validity: KeyValidityState,
         key_limit: KeyLimitInfo,
         key_validation_in_progress: bool,
+        provider_id: ProviderId | None = None,
     ) -> None:
         if self._disposed:
             return
@@ -338,6 +341,8 @@ class ChatWorkspaceView:
         self._interaction_state = interaction_state
         self._key_validity = key_validity
         self._key_limit = key_limit
+        if provider_id is not None:
+            self._provider_id = provider_id
         self._key_validation_in_progress = key_validation_in_progress
         self._new_chat_allowed = free_mode_allowed(key_validity)
         self._sync_interaction_components(force=previous_chat_id != current_chat_id)
@@ -912,7 +917,9 @@ class ChatWorkspaceView:
                         [
                             ft.Text(
                                 _key_status_presentation(
-                                    self._key_validity, self._key_limit
+                                    self._key_validity,
+                                    self._key_limit,
+                                    self._provider_id,
                                 )[0],
                                 color=ERROR_COLOR,
                                 text_align=ft.TextAlign.CENTER,
@@ -978,7 +985,9 @@ class ChatWorkspaceView:
                 on_click=self._chat_action(self._on_edit_limits, state.chat.id),
             )
         if not self._key_allows_chat(state.chat):
-            message = _key_status_presentation(self._key_validity, self._key_limit)[0]
+            message = _key_status_presentation(
+                self._key_validity, self._key_limit, state.chat.provider_id
+            )[0]
             action = ft.TextButton(tr("chat.key_options"), on_click=self._open_options)
         if not message:
             return None
@@ -1472,9 +1481,16 @@ class ChatWorkspaceView:
         )
 
     def _build_key_status_panel(self) -> ft.Control:
+        provider_id = (
+            self._selected_chat.provider_id
+            if self._selected_chat is not None
+            else self._provider_id
+        )
+        spec = provider_spec(provider_id)
         message, color, _can_retry, _can_replace = _key_status_presentation(
             self._key_validity,
             self._key_limit,
+            provider_id,
         )
         if self._key_panel is None:
             self._key_panel = _KeyStatusPanel()
@@ -1482,10 +1498,8 @@ class ChatWorkspaceView:
         panel.update_status(
             message=message,
             color=color,
-            limit=self._key_limit.remaining,
-            currency=self._selected_chat.currency
-            if self._selected_chat is not None
-            else Currency.USD,
+            limit=(self._key_limit.remaining if spec.supports_key_limit else None),
+            currency=spec.currency,
             busy=self._key_validation_in_progress or self._key_refresh_in_progress,
             replacement_busy=self.key_replacement_busy,
             replacement_notice=(
@@ -1724,6 +1738,7 @@ def _money_or_unknown(value: Decimal | None, currency: Currency = Currency.USD) 
 def _key_status_presentation(
     key_validity: KeyValidityState,
     key_limit: KeyLimitInfo,
+    provider_id: ProviderId = ProviderId.OPENROUTER,
 ) -> tuple[str, str, bool, bool]:
     if key_validity is KeyValidityState.INVALID:
         return (
@@ -1744,6 +1759,20 @@ def _key_status_presentation(
             tr("key.unknown_short"),
             ft.Colors.AMBER_300,
             True,
+            True,
+        )
+    if key_validity is KeyValidityState.UNVERIFIED:
+        return (
+            tr("metrics.key_unverified", provider=provider_spec(provider_id).name),
+            ft.Colors.AMBER_300,
+            True,
+            True,
+        )
+    if not provider_spec(provider_id).supports_key_limit:
+        return (
+            tr("metrics.key_valid", provider=provider_spec(provider_id).name),
+            SUCCESS_COLOR,
+            False,
             True,
         )
     if key_limit.state is KeyLimitState.EXHAUSTED:
@@ -1768,7 +1797,7 @@ def _key_status_presentation(
             True,
         )
     return (
-        tr("key.valid"),
+        tr("metrics.key_valid", provider=provider_spec(provider_id).name),
         SUCCESS_COLOR,
         False,
         True,

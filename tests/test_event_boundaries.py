@@ -135,7 +135,7 @@ class EventBoundaryTests(unittest.IsolatedAsyncioTestCase):
 
     def test_bool_is_not_accepted_as_numeric_limit(self) -> None:
         with patch("storage.message_repository.sqlite3.connect") as connect:
-            with self.assertRaisesRegex(ValueError, "токен-бюджет"):
+            with self.assertRaises(ValueError) as failure:
                 self.message_repository.set_chat_limits(
                     self.chat.id,
                     cast(int, True),
@@ -144,6 +144,11 @@ class EventBoundaryTests(unittest.IsolatedAsyncioTestCase):
                     cost_increase_confirmed=False,
                     updated_at=NOW,
                 )
+            self.assertEqual(
+                getattr(failure.exception.args[0], "key", None), "service.field_invalid"
+            )
+            field = getattr(failure.exception.args[0], "parameters", {}).get("field")
+            self.assertEqual(getattr(field, "key", None), "service.label.token_budget")
             connect.assert_not_called()
 
 

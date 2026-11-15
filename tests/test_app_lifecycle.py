@@ -218,7 +218,9 @@ class AppLifecycleTests(unittest.IsolatedAsyncioTestCase):
             )
         view = self.controller._pin_login_view
         assert view is not None
-        self.assertIn("Не удалось сохранить черновик", view.message.value or "")
+        self.assertEqual(
+            getattr(view.message.value, "key", None), "service.draft_lock_failed"
+        )
         self.assertFalse(self.controller._chat_controller.session_active)
 
     async def test_main_wires_lifecycle_and_retains_final_close_cleanup(self) -> None:

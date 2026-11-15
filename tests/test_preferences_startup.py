@@ -25,6 +25,7 @@ from i18n import (  # noqa: E402
     get_preferences,
     localize_tree,
     set_language,
+    tr,
 )
 from preferences import PreferencesStore  # noqa: E402
 from tests import test_app as app_fixtures  # noqa: E402
@@ -231,7 +232,7 @@ class PreferencesStartupTests(unittest.IsolatedAsyncioTestCase):
         self.assertIs(controller._pin_login_view, view)
         self.assertEqual(view.pin_field.value, "0123")
         self.assertTrue(view.message.value.startswith("The application is locked."))
-        self.assertIn("The latest text remains in memory", view.message.value)
+        self.assertIn(tr("service.draft_lock_failed"), view.message.value)
         self.assertFalse(any("А" <= char <= "я" for char in view.message.value))
         self.assertEqual(auth.key_calls, 0)
         self.assertEqual(auth.reset_calls, 0)

@@ -33,7 +33,7 @@ class _SecretTextField(ft.TextField):
 
 
 class KeyEntryView:
-    """Форма безопасного ввода и проверки OpenRouter API-ключа."""
+    """Universal first setup or a fixed-provider legacy replacement."""
 
     def __init__(
         self,
@@ -41,15 +41,25 @@ class KeyEntryView:
         *,
         replacement: bool = False,
         on_save_unverified: AsyncTextCallback | None = None,
+        provider_id: ProviderId | None = None,
     ) -> None:
         self._on_submit = on_submit
         self._on_save_unverified = on_save_unverified
+        self._provider_id = provider_id
         self._unverified_value: str | None = None
         self._busy = False
         self.key_field = _SecretTextField(
             **input_style(),
-            label=tr("providers.key"),
-            hint_text=tr("providers.key_hint"),
+            label=(
+                tr("providers.form_key", provider=provider_spec(provider_id).name)
+                if provider_id is not None
+                else tr("providers.key")
+            ),
+            hint_text=(
+                tr("providers.form_key_hint", provider=provider_spec(provider_id).name)
+                if provider_id is not None
+                else tr("providers.key_hint")
+            ),
             password=True,
             can_reveal_password=True,
             autocorrect=False,
@@ -63,7 +73,7 @@ class KeyEntryView:
             on_submit=self._handle_submit,
         )
         self.message = ft.Text(visible=False)
-        self.detected_provider = ft.Text(tr("providers.enter_key"), color=MUTED_COLOR)
+        self.detected_provider = ft.Text("", color=MUTED_COLOR)
         self.progress = BrandLoader(size=26, active=False)
         self.submit_button = ft.Button(
             tr("auth.check_key"),
@@ -82,13 +92,15 @@ class KeyEntryView:
         self.control = build_auth_screen(
             [
                 ft.Text(
-                    tr("providers.title"),
+                    tr("providers.form_key", provider=provider_spec(provider_id).name)
+                    if provider_id is not None
+                    else tr("providers.title"),
                     theme_style=ft.TextThemeStyle.HEADLINE_MEDIUM,
                 ),
                 ft.Text(
                     tr("auth.replacement_instructions")
                     if replacement
-                    else tr("providers.description"),
+                    else tr("providers.setup_description"),
                     color=MUTED_COLOR,
                 ),
                 self.key_field,
@@ -100,6 +112,7 @@ class KeyEntryView:
             ],
             header=self.header,
         )
+        self._apply_key_state()
 
     async def _handle_click(self, _event: ft.Event[ft.Button]) -> None:
         await self._submit_value()
@@ -113,6 +126,11 @@ class KeyEntryView:
         value = self.key_field.value
         if not isinstance(value, str) or not value.strip():
             return
+        provider = detect_key(value)
+        if provider is None or (
+            self._provider_id is not None and provider is not self._provider_id
+        ):
+            return
         await self._on_submit(value)
 
     def _key_changed(self, _event: ft.Event[ft.TextField]) -> None:
@@ -124,8 +142,20 @@ class KeyEntryView:
     def _apply_key_state(self) -> None:
         value = self.key_field.value
         provider = detect_key(value) if isinstance(value, str) else None
-        has_value = provider is not None
+        has_value = provider is not None and (
+            self._provider_id is None or self._provider_id is provider
+        )
         self.submit_button.disabled = self._busy or not has_value
+        if self._provider_id is not None:
+            self.detected_provider.value = (
+                ""
+                if has_value
+                else tr(
+                    "providers.form_enter_key",
+                    provider=provider_spec(self._provider_id).name,
+                )
+            )
+            return
         self.detected_provider.value = (
             tr("providers.detected", provider=provider_spec(provider).name)
             if provider is not None
@@ -157,6 +187,7 @@ class KeyEntryView:
         if (
             isinstance(value, str)
             and detect_key(value) is ProviderId.VSEGPT
+            and self._provider_id in {None, ProviderId.VSEGPT}
             and self._on_save_unverified is not None
         ):
             self._unverified_value = value.strip()
@@ -170,6 +201,7 @@ class KeyEntryView:
             and isinstance(value, str)
             and value.strip() == self._unverified_value
             and detect_key(value) is ProviderId.VSEGPT
+            and self._provider_id in {None, ProviderId.VSEGPT}
         ):
             await self._on_save_unverified(value)
 

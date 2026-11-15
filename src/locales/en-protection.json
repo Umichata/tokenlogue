@@ -1,16 +1,16 @@
 {
   "app.lock_with_warning": "{locked} {warning}",
   "protection.access_closed": "Tokenlogue is locked. Enter your PIN.",
-  "protection.unavailable": "Your conversations could not be opened. Try signing in again. Your data is kept.",
+  "protection.unavailable": "Could not open your conversations. Your data is kept. Try signing in again.",
   "protection.key_missing": "Your conversation key is missing or damaged. Your data is kept, but a new PIN or API key cannot restore it.",
-  "protection.initialization_unavailable": "Chat protection could not finish. Try signing in again. If the error continues, keep your app data and ask for help.",
+  "protection.initialization_unavailable": "Could not finish chat protection. Keep the app data and try signing in again.",
   "service.database_in_use": "Another Tokenlogue window is using this profile. Close other copies and try again.",
   "protection.binding_mismatch": "Sign-in could not open this profile. Use an available recovery method. Your data is kept.",
   "protection.native_reason": "Authenticate with your device to choose a new Tokenlogue PIN.",
   "protection.native_title": "Tokenlogue recovery",
   "protection.native_cancel": "Cancel",
   "protection.recovery_unavailable": "Device recovery is unavailable. Check your device screen lock. Your app PIN and conversations are kept.",
-  "protection.recovery_cancelled": "Device authentication was not completed. Your existing PIN and chats have been preserved.",
-  "protection.sign_in_first": "Sign in before replacing the OpenRouter key. If you forgot your PIN, choose recovery. A new API key cannot unlock old conversations.",
-  "protection.replace_key": "Enter your new OpenRouter key. Your app PIN and chats will be kept."
+  "protection.recovery_cancelled": "Device verification cancelled. Your PIN and chats are kept.",
+  "protection.sign_in_first": "Sign in before changing keys. If you forgot your PIN, use recovery. A new API key cannot unlock old conversations.",
+  "protection.replace_key": "Enter a new key for this service. Your PIN and chats are kept."
 }

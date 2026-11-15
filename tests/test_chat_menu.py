@@ -29,6 +29,7 @@ from i18n import (  # noqa: E402
     tr,
 )
 from preferences import PreferencesStore  # noqa: E402
+from providers.models import ProviderId  # noqa: E402
 from tests.test_chat_view import FakePage, _chat, _state  # noqa: E402
 from ui.chat_view import ChatWorkspaceView  # noqa: E402
 
@@ -261,11 +262,11 @@ class ChatMenuTests(unittest.IsolatedAsyncioTestCase):
             and len(c.controls) == 2
             and all(isinstance(item, ft.Text) for item in c.controls)
         }
-        self.assertEqual(rows["Остаток денежного бюджета"], "—")
-        self.assertEqual(rows["Фактическая стоимость"], "0,12 USD")
-        self.assertEqual(rows["Зарезервированная стоимость"], "0,03 USD")
-        self.assertEqual(rows["Зарезервировано токенов"], "123")
-        self.assertIn("Лимит расходов", rows)
+        self.assertEqual(rows[tr("budget.remaining_money")], "—")
+        self.assertEqual(rows[tr("budget.actual_cost")], "0,12 USD")
+        self.assertEqual(rows[tr("budget.reserved_cost")], "0,03 USD")
+        self.assertEqual(rows[tr("budget.reserved_tokens")], "123")
+        self.assertIn(tr("budget.spending_limit"), rows)
         updated = replace(
             state,
             budget=replace(budget, total_tokens_used=900, reserved_tokens=0),
@@ -295,6 +296,47 @@ class ChatMenuTests(unittest.IsolatedAsyncioTestCase):
         self.assertIsNone(view.delete_button)
         self.assertIsNone(view.limits_button)
         self.assertIsNotNone(view.replace_key_button)
+        self.assertEqual(self.calls, [])
+
+    async def test_empty_home_keeps_provider_context_through_key_menu_refresh(self):
+        view = self.view(provider_id=ProviderId.VSEGPT)
+        for language in ("en", "ru"):
+            set_language(language)
+            view.update_workspace(
+                [],
+                None,
+                None,
+                key_validity=KeyValidityState.VALID,
+                key_limit=KeyLimitInfo.unknown(),
+                key_validation_in_progress=False,
+                provider_id=ProviderId.VSEGPT,
+            )
+            await view.open_menu()
+            assert view._key_panel is not None
+            self.assertIn("VSEGPT", str(view._key_panel.message.value))
+            self.assertNotIn("OpenRouter", str(view._key_panel.message.value))
+            self.assertFalse(view._key_panel.limit_row.visible)
+            self.assertNotIn(
+                tr("key.limit_unknown_short"), texts(self.page.dialogs[-1])
+            )
+            # A new empty-Home provider context updates the same retained panel.
+            panel = view._key_panel
+            view.update_workspace(
+                [],
+                None,
+                None,
+                key_validity=KeyValidityState.VALID,
+                key_limit=KeyLimitInfo.from_validated_remaining(Decimal("7.89")),
+                key_validation_in_progress=False,
+                provider_id=ProviderId.OPENROUTER,
+            )
+            self.assertIs(view._key_panel, panel)
+            self.assertTrue(panel.limit_row.visible)
+            self.assertIn(
+                "USD" if language == "ru" else "$",
+                str(cast(ft.Text, panel.limit_row.controls[1]).value),
+            )
+            view.close_menu()
         self.assertEqual(self.calls, [])
 
     async def test_blocking_reasons_remain_visible_and_key_check_is_explicit(
@@ -335,7 +377,7 @@ class ChatMenuTests(unittest.IsolatedAsyncioTestCase):
         await view.open_menu()
         assert view.retry_key_button is not None
         self.assertTrue(view.retry_key_button.disabled)
-        self.assertIn("Проверка ключа OpenRouter…", texts(self.page.dialogs[-1]))
+        self.assertIn(tr("key.checking"), texts(self.page.dialogs[-1]))
         self.assertEqual(self.calls, [])
 
     async def test_key_refresh_stays_open_with_same_controls_during_success_or_error(
@@ -525,7 +567,7 @@ class ChatMenuTests(unittest.IsolatedAsyncioTestCase):
         self.assertIs(view._menu_dialog, original_dialog)
         self.assertIs(view._menu_list, original_list)
         self.assertIn(button, original_parent.controls)
-        self.assertIn("Replace OpenRouter key", texts(self.page.dialogs[-1]))
+        self.assertIn(tr("key.replace"), texts(self.page.dialogs[-1]))
         await cast(Callable[[ft.Event], Awaitable[None]], old_callback)(
             ft.Event(name="click", control=button)
         )

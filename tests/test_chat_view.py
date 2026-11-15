@@ -30,13 +30,16 @@ from chat.models import (  # noqa: E402
 )
 from chat_interaction_controller import ActiveChatState  # noqa: E402
 from i18n import tr  # noqa: E402
+from providers.models import Currency, ProviderId  # noqa: E402
 from ui.chat_view import ChatWorkspaceView, _key_status_presentation  # noqa: E402
 from ui.model_selection_view import (  # noqa: E402
     ModelSelectionView,
     ModeSelectionView,
     filter_models,
+    key_access_mode_notice,
     key_limit_mode_notice,
 )
+from ui.styles import SUCCESS_COLOR, WARNING_COLOR  # noqa: E402
 
 
 class FakePage:
@@ -157,12 +160,11 @@ class ChatViewTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(
             zero_notice,
-            "Расходный лимит этого ключа исчерпан. Бесплатный режим остаётся доступным",
+            tr("key.exhausted_notice"),
         )
-        self.assertIn("не установлен отдельный расходный лимит", null_notice)
+        self.assertEqual(tr("key.unlimited_notice"), null_notice)
         self.assertNotIn("положитель", null_notice.casefold())
-        self.assertIn("Доступный лимит ключа 5 USD", positive_notice)
-        self.assertIn("не баланс аккаунта", positive_notice)
+        self.assertEqual(tr("key.available_notice", amount="5"), positive_notice)
 
     def test_paid_button_is_closed_for_zero_but_not_null_or_positive(self) -> None:
         async def select_mode(_mode: ChatMode) -> None:
@@ -209,6 +211,90 @@ class ChatViewTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(zero_view.paid_button.disabled)
         self.assertFalse(null_view.paid_button.disabled)
         self.assertFalse(positive_view.paid_button.disabled)
+
+    def test_vsegpt_missing_key_limit_is_normal_and_does_not_disable_paid_models(self):
+        async def callback(*_args):
+            return None
+
+        model = CatalogModel(
+            id="vendor/paid",
+            name="A VSEGPT model",
+            prompt_price_per_token=Decimal("0.01"),
+            completion_price_per_token=Decimal("0.02"),
+            provider_id=ProviderId.VSEGPT,
+            currency=Currency.RUB,
+        )
+        unknown = KeyLimitInfo.unknown()
+        view = ModeSelectionView(
+            ModelCatalog((), (model,), available=True),
+            KeyValidityState.VALID,
+            unknown,
+            callback,
+            callback,
+        )
+        self.assertFalse(view.paid_button.disabled)
+        notice, _color = key_access_mode_notice(
+            KeyValidityState.VALID,
+            unknown,
+            Currency.RUB,
+            provider_id=ProviderId.VSEGPT,
+        )
+        self.assertEqual(notice, "")
+        text, color, retry, _replace = _key_status_presentation(
+            KeyValidityState.VALID, unknown, ProviderId.VSEGPT
+        )
+        self.assertEqual(color, SUCCESS_COLOR)
+        self.assertIn("VSEGPT", text)
+        self.assertNotIn("OpenRouter", text)
+        self.assertFalse(retry)
+        for validity in (KeyValidityState.UNVERIFIED, KeyValidityState.INVALID):
+            with self.subTest(validity=validity):
+                notice, notice_color = key_access_mode_notice(
+                    validity, unknown, Currency.RUB, provider_id=ProviderId.VSEGPT
+                )
+                self.assertTrue(notice)
+                self.assertNotEqual(notice_color, SUCCESS_COLOR)
+
+    def test_vsegpt_unverified_key_is_never_presented_as_accepted(self):
+        for key_limit in (
+            KeyLimitInfo.unknown(),
+            KeyLimitInfo.from_validated_remaining(None),
+        ):
+            text, color, retry, _replace = _key_status_presentation(
+                KeyValidityState.UNVERIFIED, key_limit, ProviderId.VSEGPT
+            )
+            self.assertIn("VSEGPT", text)
+            self.assertNotEqual(color, SUCCESS_COLOR)
+            self.assertTrue(retry)
+            notice, color = key_access_mode_notice(
+                KeyValidityState.UNVERIFIED,
+                key_limit,
+                Currency.RUB,
+                provider_id=ProviderId.VSEGPT,
+            )
+            self.assertTrue(notice)
+            self.assertEqual(color, WARNING_COLOR)
+
+    def test_empty_vsegpt_catalog_does_not_fall_back_to_openrouter_cap_warning(self):
+        from tests.test_chat_menu import texts
+
+        async def callback(*_args):
+            return None
+
+        view = ModeSelectionView(
+            ModelCatalog((), (), available=False),
+            KeyValidityState.VALID,
+            KeyLimitInfo.unknown(),
+            callback,
+            callback,
+            provider_id=ProviderId.VSEGPT,
+        )
+        self.assertTrue(view.paid_button.disabled)
+        self.assertTrue(view.free_button.disabled)
+        rendered = texts(view.control)
+        self.assertNotIn(tr("key.unknown_limit_notice"), rendered)
+        self.assertNotIn(tr("key.unlimited_notice"), rendered)
+        self.assertFalse(any("OpenRouter" in text for text in rendered))
 
     async def test_key_validity_controls_retry_replace_and_new_chat(self) -> None:
         async def callback(*_args: str) -> None:

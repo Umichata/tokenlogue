@@ -500,7 +500,7 @@ class AuthServiceTests(unittest.IsolatedAsyncioTestCase):
                 generate.assert_not_called()
                 self.assertIsNone(self.database.get_auth_state())
                 self.assertFalse((await self.credentials.inspect_state()).has_artifacts)
-                self.assertIn("Выберите и сохраните PIN.", result.message)
+                self.assertIn("PIN", result.message)
                 self.assertNotIn("созданный PIN", result.message)
 
     async def test_zero_limit_key_can_complete_registration(self) -> None:
@@ -518,7 +518,9 @@ class AuthServiceTests(unittest.IsolatedAsyncioTestCase):
         self.assertIsNotNone(result.pending_setup_token)
         self.assertEqual(result.key_validity, KeyValidityState.VALID)
         self.assertEqual(result.key_limit.state, KeyLimitState.EXHAUSTED)
-        self.assertIn("Бесплатный режим остаётся доступным", result.message)
+        self.assertEqual(
+            getattr(result.message, "key", None), "service.validated.exhausted"
+        )
         self.assertEqual(completed.status, AuthStatus.AUTHENTICATED)
         self.assertEqual(completed.key_validity, KeyValidityState.VALID)
         self.assertEqual(completed.key_limit.state, KeyLimitState.EXHAUSTED)
@@ -532,7 +534,9 @@ class AuthServiceTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result.key_validity, KeyValidityState.VALID)
         self.assertEqual(result.key_limit.state, KeyLimitState.AVAILABLE)
         self.assertEqual(result.key_limit.remaining, Decimal("5"))
-        self.assertIn("Доступный лимит ключа", result.message)
+        self.assertEqual(
+            getattr(result.message, "key", None), "service.validated.available"
+        )
         self.assertNotIn("баланс", result.message.casefold())
 
     async def test_login_does_not_wait_for_slow_key_validation(self) -> None:

@@ -3,15 +3,17 @@
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from decimal import Decimal
 
 import flet as ft
 
+from auth.models import KeyLimitInfo, KeyLimitState
 from i18n import localize_tree, number, tr
 from providers.models import ProviderId, detect_key, provider_spec
 from ui.language_selector import LanguageSelector
+from ui.provider_filter import ProviderFilter
 from ui.styles import (
     ERROR_COLOR,
     MUTED_COLOR,
@@ -34,7 +36,7 @@ class ProviderPresentation:
     balance_amount: Decimal | None = None
     balance_status: str = "unavailable"
     checked_at: datetime | None = None
-    key_limit_remaining: Decimal | None = None
+    key_limit: KeyLimitInfo = field(default_factory=KeyLimitInfo.unknown)
 
 
 @dataclass(frozen=True)
@@ -62,9 +64,10 @@ class _ProviderCard:
         self.busy = False
         self.result: ProviderCheckResult | None = None
         self.checked_value: str | None = None
+        name = provider_spec(provider_id).name
         self.key_field = _SecretTextField(
-            label=tr("providers.key"),
-            hint_text=tr("providers.key_hint"),
+            label=tr("providers.form_key", provider=name),
+            hint_text=tr("providers.form_key_hint", provider=name),
             password=True,
             autocorrect=False,
             enable_suggestions=False,
@@ -79,7 +82,7 @@ class _ProviderCard:
             icon=ft.Icons.VISIBILITY_OUTLINED,
             tooltip=tr("providers.reveal"),
         )
-        self.detected = ft.Text(tr("providers.enter_key"), color=MUTED_COLOR)
+        self.detected = ft.Text("", color=MUTED_COLOR)
         self.status = ft.Text(tr("providers.status.not_configured"))
         self.saved = ft.Text(tr("providers.no_saved_key"), color=MUTED_COLOR)
         self.message = ft.Text("", color=WARNING_COLOR, selectable=True)
@@ -138,6 +141,7 @@ class ProviderPage:
         self._on_default = on_default
         self._cleared = False
         self.cards = {provider: _ProviderCard(provider) for provider in ProviderId}
+        self.provider_filter = ProviderFilter(on_change=self.set_filter)
         self.default_selector = ft.Dropdown(
             label=tr("providers.default"),
             value=default_provider.value,
@@ -163,6 +167,7 @@ class ProviderPage:
                     ]
                 ),
                 ft.Text(tr("providers.description"), color=MUTED_COLOR),
+                self.provider_filter.control,
                 self.default_selector,
                 ft.Text(tr("providers.default_help"), size=12, color=MUTED_COLOR),
                 self.notice,
@@ -228,17 +233,12 @@ class ProviderPage:
         detected = detect_key(candidate)
         matches = detected is card.provider_id
         card.detected.value = (
-            tr("providers.enter_key")
-            if not candidate
-            else tr("providers.unknown_prefix")
-            if detected is None
-            else tr("providers.detected", provider=provider_spec(detected).name)
-            if matches
-            else tr(
-                "providers.mismatch",
-                detected=provider_spec(detected).name,
-                selected=provider_spec(card.provider_id).name,
+            tr(
+                "providers.form_enter_key",
+                provider=provider_spec(card.provider_id).name,
             )
+            if candidate and not matches
+            else ""
         )
         card.detected.color = MUTED_COLOR if matches or not candidate else ERROR_COLOR
         card.check.disabled = card.busy or not matches
@@ -337,9 +337,20 @@ class ProviderPage:
             self._render_presentation(card)
             self._update()
 
+    async def set_filter(self, provider_id: ProviderId | None) -> None:
+        """Retain each candidate in its own card and conceal it before hiding."""
+        if self._cleared:
+            return
+        self.conceal_keys()
+        self.provider_filter.set_value(provider_id)
+        for provider, card in self.cards.items():
+            card.control.visible = provider_id is None or provider is provider_id
+        self._update()
+
     def _render_presentation(self, card: _ProviderCard) -> None:
         state = card.presentation
-        currency = provider_spec(card.provider_id).currency.value
+        spec = provider_spec(card.provider_id)
+        currency = spec.currency.value
         statuses = {
             "not_configured",
             "unverified",
@@ -361,11 +372,12 @@ class ProviderPage:
         card.balance.value = (
             tr(
                 "providers.balance",
+                provider=spec.name,
                 amount=number(state.balance_amount),
                 currency=currency,
             )
             if state.balance_amount is not None
-            else tr("providers.balance_unavailable")
+            else tr("providers.balance_unavailable", provider=spec.name)
         )
         balance_statuses = {
             "unavailable",
@@ -386,22 +398,32 @@ class ProviderPage:
             if state.balance_status in balance_statuses
             else "unavailable"
         )
-        card.balance_note.value = tr(f"providers.balance_status.{balance_status}")
+        balance_key = f"providers.balance_status.{balance_status}"
+        if balance_status in {"restricted", "disabled"}:
+            balance_key += f".{card.provider_id.value}"
+        card.balance_note.value = tr(balance_key)
         card.checked.value = tr(
             "providers.checked_at",
             time=state.checked_at.astimezone().isoformat(timespec="minutes")
             if state.checked_at is not None
             else tr("providers.never_checked"),
         )
-        card.key_limit.value = (
-            tr(
-                "providers.key_remaining",
-                amount=number(state.key_limit_remaining),
-                currency=currency,
+        card.key_limit.visible = spec.supports_key_limit
+        if spec.supports_key_limit:
+            limit = state.key_limit
+            card.key_limit.value = (
+                tr(
+                    "providers.key_remaining",
+                    amount=number(limit.remaining),
+                    currency=currency,
+                )
+                if limit.remaining is not None
+                else tr("providers.key_limit_not_set")
+                if limit.state is KeyLimitState.NOT_SET
+                else tr("providers.key_remaining_unknown")
             )
-            if state.key_limit_remaining is not None
-            else tr("providers.key_remaining_unknown")
-        )
+        else:
+            card.key_limit.value = ""
         card.refresh.disabled = card.busy or not state.has_saved_key
 
     def set_default(self, provider_id: ProviderId) -> None:
@@ -427,6 +449,7 @@ class ProviderPage:
     def sync_language(self) -> None:
         if not self._cleared:
             localize_tree(self.control)
+            self.provider_filter.sync_language()
             for card in self.cards.values():
                 self._render_presentation(card)
                 self._render_detection(card)
@@ -434,14 +457,17 @@ class ProviderPage:
     def clear_private(self) -> None:
         self._cleared = True
         self.conceal_keys()
+        self.provider_filter.control.disabled = True
         self.notice.value = ""
         for card in self.cards.values():
             card.revision += 1
+            card.busy = False
+            card.key_field.disabled = card.reveal.disabled = True
             card.key_field.value = ""
             card.checked_value = None
             card.result = None
             card.presentation = ProviderPresentation(card.provider_id)
-            for field in (
+            for control in (
                 card.detected,
                 card.status,
                 card.saved,
@@ -451,7 +477,7 @@ class ProviderPage:
                 card.checked,
                 card.key_limit,
             ):
-                field.value = ""
+                control.value = ""
             card.check.disabled = card.save.disabled = card.refresh.disabled = True
 
     def _update(self) -> None:

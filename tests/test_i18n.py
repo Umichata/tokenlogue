@@ -63,6 +63,39 @@ class LocalizationTests(unittest.TestCase):
                 names(CATALOGUES["ru"][key]), names(CATALOGUES["en"][key]), key
             )
 
+    def test_generic_key_recovery_and_errors_do_not_name_an_unselected_service(self):
+        for language in ("ru", "en"):
+            set_language(language)
+            for key in (
+                "key.title",
+                "key.checking",
+                "key.replace",
+                "key.valid",
+                "key.invalid_notice",
+                "key.invalid_short",
+                "key.restricted_notice",
+                "auth.replacement_instructions",
+                "protection.replace_key",
+                "recovery.replace_key_title",
+                "profile_deletion.remote_notice",
+            ):
+                text = tr(key)
+                self.assertNotIn("OpenRouter", text, (language, key))
+                self.assertNotIn("VSEGPT", text, (language, key))
+
+    def test_missing_app_data_error_shows_no_host_configuration_name(self):
+        for language in ("ru", "en"):
+            set_language(language)
+            view = StorageErrorView(tr("service.storage_path_missing"), AsyncMock())
+            text = " ".join(
+                str(control.value)
+                for control in walk(view.control)
+                if isinstance(control, ft.Text)
+            )
+            self.assertTrue(text)
+            self.assertNotIn("FLET_APP_STORAGE_DATA", text)
+            self.assertNotIn("/home/", text)
+
     def test_actual_flet_page_dialog_stack_updates_in_place(self):
         from flet.controls.base_page import BasePage
 

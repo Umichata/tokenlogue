@@ -42,6 +42,7 @@ OWN_FILES = (
     "src/storage/provider_schema.py",
     "src/ui/analytics_pages.py",
     "src/ui/provider_page.py",
+    "src/ui/provider_filter.py",
     "src/ui/workspace_shell.py",
     "packaging/android/build_apk.py",
     "packaging/android/build_paths.py",

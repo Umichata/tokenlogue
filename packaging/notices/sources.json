@@ -7,8 +7,8 @@
       "ru": "Эти лицензии относятся к библиотекам и шрифтам пакета Android. Оригинальные тексты находятся в licenses, сведения об авторстве шрифтов — в attribution. Манифест связывает каждый компонент с точной версией и источниками."
     },
     "linux": {
-      "en": "These font notices accompany the Linux package. Original legal texts are in licenses and copyright is listed in attribution. The manifest identifies the original font source.",
-      "ru": "Эти уведомления шрифтов поставляются с пакетом Linux. Оригинальные юридические тексты находятся в licenses, сведения об авторстве — в attribution. Манифест указывает исходный шрифт."
+      "en": "These library and font notices accompany the Linux package. Original legal texts are in licenses and copyright is listed in attribution. The manifest identifies each component and its sources.",
+      "ru": "Эти уведомления библиотек и шрифтов поставляются с пакетом Linux. Оригинальные юридические тексты находятся в licenses, сведения об авторстве — в attribution. Манифест указывает компоненты и их источники."
     }
   },
   "components": [

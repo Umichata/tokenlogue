@@ -52,6 +52,138 @@ def attempt(sequence: int, **kwargs) -> RequestAttempt:
 
 
 class AnalyticsProjectionTests(unittest.TestCase):
+    def provider_history(self):
+        return [
+            attempt(
+                1,
+                requested_model_id="shared/model",
+                sent_at=NOW,
+                chronology_known=True,
+                total_tokens=11,
+                usage_source="api",
+                cost=Decimal("0.0123"),
+                cost_source="api",
+            ),
+            attempt(
+                2,
+                provider_id=ProviderId.VSEGPT,
+                currency=Currency.RUB,
+                requested_model_id="shared/model",
+                sent_at=NOW,
+                chronology_known=True,
+                total_tokens=29,
+                usage_source="api",
+                cost=Decimal("12.34"),
+                cost_source="api",
+            ),
+            attempt(
+                3,
+                provider_id=ProviderId.VSEGPT,
+                currency=Currency.RUB,
+                requested_model_id="vsegpt/archived",
+                sent_at=NOW - timedelta(days=15),
+                chronology_known=True,
+            ),
+            attempt(4, requested_model_id="legacy/model"),
+        ]
+
+    def test_provider_filter_scopes_models_usage_money_and_undated_rows(self):
+        records = self.provider_history()
+        for provider, currency, tokens, amount in (
+            (ProviderId.OPENROUTER, Currency.USD, 11, Decimal("0.0123")),
+            (ProviderId.VSEGPT, Currency.RUB, 29, Decimal("12.34")),
+        ):
+            with self.subTest(provider=provider):
+                snapshot = build_analytics(
+                    records,
+                    AnalyticsFilter(provider_id=provider, timezone_name="UTC"),
+                    NOW,
+                )
+                self.assertEqual(
+                    {
+                        (choice.provider_id, choice.model_id)
+                        for choice in snapshot.models
+                    },
+                    {(provider, "shared/model")},
+                )
+                self.assertEqual(
+                    {row.provider_id for row in snapshot.usage_rows}, {provider}
+                )
+                self.assertEqual(
+                    sum(row.total_tokens or 0 for row in snapshot.usage_rows), tokens
+                )
+                self.assertEqual(
+                    [
+                        (panel.currency, panel.confirmed_total)
+                        for panel in snapshot.spending
+                    ],
+                    [(currency, amount)],
+                )
+                self.assertEqual(snapshot.undated_requests, 0)
+        all_time = build_analytics(
+            records,
+            AnalyticsFilter(
+                period="all", provider_id=ProviderId.VSEGPT, timezone_name="UTC"
+            ),
+            NOW,
+        )
+        self.assertEqual(
+            {choice.model_id for choice in all_time.models},
+            {"shared/model", "vsegpt/archived"},
+        )
+        self.assertEqual(all_time.undated_requests, 0)
+
+    def test_all_view_distinguishes_equal_model_ids_by_provider_identity(self):
+        records = self.provider_history()
+        overview = build_analytics(records, AnalyticsFilter(timezone_name="UTC"), NOW)
+        self.assertEqual(len(overview.models), 2)
+        for provider, currency, tokens in (
+            (ProviderId.OPENROUTER, Currency.USD, 11),
+            (ProviderId.VSEGPT, Currency.RUB, 29),
+        ):
+            snapshot = build_analytics(
+                records,
+                AnalyticsFilter(
+                    model_id="shared/model",
+                    model_provider_id=provider,
+                    timezone_name="UTC",
+                ),
+                NOW,
+            )
+            self.assertEqual(snapshot.models, overview.models)
+            self.assertEqual(len(snapshot.usage_rows), 1)
+            self.assertEqual(snapshot.usage_rows[0].provider_id, provider)
+            self.assertEqual(snapshot.usage_rows[0].total_tokens, tokens)
+            self.assertEqual(
+                [panel.currency for panel in snapshot.spending], [currency]
+            )
+
+    def test_incompatible_model_resets_without_leaking_other_provider(self):
+        snapshot = build_analytics(
+            self.provider_history(),
+            AnalyticsFilter(
+                provider_id=ProviderId.VSEGPT,
+                model_id="shared/model",
+                model_provider_id=ProviderId.OPENROUTER,
+                timezone_name="UTC",
+            ),
+            NOW,
+        )
+        self.assertIsNone(snapshot.filters.model_id)
+        self.assertIsNone(snapshot.filters.model_provider_id)
+        self.assertEqual(
+            [row.provider_id for row in snapshot.usage_rows], [ProviderId.VSEGPT]
+        )
+        empty = build_analytics(
+            [self.provider_history()[0]],
+            AnalyticsFilter(
+                period="all", provider_id=ProviderId.VSEGPT, timezone_name="UTC"
+            ),
+            NOW,
+        )
+        self.assertEqual((empty.models, empty.usage_rows, empty.spending), ((), (), ()))
+        self.assertEqual(empty.undated_requests, 0)
+
     def test_named_zones_work_without_an_operating_system_database(self):
         from zoneinfo import TZPATH, ZoneInfo, reset_tzpath
 
