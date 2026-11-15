@@ -356,13 +356,18 @@ class ApplicationPagesTests(unittest.IsolatedAsyncioTestCase):
         page = self.app._provider_page
         assert page is not None
         card = page.cards[ProviderId.VSEGPT]
-        replacement = FAKE_VSEGPT + "-replacement"
-        card.key_field.value = replacement
-        await page.check_candidate(ProviderId.VSEGPT)
-        await page.save_candidate(ProviderId.VSEGPT)
-        self.assertEqual(self.profiles.key_for(ProviderId.VSEGPT), replacement)
-        self.assertEqual(card.key_field.value, "")
-        self.assertTrue(card.key_field.password)
+        for replacement in (
+            FAKE_VSEGPT + "-replacement",
+            "sk-or-vis-local-fixture",
+            "sk-or-visLOCAL_TEST",
+        ):
+            with self.subTest(prefix=replacement):
+                card.key_field.value = replacement
+                await page.check_candidate(ProviderId.VSEGPT)
+                await page.save_candidate(ProviderId.VSEGPT)
+                self.assertEqual(self.profiles.key_for(ProviderId.VSEGPT), replacement)
+                self.assertEqual(card.key_field.value, "")
+                self.assertTrue(card.key_field.password)
 
     async def test_language_change_on_analytics_translates_retained_home_and_preserves_draft(
         self,

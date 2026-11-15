@@ -191,6 +191,67 @@ class WorkspacePagesTests(unittest.IsolatedAsyncioTestCase):
         shell.clear_private()
         self.assertFalse(await shell.select(WorkspacePage.SPENDING))
 
+    async def test_resizing_hides_unused_navigation_surface_without_replacing_pages(
+        self,
+    ):
+        for platform in (ft.PagePlatform.LINUX, ft.PagePlatform.ANDROID):
+            with self.subTest(platform=platform):
+                page = SimpleNamespace(
+                    platform=platform, width=1280, update=lambda: None
+                )
+                views = [ft.Container() for _ in WorkspacePage]
+                callback = AsyncMock(return_value=True)
+                shell = WorkspaceShell(
+                    cast(ft.Page, page), *views, on_navigate=callback
+                )
+                await shell.select(WorkspacePage.TOKENS)
+                callback.reset_mock()
+                for width in (1280, 999, 1000, 420, 1001, 800, 1280):
+                    shell.resize(width)
+                    wide = platform is ft.PagePlatform.LINUX and width >= 1000
+                    self.assertEqual(shell._rail_slot.visible, wide)
+                    self.assertEqual(shell._bottom_slot.visible, not wide)
+                    self.assertEqual(shell.rail.visible, wide)
+                    self.assertEqual(shell.navigation.visible, not wide)
+                    if wide:
+                        border = shell._rail_slot.border
+                        assert border is not None and border.right is not None
+                        assert shell.rail.min_width is not None
+                        assert shell._rail_slot.width is not None
+                        self.assertGreaterEqual(
+                            shell._rail_slot.width - border.right.width,
+                            shell.rail.min_width,
+                        )
+                        self.assertEqual(shell._bottom_slot.height, 0)
+                    else:
+                        self.assertEqual(shell._rail_slot.width, 0)
+                        self.assertIsNone(shell._bottom_slot.height)
+                    self.assertIs(shell._content.content, views[2])
+                    self.assertEqual(shell.selected_page, WorkspacePage.TOKENS)
+                callback.assert_not_awaited()
+
+    async def test_vis_candidates_use_existing_provider_check_and_save_flow(self):
+        for key in ("sk-or-vis-local-fixture", "sk-or-visLOCAL_TEST"):
+            with self.subTest(key=key):
+                card = self.type_key(ProviderId.VSEGPT, "  " + key + "  ")
+                self.assertIn("VSEGPT", str(card.detected.value))
+                self.assertFalse(card.check.disabled)
+                self.check.return_value = ProviderCheckResult(True, False)
+                await self.providers.check_candidate(ProviderId.VSEGPT)
+                self.assertFalse(card.save.disabled)
+                await self.providers.save_candidate(ProviderId.VSEGPT)
+                self.save.assert_awaited_with(ProviderId.VSEGPT, key, True)
+                self.assertEqual(card.key_field.value, "")
+
+        self.check.reset_mock()
+        self.save.reset_mock()
+        card = self.type_key(ProviderId.OPENROUTER, "sk-or-visLOCAL_TEST")
+        self.assertTrue(card.check.disabled)
+        await self.providers.check_candidate(ProviderId.OPENROUTER)
+        await self.providers.save_candidate(ProviderId.OPENROUTER)
+        self.check.assert_not_awaited()
+        self.save.assert_not_awaited()
+
     async def test_analytics_separates_currencies_and_clears_all_snapshots(self):
         now = datetime(2026, 11, 15, 1, tzinfo=UTC)
         attempts = [

@@ -35,6 +35,7 @@ from providers.models import (  # noqa: E402
 
 OPENROUTER_KEY = "sk-or-v1-offline-only-fixture"
 VSEGPT_KEY = "sk-or-vv-offline-only-fixture"
+VSEGPT_VIS_KEYS = ("sk-or-vis-local-fixture", "sk-or-visLOCAL_TEST")
 MESSAGES = (ContextMessage(MessageRole.USER, "fixture message"),)
 
 
@@ -73,15 +74,30 @@ class ProviderIdentityTests(unittest.TestCase):
     def test_only_exact_complete_prefixes_are_recognized(self) -> None:
         self.assertIs(detect_key("  " + OPENROUTER_KEY + "\n"), ProviderId.OPENROUTER)
         self.assertIs(detect_key(VSEGPT_KEY), ProviderId.VSEGPT)
+        for candidate in VSEGPT_VIS_KEYS:
+            with self.subTest(candidate=candidate):
+                self.assertIs(detect_key(candidate), ProviderId.VSEGPT)
+                self.assertIs(detect_key(" \t" + candidate + "\n"), ProviderId.VSEGPT)
         for candidate in (
             "",
             "sk-or-v1-",
             "sk-or-vv-",
+            "sk-or-vis",
+            "sk-or-vis-",
+            "sk-or-vis--",
+            "sk-or-vi",
             "sk-or-v",
             "sk-or-",
             "other",
             "SK-or-v1-x",
             "sk-or-vv-a b",
+            "sk-or-vis-a b",
+            "sk-or-vis-a\tb",
+            "sk-or-vis-a\x00b",
+            "sk-or-vis-a\x1fb",
+            "sk-or-vis-a\x7fb",
+            "sk-or-vis-тест",
+            "sk-or-vis-a\u00a0b",
         ):
             with self.subTest(candidate=candidate):
                 self.assertIsNone(detect_key(candidate))
@@ -113,8 +129,14 @@ class ProviderRoutingTests(unittest.IsolatedAsyncioTestCase):
         for key, selected in (
             ("unknown", None),
             ("sk-or-vv-", None),
+            ("sk-or-vis", None),
+            ("sk-or-vis-", None),
+            ("sk-or-vis-a b", None),
+            ("sk-or-vis-a\x00b", None),
+            ("sk-or-vis-тест", None),
             (OPENROUTER_KEY, ProviderId.VSEGPT),
             (VSEGPT_KEY, ProviderId.OPENROUTER),
+            *((key, ProviderId.OPENROUTER) for key in VSEGPT_VIS_KEYS),
         ):
             with self.subTest(selected=selected):
                 validation = await router.validate_key(key, selected_provider=selected)
@@ -144,11 +166,17 @@ class ProviderRoutingTests(unittest.IsolatedAsyncioTestCase):
                 await OpenRouterClient(transport=transport).validate_key(VSEGPT_KEY)
             ).accepted
         )
+        for key in VSEGPT_VIS_KEYS:
+            self.assertFalse(
+                (await OpenRouterClient(transport=transport).validate_key(key)).accepted
+            )
+            await OpenRouterClient(transport=transport).get_credits(key)
         await OpenRouterClient(transport=transport).get_credits(VSEGPT_KEY)
         await VsegptClient(transport=transport).validate_key(OPENROUTER_KEY)
         for provider_id, wrong_key in (
             (ProviderId.OPENROUTER, VSEGPT_KEY),
             (ProviderId.VSEGPT, OPENROUTER_KEY),
+            *((ProviderId.OPENROUTER, key) for key in VSEGPT_VIS_KEYS),
         ):
             await ModelCatalogClient(
                 transport=transport, provider_id=provider_id
@@ -159,6 +187,58 @@ class ProviderRoutingTests(unittest.IsolatedAsyncioTestCase):
                 wrong_key, "vendor/model", MESSAGES, 32, ProviderPriceLimit.zero()
             )
         self.assertEqual(requests, [])
+
+    async def test_vis_credentials_keep_original_bytes_on_fixed_vsegpt_endpoints(
+        self,
+    ) -> None:
+        for key in VSEGPT_VIS_KEYS:
+            with self.subTest(key=key):
+                requests: list[httpx.Request] = []
+
+                def handler(request: httpx.Request) -> httpx.Response:
+                    requests.append(request)
+                    if request.url.path.endswith("/balance"):
+                        return _balance()
+                    if request.url.path.endswith("/models"):
+                        return httpx.Response(200, json={"data": []})
+                    return _completion({"prompt_tokens": 3, "completion_tokens": 2})
+
+                router = ProviderRouter(transport=httpx.MockTransport(handler))
+                padded = " \t" + key + "\n"
+                validation = await router.validate_key(padded)
+                balance = await router.get_credits(padded)
+                self.assertEqual(await router.fetch_models(padded), ())
+                reply = await router.complete(
+                    padded, "vendor/model", MESSAGES, 32, ProviderPriceLimit.zero()
+                )
+                self.assertTrue(validation.accepted)
+                self.assertEqual(validation.provider_id, ProviderId.VSEGPT)
+                self.assertEqual(balance.currency, Currency.RUB)
+                self.assertTrue(reply.successful)
+                self.assertEqual(reply.provider_id, ProviderId.VSEGPT)
+                self.assertEqual(reply.currency, Currency.RUB)
+                self.assertEqual(
+                    [str(request.url) for request in requests],
+                    [
+                        "https://api.vsegpt.ru/v1/balance",
+                        "https://api.vsegpt.ru/v1/balance",
+                        "https://api.vsegpt.ru/v1/models",
+                        "https://api.vsegpt.ru/v1/chat/completions",
+                    ],
+                )
+                for request in requests:
+                    if request.url.path.endswith("/models"):
+                        self.assertNotIn("Authorization", request.headers)
+                    else:
+                        self.assertEqual(
+                            request.headers["Authorization"], f"Bearer {key}"
+                        )
+                    self.assertNotIn("HTTP-Referer", request.headers)
+                    self.assertNotIn("X-Title", request.headers)
+                self.assertEqual(
+                    set(json.loads(requests[-1].content)),
+                    {"model", "messages", "max_tokens", "stream"},
+                )
 
     async def test_vsegpt_payload_has_no_openrouter_routing_or_cost_assumptions(
         self,
@@ -202,7 +282,7 @@ class ProviderRoutingTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(result.accounting_unknown)
 
     async def test_no_redirect_or_service_fallback_for_any_endpoint(self) -> None:
-        for key in (OPENROUTER_KEY, VSEGPT_KEY):
+        for key in (OPENROUTER_KEY, VSEGPT_KEY, *VSEGPT_VIS_KEYS):
             for operation in ("validate", "balance", "models", "completion"):
                 with self.subTest(provider=detect_key(key), operation=operation):
                     requests: list[httpx.Request] = []

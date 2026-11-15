@@ -8,7 +8,7 @@ from enum import StrEnum
 import flet as ft
 
 from i18n import localize_tree, tr
-from ui.styles import PANEL_BACKGROUND, PRIMARY_COLOR
+from ui.styles import BORDER_COLOR, PAGE_BACKGROUND, PRIMARY_COLOR
 
 
 class WorkspacePage(StrEnum):
@@ -19,6 +19,7 @@ class WorkspacePage(StrEnum):
 
 
 NavigateCallback = Callable[[WorkspacePage], Awaitable[bool | None]]
+_RAIL_WIDTH = 112
 
 
 class WorkspaceShell:
@@ -49,8 +50,8 @@ class WorkspaceShell:
         )
         self.rail = ft.NavigationRail(
             selected_index=0,
-            min_width=112,
-            bgcolor=PANEL_BACKGROUND,
+            min_width=_RAIL_WIDTH,
+            bgcolor=PAGE_BACKGROUND,
             indicator_color=PRIMARY_COLOR,
             label_type=ft.NavigationRailLabelType.ALL,
             destinations=[
@@ -61,7 +62,8 @@ class WorkspaceShell:
         )
         self.navigation = ft.NavigationBar(
             selected_index=0,
-            bgcolor=PANEL_BACKGROUND,
+            bgcolor=PAGE_BACKGROUND,
+            indicator_color=PRIMARY_COLOR,
             label_behavior=ft.NavigationBarLabelBehavior.ALWAYS_SHOW,
             destinations=[
                 ft.NavigationBarDestination(icon=icon, label=tr(f"nav.{item}"))
@@ -70,8 +72,16 @@ class WorkspaceShell:
             on_change=self._bar_changed,
         )
         self._content = ft.Container(expand=True, content=home)
-        self._rail_slot = ft.Container(content=self.rail)
-        self._bottom_slot = ft.Container(content=self.navigation)
+        self._rail_slot = ft.Container(
+            content=self.rail,
+            bgcolor=PAGE_BACKGROUND,
+            border=ft.Border(right=ft.BorderSide(1, BORDER_COLOR)),
+        )
+        self._bottom_slot = ft.Container(
+            content=self.navigation,
+            bgcolor=PAGE_BACKGROUND,
+            border=ft.Border(top=ft.BorderSide(1, BORDER_COLOR)),
+        )
         self.control = ft.SafeArea(
             expand=True,
             maintain_bottom_view_padding=True,
@@ -145,9 +155,13 @@ class WorkspaceShell:
 
     def resize(self, width: float) -> None:
         wide = width >= 1000 and not self._android
-        self._rail_slot.width = 112 if wide else 0
+        # Container borders reserve space inside their width. Keep the rail's
+        # minimum content width, while hiding the entire unused surface.
+        self._rail_slot.width = _RAIL_WIDTH + 1 if wide else 0
+        self._rail_slot.visible = wide
         self.rail.visible = wide
         self._bottom_slot.height = 0 if wide else None
+        self._bottom_slot.visible = not wide
         self.navigation.visible = not wide
 
     def sync_language(self) -> None:

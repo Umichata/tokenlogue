@@ -69,6 +69,8 @@ The packages and [SHA256SUMS](https://github.com/Umichata/tokenlogue/releases/do
 
 The current source checkout adds **OpenRouter and VSEGPT** with separate secure keys and four pages: **Home**, **Providers**, **Token usage** and **Spending**. New chats use the chosen default service. Existing chats keep their provider and model. Local request statistics distinguish API-reported token fields, estimates and missing data, with separate USD/RUB daily charts and tables. Unknown pricing requires explicit confirmation and is never treated as free.
 
+Provider setup recognizes complete OpenRouter keys beginning with `sk-or-v1-` and VSEGPT keys beginning with `sk-or-vv-` or `sk-or-vis`. Each needs a secret continuation. Recognition happens locally and does not prove authorization or funds.
+
 These changes apply when running the current source or a new local build made from it. The published Preview downloads linked above remain the earlier OpenRouter release. Follow the [source-build provider and analytics guide](docs/user-guide.md#en-local-flow). The existing published URLs and checksums have not changed.
 
 <a id="en-docs"></a>

@@ -30,6 +30,8 @@ KEY = "sk-or-vv-offline-auth-only-fixture"
 
 
 class VsegptOnlyAuthTests(unittest.IsolatedAsyncioTestCase):
+    key = KEY
+
     async def asyncSetUp(self):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
@@ -60,7 +62,7 @@ class VsegptOnlyAuthTests(unittest.IsolatedAsyncioTestCase):
         self.addCleanup(self.service.lock_access)
 
     async def register(self):
-        setup = await self.service.start_setup(KEY, allow_unverified=True)
+        setup = await self.service.start_setup(self.key, allow_unverified=True)
         self.assertEqual(setup.status, AuthStatus.PIN_CHOICE_REQUIRED)
         self.assertEqual(setup.key_validity, KeyValidityState.UNVERIFIED)
         self.assertEqual(setup.key_limit.state, KeyLimitState.UNKNOWN)
@@ -72,13 +74,13 @@ class VsegptOnlyAuthTests(unittest.IsolatedAsyncioTestCase):
         return result
 
     async def test_unverified_choice_is_required_before_pin_or_secure_persistence(self):
-        result = await self.service.start_setup(KEY)
+        result = await self.service.start_setup(self.key)
         self.assertEqual(result.status, AuthStatus.UNVERIFIED_KEY)
         self.assertIsNone(self.database.get_auth_state())
         self.assertFalse((await self.credentials.inspect_state()).has_artifacts)
         await self.register()
         self.assertEqual(
-            await self.credentials.get_provider_key(ProviderId.VSEGPT), KEY
+            await self.credentials.get_provider_key(ProviderId.VSEGPT), self.key
         )
         self.assertIsNone(
             await self.credentials.get_provider_key(ProviderId.OPENROUTER)
@@ -93,7 +95,7 @@ class VsegptOnlyAuthTests(unittest.IsolatedAsyncioTestCase):
         self.validator.result = KeyValidationResult(
             KeyValidationStatus.TIMEOUT, provider_id=ProviderId.VSEGPT
         )
-        result = await self.service.start_setup(KEY)
+        result = await self.service.start_setup(self.key)
         self.assertEqual(result.status, AuthStatus.UNVERIFIED_KEY)
         self.assertIsNone(result.pending_setup_token)
         await self.register()
@@ -119,7 +121,7 @@ class VsegptOnlyAuthTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(self.access.unlocked)
         result = await self.service.login("0123")
         self.assertEqual(result.status, AuthStatus.AUTHENTICATED)
-        self.assertEqual(result.api_key, KEY)
+        self.assertEqual(result.api_key, self.key)
         self.assertTrue(self.access.unlocked)
         self.assertEqual(self.validator.calls, calls)
         self.assertEqual(self.storage.values[DATA_KEY_ALIAS], key_record)
@@ -151,7 +153,7 @@ class VsegptOnlyAuthTests(unittest.IsolatedAsyncioTestCase):
         assert token is not None
         completed = await self.service.complete_recovery("4567", token)
         self.assertEqual(completed.status, AuthStatus.AUTHENTICATED)
-        self.assertEqual(completed.api_key, KEY)
+        self.assertEqual(completed.api_key, self.key)
         self.service.lock_access()
         self.assertEqual(
             (await self.service.login("0123")).status, AuthStatus.INVALID_PIN
@@ -163,11 +165,43 @@ class VsegptOnlyAuthTests(unittest.IsolatedAsyncioTestCase):
         assert current is not None
         self.assertEqual(current.registration_id, registration_id)
         self.assertEqual(
-            await self.credentials.get_provider_key(ProviderId.VSEGPT), KEY
+            await self.credentials.get_provider_key(ProviderId.VSEGPT), self.key
         )
         self.assertIsNone(
             await self.credentials.get_provider_key(ProviderId.OPENROUTER)
         )
+
+    async def test_restart_reloads_same_vsegpt_slot_after_pin_without_revalidation(
+        self,
+    ):
+        await self.register()
+        state = self.database.get_auth_state()
+        assert state is not None
+        calls = self.validator.calls
+        self.service.lock_access()
+        reloaded_credentials = FletSecureCredentials(self.storage)
+        restarted = AuthService(
+            self.validator,
+            reloaded_credentials,
+            self.database,
+            pin_hasher=self.hasher,
+            protection=self.protection,
+        )
+        self.addCleanup(restarted.lock_access)
+        self.assertEqual((await restarted.initialize()).initial_route, InitialRoute.PIN)
+        unlocked = await restarted.login("0123")
+        self.assertEqual(unlocked.status, AuthStatus.AUTHENTICATED)
+        self.assertEqual(unlocked.api_key, self.key)
+        self.assertEqual(self.validator.calls, calls)
+        self.assertEqual(
+            await reloaded_credentials.get_provider_key(ProviderId.VSEGPT), self.key
+        )
+        self.assertIsNone(
+            await reloaded_credentials.get_provider_key(ProviderId.OPENROUTER)
+        )
+        current = self.database.get_auth_state()
+        assert current is not None
+        self.assertEqual(current.registration_id, state.registration_id)
 
     async def test_known_invalid_vsegpt_key_cannot_be_saved_even_with_unverified_choice(
         self,
@@ -175,7 +209,13 @@ class VsegptOnlyAuthTests(unittest.IsolatedAsyncioTestCase):
         self.validator.result = KeyValidationResult(
             KeyValidationStatus.INVALID, provider_id=ProviderId.VSEGPT
         )
-        rejected = await self.service.start_setup(KEY, allow_unverified=True)
+        rejected = await self.service.start_setup(self.key, allow_unverified=True)
         self.assertEqual(rejected.status, AuthStatus.INVALID_KEY)
         self.assertFalse((await self.credentials.inspect_state()).has_artifacts)
         self.assertIsNone(self.database.get_auth_state())
+
+
+class VsegptVisOnlyAuthTests(VsegptOnlyAuthTests):
+    """The additional prefix follows the same PIN/recovery and secure-slot flow."""
+
+    key = "sk-or-visLOCAL_TEST"

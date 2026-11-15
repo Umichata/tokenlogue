@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import sys
 import tempfile
 import unittest
@@ -12,12 +13,14 @@ from pathlib import Path
 from typing import cast
 
 import flet as ft
+import httpx
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from api.chat_completions import ChatCompletionResult  # noqa: E402
 from api.models import ModelCatalogService  # noqa: E402
 from api.openrouter import KeyValidationResult  # noqa: E402
+from api.provider_router import ProviderRouter  # noqa: E402
 from auth.models import KeyLimitInfo, KeyValidityState  # noqa: E402
 from chat.account_balance import AccountBalanceSnapshot  # noqa: E402
 from chat.accounting import (  # noqa: E402
@@ -242,6 +245,58 @@ class ProviderSendingTests(unittest.IsolatedAsyncioTestCase):
             self.assertIsNone(turn.cost)
             self.assertIsNone(turn.cost_usd)
 
+    async def test_saved_vis_key_dispatches_once_to_vsegpt_with_existing_consent(self):
+        key = "sk-or-visLOCAL_TEST"
+        requests: list[httpx.Request] = []
+
+        def respond(request: httpx.Request) -> httpx.Response:
+            requests.append(request)
+            return httpx.Response(
+                200,
+                json={
+                    "id": "synthetic-vis-reply",
+                    "model": "vendor/paid-model",
+                    "choices": [
+                        {
+                            "finish_reason": "stop",
+                            "message": {"content": "offline fixture reply"},
+                        }
+                    ],
+                    "usage": {
+                        "prompt_tokens": 4,
+                        "completion_tokens": 3,
+                        "total_tokens": 7,
+                    },
+                },
+            )
+
+        self.sender = self.make_sender(
+            ProviderRouter(transport=httpx.MockTransport(respond))
+        )
+        controller, profiles, _, _, _ = await self.controller(key=key)
+        self.assertEqual(profiles.key_for(ProviderId.VSEGPT), key)
+        view = controller._workspace_view
+        assert view is not None
+        await controller._workspace_controller.update_draft("rub", "synthetic request")
+        view.restore_editor("synthetic request")
+        await controller.submit_message("synthetic request")
+        self.assertEqual(requests, [])
+        await controller.confirm_paid_request()
+        self.assertEqual(len(requests), 1)
+        request = requests[0]
+        self.assertEqual(str(request.url), "https://api.vsegpt.ru/v1/chat/completions")
+        self.assertEqual(request.headers["Authorization"], f"Bearer {key}")
+        self.assertEqual(
+            set(json.loads(request.content)),
+            {"model", "messages", "max_tokens", "stream"},
+        )
+        turns = self.messages.list_turns("rub")
+        self.assertEqual(len(turns), 1)
+        self.assertEqual(turns[0].currency, Currency.RUB)
+        self.assertEqual(turns[0].total_tokens, 7)
+        self.assertIsNone(turns[0].cost)
+        self.assertIn((ProviderId.VSEGPT, True), profiles.refreshes)
+
     async def test_ack_is_single_use_and_changes_to_text_or_key_revoke_it(self):
         for changed in ("text", "key"):
             preview = await self.preview()
@@ -370,9 +425,10 @@ class ProviderSendingTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(drafts.get_draft("rub"), ChatDraft("rub", 1, "hello"))
         self.assertIsNotNone(self.chats.get_chat("rub"))
 
-    async def controller(self):
+    async def controller(self, *, key=KEY):
         page = FakePage()
         profiles = FakeProviderProfiles()
+        profiles.keys[ProviderId.VSEGPT] = key
         presented: list[ft.Control] = []
         opened: list[bool] = []
 
@@ -399,7 +455,7 @@ class ProviderSendingTests(unittest.IsolatedAsyncioTestCase):
         )
         self.addCleanup(controller.dispose)
         await controller.activate(
-            KEY, KeyValidityState.UNVERIFIED, KeyLimitInfo.unknown()
+            key, KeyValidityState.UNVERIFIED, KeyLimitInfo.unknown()
         )
         return controller, profiles, page, presented, opened
 

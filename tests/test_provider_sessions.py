@@ -38,6 +38,8 @@ OR_NEW = "sk-or-v1-synthetic-new"
 OR_OTHER = "sk-or-v1-synthetic-other"
 VV_OLD = "sk-or-vv-synthetic-old"
 VV_NEW = "sk-or-vv-synthetic-new"
+VIS_NEW = "sk-or-vis-local-fixture"
+VIS_OTHER = "sk-or-visLOCAL_TEST"
 
 
 @dataclass
@@ -215,6 +217,9 @@ class SecureProviderSlotsTests(unittest.IsolatedAsyncioTestCase):
     ):
         for provider, key in (
             (ProviderId.OPENROUTER, VV_NEW),
+            (ProviderId.OPENROUTER, VIS_NEW),
+            (ProviderId.VSEGPT, "sk-or-vis"),
+            (ProviderId.VSEGPT, "sk-or-vis-"),
             (ProviderId.VSEGPT, OR_NEW),
             (ProviderId.OPENROUTER, "sk-or-v1-"),
         ):
@@ -352,6 +357,56 @@ class ProviderSessionTests(unittest.IsolatedAsyncioTestCase):
             KeyValidityState.UNVERIFIED,
         )
         self.assertEqual(self.profiles.key_for(ProviderId.OPENROUTER), OR_OLD)
+        self.assertEqual(self.profiles.default_provider, ProviderId.OPENROUTER)
+
+    async def test_vis_save_lock_and_restart_use_existing_vsegpt_slot(self):
+        self.api.results[VIS_NEW] = validation(VIS_NEW, KeyValidationStatus.UNVERIFIED)
+        await self.profiles.check(ProviderId.VSEGPT, " \t" + VIS_NEW + "\n")
+        with self.assertRaises(ProviderSessionExpired):
+            await self.profiles.save(ProviderId.VSEGPT, VIS_NEW, allow_unverified=False)
+        self.assertEqual(self.profiles.key_for(ProviderId.VSEGPT), VV_OLD)
+        await self.profiles.save(ProviderId.VSEGPT, VIS_NEW, allow_unverified=True)
+        await self.profiles.set_default(ProviderId.VSEGPT)
+        self.assertEqual(
+            self.storage.values[PROVIDER_KEY_STORAGE_NAMES[ProviderId.VSEGPT]], VIS_NEW
+        )
+        self.assertEqual(self.storage.values[API_KEY_STORAGE_NAME], OR_OLD)
+        calls = list(self.api.validations)
+        self.profiles.deactivate()
+        self.assertIsNone(self.profiles.key_for(ProviderId.VSEGPT))
+        reloaded = ProviderProfiles(FletSecureCredentials(self.storage), self.api)
+        self.addCleanup(reloaded.deactivate)
+        await reloaded.activate(
+            VIS_NEW, KeyValidityState.UNVERIFIED, KeyLimitInfo.unknown()
+        )
+        self.assertEqual(reloaded.key_for(ProviderId.VSEGPT), VIS_NEW)
+        self.assertEqual(reloaded.key_for(ProviderId.OPENROUTER), OR_OLD)
+        self.assertEqual(reloaded.default_provider, ProviderId.VSEGPT)
+        self.assertEqual(self.api.validations, calls)
+
+    async def test_failed_or_late_vis_check_preserves_current_key_and_session(self):
+        self.api.results[VIS_NEW] = validation(VIS_NEW, KeyValidationStatus.INVALID)
+        await self.profiles.check(ProviderId.VSEGPT, VIS_NEW)
+        with self.assertRaises(ProviderSessionExpired):
+            await self.profiles.save(ProviderId.VSEGPT, VIS_NEW, allow_unverified=True)
+        self.assertEqual(self.profiles.key_for(ProviderId.VSEGPT), VV_OLD)
+        gate = self.api.validation_gates[VIS_NEW] = Gate()
+        self.api.results[VIS_NEW] = validation(VIS_NEW)
+        pending = asyncio.create_task(self.profiles.check(ProviderId.VSEGPT, VIS_NEW))
+        await gate.entered.wait()
+        await self.profiles.check(ProviderId.VSEGPT, VIS_OTHER)
+        await self.profiles.save(ProviderId.VSEGPT, VIS_OTHER, allow_unverified=False)
+        gate.release.set()
+        with self.assertRaises(ProviderSessionExpired):
+            await pending
+        with self.assertRaises(ProviderSessionExpired):
+            await self.profiles.save(ProviderId.VSEGPT, VIS_NEW, allow_unverified=False)
+        self.assertEqual(self.profiles.key_for(ProviderId.VSEGPT), VIS_OTHER)
+        self.assertEqual(self.profiles.key_for(ProviderId.OPENROUTER), OR_OLD)
+        self.assertEqual(
+            self.storage.values[PROVIDER_KEY_STORAGE_NAMES[ProviderId.VSEGPT]],
+            VIS_OTHER,
+        )
         self.assertEqual(self.profiles.default_provider, ProviderId.OPENROUTER)
 
     async def test_late_validation_cannot_replace_a_newer_candidate_or_save_itself(

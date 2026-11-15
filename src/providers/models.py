@@ -28,7 +28,7 @@ class ProviderSpec:
     name: str
     currency: Currency
     base_url: str
-    key_prefix: str
+    key_prefixes: tuple[str, ...]
     supports_key_limit: bool
     supports_provider_routing: bool
     catalog_is_public: bool
@@ -40,7 +40,7 @@ _SPECS = {
         "OpenRouter",
         Currency.USD,
         "https://openrouter.ai/api/v1",
-        "sk-or-v1-",
+        ("sk-or-v1-",),
         True,
         True,
         False,
@@ -50,7 +50,7 @@ _SPECS = {
         "VSEGPT",
         Currency.RUB,
         "https://api.vsegpt.ru/v1",
-        "sk-or-vv-",
+        ("sk-or-vv-", "sk-or-vis"),
         False,
         False,
         True,
@@ -76,8 +76,11 @@ def detect_key(api_key: str) -> ProviderId | None:
     ):
         return None
     for provider_id, spec in _SPECS.items():
-        if normalized.startswith(spec.key_prefix) and len(normalized) > len(
-            spec.key_prefix
-        ):
-            return provider_id
+        for prefix in spec.key_prefixes:
+            if normalized.startswith(prefix):
+                # A separator alone is not a secret suffix. Inspect it without
+                # modifying the credential that callers validate and persist.
+                suffix = normalized[len(prefix) :]
+                if suffix.strip("-"):
+                    return provider_id
     return None
