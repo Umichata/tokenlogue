@@ -991,6 +991,8 @@ class ChatSessionController:
                 catalog = await self._catalog_service.get_catalog(key)
                 if not self._connection_matches(change):
                     return
+                if not catalog.available:
+                    raise ChatPolicyError(tr("connection.catalog_unavailable"))
                 # Reconfirm the exact selected model, including prices and
                 # constraints. Never substitute a same-ID model or new price.
                 if model not in (*catalog.free_models, *catalog.paid_models):

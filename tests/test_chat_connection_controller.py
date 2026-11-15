@@ -21,7 +21,12 @@ from api.models import ModelCatalogService  # noqa: E402
 from auth.models import KeyLimitInfo, KeyValidityState  # noqa: E402
 from chat.accounting import ChatBudgetService, ChatLimitConfiguration  # noqa: E402
 from chat.drafts import ChatDraftService  # noqa: E402
-from chat.models import FREE_ROUTER_MODEL, CatalogModel, ChatMode  # noqa: E402
+from chat.models import (  # noqa: E402
+    FREE_ROUTER_MODEL,
+    CatalogModel,
+    ChatMode,
+    ModelCatalog,
+)
 from chat.sending import MessageSendingService  # noqa: E402
 from chat.service import ChatService  # noqa: E402
 from chat_controller import ChatSessionController, ProviderProfiles  # noqa: E402
@@ -348,6 +353,57 @@ class ChatConnectionControllerTests(unittest.IsolatedAsyncioTestCase):
         await self.assert_original()
         self.assertNotIn(
             "private fixture failure", "\n".join(texts(self.page.controls[0]))
+        )
+
+    async def _assert_confirmation_catalogue_failure_is_atomic(
+        self, catalogue: ModelCatalog, error_key: str
+    ) -> None:
+        dialog = await self.review()
+        view = self.controller._new_limits_view
+        assert view is not None
+        draft_before = await self.drafts.load(self.original.id)
+        budgets_before = {
+            provider: await self.budgets.get_chat_budget(
+                self.original.id, provider_id=provider
+            )
+            for provider in ProviderId
+        }
+        with (
+            patch.object(self.catalog, "get_catalog", return_value=catalogue),
+            patch.object(self.sender, "switch_chat_connection") as switch,
+        ):
+            await self.click(dialog.actions[-1])
+        switch.assert_not_awaited()
+        await self.assert_original()
+        self.assertEqual(await self.drafts.load(self.original.id), draft_before)
+        self.assertEqual(
+            {
+                provider: await self.budgets.get_chat_budget(
+                    self.original.id, provider_id=provider
+                )
+                for provider in ProviderId
+            },
+            budgets_before,
+        )
+        self.assertIsNone(self.controller._connection_dialog)
+        self.assertFalse(self.controller._workspace_controller.busy)
+        self.assertFalse(self.controller._operation_lock.locked())
+        self.assertFalse(view.form.submit_button.disabled)
+        self.assertTrue(view.form.error.visible)
+        self.assertEqual(getattr(view.form.error.value, "key", None), error_key)
+
+    async def test_catalogue_unavailable_during_confirmation_keeps_connection(
+        self,
+    ) -> None:
+        await self._assert_confirmation_catalogue_failure_is_atomic(
+            ModelCatalog((), (), available=False), "connection.catalog_unavailable"
+        )
+
+    async def test_model_missing_from_available_confirmation_catalogue_keeps_connection(
+        self,
+    ) -> None:
+        await self._assert_confirmation_catalogue_failure_is_atomic(
+            ModelCatalog((), (), available=True), "service.model_missing"
         )
 
     async def test_lock_revokes_old_confirmation_and_reopen_keeps_original_draft(
