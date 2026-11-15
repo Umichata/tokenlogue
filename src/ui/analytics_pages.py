@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
 from dataclasses import replace
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal, localcontext
 from typing import Literal
 
 import flet as ft
@@ -44,7 +44,20 @@ def _tokens(value: int | None) -> str:
 
 
 def _amount(value: Decimal, currency: str) -> str:
-    return tr("analytics.amount", amount=number(value), currency=currency)
+    return tr("analytics.amount", amount=_monetary_number(value), currency=currency)
+
+
+def _monetary_number(value: Decimal) -> str:
+    minimum = Decimal("0.000001")
+    if value != 0 and abs(value) < minimum:
+        return tr(
+            "analytics.tiny_positive" if value > 0 else "analytics.tiny_negative",
+            amount=number(minimum),
+        )
+    with localcontext() as context:
+        context.prec = max(context.prec, value.adjusted() + 8)
+        rounded = value.quantize(minimum, rounding=ROUND_HALF_UP)
+    return number(rounded)
 
 
 def _metric(label: str, value: str) -> ft.Column:
@@ -166,7 +179,7 @@ class _AnalyticsPage:
             label=tr("analytics.period"),
             value=self.filters.period,
             options=[
-                ft.DropdownOption(key=value, text=tr(f"analytics.period.{value}"))
+                ft.DropdownOption(key=value, text=str(tr(f"analytics.period.{value}")))
                 for value in ("7d", "30d", "all")
             ],
             on_select=self._filters_changed,
@@ -176,7 +189,7 @@ class _AnalyticsPage:
             label=tr("analytics.provider"),
             value=self.filters.provider_id or "",
             options=[
-                ft.DropdownOption(key="", text=tr("analytics.all_providers")),
+                ft.DropdownOption(key="", text=str(tr("analytics.all_providers"))),
                 *[
                     ft.DropdownOption(key=p.value, text=provider_spec(p).name)
                     for p in ProviderId
@@ -188,7 +201,7 @@ class _AnalyticsPage:
         self.model = ft.Dropdown(
             label=tr("analytics.model"),
             value=self.filters.model_id or "",
-            options=[ft.DropdownOption(key="", text=tr("analytics.all_models"))],
+            options=[ft.DropdownOption(key="", text=str(tr("analytics.all_models")))],
             on_select=self._filters_changed,
             col={"xs": 12, "md": 4},
         )
@@ -205,7 +218,7 @@ class _AnalyticsPage:
                         ft.Text(
                             tr(f"analytics.title.{page_kind}"), size=26, expand=True
                         ),
-                        LanguageSelector(),
+                        LanguageSelector(compact=True),
                     ],
                 ),
                 ft.Text(tr("analytics.scope"), color=MUTED_COLOR),
@@ -260,7 +273,7 @@ class _AnalyticsPage:
             {choice.model_id for choice in snapshot.models if choice.model_id}
         )
         self.model.options = [
-            ft.DropdownOption(key="", text=tr("analytics.all_models")),
+            ft.DropdownOption(key="", text=str(tr("analytics.all_models"))),
             *[ft.DropdownOption(key=model, text=model) for model in model_ids],
         ]
         self.error.value = ""
@@ -498,11 +511,16 @@ class _AnalyticsPage:
         )
         limit = self._day_limits.get(currency, 60)
         for day in panel.days[:limit]:
-            notes: list[ft.Control] = [ft.Text(number(day.confirmed), selectable=True)]
+            notes: list[ft.Control] = [
+                ft.Text(_monetary_number(day.confirmed), selectable=True)
+            ]
             if day.estimated:
                 notes.append(
                     ft.Text(
-                        tr("analytics.day_estimate", amount=number(day.estimated)),
+                        tr(
+                            "analytics.day_estimate",
+                            amount=_monetary_number(day.estimated),
+                        ),
                         size=12,
                         color=WARNING_COLOR,
                     )
@@ -538,6 +556,28 @@ class _AnalyticsPage:
     def sync_language(self) -> None:
         if not self._cleared:
             localize_tree(self.control)
+            # Mounted DropdownOption controls are frozen by Flet 0.86.5.
+            # Replace translated options instead of mutating their text.
+            self.period.options = [
+                ft.DropdownOption(key=value, text=str(tr(f"analytics.period.{value}")))
+                for value in ("7d", "30d", "all")
+            ]
+            self.provider.options = [
+                ft.DropdownOption(key="", text=str(tr("analytics.all_providers"))),
+                *[
+                    ft.DropdownOption(key=p.value, text=provider_spec(p).name)
+                    for p in ProviderId
+                ],
+            ]
+            self.model.options = [
+                ft.DropdownOption(
+                    key=option.key,
+                    text=str(tr("analytics.all_models"))
+                    if not option.key
+                    else option.text,
+                )
+                for option in self.model.options
+            ]
             self._render()
 
     def clear_private(self) -> None:

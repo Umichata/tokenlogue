@@ -49,7 +49,7 @@ class WorkspaceShell:
         )
         self.rail = ft.NavigationRail(
             selected_index=0,
-            min_width=88,
+            min_width=112,
             bgcolor=PANEL_BACKGROUND,
             indicator_color=PRIMARY_COLOR,
             label_type=ft.NavigationRailLabelType.ALL,
@@ -145,13 +145,17 @@ class WorkspaceShell:
 
     def resize(self, width: float) -> None:
         wide = width >= 1000 and not self._android
-        self._rail_slot.width = 88 if wide else 0
+        self._rail_slot.width = 112 if wide else 0
         self.rail.visible = wide
         self._bottom_slot.height = 0 if wide else None
         self.navigation.visible = not wide
 
     def sync_language(self) -> None:
         localize_tree(self.control)
+        # Only the active page is attached to Page. Retained Home controls
+        # still need translating without recreating their editor or history.
+        for control in self._views.values():
+            localize_tree(control)
 
     def clear_private(self) -> None:
         """Revoke retained references before the owner's next asynchronous wait."""

@@ -673,3 +673,68 @@ class ProviderSessionTests(unittest.IsolatedAsyncioTestCase):
             self.profiles.key_validity_for(ProviderId.OPENROUTER),
             KeyValidityState.VALID,
         )
+
+    async def test_authenticated_vsegpt_restrictions_keep_money_and_permission_separate(
+        self,
+    ):
+        for status, amount in (
+            (CreditsStatus.SUBSCRIPTION_REQUIRED, Decimal("250.125")),
+            (CreditsStatus.INSUFFICIENT_FUNDS, Decimal("-0.125")),
+            (CreditsStatus.ACCOUNT_DISABLED, Decimal("0")),
+        ):
+            with self.subTest(status=status):
+                self.api.balance_results[VV_OLD] = CreditsResult(
+                    status,
+                    balance_amount=amount,
+                    provider_id=ProviderId.VSEGPT,
+                    currency=Currency.RUB,
+                    warning=True,
+                    subscription_active=False,
+                )
+                await self.profiles.refresh(ProviderId.VSEGPT)
+                balance = self.profiles.balance_for(ProviderId.VSEGPT)
+                self.assertEqual(balance.state, AccountBalanceState.CURRENT)
+                self.assertEqual(balance.balance_amount, amount)
+                self.assertIsNone(balance.balance_usd)
+                self.assertEqual(balance.error, status)
+                self.assertTrue(balance.warning)
+                self.assertFalse(
+                    self.profiles.state(ProviderId.VSEGPT).subscription_active
+                )
+                self.assertEqual(
+                    self.profiles.key_validity_for(ProviderId.VSEGPT),
+                    KeyValidityState.VALID,
+                )
+
+    async def test_vsegpt_restriction_without_valid_amount_does_not_invent_balance_or_auth(
+        self,
+    ):
+        self.api.balance_results[VV_OLD] = CreditsResult(
+            CreditsStatus.SUBSCRIPTION_REQUIRED,
+            provider_id=ProviderId.VSEGPT,
+            currency=Currency.RUB,
+            subscription_active=False,
+        )
+        await self.profiles.refresh(ProviderId.VSEGPT)
+        balance = self.profiles.balance_for(ProviderId.VSEGPT)
+        self.assertEqual(balance.state, AccountBalanceState.UNAVAILABLE)
+        self.assertIsNone(balance.balance_amount)
+        self.assertEqual(balance.error, CreditsStatus.SUBSCRIPTION_REQUIRED)
+        self.assertEqual(
+            self.profiles.key_validity_for(ProviderId.VSEGPT),
+            KeyValidityState.UNVERIFIED,
+        )
+
+    async def test_vsegpt_account_statuses_do_not_authorize_an_openrouter_amount(self):
+        self.api.balance_results[OR_OLD] = CreditsResult(
+            CreditsStatus.ACCOUNT_DISABLED, balance_usd=Decimal("125")
+        )
+        await self.profiles.refresh(ProviderId.OPENROUTER)
+        balance = self.profiles.balance_for(ProviderId.OPENROUTER)
+        self.assertEqual(balance.state, AccountBalanceState.UNAVAILABLE)
+        self.assertIsNone(balance.balance_amount)
+        self.assertEqual(balance.error, CreditsStatus.ACCOUNT_DISABLED)
+        self.assertEqual(
+            self.profiles.key_validity_for(ProviderId.VSEGPT),
+            KeyValidityState.UNVERIFIED,
+        )

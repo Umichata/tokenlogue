@@ -159,7 +159,7 @@ class ProviderPage:
                 ft.Row(
                     controls=[
                         ft.Text(tr("providers.title"), size=26, expand=True),
-                        LanguageSelector(),
+                        LanguageSelector(compact=True),
                     ]
                 ),
                 ft.Text(tr("providers.description"), color=MUTED_COLOR),
@@ -378,6 +378,8 @@ class ProviderPage:
             "insufficient_funds",
             "warning",
             "invalid",
+            "disabled",
+            "account_disabled",
         }
         balance_status = (
             state.balance_status

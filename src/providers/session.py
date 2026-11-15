@@ -13,7 +13,11 @@ from typing import Protocol
 from api.openrouter import CreditsResult, CreditsStatus, KeyValidationResult
 from auth.key_validation import interpret_key_validation
 from auth.models import KeyLimitInfo, KeyValidityState
-from chat.account_balance import AccountBalanceService, AccountBalanceSnapshot
+from chat.account_balance import (
+    AccountBalanceService,
+    AccountBalanceSnapshot,
+    has_authenticated_vsegpt_balance,
+)
 from providers.models import ProviderId, detect_key, provider_spec
 from storage.secure_credentials import FletSecureCredentials
 
@@ -322,7 +326,9 @@ class ProviderProfiles:
         ):
             return
         state = self._states[provider]
-        if result.status is CreditsStatus.SUCCESS:
+        if result.status is CreditsStatus.SUCCESS or has_authenticated_vsegpt_balance(
+            result
+        ):
             state = replace(state, key_validity=KeyValidityState.VALID)
         elif result.status is CreditsStatus.UNAUTHORIZED:
             state = replace(state, key_validity=KeyValidityState.INVALID)

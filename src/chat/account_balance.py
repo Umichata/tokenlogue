@@ -43,6 +43,23 @@ class AccountBalanceSnapshot:
             raise ValueError("balance_currency_mismatch")
 
 
+def has_authenticated_vsegpt_balance(result: CreditsResult) -> bool:
+    """An account restriction does not discard an authenticated RUB amount."""
+    return (
+        result.provider_id is ProviderId.VSEGPT
+        and result.currency is Currency.RUB
+        and result.balance_amount is not None
+        and result.balance_amount.is_finite()
+        and result.status
+        in {
+            CreditsStatus.SUCCESS,
+            CreditsStatus.SUBSCRIPTION_REQUIRED,
+            CreditsStatus.INSUFFICIENT_FUNDS,
+            CreditsStatus.ACCOUNT_DISABLED,
+        }
+    )
+
+
 class AccountBalanceService:
     """Publish only the newest read from the currently unlocked session."""
 
@@ -138,7 +155,10 @@ class AccountBalanceService:
         if not self._is_current(ticket):
             return
         if (
-            result.status is CreditsStatus.SUCCESS
+            (
+                result.status is CreditsStatus.SUCCESS
+                or has_authenticated_vsegpt_balance(result)
+            )
             and result.balance_amount is not None
             and result.provider_id is self._snapshot.provider_id
             and result.currency is self._snapshot.currency
@@ -148,6 +168,9 @@ class AccountBalanceService:
                     AccountBalanceState.CURRENT,
                     result.balance_usd,
                     self._clock(),
+                    error=result.status
+                    if result.status is not CreditsStatus.SUCCESS
+                    else None,
                     balance_amount=result.balance_amount,
                     currency=result.currency,
                     provider_id=result.provider_id,

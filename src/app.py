@@ -12,7 +12,7 @@ from typing import Literal, cast
 import flet as ft
 
 from api.models import ModelCatalogService
-from api.openrouter import CreditsStatus
+from api.openrouter import CreditsStatus, KeyValidationStatus
 from auth.contracts import KeyValidator
 from auth.models import (
     AuthResult,
@@ -2481,7 +2481,31 @@ class AppController:
         result = await profiles.check(provider, candidate)
         if epoch != self._private_views_epoch or not self._private_pages_available():
             return ProviderCheckResult(False)
-        return ProviderCheckResult(result.save_allowed, result.authorization_confirmed)
+        messages = {
+            KeyValidationStatus.INVALID: "service.auth_rejected",
+            KeyValidationStatus.RESTRICTED: "service.auth_restricted",
+            KeyValidationStatus.TIMEOUT: "service.auth_timeout",
+            KeyValidationStatus.NETWORK_ERROR: "service.auth_network",
+            KeyValidationStatus.TLS_ERROR: "service.auth_tls",
+            KeyValidationStatus.RATE_LIMITED: "service.auth_rate",
+            KeyValidationStatus.SERVER_ERROR: "service.auth_unavailable",
+            KeyValidationStatus.INVALID_RESPONSE: "service.response_format",
+            KeyValidationStatus.UNEXPECTED_STATUS: "service.auth_unchecked",
+        }
+        message = tr(messages[result.status]) if result.status in messages else ""
+        if result.save_allowed and not result.authorization_confirmed:
+            message = (message + "\n" if message else "") + tr(
+                "providers.unverified_help"
+            )
+        if result.subscription_active is False:
+            message = (
+                tr("providers.balance_status.subscription_required") + "\n" + message
+            )
+        elif result.warning:
+            message = tr("providers.balance_status.warning") + "\n" + message
+        return ProviderCheckResult(
+            result.save_allowed, result.authorization_confirmed, message
+        )
 
     async def _save_provider_key(
         self, provider: ProviderId, candidate: str, allow_unverified: bool
@@ -2544,10 +2568,16 @@ class AppController:
                 AccountBalanceState.LOADING: "loading",
                 AccountBalanceState.STALE: "stale",
             }.get(balance.state, "unavailable")
-            if balance.state is AccountBalanceState.UNAVAILABLE:
+            if balance.state is AccountBalanceState.UNAVAILABLE or balance.error in {
+                CreditsStatus.SUBSCRIPTION_REQUIRED,
+                CreditsStatus.INSUFFICIENT_FUNDS,
+                CreditsStatus.ACCOUNT_DISABLED,
+            }:
                 balance_status = (
                     {
                         CreditsStatus.UNAUTHORIZED: "invalid",
+                        CreditsStatus.BALANCE_DISABLED: "disabled",
+                        CreditsStatus.ACCOUNT_DISABLED: "account_disabled",
                         CreditsStatus.RESTRICTED: "restricted",
                         CreditsStatus.SUBSCRIPTION_REQUIRED: "subscription_required",
                         CreditsStatus.INSUFFICIENT_FUNDS: "insufficient_funds",
@@ -2558,7 +2588,11 @@ class AppController:
                     if balance.error is not None
                     else "unavailable"
                 )
-            if balance.warning and balance.state is AccountBalanceState.CURRENT:
+            if (
+                balance.warning
+                and balance.state is AccountBalanceState.CURRENT
+                and balance.error is None
+            ):
                 balance_status = "warning"
             view.set_provider(
                 ProviderPresentation(

@@ -41,14 +41,14 @@ from chat.models import (  # noqa: E402
     ModelCatalog,
 )
 from chat.sending import MessageSendPreview  # noqa: E402
-from i18n import configure_localization, set_language  # noqa: E402
+from i18n import configure_localization, localize_tree, set_language  # noqa: E402
 from preferences import PreferencesStore  # noqa: E402
 from providers.models import Currency, PriceUnit, ProviderId  # noqa: E402
 from tests import test_chat_menu as menu_fixtures  # noqa: E402
 from tests.test_chat_components import _message, _turn  # noqa: E402
 from tests.test_chat_menu import walk  # noqa: E402
 from tests.test_chat_view import _state  # noqa: E402
-from ui.analytics_pages import SpendingPage, TokenUsagePage  # noqa: E402
+from ui.analytics_pages import SpendingPage, TokenUsagePage, _amount  # noqa: E402
 from ui.chat_limits_view import (  # noqa: E402
     ChatLimitsForm,
     build_budget_warning_dialog,
@@ -250,6 +250,33 @@ class WorkspacePagesTests(unittest.IsolatedAsyncioTestCase):
                 page.set_snapshot(build_analytics([], AnalyticsFilter()))
                 page.sync_language()
                 self.assertTrue(page._body.controls)
+
+    async def test_language_change_replaces_mounted_frozen_filter_options(self):
+        page = SpendingPage(
+            on_filter=AsyncMock(), filters=AnalyticsFilter(period="all")
+        )
+        for selector in (page.period, page.provider, page.model):
+            for option in selector.options:
+                object.__setattr__(option, "_frozen", True)
+        set_language("en")
+        localize_tree(page.control)
+        page.sync_language()
+        self.assertEqual(page.period.value, "all")
+        self.assertEqual(page.period.options[0].text, "7 days")
+        self.assertEqual(page.provider.options[0].text, "All providers")
+        self.assertEqual(page.model.options[0].text, "All models")
+
+    async def test_analytics_money_display_rounds_without_losing_nonzero_amounts(self):
+        exact = Decimal("106.25") / Decimal(30)
+        for language, expected in (("en", "3.541667 RUB"), ("ru", "3,541667 RUB")):
+            set_language(language)
+            self.assertEqual(_amount(exact, "RUB"), expected)
+            self.assertIn("<", _amount(Decimal("0.0000000001"), "RUB"))
+            self.assertNotEqual(
+                _amount(Decimal("0.0000000001"), "RUB"), _amount(Decimal(0), "RUB")
+            )
+            self.assertEqual(_amount(Decimal(0), "RUB"), "0 RUB")
+        self.assertEqual(exact, Decimal("106.25") / Decimal(30))
 
     async def test_rub_metrics_use_only_rub_and_keep_tokens_with_unknown_cost(self):
         for language in ("ru", "en"):

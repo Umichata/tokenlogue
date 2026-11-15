@@ -26,12 +26,15 @@ from app import AppController  # noqa: E402
 from auth.contracts import KeyValidator  # noqa: E402
 from auth.models import InitialRoute, KeyLimitInfo, KeyValidityState  # noqa: E402
 from auth.service import AuthService  # noqa: E402
+from chat.account_balance import AccountBalanceSnapshot  # noqa: E402
 from chat.analytics import AnalyticsFilter  # noqa: E402
 from chat.drafts import ChatDraftService  # noqa: E402
 from chat.models import ChatMode  # noqa: E402
 from chat.sending import MessageSendingService  # noqa: E402
+from i18n import configure_localization, localize_tree, set_language, tr  # noqa: E402
+from preferences import PreferencesStore  # noqa: E402
 from providers.models import Currency, ProviderId, detect_key  # noqa: E402
-from providers.session import ProviderProfiles  # noqa: E402
+from providers.session import ProviderProfiles, ProviderState  # noqa: E402
 from storage.analytics_repository import SqliteAnalyticsRepository  # noqa: E402
 from storage.secure_credentials import FletSecureCredentials  # noqa: E402
 from tests import test_app as app_fixtures  # noqa: E402
@@ -77,6 +80,8 @@ class OfflineProviderAPI:
 
 class ApplicationPagesTests(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self) -> None:
+        configure_localization(PreferencesStore())
+        self.addCleanup(configure_localization, PreferencesStore())
         self.fx = chat_fixtures.ChatUiIntegrationTests()
         await self.fx.asyncSetUp()
         self.addCleanup(self.fx.temp_dir.cleanup)
@@ -358,6 +363,60 @@ class ApplicationPagesTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.profiles.key_for(ProviderId.VSEGPT), replacement)
         self.assertEqual(card.key_field.value, "")
         self.assertTrue(card.key_field.password)
+
+    async def test_language_change_on_analytics_translates_retained_home_and_preserves_draft(
+        self,
+    ):
+        home = self.home()
+        assert home.composer is not None
+        editor = home.composer.message_field
+        editor.value = " Untranslated user draft\nСвой текст "
+        await self.shell().select(WorkspacePage.SPENDING)
+        set_language("en")
+        localize_tree(self.shell().control)
+        self.app.handle_language_change()
+        await self.shell().select(WorkspacePage.HOME)
+        self.assertIs(self.home(), home)
+        self.assertIs(home.composer.message_field, editor)
+        self.assertEqual(editor.value, " Untranslated user draft\nСвой текст ")
+        self.assertEqual(home.composer.send_button.content, "Send")
+        self.assertEqual(editor.label, "Message")
+        assert home.rename_button is not None
+        self.assertEqual(home.rename_button.content, "Rename")
+
+    async def test_disabled_balance_and_disabled_account_have_distinct_settings_help(
+        self,
+    ):
+        providers = self.app._provider_page
+        assert providers is not None
+        original = self.profiles.state
+        for error, label in (
+            (CreditsStatus.BALANCE_DISABLED, "disabled"),
+            (CreditsStatus.ACCOUNT_DISABLED, "account_disabled"),
+        ):
+
+            def state(provider):
+                if provider is ProviderId.VSEGPT:
+                    return ProviderState(
+                        provider,
+                        has_saved_key=True,
+                        key_validity=KeyValidityState.UNVERIFIED,
+                        balance=AccountBalanceSnapshot(
+                            error=error, provider_id=provider, currency=Currency.RUB
+                        ),
+                    )
+                return original(provider)
+
+            with patch.object(self.profiles, "state", side_effect=state):
+                self.app._refresh_provider_presentations()
+            self.assertEqual(
+                providers.cards[ProviderId.VSEGPT].balance_note.value,
+                tr(f"providers.balance_status.{label}"),
+            )
+            self.assertNotEqual(
+                providers.cards[ProviderId.VSEGPT].status.value,
+                tr("providers.status.invalid"),
+            )
 
 
 if __name__ == "__main__":
