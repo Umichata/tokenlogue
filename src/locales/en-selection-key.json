@@ -1,0 +1,13 @@
+{
+  "selection.connection": "Connection · {provider}",
+  "selection.key.check": "Check key",
+  "selection.key.checking": "Checking the {provider} key…",
+  "selection.key.not_checked": "{provider} key not checked.",
+  "selection.key.accepted": "Key accepted by {provider}.",
+  "selection.key.failed": "The key could not be checked. Try again.",
+  "selection.models.vsegpt": "Choose a VSEGPT model",
+  "selection.models.vsegpt_paid": "Tokenlogue uses paid mode for VSEGPT. Set your chat budget in RUB in the next step.",
+  "selection.models.check_key": "Check the {provider} key before choosing a model.",
+  "selection.catalog.unavailable": "The model list is unavailable. Refresh it or go back.",
+  "selection.key.vsegpt_balance_unavailable": "The balance service is unavailable for this check. The key remains unverified."
+}

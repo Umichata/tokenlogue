@@ -205,7 +205,11 @@ class ChatConnectionControllerTests(unittest.IsolatedAsyncioTestCase):
             if isinstance(control, ft.Text)
             and control.theme_style is ft.TextThemeStyle.HEADLINE_MEDIUM
         ]
-        self.assertEqual(headings, ["connection.change_provider"])
+        if provider is ProviderId.VSEGPT:
+            self.assertEqual(self.controller._screen.value, "model_selection")
+            self.assertIs(self.controller._pending_mode, ChatMode.PAID)
+        else:
+            self.assertEqual(headings, ["connection.change_provider"])
         self.assertEqual(len(await self.chats.list_chats()), 2)
         mode = ChatMode.PAID if provider is ProviderId.VSEGPT else ChatMode.FREE
         await self.controller.select_chat_mode(mode)

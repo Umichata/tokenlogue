@@ -144,7 +144,15 @@ class ChatViewTests(unittest.IsolatedAsyncioTestCase):
             on_cancel=cancel,
         )
 
-        self.assertEqual(len(view.results.controls), 2)
+        from tests.test_chat_menu import walk
+
+        selections = [
+            control
+            for control in walk(view.results)
+            if isinstance(control, ft.Button)
+            and control.content == tr("catalog.select")
+        ]
+        self.assertEqual(len(selections), 2)
         self.assertEqual(filter_models((first, second), " ALPHA "), (first,))
         self.assertEqual(filter_models((first, second), "vendor/beta"), (second,))
 

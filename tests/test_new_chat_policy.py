@@ -532,12 +532,12 @@ class CreationPolicyControllerTests(unittest.IsolatedAsyncioTestCase):
 
         with patch("chat_controller.ModeSelectionView", side_effect=mode_view):
             await controller.request_new_chat()
-            await controller.select_creation_provider(ProviderId.VSEGPT)
+            await controller.select_creation_provider(ProviderId.OPENROUTER)
             old_catalog = controller._catalog
-            old_button = views[-1].paid_button
+            old_button = views[-1].free_button
             await controller.cancel_new_chat()
             await controller.request_new_chat()
-            await controller.select_creation_provider(ProviderId.VSEGPT)
+            await controller.select_creation_provider(ProviderId.OPENROUTER)
             self.assertIs(controller._catalog, old_catalog)
             callback = cast(Callable[[ft.Event], Awaitable[None]], old_button.on_click)
             await callback(cast(ft.Event, None))

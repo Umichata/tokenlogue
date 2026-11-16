@@ -48,7 +48,7 @@ from i18n import tr
 from platform_security.local_protection import ProtectionSnapshot
 from providers.creation import NewChatPolicy
 from providers.credentials import masked_key_display
-from providers.models import ProviderId, detect_key
+from providers.models import ProviderId, detect_key, provider_spec
 from service_errors import localized_error_text
 from storage.data_access import DataAccess
 from ui import (
@@ -134,7 +134,7 @@ class ProviderProfiles(Protocol):
         *,
         after_response: bool = False,
         validate_key: bool = False,
-    ) -> None: ...
+    ) -> KeyValidationResult | None: ...
 
 
 class ChatSessionController:
@@ -211,6 +211,10 @@ class ChatSessionController:
             tuple[str, int | None, str | None, datetime | None] | None
         ) = None
         self._key_validation_task: asyncio.Task[None] | None = None
+        self._selection_key_task: asyncio.Task[object] | None = None
+        self._selection_key_request = 0
+        self._selection_key_notice: str | None = None
+        self._selection_view: ModeSelectionView | ModelSelectionView | None = None
         self._balance_task: asyncio.Task[None] | None = None
         self._balance_expiry: asyncio.TimerHandle | None = None
         self._balance_service = (
@@ -500,6 +504,8 @@ class ChatSessionController:
         self._push_estimate_metadata()
         if self._screen is _ChatScreen.WORKSPACE:
             await self._show_workspace(expected_generation=self._session_generation)
+        elif self._screen in {_ChatScreen.MODE_SELECTION, _ChatScreen.MODEL_SELECTION}:
+            self._refresh_selection_key_state()
 
     async def _open_provider_settings(self) -> None:
         if self._on_provider_settings is not None:
@@ -725,6 +731,7 @@ class ChatSessionController:
         """Отзывает UI и отменяет только собственные фоновые операции."""
         tasks = (
             self._key_validation_task,
+            self._selection_key_task,
             self._catalog_task,
             self._estimate_metadata_task,
             self._operation_lock.owner,
@@ -787,6 +794,7 @@ class ChatSessionController:
                 pass
 
     def _discard_connection_change(self) -> None:
+        self._cancel_selection_key_check()
         self._connection_request += 1
         self._connection_change = None
         self._connection_waiting_for_key = False
@@ -895,6 +903,7 @@ class ChatSessionController:
             credential_revision=self._provider_revision(provider),
             budget=None,
         )
+        self._cancel_selection_key_check()
         self._connection_change = change
         if self._key_for_provider(provider) is None:
             self._close_connection_dialog()
@@ -955,7 +964,7 @@ class ChatSessionController:
             return
         self._connection_change = replace(change, budget=budget)
         self._catalog = catalog
-        self._show_mode_selection()
+        self._show_provider_selection()
 
     async def _review_connection_change(
         self, configuration: ChatLimitConfiguration
@@ -1133,6 +1142,7 @@ class ChatSessionController:
                 pass
 
     def _discard_chat_creation(self) -> None:
+        self._cancel_selection_key_check()
         self._creation_request += 1
         self._chat_creation = None
         self._creation_waiting_for_key = False
@@ -1210,6 +1220,7 @@ class ChatSessionController:
             provider=provider,
             credential_revision=self._provider_revision(provider),
         )
+        self._cancel_selection_key_check()
         self._chat_creation = creation
         if self._key_for_provider(provider) is None:
 
@@ -1245,7 +1256,10 @@ class ChatSessionController:
     ) -> None:
         if not self._creation_matches(creation) or creation.provider is None:
             return
-        if self._key_validity is KeyValidityState.INVALID:
+        if (
+            self._key_validity is KeyValidityState.INVALID
+            and self._provider_profiles is None
+        ):
             await self.cancel_new_chat()
             self._show_chat_action_error(tr("service.auth_rejected"))
             return
@@ -1276,7 +1290,7 @@ class ChatSessionController:
             return
         self._catalog = catalog
         self._pending_mode = None
-        self._show_mode_selection()
+        self._show_provider_selection()
 
     async def cancel_new_chat(self) -> None:
         if self._connection_change is not None:
@@ -1292,67 +1306,133 @@ class ChatSessionController:
         await self._show_workspace(expected_generation=generation)
 
     async def select_chat_mode(self, mode: ChatMode) -> None:
-        if not isinstance(mode, ChatMode):
-            return
-        if self._screen is not _ChatScreen.MODE_SELECTION:
-            return
-        change = self._connection_change
-        if change is not None and not self._connection_matches(change):
-            return
-        creation = self._chat_creation
-        if creation is not None and not self._creation_matches(creation):
+        if (
+            not isinstance(mode, ChatMode)
+            or self._screen is not _ChatScreen.MODE_SELECTION
+            or self._creation_provider is not ProviderId.OPENROUTER
+            or self._selection_key_task is not None
+            or not self._selection_context_current()
+        ):
             return
         catalog = self._catalog
-        if self._disposed or catalog is None or self._session_api_key is None:
-            return
-        if change is not None and not catalog.available:
-            return
-        if mode is ChatMode.FREE and not free_mode_allowed(self._key_validity):
-            return
-        if mode is ChatMode.PAID and (
-            not paid_mode_allowed(
-                self._key_validity, self._key_limit, self._creation_provider
-            )
-            or not catalog.available
-            or not catalog.paid_models
-        ):
+        if catalog is None or not self._mode_allowed(mode):
             return
         self._pending_mode = mode
         self._pending_model = None
-        models = catalog.free_models if mode is ChatMode.FREE else catalog.paid_models
+        self._show_model_selection(mode)
 
-        async def choose(model: CatalogModel) -> None:
-            if (
+    def _mode_allowed(self, mode: ChatMode) -> bool:
+        catalog = self._catalog
+        if catalog is None:
+            return False
+        if self._provider_profiles is not None:
+            self._sync_provider_metadata(self._creation_provider, publish_balance=False)
+        if mode is ChatMode.FREE:
+            return (
+                self._creation_provider is ProviderId.OPENROUTER
+                and free_mode_allowed(self._key_validity)
+                and bool(catalog.free_models)
+                and (self._connection_change is None or catalog.available)
+            )
+        return (
+            paid_mode_allowed(
+                self._key_validity, self._key_limit, self._creation_provider
+            )
+            and catalog.available
+            and bool(catalog.paid_models)
+        )
+
+    def _selection_context_current(self) -> bool:
+        if self._disposed or not self.session_active:
+            return False
+        creation, change = self._chat_creation, self._connection_change
+        return (
+            self._creation_matches(creation)
+            if creation is not None
+            else self._connection_matches(change)
+            if change is not None
+            else self._provider_profiles is None
+        )
+
+    def _show_model_selection(self, mode: ChatMode) -> None:
+        catalog = self._catalog
+        if catalog is None or not self._selection_context_current():
+            return
+        models = catalog.free_models if mode is ChatMode.FREE else catalog.paid_models
+        change, creation = self._connection_change, self._chat_creation
+
+        def current() -> bool:
+            return (
                 self._catalog is catalog
-                and self._pending_mode is mode
                 and self._connection_change is change
                 and self._chat_creation is creation
-            ):
+                and self._selection_view is view
+                and self._selection_context_current()
+            )
+
+        async def choose(model: CatalogModel) -> None:
+            if current():
                 await self.select_chat_model(model)
 
         async def cancel() -> None:
-            if (
-                self._catalog is catalog
-                and self._connection_change is change
-                and self._chat_creation is creation
-            ):
+            if current():
                 await self.back_to_mode_selection()
 
+        async def refresh() -> None:
+            if current():
+                await self.refresh_chat_catalog()
+
+        async def check_key() -> None:
+            if current():
+                await self.request_key_revalidation()
+
+        is_vsegpt = self._creation_provider is ProviderId.VSEGPT
+        self._pending_mode = mode
+        self._dispose_selection_view()
+        self._clear_workspace()
         view = ModelSelectionView(
             mode,
             models,
             on_select=choose,
             on_cancel=cancel,
+            provider_id=self._creation_provider,
+            catalog=catalog if is_vsegpt else None,
+            changing_provider=change is not None,
+            key_validity=self._key_validity,
+            key_limit=self._key_limit,
+            on_check_key=check_key if is_vsegpt else None,
+            on_refresh=refresh if is_vsegpt else None,
+            key_check_busy=self._selection_key_task is not None,
+            key_notice=self._selection_key_notice,
         )
+        self._selection_view = view
         self._screen = _ChatScreen.MODEL_SELECTION
         self._replace_page(view.control)
 
     async def back_to_mode_selection(self) -> None:
-        if self._catalog is None or self._session_api_key is None:
+        if self._catalog is None or not self._selection_context_current():
             return
+        self._cancel_selection_key_check()
         self._pending_mode = None
         self._pending_model = None
-        self._show_mode_selection()
+        if self._creation_provider is ProviderId.VSEGPT:
+            change, creation = self._connection_change, self._chat_creation
+            if change is not None:
+                self._screen = _ChatScreen.WORKSPACE
+                await self._show_workspace(expected_generation=change.session)
+                if self._connection_matches(change):
+                    self._show_connection_provider_choice(change)
+            elif (
+                creation is not None and self._new_chat_policy() is NewChatPolicy.MANUAL
+            ):
+                self._screen = _ChatScreen.WORKSPACE
+                await self._show_workspace(expected_generation=creation.session)
+                if self._creation_matches(creation):
+                    self._show_creation_provider_choice(creation)
+            else:
+                await self.cancel_new_chat()
+            return
+        self._show_provider_selection()
 
     async def select_chat_model(self, model: CatalogModel) -> None:
         if not isinstance(model, CatalogModel):
@@ -1363,6 +1443,7 @@ class ChatSessionController:
             or self._pending_mode is None
             or self._session_api_key is None
             or self._screen is not _ChatScreen.MODEL_SELECTION
+            or self._selection_key_task is not None
         ):
             return
         if model.provider_id is not self._creation_provider:
@@ -1377,7 +1458,7 @@ class ChatSessionController:
         candidates = (
             catalog.free_models if mode is ChatMode.FREE else catalog.paid_models
         )
-        if model not in candidates:
+        if model not in candidates or not self._mode_allowed(mode):
             return
         self._pending_model = model
 
@@ -1402,45 +1483,18 @@ class ChatSessionController:
             preserve_tokens=change is not None,
             submit_label=tr("connection.review") if change is not None else None,
         )
+        self._dispose_selection_view()
         self._new_limits_view = view
         self._screen = _ChatScreen.LIMITS_SELECTION
         self._replace_page(self._new_limits_view.control)
 
     async def back_to_model_selection(self) -> None:
         mode = self._pending_mode
-        catalog = self._catalog
-        if mode is None or catalog is None or self._session_api_key is None:
+        if mode is None or not self._selection_context_current():
             return
         self._pending_model = None
         self._new_limits_view = None
-        models = catalog.free_models if mode is ChatMode.FREE else catalog.paid_models
-        change = self._connection_change
-        creation = self._chat_creation
-
-        async def choose(model: CatalogModel) -> None:
-            if (
-                self._catalog is catalog
-                and self._connection_change is change
-                and self._chat_creation is creation
-            ):
-                await self.select_chat_model(model)
-
-        async def cancel() -> None:
-            if (
-                self._catalog is catalog
-                and self._connection_change is change
-                and self._chat_creation is creation
-            ):
-                await self.back_to_mode_selection()
-
-        view = ModelSelectionView(
-            mode,
-            models,
-            on_select=choose,
-            on_cancel=cancel,
-        )
-        self._screen = _ChatScreen.MODEL_SELECTION
-        self._replace_page(view.control)
+        self._show_model_selection(mode)
 
     async def submit_new_chat_limits(
         self,
@@ -1818,8 +1872,17 @@ class ChatSessionController:
         self._workspace_controller.cancel_release_unknown()
 
     async def request_key_revalidation(self) -> None:
-        """Запускает одну повторную проверку и сразу возвращает управление UI."""
+        """Check the captured choice's saved slot, never a previous chat's key."""
+        if self._screen in {_ChatScreen.MODE_SELECTION, _ChatScreen.MODEL_SELECTION}:
+            await self._check_selection_key()
+            return
         if self._provider_profiles is not None:
+            if (
+                self._disposed
+                or not self.session_active
+                or self._screen is _ChatScreen.SECURITY
+            ):
+                return
             await self._provider_profiles.refresh(
                 self._current_provider(), validate_key=True
             )
@@ -1837,6 +1900,127 @@ class ChatSessionController:
         if not self._start_key_validation():
             return
         await self._refresh_after_key_validation(generation)
+
+    def _cancel_selection_key_check(self) -> None:
+        self._selection_key_request += 1
+        task, self._selection_key_task = self._selection_key_task, None
+        self._selection_key_notice = None
+        self._dispose_selection_view()
+        if task is not None and task is not asyncio.current_task() and not task.done():
+            task.cancel()
+
+    def _dispose_selection_view(self) -> None:
+        view, self._selection_view = self._selection_view, None
+        if view is not None:
+            view.dispose()
+
+    def _refresh_selection_key_state(self) -> None:
+        view = self._selection_view
+        if view is None or not self._selection_context_current():
+            return
+        if self._provider_profiles is not None:
+            self._sync_provider_metadata(self._creation_provider, publish_balance=False)
+        view.set_connection_state(
+            self._key_validity,
+            self._key_limit,
+            key_check_busy=self._selection_key_task is not None,
+            key_notice=self._selection_key_notice,
+        )
+        self._page.update()
+
+    @staticmethod
+    def _selection_validation_notice(result: KeyValidationResult) -> str:
+        if result.accepted:
+            return tr(
+                "metrics.key_valid", provider=provider_spec(result.provider_id).name
+            )
+        messages = {
+            KeyValidationStatus.INVALID: "service.auth_rejected",
+            KeyValidationStatus.RESTRICTED: "service.auth_restricted",
+            KeyValidationStatus.TIMEOUT: "service.auth_timeout",
+            KeyValidationStatus.NETWORK_ERROR: "service.auth_network",
+            KeyValidationStatus.TLS_ERROR: "service.auth_tls",
+            KeyValidationStatus.RATE_LIMITED: "service.auth_rate",
+            KeyValidationStatus.SERVER_ERROR: "service.auth_unavailable",
+            KeyValidationStatus.INVALID_RESPONSE: "service.response_format",
+            KeyValidationStatus.UNEXPECTED_STATUS: "service.auth_unchecked",
+            KeyValidationStatus.UNVERIFIED: "selection.key.vsegpt_balance_unavailable",
+        }
+        return tr(messages[result.status])
+
+    async def _check_selection_key(self) -> None:
+        if (
+            self._selection_key_task is not None
+            or not self._selection_context_current()
+            or self._catalog is None
+            or self._screen
+            not in {_ChatScreen.MODE_SELECTION, _ChatScreen.MODEL_SELECTION}
+            or (
+                self._screen is _ChatScreen.MODEL_SELECTION
+                and self._creation_provider is not ProviderId.VSEGPT
+            )
+        ):
+            return
+        provider = self._creation_provider
+        key = self._key_for_provider(provider)
+        task = asyncio.current_task()
+        if key is None or task is None:
+            return
+        generation, revision = (
+            self._session_generation,
+            self._provider_revision(provider),
+        )
+        creation, change = self._chat_creation, self._connection_change
+        catalog = self._catalog
+        self._selection_key_request += 1
+        request = self._selection_key_request
+        self._selection_key_task = task
+        self._selection_key_notice = None
+
+        def current() -> bool:
+            return (
+                self._selection_key_request == request
+                and self._selection_key_task is task
+                and generation == self._session_generation
+                and revision == self._provider_revision(provider)
+                and self._chat_creation is creation
+                and self._connection_change is change
+                and self._catalog is catalog
+                and self._creation_provider is provider
+                and self._screen
+                in {_ChatScreen.MODE_SELECTION, _ChatScreen.MODEL_SELECTION}
+                and self._selection_context_current()
+            )
+
+        self._refresh_selection_key_state()
+        try:
+            async with asyncio.timeout(15):
+                profiles = self._provider_profiles
+                if profiles is not None:
+                    result = await profiles.refresh(provider, validate_key=True)
+                else:
+                    result = await self._key_validator.validate_key(key)
+                    if current() and result.provider_id is provider:
+                        self._key_validity, self._key_limit = interpret_key_validation(
+                            result
+                        )
+            if current() and result is not None and result.provider_id is provider:
+                self._selection_key_notice = self._selection_validation_notice(result)
+        except asyncio.CancelledError:
+            return
+        except TimeoutError:
+            if current():
+                self._selection_key_notice = tr("service.auth_timeout")
+        except Exception:
+            if current():
+                self._selection_key_notice = tr("service.auth_unchecked")
+        finally:
+            if current():
+                self._selection_key_task = None
+                self._refresh_selection_key_state()
+            elif self._selection_key_task is task:
+                # A stale operation must not clear another operation's busy state.
+                self._selection_key_task = None
 
     def _start_balance_refresh(self, *, after_response: bool = False) -> None:
         if self._provider_profiles is not None:
@@ -2204,7 +2388,11 @@ class ChatSessionController:
             self._key_metadata_updated_at = (
                 datetime.now(UTC) if key_validity is KeyValidityState.VALID else None
             )
-            if key_validity is KeyValidityState.INVALID:
+            if key_validity is KeyValidityState.INVALID and self._screen not in {
+                _ChatScreen.MODE_SELECTION,
+                _ChatScreen.MODEL_SELECTION,
+                _ChatScreen.LIMITS_SELECTION,
+            }:
                 self._catalog = None
                 self._pending_mode = None
                 self._catalog_service.clear_cache(preserve_backoff=True)
@@ -2243,7 +2431,13 @@ class ChatSessionController:
         if not can_use_paid and self._workspace_controller.pending_preview is not None:
             self._workspace_controller.cancel_pending_send()
 
-        if not can_use_free:
+        if self._screen is _ChatScreen.MODE_SELECTION or (
+            self._screen is _ChatScreen.MODEL_SELECTION
+            and self._creation_provider is ProviderId.VSEGPT
+        ):
+            self._refresh_selection_key_state()
+            return
+        if not can_use_free and self._screen is not _ChatScreen.LIMITS_SELECTION:
             self._invalidate_catalog_request()
             self._catalog = None
             self._pending_mode = None
@@ -2251,20 +2445,17 @@ class ChatSessionController:
             return
         if self._screen is _ChatScreen.CATALOG_LOADING:
             return
-        if self._screen is _ChatScreen.MODE_SELECTION:
-            self._show_mode_selection()
-            return
         if self._screen is _ChatScreen.MODEL_SELECTION:
             if self._pending_mode is ChatMode.PAID and not can_use_paid:
                 self._pending_mode = None
-                self._show_mode_selection()
+                self._show_provider_selection()
             return
         if self._screen is _ChatScreen.LIMITS_SELECTION:
             if self._pending_mode is ChatMode.PAID and not can_use_paid:
                 self._pending_mode = None
                 self._pending_model = None
                 self._new_limits_view = None
-                self._show_mode_selection()
+                self._show_provider_selection()
             return
         await self._show_workspace(expected_generation=generation)
 
@@ -2771,6 +2962,7 @@ class ChatSessionController:
             task.cancel()
 
     def _show_catalog_loading(self) -> None:
+        self._dispose_selection_view()
         self._workspace_request_id += 1
         self._clear_workspace()
         self._screen = _ChatScreen.CATALOG_LOADING
@@ -2781,8 +2973,10 @@ class ChatSessionController:
         if (
             self._disposed
             or not self.session_active
-            or self._screen is not _ChatScreen.MODE_SELECTION
+            or self._screen
+            not in {_ChatScreen.MODE_SELECTION, _ChatScreen.MODEL_SELECTION}
             or self._catalog_task is not None
+            or self._selection_key_task is not None
         ):
             return
         creation = self._chat_creation
@@ -2823,9 +3017,23 @@ class ChatSessionController:
         self._pending_mode = None
         self._pending_model = None
         self._new_limits_view = None
+        self._show_provider_selection()
+
+    def _show_provider_selection(self) -> None:
+        if not self._selection_context_current():
+            return
+        if self._provider_profiles is not None:
+            self._sync_provider_metadata(self._creation_provider, publish_balance=False)
+        if self._creation_provider is ProviderId.VSEGPT:
+            self._pending_model = None
+            self._show_model_selection(ChatMode.PAID)
+            return
         self._show_mode_selection()
 
     def _show_mode_selection(self) -> None:
+        if self._creation_provider is ProviderId.VSEGPT:
+            self._show_model_selection(ChatMode.PAID)
+            return
         catalog = self._catalog
         if catalog is None:
             return
@@ -2857,6 +3065,16 @@ class ChatSessionController:
             ):
                 await self.refresh_chat_catalog()
 
+        async def check_key() -> None:
+            if (
+                self._catalog is catalog
+                and self._connection_change is change
+                and self._chat_creation is creation
+                and self._selection_view is view
+            ):
+                await self.request_key_revalidation()
+
+        self._dispose_selection_view()
         self._clear_workspace()
         view = ModeSelectionView(
             catalog,
@@ -2867,7 +3085,11 @@ class ChatSessionController:
             provider_id=self._creation_provider,
             changing_provider=change is not None,
             on_refresh=refresh,
+            on_check_key=check_key,
+            key_check_busy=self._selection_key_task is not None,
+            key_notice=self._selection_key_notice,
         )
+        self._selection_view = view
         self._screen = _ChatScreen.MODE_SELECTION
         self._replace_page(view.control)
 

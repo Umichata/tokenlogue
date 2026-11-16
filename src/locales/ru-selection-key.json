@@ -1,0 +1,13 @@
+{
+  "selection.connection": "Подключение · {provider}",
+  "selection.key.check": "Проверить ключ",
+  "selection.key.checking": "Проверяем ключ {provider}…",
+  "selection.key.not_checked": "Ключ {provider} не проверен.",
+  "selection.key.accepted": "Ключ принят сервисом {provider}.",
+  "selection.key.failed": "Не удалось проверить ключ. Повторите попытку.",
+  "selection.models.vsegpt": "Выберите модель VSEGPT",
+  "selection.models.vsegpt_paid": "Tokenlogue использует платный режим для VSEGPT. На следующем шаге задайте бюджет чата в RUB.",
+  "selection.models.check_key": "Проверьте ключ {provider} перед выбором модели.",
+  "selection.catalog.unavailable": "Список моделей недоступен. Обновите его или вернитесь назад.",
+  "selection.key.vsegpt_balance_unavailable": "Баланс сервиса недоступен для этой проверки. Ключ остаётся непроверенным."
+}

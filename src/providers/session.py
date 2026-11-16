@@ -10,7 +10,12 @@ from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
 from typing import Protocol
 
-from api.openrouter import CreditsResult, CreditsStatus, KeyValidationResult
+from api.openrouter import (
+    CreditsResult,
+    CreditsStatus,
+    KeyValidationResult,
+    KeyValidationStatus,
+)
 from auth.key_validation import interpret_key_validation
 from auth.models import KeyLimitInfo, KeyValidityState
 from chat.account_balance import (
@@ -45,6 +50,7 @@ class ProviderState:
     checked_at: datetime | None = None
     warning: bool = False
     subscription_active: bool | None = None
+    last_validation_status: KeyValidationStatus | None = None
 
 
 class _Reader:
@@ -54,10 +60,13 @@ class _Reader:
 
     async def get_credits(self, api_key: str, /) -> CreditsResult:
         revision = self.owner.credential_revision(self.provider)
+        authorization = self.owner._authorization_sequence[self.provider]
         result = await self.owner._api.get_credits(api_key)
-        if revision == self.owner.credential_revision(
-            self.provider
-        ) and self.owner.key_is_current(self.provider, api_key):
+        if (
+            revision == self.owner.credential_revision(self.provider)
+            and self.owner.key_is_current(self.provider, api_key)
+            and (authorization == self.owner._authorization_sequence[self.provider])
+        ):
             self.owner._balance_authorization(self.provider, result)
         return result
 
@@ -65,9 +74,16 @@ class _Reader:
 class ProviderProfiles:
     """No keys enter public DTOs, preferences, database rows or exception text."""
 
-    def __init__(self, credentials: FletSecureCredentials, api: ProviderAPI) -> None:
+    def __init__(
+        self,
+        credentials: FletSecureCredentials,
+        api: ProviderAPI,
+        *,
+        validation_timeout_seconds: float = 12.0,
+    ) -> None:
         self._credentials = credentials
         self._api = api
+        self._validation_timeout = min(12.0, max(0.001, validation_timeout_seconds))
         self._epoch = 0
         self._active = False
         self._default_provider = ProviderId.OPENROUTER
@@ -78,6 +94,10 @@ class ProviderProfiles:
         self._check_sequence = dict.fromkeys(ProviderId, 0)
         self._states = {p: ProviderState(p) for p in ProviderId}
         self._refresh_tasks: dict[ProviderId, asyncio.Task[None]] = {}
+        self._validation_tasks: dict[
+            ProviderId, asyncio.Task[KeyValidationResult | None]
+        ] = {}
+        self._authorization_sequence = dict.fromkeys(ProviderId, 0)
         self._write_locks = {provider: asyncio.Lock() for provider in ProviderId}
         self._default_lock = asyncio.Lock()
         self._on_change: Callable[[], None] = lambda: None
@@ -203,9 +223,10 @@ class ProviderProfiles:
         self._keys.clear()
         self._revisions.clear()
         self._checks.clear()
-        for task in self._refresh_tasks.values():
+        for task in (*self._refresh_tasks.values(), *self._validation_tasks.values()):
             task.cancel()
         self._refresh_tasks.clear()
+        self._validation_tasks.clear()
         self._states = {p: ProviderState(p) for p in ProviderId}
         for service in self._balances.values():
             service.invalidate()
@@ -263,6 +284,9 @@ class ProviderProfiles:
             previous_refresh = self._refresh_tasks.pop(provider, None)
             if previous_refresh is not None:
                 previous_refresh.cancel()
+            previous_validation = self._validation_tasks.pop(provider, None)
+            if previous_validation is not None:
+                previous_validation.cancel()
             self._balances[provider].invalidate()
             self._balances[provider].begin_session(provider)
             self.apply_validation(provider, normalized, result)
@@ -298,6 +322,7 @@ class ProviderProfiles:
         if not self.key_is_current(provider, key) or result.provider_id is not provider:
             return
         validity, limit = interpret_key_validation(result)
+        self._authorization_sequence[provider] += 1
         self._states[provider] = replace(
             self._states[provider],
             has_saved_key=True,
@@ -306,6 +331,7 @@ class ProviderProfiles:
             checked_at=datetime.now(UTC),
             warning=result.warning,
             subscription_active=result.subscription_active,
+            last_validation_status=result.status,
         )
         self._notify()
 
@@ -315,36 +341,131 @@ class ProviderProfiles:
         *,
         after_response: bool = False,
         validate_key: bool = False,
-    ) -> None:
+    ) -> KeyValidationResult | None:
+        """Check one captured slot without losing stronger concurrent intent.
+
+        Authorization has its own coalesced flight and deadline. Balance I/O
+        cannot consume or delay an explicit check, and optional balance work
+        never delays returning its safe result to the selection screen.
+        """
         key = self.key_for(provider)
         if key is None:
-            return
+            return None
+        revision = self.credential_revision(provider)
+        if validate_key:
+            task = self._validation_tasks.get(provider)
+            if task is None or task.done():
+                # Any older VSEGPT balance response must no longer change
+                # authorization while this newer explicit check is pending.
+                self._authorization_sequence[provider] += 1
+
+                async def validate() -> KeyValidationResult | None:
+                    result = await self._validate_saved_key(provider, key)
+                    if not self._refresh_current(provider, key, revision):
+                        return None
+                    self.apply_validation(provider, key, result)
+                    return result
+
+                task = asyncio.create_task(validate())
+                self._validation_tasks[provider] = task
+
+                def validated(
+                    completed: asyncio.Task[KeyValidationResult | None],
+                ) -> None:
+                    if self._validation_tasks.get(provider) is completed:
+                        self._validation_tasks.pop(provider, None)
+                    self._consume_finished(completed)
+
+                task.add_done_callback(validated)
+            try:
+                result = await asyncio.shield(task)
+            except asyncio.CancelledError:
+                caller = asyncio.current_task()
+                if caller is not None and caller.cancelling():
+                    raise
+                return None
+            if not self._refresh_current(provider, key, revision):
+                return None
+            self._start_balance_refresh(provider, key, revision, after_response)
+            return result
+
+        balance = self._start_balance_refresh(provider, key, revision, after_response)
+        try:
+            await asyncio.shield(balance)
+        except asyncio.CancelledError:
+            caller = asyncio.current_task()
+            if caller is not None and caller.cancelling():
+                raise
+        return None
+
+    def _refresh_current(
+        self, provider: ProviderId, key: str, revision: object
+    ) -> bool:
+        return (
+            self._active
+            and revision == self.credential_revision(provider)
+            and self.key_is_current(provider, key)
+        )
+
+    def _start_balance_refresh(
+        self, provider: ProviderId, key: str, revision: object, after_response: bool
+    ) -> asyncio.Task[None]:
         previous = self._refresh_tasks.get(provider)
         if previous is not None and not previous.done():
-            await asyncio.shield(previous)
-            return
-
-        revision = self.credential_revision(provider)
+            return previous
 
         async def read() -> None:
-            if validate_key and provider is ProviderId.OPENROUTER:
-                result = await self._api.validate_key(key)
-                if revision == self.credential_revision(provider):
-                    self.apply_validation(provider, key, result)
-            if revision == self.credential_revision(provider) and self.key_is_current(
-                provider, key
-            ):
+            if self._refresh_current(provider, key, revision):
                 await self._balances[provider].refresh(
                     key, after_response=after_response
                 )
 
         task = asyncio.create_task(read())
         self._refresh_tasks[provider] = task
-        try:
-            await asyncio.shield(task)
-        finally:
-            if self._refresh_tasks.get(provider) is task and task.done():
+
+        def completed(finished: asyncio.Task[None]) -> None:
+            if self._refresh_tasks.get(provider) is finished:
                 self._refresh_tasks.pop(provider, None)
+            self._consume_finished(finished)
+
+        task.add_done_callback(completed)
+        return task
+
+    async def _validate_saved_key(
+        self, provider: ProviderId, key: str
+    ) -> KeyValidationResult:
+        # The API adapter supplies the authorized contract for each service.
+        # In particular, a public model list never confirms a VSEGPT key.
+        call = asyncio.create_task(self._api.validate_key(key))
+        try:
+            done, _pending = await asyncio.wait(
+                (call,), timeout=self._validation_timeout
+            )
+            if not done:
+                call.cancel()
+                call.add_done_callback(self._consume_finished)
+                return KeyValidationResult(
+                    KeyValidationStatus.TIMEOUT, provider_id=provider
+                )
+            result = call.result()
+            if result.provider_id is not provider:
+                return KeyValidationResult(
+                    KeyValidationStatus.INVALID_RESPONSE, provider_id=provider
+                )
+            return result
+        except asyncio.CancelledError:
+            call.cancel()
+            call.add_done_callback(self._consume_finished)
+            raise
+        except Exception:
+            return KeyValidationResult(
+                KeyValidationStatus.NETWORK_ERROR, provider_id=provider
+            )
+
+    @staticmethod
+    def _consume_finished(task: asyncio.Task) -> None:
+        if not task.cancelled():
+            task.exception()
 
     def _balance_authorization(
         self, provider: ProviderId, result: CreditsResult

@@ -10,6 +10,8 @@ from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
+import httpx
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from api.openrouter import (  # noqa: E402
@@ -18,6 +20,7 @@ from api.openrouter import (  # noqa: E402
     KeyValidationResult,
     KeyValidationStatus,
 )
+from api.provider_router import ProviderRouter  # noqa: E402
 from auth.models import KeyLimitInfo, KeyValidityState  # noqa: E402
 from chat.account_balance import AccountBalanceState  # noqa: E402
 from providers.models import Currency, ProviderId, detect_key  # noqa: E402
@@ -505,6 +508,340 @@ class ProviderSessionTests(unittest.IsolatedAsyncioTestCase):
         )
         self.assertEqual(
             self.profiles.balance_for(ProviderId.VSEGPT).balance_amount, 250
+        )
+
+    async def test_strong_refresh_waiting_on_balance_performs_one_target_validation(
+        self,
+    ):
+        for provider, key in (
+            (ProviderId.OPENROUTER, OR_OLD),
+            (ProviderId.VSEGPT, VV_OLD),
+        ):
+            with self.subTest(provider=provider):
+                self.api.validations.clear()
+                self.api.balances.clear()
+                balance_gate = self.api.balance_gates[key] = Gate()
+                check_gate = self.api.validation_gates[key] = Gate()
+                balance = asyncio.create_task(self.profiles.refresh(provider))
+                await balance_gate.entered.wait()
+                strong1 = asyncio.create_task(
+                    self.profiles.refresh(provider, validate_key=True)
+                )
+                strong2 = asyncio.create_task(
+                    self.profiles.refresh(provider, validate_key=True)
+                )
+                await check_gate.entered.wait()
+                self.assertFalse(balance.done())
+                self.assertEqual(self.api.validations, [key])
+                self.assertFalse(strong1.done())
+                self.assertFalse(strong2.done())
+                check_gate.release.set()
+                first, second = await asyncio.gather(strong1, strong2)
+                self.assertFalse(balance.done())
+                balance_gate.release.set()
+                await balance
+                self.assertIs(first, second)
+                assert first is not None
+                self.assertEqual(first.provider_id, provider)
+                self.assertTrue(first.accepted)
+                self.assertEqual(self.api.validations, [key])
+                self.assertEqual(
+                    self.profiles.state(provider).last_validation_status, first.status
+                )
+                self.api.balance_gates.pop(key)
+                self.api.validation_gates.pop(key)
+
+    async def test_cancelled_waiter_does_not_cancel_shared_strong_check(self):
+        gate = self.api.validation_gates[OR_OLD] = Gate()
+        first = asyncio.create_task(
+            self.profiles.refresh(ProviderId.OPENROUTER, validate_key=True)
+        )
+        await gate.entered.wait()
+        second = asyncio.create_task(
+            self.profiles.refresh(ProviderId.OPENROUTER, validate_key=True)
+        )
+        await asyncio.sleep(0)
+        first.cancel()
+        with self.assertRaises(asyncio.CancelledError):
+            await first
+        self.assertFalse(second.done())
+        gate.release.set()
+        result = await second
+        assert result is not None
+        self.assertTrue(result.accepted)
+        self.assertEqual(self.api.validations, [OR_OLD])
+        self.assertEqual(self.profiles.key_for(ProviderId.OPENROUTER), OR_OLD)
+
+    async def test_saved_validation_errors_are_typed_and_retry_keeps_same_slot(self):
+        self.api.balance_results[OR_OLD] = CreditsResult(CreditsStatus.RESTRICTED)
+        for status in (
+            KeyValidationStatus.NETWORK_ERROR,
+            KeyValidationStatus.TIMEOUT,
+            KeyValidationStatus.TLS_ERROR,
+            KeyValidationStatus.RESTRICTED,
+            KeyValidationStatus.RATE_LIMITED,
+            KeyValidationStatus.SERVER_ERROR,
+            KeyValidationStatus.INVALID_RESPONSE,
+            KeyValidationStatus.INVALID,
+        ):
+            with self.subTest(status=status):
+                self.api.results[OR_OLD] = validation(OR_OLD, status)
+                result = await self.profiles.refresh(
+                    ProviderId.OPENROUTER, validate_key=True
+                )
+                assert result is not None
+                self.assertEqual(result.status, status)
+                self.assertEqual(
+                    self.profiles.state(ProviderId.OPENROUTER).last_validation_status,
+                    status,
+                )
+                self.assertEqual(self.profiles.key_for(ProviderId.OPENROUTER), OR_OLD)
+                self.assertEqual(self.profiles.key_for(ProviderId.VSEGPT), VV_OLD)
+                self.assertNotIn(
+                    OR_OLD, repr(self.profiles.state(ProviderId.OPENROUTER))
+                )
+                self.api.results[OR_OLD] = KeyValidationResult(
+                    KeyValidationStatus.ACCEPTED, limit_remaining=Decimal("4.25")
+                )
+                retry = await self.profiles.refresh(
+                    ProviderId.OPENROUTER, validate_key=True
+                )
+                assert retry is not None
+                self.assertTrue(retry.accepted)
+                self.assertEqual(
+                    self.profiles.key_validity_for(ProviderId.OPENROUTER),
+                    KeyValidityState.VALID,
+                )
+                self.assertEqual(
+                    self.profiles.key_limit_for(ProviderId.OPENROUTER).remaining,
+                    Decimal("4.25"),
+                )
+                await self.profiles.refresh(ProviderId.OPENROUTER)
+                self.assertEqual(
+                    self.profiles.balance_for(ProviderId.OPENROUTER).error,
+                    CreditsStatus.RESTRICTED,
+                )
+
+    async def test_vsegpt_saved_key_check_uses_authorized_contract_not_catalogue(self):
+        for status in (200, 403, 401):
+            with self.subTest(status=status):
+                observed = []
+
+                def handler(request):
+                    observed.append(request)
+                    if status == 200:
+                        return httpx.Response(
+                            200,
+                            json={
+                                "status": "ok",
+                                "data": {
+                                    "credits": "0",
+                                    "subscription_status": "ok",
+                                    "user_status": 0,
+                                },
+                            },
+                        )
+                    return httpx.Response(status)
+
+                profiles = ProviderProfiles(
+                    self.credentials,
+                    ProviderRouter(transport=httpx.MockTransport(handler)),
+                )
+                await profiles.activate(
+                    OR_OLD, KeyValidityState.VALID, KeyLimitInfo.unknown()
+                )
+                result = await profiles.refresh(ProviderId.VSEGPT, validate_key=True)
+                assert result is not None
+                expected = {
+                    200: KeyValidationStatus.ACCEPTED_WITHOUT_LIMIT,
+                    403: KeyValidationStatus.UNVERIFIED,
+                    401: KeyValidationStatus.INVALID,
+                }[status]
+                self.assertEqual(result.status, expected)
+                self.assertEqual(
+                    profiles.state(ProviderId.VSEGPT).last_validation_status, expected
+                )
+                if status == 403:
+                    self.assertEqual(
+                        profiles.key_validity_for(ProviderId.VSEGPT),
+                        KeyValidityState.UNVERIFIED,
+                    )
+                self.assertTrue(observed)
+                for request in observed:
+                    self.assertEqual(request.method, "GET")
+                    self.assertEqual(request.url.host, "api.vsegpt.ru")
+                    self.assertEqual(request.url.path, "/v1/balance")
+                    self.assertEqual(
+                        request.headers["Authorization"], "Bearer " + VV_OLD
+                    )
+                self.assertEqual(
+                    profiles.key_validity_for(ProviderId.OPENROUTER),
+                    KeyValidityState.VALID,
+                )
+                profiles.deactivate()
+
+    async def test_timeout_is_bounded_even_if_old_adapter_ignores_cancellation(self):
+        profiles = ProviderProfiles(
+            self.credentials, self.api, validation_timeout_seconds=0.01
+        )
+        await profiles.activate(OR_OLD, KeyValidityState.VALID, KeyLimitInfo.unknown())
+        gate = self.api.validation_gates[OR_OLD] = Gate()
+        self.api.ignore_validation_cancellation.add(OR_OLD)
+        result = await asyncio.wait_for(
+            profiles.refresh(ProviderId.OPENROUTER, validate_key=True), 0.5
+        )
+        assert result is not None
+        self.assertEqual(result.status, KeyValidationStatus.TIMEOUT)
+        self.assertEqual(
+            profiles.state(ProviderId.OPENROUTER).last_validation_status,
+            KeyValidationStatus.TIMEOUT,
+        )
+        self.api.validation_gates.pop(OR_OLD)
+        self.api.results[OR_OLD] = validation(OR_OLD)
+        retry = await profiles.refresh(ProviderId.OPENROUTER, validate_key=True)
+        assert retry is not None
+        self.assertTrue(retry.accepted)
+        gate.release.set()
+        await asyncio.sleep(0)
+        self.assertEqual(
+            profiles.state(ProviderId.OPENROUTER).last_validation_status, retry.status
+        )
+        self.assertEqual(profiles.key_for(ProviderId.OPENROUTER), OR_OLD)
+        profiles.deactivate()
+
+    async def test_old_cancelled_flight_cleanup_cannot_remove_new_shared_validation(
+        self,
+    ):
+        old_gate, new_gate = Gate(), Gate()
+
+        class OrderedAPI(FakeAPI):
+            async def validate_key(self, api_key: str) -> KeyValidationResult:
+                index = len(self.validations)
+                self.validations.append(api_key)
+                gate = (old_gate, new_gate)[index]
+                result = validation(
+                    api_key,
+                    KeyValidationStatus.INVALID
+                    if index == 0
+                    else KeyValidationStatus.ACCEPTED_WITHOUT_LIMIT,
+                )
+                try:
+                    await gate.wait()
+                except asyncio.CancelledError:
+                    await gate.release.wait()
+                return result
+
+        api = OrderedAPI()
+        profiles = ProviderProfiles(self.credentials, api)
+        await profiles.activate(OR_OLD, KeyValidityState.VALID, KeyLimitInfo.unknown())
+        old = asyncio.create_task(
+            profiles.refresh(ProviderId.OPENROUTER, validate_key=True)
+        )
+        await old_gate.entered.wait()
+        profiles.deactivate()
+        await profiles.activate(OR_OLD, KeyValidityState.VALID, KeyLimitInfo.unknown())
+        current = asyncio.create_task(
+            profiles.refresh(ProviderId.OPENROUTER, validate_key=True)
+        )
+        await new_gate.entered.wait()
+        old_gate.release.set()
+        await asyncio.gather(old, return_exceptions=True)
+        await asyncio.sleep(0)
+        self.assertIsNone(profiles.state(ProviderId.OPENROUTER).last_validation_status)
+        joined = asyncio.create_task(
+            profiles.refresh(ProviderId.OPENROUTER, validate_key=True)
+        )
+        await asyncio.sleep(0)
+        self.assertEqual(api.validations, [OR_OLD, OR_OLD])
+        self.assertFalse(current.done())
+        new_gate.release.set()
+        first, second = await asyncio.gather(current, joined)
+        self.assertIs(first, second)
+        assert first is not None
+        self.assertTrue(first.accepted)
+        self.assertEqual(
+            profiles.key_validity_for(ProviderId.OPENROUTER), KeyValidityState.VALID
+        )
+        profiles.deactivate()
+
+    async def test_wrong_provider_and_unexpected_errors_are_safe_current_slot_results(
+        self,
+    ):
+        self.api.results[OR_OLD] = validation(VV_OLD)
+        result = await self.profiles.refresh(ProviderId.OPENROUTER, validate_key=True)
+        assert result is not None
+        self.assertEqual(result.provider_id, ProviderId.OPENROUTER)
+        self.assertEqual(result.status, KeyValidationStatus.INVALID_RESPONSE)
+        self.assertEqual(self.profiles.key_for(ProviderId.OPENROUTER), OR_OLD)
+
+        class FailingAPI(FakeAPI):
+            async def validate_key(self, api_key: str) -> KeyValidationResult:
+                raise RuntimeError("private failure " + api_key)
+
+        profiles = ProviderProfiles(self.credentials, FailingAPI())
+        await profiles.activate(OR_OLD, KeyValidityState.VALID, KeyLimitInfo.unknown())
+        failed = await profiles.refresh(ProviderId.OPENROUTER, validate_key=True)
+        assert failed is not None
+        self.assertEqual(failed.status, KeyValidationStatus.NETWORK_ERROR)
+        self.assertNotIn(OR_OLD, repr(failed))
+        self.assertEqual(profiles.key_for(ProviderId.OPENROUTER), OR_OLD)
+        profiles.deactivate()
+
+    async def test_queued_strong_refresh_does_not_validate_replaced_credential(self):
+        gate = self.api.balance_gates[OR_OLD] = Gate()
+        check_gate = self.api.validation_gates[OR_OLD] = Gate()
+        balance = asyncio.create_task(self.profiles.refresh(ProviderId.OPENROUTER))
+        await gate.entered.wait()
+        strong = asyncio.create_task(
+            self.profiles.refresh(ProviderId.OPENROUTER, validate_key=True)
+        )
+        await check_gate.entered.wait()
+        await self.profiles.check(ProviderId.OPENROUTER, OR_NEW)
+        await self.profiles.save(ProviderId.OPENROUTER, OR_NEW, allow_unverified=False)
+        gate.release.set()
+        check_gate.release.set()
+        await asyncio.gather(balance, return_exceptions=True)
+        self.assertIsNone(await strong)
+        self.assertEqual(self.api.validations, [OR_OLD, OR_NEW])
+        self.assertEqual(self.profiles.key_for(ProviderId.OPENROUTER), OR_NEW)
+
+    async def test_authorization_success_returns_before_slow_balance_finishes(self):
+        gate = self.api.balance_gates[OR_OLD] = Gate()
+        balance = asyncio.create_task(self.profiles.refresh(ProviderId.OPENROUTER))
+        await gate.entered.wait()
+        result = await asyncio.wait_for(
+            self.profiles.refresh(ProviderId.OPENROUTER, validate_key=True), 0.5
+        )
+        assert result is not None
+        self.assertTrue(result.accepted)
+        self.assertFalse(balance.done())
+        self.assertEqual(self.api.validations, [OR_OLD])
+        self.assertEqual(
+            self.profiles.state(ProviderId.OPENROUTER).last_validation_status,
+            result.status,
+        )
+        gate.release.set()
+        await balance
+
+    async def test_older_vsegpt_balance_cannot_override_new_explicit_key_failure(self):
+        gate = self.api.balance_gates[VV_OLD] = Gate()
+        balance = asyncio.create_task(self.profiles.refresh(ProviderId.VSEGPT))
+        await gate.entered.wait()
+        self.api.results[VV_OLD] = validation(VV_OLD, KeyValidationStatus.INVALID)
+        result = await self.profiles.refresh(ProviderId.VSEGPT, validate_key=True)
+        assert result is not None
+        self.assertEqual(result.status, KeyValidationStatus.INVALID)
+        self.assertEqual(
+            self.profiles.key_validity_for(ProviderId.VSEGPT), KeyValidityState.INVALID
+        )
+        gate.release.set()
+        await balance
+        self.assertEqual(
+            self.profiles.key_validity_for(ProviderId.VSEGPT), KeyValidityState.INVALID
+        )
+        self.assertEqual(
+            self.profiles.state(ProviderId.VSEGPT).last_validation_status,
+            KeyValidationStatus.INVALID,
         )
 
     async def test_late_old_balance_cannot_overwrite_replaced_key_snapshot(self):

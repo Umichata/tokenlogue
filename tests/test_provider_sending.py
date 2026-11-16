@@ -106,7 +106,7 @@ class FakeProviderProfiles:
         *,
         after_response: bool = False,
         validate_key: bool = False,
-    ) -> None:
+    ) -> KeyValidationResult | None:
         self.refreshes.append((provider, after_response))
 
 

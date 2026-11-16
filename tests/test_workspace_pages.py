@@ -664,7 +664,14 @@ class WorkspacePagesTests(unittest.IsolatedAsyncioTestCase):
             pricing_unit=PriceUnit.UNKNOWN,
             pricing_is_complete=False,
         )
-        view = ModelSelectionView(ChatMode.PAID, (model,), AsyncMock(), AsyncMock())
+        view = ModelSelectionView(
+            ChatMode.PAID,
+            (model,),
+            AsyncMock(),
+            AsyncMock(),
+            provider_id=ProviderId.VSEGPT,
+            key_validity=KeyValidityState.UNVERIFIED,
+        )
         labels = " ".join(
             str(item.value or "")
             for item in walk(view.control)

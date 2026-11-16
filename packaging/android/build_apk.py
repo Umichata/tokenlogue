@@ -38,6 +38,8 @@ OWN_FILES = (
     "src/providers/quota.py",
     "src/locales/en-daily-catalogue.json",
     "src/locales/ru-daily-catalogue.json",
+    "src/locales/en-selection-key.json",
+    "src/locales/ru-selection-key.json",
     "src/locales/en-chat-connection.json",
     "src/locales/ru-chat-connection.json",
     "src/locales/en-providers-analytics.json",
