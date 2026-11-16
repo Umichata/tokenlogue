@@ -48,6 +48,6 @@ The [Tokenlogue device adapter](../recovery_bridge.dart) and [template configura
 
 The source archives and checksums identify the materials supplied for these components. Source-to-binary correspondence for every native wheel is not fully documented, and the collection does not provide a complete offline Android build environment.
 
-The Mobile Forge CFFI recipe does not pin the host libffi version. The exact libffi inside the selected CFFI wheel remains unidentified; it is separate from the libffi supplied with the Android Python runtime. Original CFFI notices are included.
+The Mobile Forge CFFI recipe does not pin the host libffi version. The exact libffi inside the selected CFFI wheel remains unidentified. Details of libffi supplied with the Android Python runtime do not identify that library. Original CFFI notices are included.
 
 See <a href="../../../docs/source-materials.md#english" title="source materials and remaining provenance limits">source materials and remaining provenance limits&nbsp;<img src="../../../docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> for the wider collection. <a href="../../../THIRD_PARTY_NOTICES.md#english" title="Third-party notices">Third-party notices&nbsp;<img src="../../../docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> explain the licensing materials.

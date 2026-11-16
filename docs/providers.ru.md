@@ -16,7 +16,7 @@
 
 | Linux | Эмулятор Android |
 | --- | --- |
-| <a href="assets/screenshots/v011-linux-provider-policy-ru.png"><img src="assets/screenshots/v011-linux-provider-policy-ru.png" alt="Выбрана отдельная форма ключа VSEGPT в Linux" width="560"></a> | <a href="assets/screenshots/v011-android-provider-policy-ru.png"><img src="assets/screenshots/v011-android-provider-policy-ru.png" alt="Отдельные формы провайдеров в эмуляторе Android" width="300"></a> |
+| <a href="assets/screenshots/v011-55-linux-providers-ru.png"><img src="assets/screenshots/v011-55-linux-providers-ru.png" alt="Отдельные карточки OpenRouter и VSEGPT и выпадающий фильтр в Linux" width="560"></a> | <a href="assets/screenshots/v011-55-android-providers-ru.png"><img src="assets/screenshots/v011-55-android-providers-ru.png" alt="Отдельные формы провайдеров в эмуляторе Android" width="300"></a> |
 
 *Демонстрационные данные. Кадры Android сняты в эмуляторе.*
 

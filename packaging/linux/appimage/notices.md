@@ -9,7 +9,7 @@
 <a id="english"></a>
 <a id="lang-en"></a>
 
-The Linux package carries the original licenses and copyright notices for its included software. Tokenlogue's own code uses the <a href="../../../LICENSE" title="MIT license">MIT license&nbsp;<img src="../../../docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a>.
+The AppImage package carries the original licenses and copyright notices for its included software. Tokenlogue's own code uses the <a href="../../../LICENSE" title="MIT license">MIT license&nbsp;<img src="../../../docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a>.
 
 <a id="-find-the-original-texts"></a>
 ## <img src="../../../docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> License files

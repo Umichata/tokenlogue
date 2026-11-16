@@ -9,7 +9,7 @@
 <a id="russian"></a>
 <a id="lang-ru"></a>
 
-Пакет Linux содержит оригинальные лицензии и уведомления об авторских правах включённого программного обеспечения. Собственный код Tokenlogue распространяется по <a href="../../../LICENSE" title="лицензии MIT">лицензии MIT&nbsp;<img src="../../../docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a>.
+Пакет AppImage содержит оригинальные лицензии и уведомления об авторских правах включённого программного обеспечения. Собственный код Tokenlogue распространяется по <a href="../../../LICENSE" title="лицензии MIT">лицензии MIT&nbsp;<img src="../../../docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a>.
 
 <a id="-где-найти-оригинальные-тексты"></a>
 ## <img src="../../../docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Файлы лицензий

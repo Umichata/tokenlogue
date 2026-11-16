@@ -22,11 +22,13 @@
 
 A VSEGPT-only profile needs no OpenRouter key. Add the second service later through [Providers](providers.md). Subsequent sign-ins and recovery use your existing protected profile rather than opening a new registration.
 
-<a href="assets/screenshots/v011-android-first-run-en.png"><img src="assets/screenshots/v011-android-first-run-en.png" alt="First provider connection in an Android emulator" width="320"></a>
+| Linux | Android emulator |
+| --- | --- |
+| <a href="assets/screenshots/v011-55-linux-first-run-en.png"><img src="assets/screenshots/v011-55-linux-first-run-en.png" alt="Empty first-connection form on Linux" width="560"></a> | <a href="assets/screenshots/v011-55-android-start-en.png"><img src="assets/screenshots/v011-55-android-start-en.png" alt="Empty first-connection form in an Android emulator" width="300"></a> |
 
-*Demonstration setup with a masked synthetic key.*
+*Separate demonstration profiles before entering a key.*
 
-[Choosing an app PIN](assets/screenshots/v011-android-pin-setup-en.png) shows the next step without displaying a PIN.
+[Choosing an app PIN](assets/screenshots/v011-android-pin-setup-en.png) shows the next step without displaying a PIN. See also the [Linux PIN setup](assets/screenshots/v011-55-linux-pin-setup-en.png).
 
 ## Navigate without losing your place
 
@@ -46,24 +48,25 @@ When a catalogue cannot load, the app shows a specific reason and **Refresh list
 
 Use the conversation list to reopen a chat. **Rename** preserves its history and draft. **Delete chat** asks for confirmation and removes that chat, its draft and its local statistics. Header shortcuts can hide when the keyboard leaves too little height. The **⋮** menu holds model details, limits, key information and profile actions.
 
-[New chat and model choice](assets/screenshots/v011-android-models-en.png) · [Rename](assets/screenshots/v011-android-rename-en.png) · [Delete chat](assets/screenshots/v011-android-delete-chat-en.png) · [Chat limits](assets/screenshots/v011-android-chat-limits-en.png)
+[New chat and model choice](assets/screenshots/v011-55-android-vsegpt-models-en.png) · [Rename](assets/screenshots/v011-55-android-rename-chat-en.png) · [Delete chat](assets/screenshots/v011-55-android-delete-chat-en.png) · [Chat limits](assets/screenshots/v011-55-android-paid-limits-en.png)
 
 *Demonstration conversation actions in an Android emulator. Model names come from the service catalogue.*
 
-<a id="en-chat-connection"></a>
+[Rename on Linux](assets/screenshots/v011-55-linux-rename-chat-en.png).
+
 <a id="en-new-chat-provider"></a>
 
 ### Choose a provider for a new chat
 
 | Linux | Android emulator |
 | --- | --- |
-| <a href="assets/screenshots/v011-linux-new-chat-provider-en.png"><img src="assets/screenshots/v011-linux-new-chat-provider-en.png" alt="Provider choice for a new chat on Linux" width="560"></a> | <a href="assets/screenshots/v011-android-new-chat-provider-en.png"><img src="assets/screenshots/v011-android-new-chat-provider-en.png" alt="Provider choice for a new chat in an Android emulator" width="300"></a> |
+| <a href="assets/screenshots/v011-55-linux-new-chat-provider-en.png"><img src="assets/screenshots/v011-55-linux-new-chat-provider-en.png" alt="Provider choice for a new chat on Linux" width="560"></a> | <a href="assets/screenshots/v011-55-android-new-chat-provider-en.png"><img src="assets/screenshots/v011-55-android-new-chat-provider-en.png" alt="Provider choice for a new chat in an Android emulator" width="300"></a> |
 
 | Linux | Android emulator |
 | --- | --- |
-| <a href="assets/screenshots/v011-linux-vsegpt-models-en.png"><img src="assets/screenshots/v011-linux-vsegpt-models-en.png" alt="Direct VSEGPT model selection on Linux" width="560"></a> | <a href="assets/screenshots/v011-android-vsegpt-models-en.png"><img src="assets/screenshots/v011-android-vsegpt-models-en.png" alt="Direct VSEGPT model selection in an Android emulator" width="300"></a> |
+| <a href="assets/screenshots/v011-55-linux-vsegpt-models-search-en.png"><img src="assets/screenshots/v011-55-linux-vsegpt-models-search-en.png" alt="Direct VSEGPT model selection on Linux" width="560"></a> | <a href="assets/screenshots/v011-55-android-vsegpt-models-en.png"><img src="assets/screenshots/v011-55-android-vsegpt-models-en.png" alt="Direct VSEGPT model selection in an Android emulator" width="300"></a> |
 
-*Demonstration profiles in the actual Linux bundle and Android emulator. No paid request was sent.*
+*Demonstration profiles. The Linux model list is shown during a provider change, and the Android list during new-chat creation. Both open VSEGPT models directly. No paid request was sent.*
 
 <a id="en-check-saved-key"></a>
 
@@ -83,9 +86,21 @@ When VSEGPT balance access is disabled in the service settings, the key stays un
 | --- | --- |
 | <a href="assets/screenshots/v011-linux-openrouter-key-result-en.png"><img src="assets/screenshots/v011-linux-openrouter-key-result-en.png" alt="Real service rejection of a deliberately fake OpenRouter key on Linux" width="560"></a> | <a href="assets/screenshots/v011-android-openrouter-key-result-en.png"><img src="assets/screenshots/v011-android-openrouter-key-result-en.png" alt="Network error during an offline OpenRouter key check in an Android emulator" width="300"></a> |
 
-*Linux uses a separate demonstration profile with a deliberately fake key in protected storage. The real service rejects that key. Android shows a separate protected test profile with networking deliberately disabled, so its check reports a network error. Neither result demonstrates successful authorization. No chat message was sent.*
+*Demonstration profiles. Linux shows a real rejection of a deliberately fake key. Android shows an intentional offline network error. Neither image shows successful authorization.*
+
+<a id="en-successful-key-check"></a>
+
+### After a successful saved-key check
+
+<a href="assets/screenshots/v011-55-linux-openrouter-key-accepted-en.png"><img src="assets/screenshots/v011-55-linux-openrouter-key-accepted-en.png" alt="OpenRouter accepted status on Linux" width="560"></a>
+
+<a href="assets/screenshots/v011-55-android-openrouter-accepted-en.png"><img src="assets/screenshots/v011-55-android-openrouter-accepted-en.png" alt="OpenRouter accepted status on Android" width="560"></a>
+
+*Details from the real app after checking the saved key. The figures show the provider and result, excluding personal amounts and key limits. The mode examples above show the controls.*
 
 During manual creation, Back from VSEGPT models returns to the provider choice. With a fixed VSEGPT preference, it cancels creation and returns to chats. While changing a connection, Back returns to the service choice and keeps the existing connection. Back from the limits form returns to the model list. Cancel preserves the previous draft.
+
+<a id="en-chat-connection"></a>
 
 ## Chat connection and provider changes
 
@@ -108,13 +123,19 @@ Before final confirmation, Cancel or Back leaves the stored connection unchanged
 
 | Connection | Linux | Android |
 | --- | --- | --- |
-| OpenRouter | <a href="assets/screenshots/v011-linux-chat-connection-openrouter-en.png"><img src="assets/screenshots/v011-linux-chat-connection-openrouter-en.png" alt="OpenRouter chat connection and masked test key on Linux" width="320"></a> | <a href="assets/screenshots/v011-android-chat-connection-openrouter-en.png"><img src="assets/screenshots/v011-android-chat-connection-openrouter-en.png" alt="OpenRouter chat connection and key status in an Android emulator" width="220"></a> |
-| VSEGPT | <a href="assets/screenshots/v011-linux-chat-connection-vsegpt-en.png"><img src="assets/screenshots/v011-linux-chat-connection-vsegpt-en.png" alt="VSEGPT chat connection and masked test key on Linux" width="320"></a> | <a href="assets/screenshots/v011-android-chat-connection-vsegpt-en.png"><img src="assets/screenshots/v011-android-chat-connection-vsegpt-en.png" alt="VSEGPT chat connection and masked test key in an Android emulator" width="220"></a> |
+| OpenRouter | <a href="assets/screenshots/v011-55-linux-chat-connection-openrouter-en.png"><img src="assets/screenshots/v011-55-linux-chat-connection-openrouter-en.png" alt="OpenRouter chat connection and masked key on Linux" width="320"></a> | <a href="assets/screenshots/v011-55-android-chat-connection-openrouter-en.png"><img src="assets/screenshots/v011-55-android-chat-connection-openrouter-en.png" alt="OpenRouter provider and masked key in an Android emulator" width="220"></a> |
+| VSEGPT | <a href="assets/screenshots/v011-55-linux-chat-connection-vsegpt-en.png"><img src="assets/screenshots/v011-55-linux-chat-connection-vsegpt-en.png" alt="VSEGPT chat connection and masked test key on Linux" width="320"></a> | <a href="assets/screenshots/v011-55-android-chat-connection-vsegpt-en.png"><img src="assets/screenshots/v011-55-android-chat-connection-vsegpt-en.png" alt="VSEGPT chat connection and masked test key in an Android emulator" width="220"></a> |
 
-*Demonstration profiles with sample keys in the Linux app and an Android emulator. Sending requires a valid key for the chosen service. Changing the interface language does not translate existing messages.*
+*Separate demonstration profiles. Only masked key references are shown. Sending requires a valid key for the chosen service. Changing the interface language does not translate existing messages.*
 
-- Linux examples show [provider choice](assets/screenshots/v011-linux-chat-provider-picker-en.png), [the final review](assets/screenshots/v011-linux-chat-connection-review-en.png) and [the chat after a change](assets/screenshots/v011-linux-chat-after-switch-en.png).
-- Android examples show [provider choice](assets/screenshots/v011-android-chat-provider-picker-en.png), [the final review](assets/screenshots/v011-android-chat-connection-review-en.png) and [the chat after a change](assets/screenshots/v011-android-chat-after-switch-en.png).
+- Linux examples show [provider choice](assets/screenshots/v011-55-linux-chat-provider-picker-en.png), [the final review](assets/screenshots/v011-55-linux-chat-connection-review-en.png) and [the chat after a change](assets/screenshots/v011-55-linux-home-en.png).
+- Android examples show [provider choice](assets/screenshots/v011-55-android-chat-change-provider-en.png), [the final review](assets/screenshots/v011-55-android-chat-change-confirm-en.png) and [the chat after a change](assets/screenshots/v011-55-android-chat-after-change-en.png).
+
+<a id="en-connection-action-examples"></a>
+
+OpenRouter connection actions for key settings and changing provider
+
+[Linux](assets/screenshots/v011-55-linux-chat-connection-openrouter-actions-en.png).
 
 ## Messages and drafts
 
@@ -148,16 +169,39 @@ A paid request that could leave 10% or less of the chat's spending limit shows a
 
 Unknown pricing requires explicit review too. A changed draft, model, price or budget can require new consent. An estimate cannot guarantee the final charge.
 
+If model prices have changed, review the old and current prices. With ordinary confirmations enabled, **Confirm new prices** checks the request again before opening its confirmation. It does not send the message.
 
-<a href="assets/screenshots/v011-android-budget-warning-en.png"><img src="assets/screenshots/v011-android-budget-warning-en.png" alt="Unknown model-price review with three actions" width="320"></a>
 
-*Demonstration data in an Android emulator. This example asks for review because the model price is unavailable. The displayed remainder belongs to the chat budget.*
+<a id="en-known-price-warning-examples"></a>
+
+The following examples use known current catalogue prices and demonstration chat budgets. No message was sent.
+
+| Forecast | Linux | Android emulator |
+| --- | --- | --- |
+| Almost exhausted | [View](assets/screenshots/v011-55-linux-budget-near-zero-en.png) | [View](assets/screenshots/v011-55-android-budget-near-zero-en.png) |
+| Projected overrun | [View](assets/screenshots/v011-55-linux-budget-exceed-en.png) | [View](assets/screenshots/v011-55-android-budget-exceed-en.png) |
+
+<a href="assets/screenshots/v011-55-linux-price-unknown-en.png"><img src="assets/screenshots/v011-55-linux-price-unknown-en.png" alt="Review because the model price is unavailable" width="640"></a>
+
+*Demonstration chat in the Linux app. This separate example asks for review because the model price is unavailable. The remainder belongs to the local chat budget.*
+
+[Android unknown-price example](assets/screenshots/v011-55-android-price-unknown-en.png).
 
 ## Ordinary paid confirmation
 
 Paid chats normally request confirmation before sending. **Without confirmation** disables that ordinary dialog for the selected chat from its first request, including retries. Known current model prices can then be accepted without another price-change dialog.
 
 Chat-budget warnings, token limits, key checks and unknown-price protection continue to apply. Switching the option does not send anything. Turn it off to review the next paid request again.
+
+<a id="en-ordinary-paid-example"></a>
+
+Ordinary confirmation before a paid request
+
+[Linux](assets/screenshots/v011-55-linux-paid-confirmation-en.png) · [Android emulator](assets/screenshots/v011-55-android-paid-confirmation-en.png).
+
+[Linux](assets/screenshots/v011-55-linux-without-confirmation-en.png) · [Android emulator](assets/screenshots/v011-55-android-without-confirmation-en.png)
+
+The examples show **Without confirmation** and its explanation in a demonstration chat. Switching this option sends no message.
 
 ## Read tokens and money
 

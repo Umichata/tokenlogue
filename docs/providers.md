@@ -16,7 +16,7 @@ Use the **Provider** dropdown with **All**, **OpenRouter** and **VSEGPT** to sho
 
 | Linux | Android emulator |
 | --- | --- |
-| <a href="assets/screenshots/v011-linux-provider-policy-en.png"><img src="assets/screenshots/v011-linux-provider-policy-en.png" alt="VSEGPT key form selected on Linux" width="560"></a> | <a href="assets/screenshots/v011-android-provider-policy-en.png"><img src="assets/screenshots/v011-android-provider-policy-en.png" alt="Separate provider forms in an Android emulator" width="300"></a> |
+| <a href="assets/screenshots/v011-55-linux-providers-en.png"><img src="assets/screenshots/v011-55-linux-providers-en.png" alt="Separate OpenRouter and VSEGPT cards and provider-view dropdown on Linux" width="560"></a> | <a href="assets/screenshots/v011-55-android-providers-en.png"><img src="assets/screenshots/v011-55-android-providers-en.png" alt="Separate provider forms in an Android emulator" width="300"></a> |
 
 *Demonstration data. Android images show an emulator.*
 

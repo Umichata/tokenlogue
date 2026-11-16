@@ -18,7 +18,7 @@ Three incorrect PIN checks block entry for five minutes. Restarting does not res
 
 Use the lock button before leaving the device. Locking saves the draft and closes all private pages. Entered provider candidates and visible analytics are cleared, including hidden cards. An already dispatched request can finish and record its response once. Unlocking never sends a draft.
 
-![The ordinary Tokenlogue PIN sign-in screen on Linux](assets/screenshots/v011-linux-pin-login-en.png)
+![The ordinary Tokenlogue PIN sign-in screen on Linux](assets/screenshots/v011-55-linux-pin-lock-en.png)
 
 *Separate demonstration profile. No PIN or recovery secret is shown.*
 
@@ -29,6 +29,10 @@ Android backgrounding closes access. Returning or unlocking Android still requir
 After first setup, **Check local protection** introduces the check. The PIN is already saved. **Start check** requests a normal system lock. Unlock Linux, then enter your app PIN and review the result. You can continue with manual app locking and check later.
 
 The shield opens the protection panel without locking or suspending the computer. Screen-lock and sleep checks have separate results. A saved result does not prove that current monitoring remains available. Enter your Linux password only in the operating system's authentication window.
+
+<a href="assets/screenshots/v011-55-linux-local-protection-en.png"><img src="assets/screenshots/v011-55-linux-local-protection-en.png" alt="Linux protection panel with separate screen-lock and sleep results" width="640"></a>
+
+*This example has no confirmed system monitoring. Use manual app locking when monitoring is unavailable.*
 
 <a id="en-recovery"></a>
 ## Recover a forgotten PIN
@@ -44,6 +48,12 @@ The old code remains valid until a replacement is confirmed. You cannot reveal t
 
 Saving a replacement PIN consumes the used code. Save and confirm the replacement offered afterwards. If you close the app first, sign in with the new PIN and issue another code. Creating a code for an already locked profile requires valid access first.
 
+<a href="assets/screenshots/v011-55-linux-recovery-verified-en.png"><img src="assets/screenshots/v011-55-linux-recovery-verified-en.png" alt="Linux recovery code verified before choosing a new PIN" width="420"></a>
+
+*Separate demonstration profile. No recovery code or PIN is shown.*
+
+The [code-entry form](assets/screenshots/v011-55-linux-recovery-en.png).
+
 ### Linux system recovery
 
 The separate **Use Linux system recovery** option needs the Tokenlogue polkit policy and desktop authentication agent. It requests fresh confirmation of your own Linux account. An already unlocked keyring or another administrator does not replace this proof. See [optional Linux setup](linux-appimage.md).
@@ -54,9 +64,9 @@ On supported Android 11 or later devices, **Forgot PIN?** requests fresh system 
 
 After confirmation, choose and repeat a new app PIN and save it. Cancelling before saving keeps the old PIN and conversations. If the device check is unavailable, use the current app PIN.
 
-<a href="assets/screenshots/v011-android-recovery-en.png"><img src="assets/screenshots/v011-android-recovery-en.png" alt="Android recovery entry when the device-lock prerequisite is unavailable" width="320"></a>
+<a href="assets/screenshots/v011-55-android-recovery-new-pin-en.png"><img src="assets/screenshots/v011-55-android-recovery-new-pin-en.png" alt="Android device verification completed before choosing a new app PIN" width="420"></a>
 
-*Android emulator. This example shows the message displayed when device screen lock is unavailable. Recovery availability depends on the device.*
+*Android emulator after normal device verification. Both new-PIN fields are empty. Availability depends on the device and its screen lock.*
 
 ## Encryption and separate storage
 
@@ -78,7 +88,7 @@ A database copy does not contain its separate encryption key. Android backup is 
 
 **Delete local profile** is available from the PIN screen or **⋮**, including during PIN lockout. It needs no old PIN or network access. Anyone able to use this screen can confirm it. Read the warning, type **DELETE PROFILE** exactly and choose **Delete profile**. **Keep profile** cancels before acceptance.
 
-![Local-profile deletion warning before confirmation](assets/screenshots/v011-linux-delete-profile-en.png)
+![Local-profile deletion warning before confirmation](assets/screenshots/v011-55-linux-delete-profile-en.png)
 
 *Separate demonstration profile. The typed confirmation is an intent check, not an identity check.*
 

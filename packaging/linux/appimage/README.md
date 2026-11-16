@@ -15,10 +15,12 @@ AppImage is unsigned. Verify its supplied checksum, grant execute permission and
 
 ## Desktop requirements
 
-Use an x86-64-v2 CPU, compatible system libraries, GTK3, distribution graphics drivers and an available user D-Bus session. Ubuntu 22.04 is the system-library baseline.
+The local desktop bundle needs Linux x86_64, compatible system libraries, GTK3, distribution graphics drivers and an available user D-Bus session. Ubuntu 22.04 is the build and library-compatibility baseline. This does not mean that every distribution has been tested.
+
+The published 0.1.0 AppImage requires an x86-64-v2 CPU. The lowest CPU instruction level for the local 0.1.1 bundle has not been established by runtime tests.
 
 A Secret Service provider such as GNOME Keyring stores protected keys. AppImage contains the application and is not a backup of conversations. Read [protection and recovery](../../../docs/security.md) before moving a profile or changing the key store.
 
 ## Sources and licenses
 
-The [notice collection](notices.md), [startup runtime](runtime/README.md) and [source-materials guide](../../../docs/source-materials.md) explain their separate roles. Building a new AppImage uses the existing producer and its source, ABI and notice checks. It is separate from obtaining a normal desktop bundle.
+The [notice collection](notices.md), [AppImage startup runtime](runtime/README.md) and [source-materials guide](../../../docs/source-materials.md) explain their separate roles. Building a new AppImage uses the existing producer and its source, ABI and notice checks. It is separate from obtaining a normal desktop bundle.

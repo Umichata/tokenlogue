@@ -19,6 +19,29 @@
 The minimum API does not mean that every Android version has been tested. Static ELF and ZIP checks cover 4 KiB and 16 KiB alignment. Runtime operation on a native ARM64 device with a 16 KiB kernel remains untested.
 
 <a id="en-install"></a>
+<a id="en-local-package"></a>
+## Local Android package 0.1.1
+
+The current local package is supplied separately. This file is not available on the published 0.1.0 release page. If you already have the APK, verify it in your download directory.
+
+| Item | Value |
+| --- | --- |
+| File | `Tokenlogue-0.1.1-android-arm64-v8a-v55.apk` |
+| Version | 0.1.1, versionCode 55 |
+| Architecture | ARM64, `arm64-v8a` |
+| Size | 56,571,846 bytes |
+| SHA-256 | `eba164999093157e1b8fc35a6296b515686a40876843ccf60ab9d3ac28a4aea0` |
+| Certificate SHA-256 | `927292ad5a76ff049059d1c5d8e9497a42c03f3e995a5d9ca935c59ad8d0b09e` |
+
+```bash
+printf '%s  %s\n' \
+  'eba164999093157e1b8fc35a6296b515686a40876843ccf60ab9d3ac28a4aea0' \
+  'Tokenlogue-0.1.1-android-arm64-v8a-v55.apk' | sha256sum --check -
+```
+
+Continue only after the named APK reports `OK`. Open the verified file on Android and confirm installation. A compatible update installs over the previous Tokenlogue with the same signature. Keep the app and its data. The [safe update instructions](#update-without-deleting-data) also apply to this package.
+
+<a id="en-published-preview"></a>
 ## Install the published preview
 
 The public download below is **0.1.0**, not local 0.1.1. APK is the installer. GitHub source archives are not Android applications.

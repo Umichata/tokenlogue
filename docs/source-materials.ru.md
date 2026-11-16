@@ -12,7 +12,9 @@
 
 ## Материалы для выбранного пакета
 
-Ссылки ниже относятся к опубликованным пакетам 0.1.0. У локальной 0.1.1 другая ревизия приложения с двумя провайдерами и аналитикой. Точные commit, дерево, lock-файлы и входы берите из provenance своего локального пакета. Изменение одной документации не меняет уже собранный бинарник.
+Ссылки ниже относятся к опубликованным пакетам 0.1.0. Текущие локальные APK55 и Linux bundle 0.1.1+55 используют общее ядро с двумя провайдерами и аналитикой. Их точные файлы и суммы указаны в руководствах [Android](android.ru.md#ru-local-package) и [Linux](linux-appimage.ru.md#ru-local-bundle). Это отдельные файлы, не загрузки прежнего выпуска.
+
+Точные commit, дерево, lock-файлы и входы берите из provenance своего локального пакета. В опубликованный комплект 0.1.0 не входит архив проекта для этих сборок 0.1.1. Архивы 0.1.0 ниже не являются их точными исходниками. Изменение одной документации не меняет уже собранный бинарник.
 
 Архив приложения, оригинальные сторонние исходники и доказательства производства бинарника имеют разные роли. Подходящая версия или сумма исходников не доказывают сборку определённого wheel из них. Наличие исходников отличается от полноты происхождения бинарника.
 
@@ -23,7 +25,7 @@
 
 Выберите исходный архив каждого пакета по [`PROVENANCE.json`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/PROVENANCE.json). Опубликованные Android и Linux используют общее ядро приложения и отдельные ревизии упаковки. Манифест содержит точные commits, деревья исходников и контрольные суммы пакетов.
 
-На странице [0.1.0 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9) доступны пакеты приложения и архивы исходников. Для установки скачайте [APK для Android](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-android-arm64-v8a-v43.apk) или [AppImage для Linux](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage) и следуйте руководству для [Android](android.ru.md#ru-install) или [Linux](linux-appimage.ru.md#ru-download). Сторонние исходники поставляются отдельно в архиве зависимостей с реестром компонентов.
+На странице [0.1.0 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9) доступны пакеты приложения и архивы исходников. Для установки скачайте [APK для Android](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-android-arm64-v8a-v43.apk) или [AppImage для Linux](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage) и следуйте руководству для [Android](android.ru.md#ru-published-preview) или [Linux](linux-appimage.ru.md#ru-published-appimage). Сторонние исходники поставляются отдельно в архиве зависимостей с реестром компонентов.
 
 <a id="-выбор-подходящего-комплекта"></a>
 ## Архив зависимостей
@@ -71,7 +73,7 @@ uv sync --locked
 uv run --locked flet run
 ```
 
-Эти команды запускают приложение из исходников и не создают APK или AppImage. Подготовка окружения и получение desktop-компонентов Flet могут потребовать интернет. Для упаковки используйте рецепты и точные lock-файлы подходящего архива проекта. [Руководство по упаковке Linux](../packaging/linux/appimage/README.ru.md#russian), [рецепт стартового runtime Linux](../packaging/linux/appimage/runtime/README.ru.md#russian) и [руководство по нативным зависимостям Android](../packaging/android/crypto/README.ru.md#russian) описывают соответствующие компоненты.
+Эти команды запускают приложение из исходников и не создают APK или AppImage. Подготовка окружения и получение desktop-компонентов Flet могут потребовать интернет. Для упаковки используйте рецепты и точные lock-файлы подходящего архива проекта. [Руководство по упаковке Linux](../packaging/linux/appimage/README.ru.md#russian), [рецепт стартового runtime AppImage](../packaging/linux/appimage/runtime/README.ru.md#russian) и [руководство по нативным зависимостям Android](../packaging/android/crypto/README.ru.md#russian) описывают соответствующие компоненты.
 
 <a id="-что-подтверждают-материалы"></a>
 ## Происхождение компонентов

@@ -12,7 +12,9 @@
 
 ## Choose materials for your package
 
-The links below belong to the published 0.1.0 packages. Local 0.1.1 has a different application revision and includes the two-provider interface and analytics. Use the provenance supplied with your specific local package to identify its exact source commit, tree, locks and build inputs. A documentation-only revision does not change an already built binary.
+The links below belong to the published 0.1.0 packages. The current local APK55 and Linux bundle 0.1.1+55 share the application core with two providers and analytics. The [Android](android.md#en-local-package) and [Linux](linux-appimage.md#en-local-bundle) guides identify their exact files and checksums. They are separate files, not downloads from the earlier release.
+
+Use the provenance supplied with your local package to identify its exact source commit, tree, locks and build inputs. The published 0.1.0 collection does not include a project archive for these 0.1.1 builds. Its archives below are not their exact sources. A documentation-only revision does not change an already built binary.
 
 The application source archive, original dependency sources and evidence of binary production have different roles. Matching a version or source checksum does not prove that a particular wheel was compiled from it. Source availability is separate from complete binary provenance.
 
@@ -23,7 +25,7 @@ Tokenlogue's application code uses the [MIT License](../LICENSE). Third-party co
 
 Use [`PROVENANCE.json`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/PROVENANCE.json) to select the source archive for each package. The published Android and Linux packages share the application core and use separate packaging revisions. The manifest records the exact commits, source trees and package checksums.
 
-The [0.1.0 Preview release](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9) lists application packages and source archives. For installation, download the [Android APK](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-android-arm64-v8a-v43.apk) or [Linux AppImage](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage) and follow the [Android](android.md#en-install) or [Linux](linux-appimage.md#en-download) guide. Third-party sources are supplied separately in a dependency archive with a component index.
+The [0.1.0 Preview release](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9) lists application packages and source archives. For installation, download the [Android APK](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-android-arm64-v8a-v43.apk) or [Linux AppImage](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage) and follow the [Android](android.md#en-published-preview) or [Linux](linux-appimage.md#en-published-appimage) guide. Third-party sources are supplied separately in a dependency archive with a component index.
 
 <a id="-find-the-matching-collection"></a>
 ## Dependency archive
@@ -71,7 +73,7 @@ uv sync --locked
 uv run --locked flet run
 ```
 
-These commands run the source application and do not create an APK or AppImage. Preparing the environment and downloading Flet desktop components may require internet access. For packaging, use the project recipes and exact locks from the matching project archive. The [Linux packaging guide](../packaging/linux/appimage/README.md#english), [Linux startup runtime recipe](../packaging/linux/appimage/runtime/README.md#english) and [Android native dependency guide](../packaging/android/crypto/README.md#english) describe the corresponding components.
+These commands run the source application and do not create an APK or AppImage. Preparing the environment and downloading Flet desktop components may require internet access. For packaging, use the project recipes and exact locks from the matching project archive. The [Linux packaging guide](../packaging/linux/appimage/README.md#english), [AppImage startup runtime recipe](../packaging/linux/appimage/runtime/README.md#english) and [Android native dependency guide](../packaging/android/crypto/README.md#english) describe the corresponding components.
 
 <a id="-what-the-available-materials-establish"></a>
 ## Component provenance

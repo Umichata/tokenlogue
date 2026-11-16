@@ -23,7 +23,7 @@
 - Review the provider and masked shared key in **⋮**, then [change that chat’s provider explicitly](docs/user-guide.md#en-chat-connection).
 - View daily tokens with separate API usage and local estimates, and choose a service for each new chat.
 - Use **Home**, **Providers**, **Tokens** and **Spending** without losing the current chat or draft.
-- View one service or both with **All · OpenRouter · VSEGPT**. The viewing filter does not change the provider of a chat.
+- Use the **Provider** dropdown to view **All**, **OpenRouter** or **VSEGPT**. The viewing filter does not change the provider of a chat.
 - Track local token usage and daily costs by provider and model. USD and RUB remain separate.
 - Review approximate costs and chat-budget warnings before sending a paid request.
 - Use English or Russian, app PIN access and encryption of saved conversation fields.
@@ -33,17 +33,17 @@
 
 | Linux | Android emulator |
 | --- | --- |
-| <a href="docs/assets/screenshots/v011-linux-home-en.png"><img src="docs/assets/screenshots/v011-linux-home-en.png" alt="Home with a conversation and saved draft on Linux" width="560"></a> | <a href="docs/assets/screenshots/v011-android-home-en.png"><img src="docs/assets/screenshots/v011-android-home-en.png" alt="Home with a conversation and saved draft in an Android emulator" width="300"></a> |
+| <a href="docs/assets/screenshots/v011-55-linux-home-en.png"><img src="docs/assets/screenshots/v011-55-linux-home-en.png" alt="Home with a conversation and saved draft on Linux" width="560"></a> | <a href="docs/assets/screenshots/v011-55-android-home-en.png"><img src="docs/assets/screenshots/v011-55-android-home-en.png" alt="Home with a conversation and saved draft in an Android emulator" width="300"></a> |
 
-*Demonstration data. Android images show an emulator.*
+*Demonstration data. Android images show an emulator.* [Tablet view](docs/assets/screenshots/v011-55-android-chat-after-change-en.png).
 
 <a id="en-start"></a>
 ## Install and update
 
 | Platform | Current local version | Published package |
 | --- | --- | --- |
-| Android ARM64 | 0.1.1 APK, Android 7.0 / API 24 or later | [0.1.0 APK](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-android-arm64-v8a-v43.apk) · [Installation](docs/android.md) |
-| Linux x86_64 | 0.1.1 desktop bundle | [0.1.0 AppImage](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage) · [Installation](docs/linux-appimage.md) |
+| Android ARM64 | 0.1.1 APK, build 55, Android 7.0 / API 24 or later | [0.1.0 APK](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-android-arm64-v8a-v43.apk) · [Installation](docs/android.md#en-install) |
+| Linux x86_64 | 0.1.1 desktop bundle, build 55 | [0.1.0 AppImage](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage) · [Installation](docs/linux-appimage.md#en-download) |
 
 The [published release](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9) provides [SHA256SUMS](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SHA256SUMS). Check the package before installing. AppImage is unsigned. You do not need Python, Flutter or source archives to run a packaged app.
 

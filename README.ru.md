@@ -23,7 +23,7 @@
 - Проверяйте провайдера и маску общего ключа в **⋮** и [явно меняйте провайдера выбранного чата](docs/user-guide.ru.md#ru-chat-connection).
 - Смотрите токены по дням отдельно для usage API и местных оценок и выбирайте сервис для каждого нового чата.
 - Переходите между **Главной**, **Провайдерами**, **Токенами** и **Расходами**, сохраняя текущий чат и черновик.
-- Выбирайте **Все · OpenRouter · VSEGPT** для просмотра одного или двух сервисов. Фильтр просмотра не меняет провайдера чата.
+- В выпадающем списке **Провайдер** выбирайте **Все**, **OpenRouter** или **VSEGPT** для просмотра. Фильтр просмотра не меняет провайдера чата.
 - Смотрите местную статистику токенов и дневных расходов по сервису и модели. USD и RUB остаются раздельными.
 - Проверяйте приблизительную стоимость и предупреждения бюджета перед платной отправкой.
 - Используйте русский или английский язык, вход по PIN и шифрование сохранённых полей переписки.
@@ -33,17 +33,17 @@
 
 | Linux | Эмулятор Android |
 | --- | --- |
-| <a href="docs/assets/screenshots/v011-linux-home-ru.png"><img src="docs/assets/screenshots/v011-linux-home-ru.png" alt="Главная с перепиской и сохранённым черновиком в Linux" width="560"></a> | <a href="docs/assets/screenshots/v011-android-home-ru.png"><img src="docs/assets/screenshots/v011-android-home-ru.png" alt="Главная с перепиской и сохранённым черновиком в эмуляторе Android" width="300"></a> |
+| <a href="docs/assets/screenshots/v011-55-linux-home-ru.png"><img src="docs/assets/screenshots/v011-55-linux-home-ru.png" alt="Главная с перепиской и сохранённым черновиком в Linux" width="560"></a> | <a href="docs/assets/screenshots/v011-55-android-home-ru.png"><img src="docs/assets/screenshots/v011-55-android-home-ru.png" alt="Главная с перепиской и сохранённым черновиком в эмуляторе Android" width="300"></a> |
 
-*Демонстрационные данные. Кадры Android сняты в эмуляторе.*
+*Демонстрационные данные. Кадры Android сняты в эмуляторе.* [Вид на планшете](docs/assets/screenshots/v011-55-android-chat-after-change-ru.png).
 
 <a id="ru-start"></a>
 ## Установка и обновление
 
 | Платформа | Текущая локальная версия | Опубликованный пакет |
 | --- | --- | --- |
-| Android ARM64 | APK 0.1.1, Android 7.0 / API 24 или новее | [APK 0.1.0](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-android-arm64-v8a-v43.apk) · [Установка](docs/android.ru.md) |
-| Linux x86_64 | Настольный bundle 0.1.1 | [AppImage 0.1.0](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage) · [Установка](docs/linux-appimage.ru.md) |
+| Android ARM64 | APK 0.1.1, сборка 55, Android 7.0 / API 24 или новее | [APK 0.1.0](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-android-arm64-v8a-v43.apk) · [Установка](docs/android.ru.md#ru-install) |
+| Linux x86_64 | Настольный bundle 0.1.1, сборка 55 | [AppImage 0.1.0](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage) · [Установка](docs/linux-appimage.ru.md#ru-download) |
 
 На странице [опубликованного выпуска](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9) есть [SHA256SUMS](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SHA256SUMS). Сверьте пакет до установки. AppImage не подписана. Для готового приложения не нужны Python, Flutter и архивы исходников.
 

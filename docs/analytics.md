@@ -24,11 +24,13 @@ The model list follows the selected service and period. The same model ID from O
 
 | Linux | Android emulator |
 | --- | --- |
-| <a href="assets/screenshots/v011-linux-daily-tokens-en.png"><img src="assets/screenshots/v011-linux-daily-tokens-en.png" alt="Token usage filtered by provider on Linux" width="560"></a> | <a href="assets/screenshots/v011-android-daily-tokens-en.png"><img src="assets/screenshots/v011-android-daily-tokens-en.png" alt="Token usage filtered by provider in an Android emulator" width="300"></a> |
+| <a href="assets/screenshots/v011-55-linux-daily-tokens-en.png"><img src="assets/screenshots/v011-55-linux-daily-tokens-en.png" alt="Token usage filtered by provider on Linux" width="560"></a> | <a href="assets/screenshots/v011-55-android-daily-tokens-en.png"><img src="assets/screenshots/v011-55-android-daily-tokens-en.png" alt="Token usage filtered by provider in an Android emulator" width="300"></a> |
 
-*Demonstration data. Android images show an emulator.*
+*Demonstration journal, not paid requests. Android images show an emulator.*
 
-**Tokens by day** groups saved attempts by their known local dispatch date using the same filters as the model table. API usage and local estimates have different colours. Tap a day or use the day controls to inspect input, output and total tokens, their source and partial coverage. Longer histories use a movable window. A request with unknown usage is distinct from a day without requests. Missing total is not reconstructed as an API value.
+**Tokens by day** groups saved attempts by their known dispatch date in the time zone shown on the page, using the same filters as the model table. API usage and local estimates have different colours. Tap a day or use the day controls to inspect input, output and total tokens, their source and partial coverage. Longer histories use a movable window. A request with unknown usage is distinct from a day without requests. Missing total is not reconstructed as an API value.
+
+Inspect a selected day on [Linux](assets/screenshots/v011-55-linux-daily-tokens-day-en.png) or in an [Android emulator](assets/screenshots/v011-55-android-selected-token-day-en.png).
 
 The page also shows separate provider totals, requests, API-reported input/output/total tokens and a model table. The most-used-model bars show usage for the selected filters.
 
@@ -40,11 +42,11 @@ Historical requests without a reliable dispatch date appear only in **All time**
 
 | Linux | Android emulator |
 | --- | --- |
-| <a href="assets/screenshots/v011-linux-spending-filter-en.png"><img src="assets/screenshots/v011-linux-spending-filter-en.png" alt="Daily spending in separate currencies on Linux" width="560"></a> | <a href="assets/screenshots/v011-android-spending-filter-en.png"><img src="assets/screenshots/v011-android-spending-filter-en.png" alt="Daily spending in separate currencies in an Android emulator" width="300"></a> |
+| <a href="assets/screenshots/v011-55-linux-spending-en.png"><img src="assets/screenshots/v011-55-linux-spending-en.png" alt="Daily spending in separate currencies on Linux" width="560"></a> | <a href="assets/screenshots/v011-55-android-spending-en.png"><img src="assets/screenshots/v011-55-android-spending-en.png" alt="Daily spending in separate currencies in an Android emulator" width="300"></a> |
 
-*Demonstration data. Android images show an emulator.*
+*Demonstration journal, not paid requests. Android images show an emulator.*
 
-The Linux example shows the 30-day RUB panel. The [OpenRouter USD panel](assets/screenshots/v011-linux-spending-usd-en.png) appears further down the same view with its own scale.
+The examples use **All**, **7 days** and **All models**. Each currency has its own panel and scale. Scroll to compare the panels and their dated tables. The [additional Linux view](assets/screenshots/v011-55-linux-spending-table-en.png) shows another part of the same demonstration journal.
 
 **All** shows separate OpenRouter USD and VSEGPT RUB panels. A single-service selection shows only that service. There is no combined monetary total, shared currency scale or exchange-rate conversion.
 

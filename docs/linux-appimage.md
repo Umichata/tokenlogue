@@ -12,11 +12,45 @@
 
 ## Requirements
 
-Use Linux x86_64 with an x86-64-v2 CPU, a graphical desktop, GTK3 and distribution graphics drivers. Ubuntu 22.04 is the system-library baseline. You also need a user D-Bus session and an unlocked Secret Service provider, such as GNOME Keyring. The bundled libsecret client is not a key store.
+Use Linux x86_64 with a graphical desktop, GTK3 and distribution graphics drivers. Ubuntu 22.04 is the system-library baseline. The published AppImage requires an x86-64-v2 CPU. The local bundle has not been tested on older CPUs. You also need a user D-Bus session and an unlocked Secret Service provider, such as GNOME Keyring. The bundled libsecret client is not a key store.
 
 Online model use needs a key for the chat's provider. Cinnamon/X11 is the supported screen-lock and sleep-monitoring session. Other desktops and Wayland can limit automatic monitoring. Use manual app locking when monitoring is unavailable.
 
 <a id="en-download"></a>
+<a id="en-local-bundle"></a>
+## Local desktop bundle 0.1.1
+
+The current desktop build is supplied as a separate archive. There is no ready AppImage 0.1.1. This file is not among the published 0.1.0 downloads and does not require FUSE.
+
+| Item | Value |
+| --- | --- |
+| File | `Tokenlogue-0.1.1+55-9117edc-linux-x86_64-bundle.tar.gz` |
+| Version | 0.1.1+55 |
+| Architecture | Linux x86_64 |
+| Size | 35,606,991 bytes |
+| SHA-256 | `59675e0369298fee0007ce057000f105a3c6af3b09b7b2fdf4ae03a086b8b2e2` |
+| Extracted directory | `Tokenlogue-0.1.1+55-linux-x86_64/` |
+
+Close earlier Tokenlogue copies. In the directory containing the supplied archive, verify its checksum.
+
+```bash
+printf '%s  %s\n' \
+  '59675e0369298fee0007ce057000f105a3c6af3b09b7b2fdf4ae03a086b8b2e2' \
+  'Tokenlogue-0.1.1+55-9117edc-linux-x86_64-bundle.tar.gz' | sha256sum --check -
+```
+
+After `OK`, extract the entire bundle into a new directory and run it as your ordinary user. This example assumes `tokenlogue-local` does not already exist. Stop if a command reports an error.
+
+```bash
+mkdir tokenlogue-local &&
+tar --extract --gzip --file 'Tokenlogue-0.1.1+55-9117edc-linux-x86_64-bundle.tar.gz' \
+  --directory tokenlogue-local --no-same-owner &&
+./tokenlogue-local/Tokenlogue-0.1.1+55-linux-x86_64/tokenlogue
+```
+
+Keep the executable with its libraries and data folders. Use the same OS account and existing unlocked secure storage. Replacing the application directory does not require deleting your profile. See [safe updates](#update-safely).
+
+<a id="en-published-appimage"></a>
 ## Published AppImage
 
 This public file is **0.1.0**. Local 0.1.1 is supplied as a separate desktop bundle. An archive of project sources is not an installed application.
@@ -56,7 +90,7 @@ If FUSE is unavailable, use the following option with enough temporary disk spac
 
 ## Launch a local desktop bundle
 
-Verify the checksum supplied with the bundle, then extract it into a new directory. Keep its executable, libraries and data folders together. Open `tokenlogue` inside the extracted application directory as your ordinary user. Moving only the executable will break the bundle. It requires no FUSE and is not an AppImage.
+Use the [local bundle instructions](#en-local-bundle) above for its exact file, checksum and extraction steps. Keep the whole application directory together. AppImage options do not apply to this format.
 
 ## Update safely
 
@@ -91,7 +125,7 @@ sudo /usr/bin/python3 -I packaging/linux/polkit/tokenlogue-polkit.py uninstall
 | FUSE mount failed | Use extract-and-run for AppImage. |
 | Missing GTK library | Restore GTK3 and dependencies through your distribution. |
 | Key storage unavailable | Unlock Secret Service and check the user D-Bus session. Keep the profile files. |
-| Illegal instruction | Check x86-64-v2 CPU support. |
+| Illegal instruction | Check the package’s CPU requirements. The published AppImage requires x86-64-v2. |
 | Graphics failure | Check distribution graphics drivers. |
 | Profile already in use | Close the copy using it. Do not bypass its lock. |
 

@@ -15,6 +15,7 @@
 - Daily token charts separate API usage, estimates and incomplete or undated data.
 - **Choose each time** selects a provider for each new chat while retaining existing service preferences.
 - Catalogue failures show a specific safe cause and support refreshing the list. VSEGPT opens paid models directly, without a separate mode step.
+- Mode and model screens scroll as one list so their actions remain reachable in short windows.
 - Saved-key checks are available on the OpenRouter mode screen and VSEGPT model list. They update the current status without re-entering a key or generating a message.
 - Provider-aware model choices and saved filters on **Tokens** and **Spending**.
 - Independent USD and RUB panels and protection against stale statistics replacing the current view.

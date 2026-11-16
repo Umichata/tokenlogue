@@ -22,11 +22,13 @@
 
 Для профиля только с VSEGPT ключ OpenRouter не нужен. Другой сервис добавляется позже через [Провайдеры](providers.ru.md). Повторный вход и восстановление используют прежний защищённый профиль и не создают новую регистрацию.
 
-<a href="assets/screenshots/v011-android-first-run-ru.png"><img src="assets/screenshots/v011-android-first-run-ru.png" alt="Первое подключение провайдера в эмуляторе Android" width="320"></a>
+| Linux | Эмулятор Android |
+| --- | --- |
+| <a href="assets/screenshots/v011-55-linux-first-run-ru.png"><img src="assets/screenshots/v011-55-linux-first-run-ru.png" alt="Пустая форма первого подключения в Linux" width="560"></a> | <a href="assets/screenshots/v011-55-android-start-ru.png"><img src="assets/screenshots/v011-55-android-start-ru.png" alt="Пустая форма первого подключения в эмуляторе Android" width="300"></a> |
 
-*Демонстрационная настройка с маскированным поддельным ключом.*
+*Отдельные демонстрационные профили до ввода ключа.*
 
-[Выбор PIN приложения](assets/screenshots/v011-android-pin-setup-ru.png) показывает следующий шаг без раскрытия PIN.
+[Выбор PIN приложения](assets/screenshots/v011-android-pin-setup-ru.png) показывает следующий шаг без раскрытия PIN. Также показана [настройка PIN в Linux](assets/screenshots/v011-55-linux-pin-setup-ru.png).
 
 ## Навигация с сохранением места
 
@@ -46,24 +48,25 @@ VSEGPT в Tokenlogue работает только в платном режим�
 
 Выберите разговор в списке, чтобы вернуться к нему. **Переименовать** сохраняет историю и черновик. **Удалить чат** запрашивает подтверждение и удаляет этот чат, его черновик и местную статистику. При нехватке высоты из-за клавиатуры действия в шапке могут скрываться. Меню **⋮** содержит сведения о модели, лимиты, данные ключа и действия профиля.
 
-[Новый чат и выбор модели](assets/screenshots/v011-android-models-ru.png) · [Переименование](assets/screenshots/v011-android-rename-ru.png) · [Удаление чата](assets/screenshots/v011-android-delete-chat-ru.png) · [Лимиты чата](assets/screenshots/v011-android-chat-limits-ru.png)
+[Новый чат и выбор модели](assets/screenshots/v011-55-android-vsegpt-models-ru.png) · [Переименование](assets/screenshots/v011-55-android-rename-chat-ru.png) · [Удаление чата](assets/screenshots/v011-55-android-delete-chat-ru.png) · [Лимиты чата](assets/screenshots/v011-55-android-paid-limits-ru.png)
 
 *Демонстрационные действия чата в эмуляторе Android. Названия моделей получены из каталога сервиса.*
 
-<a id="ru-chat-connection"></a>
+[Переименование в Linux](assets/screenshots/v011-55-linux-rename-chat-ru.png).
+
 <a id="ru-new-chat-provider"></a>
 
 ### Выбор провайдера нового чата
 
 | Linux | Эмулятор Android |
 | --- | --- |
-| <a href="assets/screenshots/v011-linux-new-chat-provider-ru.png"><img src="assets/screenshots/v011-linux-new-chat-provider-ru.png" alt="Выбор провайдера нового чата в Linux" width="560"></a> | <a href="assets/screenshots/v011-android-new-chat-provider-ru.png"><img src="assets/screenshots/v011-android-new-chat-provider-ru.png" alt="Выбор провайдера нового чата в эмуляторе Android" width="300"></a> |
+| <a href="assets/screenshots/v011-55-linux-new-chat-provider-ru.png"><img src="assets/screenshots/v011-55-linux-new-chat-provider-ru.png" alt="Выбор провайдера нового чата в Linux" width="560"></a> | <a href="assets/screenshots/v011-55-android-new-chat-provider-ru.png"><img src="assets/screenshots/v011-55-android-new-chat-provider-ru.png" alt="Выбор провайдера нового чата в эмуляторе Android" width="300"></a> |
 
 | Linux | Эмулятор Android |
 | --- | --- |
-| <a href="assets/screenshots/v011-linux-vsegpt-models-ru.png"><img src="assets/screenshots/v011-linux-vsegpt-models-ru.png" alt="Прямой выбор модели VSEGPT в Linux" width="560"></a> | <a href="assets/screenshots/v011-android-vsegpt-models-ru.png"><img src="assets/screenshots/v011-android-vsegpt-models-ru.png" alt="Прямой выбор модели VSEGPT в эмуляторе Android" width="300"></a> |
+| <a href="assets/screenshots/v011-55-linux-vsegpt-models-search-ru.png"><img src="assets/screenshots/v011-55-linux-vsegpt-models-search-ru.png" alt="Прямой выбор модели VSEGPT в Linux" width="560"></a> | <a href="assets/screenshots/v011-55-android-vsegpt-models-ru.png"><img src="assets/screenshots/v011-55-android-vsegpt-models-ru.png" alt="Прямой выбор модели VSEGPT в эмуляторе Android" width="300"></a> |
 
-*Демонстрационные профили в настоящем Linux bundle и эмуляторе Android. Платные запросы не отправлялись.*
+*Демонстрационные профили. В Linux список моделей показан при смене провайдера, в Android — при создании нового чата. В обоих случаях модели VSEGPT открываются напрямую. Платные запросы не отправлялись.*
 
 <a id="ru-check-saved-key"></a>
 
@@ -83,9 +86,21 @@ VSEGPT в Tokenlogue работает только в платном режим�
 | --- | --- |
 | <a href="assets/screenshots/v011-linux-openrouter-key-result-ru.png"><img src="assets/screenshots/v011-linux-openrouter-key-result-ru.png" alt="Настоящий отказ сервиса заведомо поддельному ключу OpenRouter в Linux" width="560"></a> | <a href="assets/screenshots/v011-android-openrouter-key-result-ru.png"><img src="assets/screenshots/v011-android-openrouter-key-result-ru.png" alt="Сетевая ошибка при проверке ключа OpenRouter без сети в эмуляторе Android" width="300"></a> |
 
-*В Linux использован отдельный демонстрационный профиль с заведомо поддельным ключом в защищённом хранилище. Сервис действительно отклонил этот ключ. Android показывает отдельный защищённый тестовый профиль с намеренно отключённой сетью, поэтому проверка завершилась сетевой ошибкой. Эти результаты не подтверждают успешную авторизацию. Сообщения не отправлялись.*
+*Демонстрационные профили. Linux показывает настоящий отказ заведомо поддельному ключу. Android показывает намеренную ошибку без сети. Эти кадры не изображают успешную авторизацию.*
+
+<a id="ru-successful-key-check"></a>
+
+### После успешной проверки сохранённого ключа
+
+<a href="assets/screenshots/v011-55-linux-openrouter-key-accepted-ru.png"><img src="assets/screenshots/v011-55-linux-openrouter-key-accepted-ru.png" alt="Статус принятого ключа OpenRouter в Linux" width="560"></a>
+
+<a href="assets/screenshots/v011-55-android-openrouter-accepted-ru.png"><img src="assets/screenshots/v011-55-android-openrouter-accepted-ru.png" alt="Статус принятого ключа OpenRouter в эмуляторе Android" width="560"></a>
+
+*Фрагменты настоящего приложения после проверки сохранённого ключа. Показаны сервис и результат без личных сумм и лимита ключа. Кнопки показаны в примерах режимов выше.*
 
 При ручном создании Back из списка моделей VSEGPT возвращает к выбору провайдера. При фиксированном VSEGPT он отменяет создание и возвращает к чатам. Во время смены подключения Back возвращает к выбору сервиса, сохраняя прежнее подключение. Из формы лимитов Back возвращает к списку моделей. Отмена сохраняет прежний черновик.
+
+<a id="ru-chat-connection"></a>
 
 ## Подключение чата и смена провайдера
 
@@ -108,13 +123,19 @@ VSEGPT в Tokenlogue работает только в платном режим�
 
 | Подключение | Linux | Android |
 | --- | --- | --- |
-| OpenRouter | <a href="assets/screenshots/v011-linux-chat-connection-openrouter-ru.png"><img src="assets/screenshots/v011-linux-chat-connection-openrouter-ru.png" alt="Подключение чата к OpenRouter и маска тестового ключа в Linux" width="320"></a> | <a href="assets/screenshots/v011-android-chat-connection-openrouter-ru.png"><img src="assets/screenshots/v011-android-chat-connection-openrouter-ru.png" alt="Подключение чата к OpenRouter и состояние ключа в эмуляторе Android" width="220"></a> |
-| VSEGPT | <a href="assets/screenshots/v011-linux-chat-connection-vsegpt-ru.png"><img src="assets/screenshots/v011-linux-chat-connection-vsegpt-ru.png" alt="Подключение чата к VSEGPT и маска тестового ключа в Linux" width="320"></a> | <a href="assets/screenshots/v011-android-chat-connection-vsegpt-ru.png"><img src="assets/screenshots/v011-android-chat-connection-vsegpt-ru.png" alt="Подключение чата к VSEGPT и маска тестового ключа в эмуляторе Android" width="220"></a> |
+| OpenRouter | <a href="assets/screenshots/v011-55-linux-chat-connection-openrouter-ru.png"><img src="assets/screenshots/v011-55-linux-chat-connection-openrouter-ru.png" alt="Подключение чата к OpenRouter и маска ключа в Linux" width="320"></a> | <a href="assets/screenshots/v011-55-android-chat-connection-openrouter-ru.png"><img src="assets/screenshots/v011-55-android-chat-connection-openrouter-ru.png" alt="Провайдер OpenRouter и маска ключа в эмуляторе Android" width="220"></a> |
+| VSEGPT | <a href="assets/screenshots/v011-55-linux-chat-connection-vsegpt-ru.png"><img src="assets/screenshots/v011-55-linux-chat-connection-vsegpt-ru.png" alt="Подключение чата к VSEGPT и маска тестового ключа в Linux" width="320"></a> | <a href="assets/screenshots/v011-55-android-chat-connection-vsegpt-ru.png"><img src="assets/screenshots/v011-55-android-chat-connection-vsegpt-ru.png" alt="Подключение чата к VSEGPT и маска тестового ключа в эмуляторе Android" width="220"></a> |
 
-*Демонстрационные профили с тестовыми ключами в приложении Linux и эмуляторе Android. Для отправки нужен действующий ключ выбранного сервиса. Смена языка интерфейса не переводит существующие сообщения.*
+*Отдельные демонстрационные профили. Показаны только маски ключей. Для отправки нужен действующий ключ выбранного сервиса. Смена языка интерфейса не переводит существующие сообщения.*
 
-- Примеры Linux показывают [выбор провайдера](assets/screenshots/v011-linux-chat-provider-picker-ru.png), [окончательную проверку](assets/screenshots/v011-linux-chat-connection-review-ru.png) и [чат после смены](assets/screenshots/v011-linux-chat-after-switch-ru.png).
-- Примеры Android показывают [выбор провайдера](assets/screenshots/v011-android-chat-provider-picker-ru.png), [окончательную проверку](assets/screenshots/v011-android-chat-connection-review-ru.png) и [чат после смены](assets/screenshots/v011-android-chat-after-switch-ru.png).
+- Примеры Linux показывают [выбор провайдера](assets/screenshots/v011-55-linux-chat-provider-picker-ru.png), [окончательную проверку](assets/screenshots/v011-55-linux-chat-connection-review-ru.png) и [чат после смены](assets/screenshots/v011-55-linux-home-ru.png).
+- Примеры Android показывают [выбор провайдера](assets/screenshots/v011-55-android-chat-change-provider-ru.png), [окончательную проверку](assets/screenshots/v011-55-android-chat-change-confirm-ru.png) и [чат после смены](assets/screenshots/v011-55-android-chat-after-change-ru.png).
+
+<a id="ru-connection-action-examples"></a>
+
+Действия подключения OpenRouter для настройки ключа и смены провайдера
+
+[Linux](assets/screenshots/v011-55-linux-chat-connection-openrouter-actions-ru.png).
 
 ## Сообщения и черновики
 
@@ -148,16 +169,39 @@ VSEGPT в Tokenlogue работает только в платном режим�
 
 Неизвестная цена тоже требует явного рассмотрения. Изменение черновика, модели, цены или бюджета может потребовать нового подтверждения. Оценка не гарантирует итоговое списание.
 
+Если цены модели изменились, проверьте прежние и текущие значения. При обычных подтверждениях действие **Подтвердить новые цены** заново проверяет запрос перед его подтверждением. Само оно не отправляет сообщение.
 
-<a href="assets/screenshots/v011-android-budget-warning-ru.png"><img src="assets/screenshots/v011-android-budget-warning-ru.png" alt="Предупреждение о неизвестной цене с тремя действиями" width="320"></a>
 
-*Демонстрационные данные в эмуляторе Android. В этом примере требуется подтверждение из-за неизвестной цены модели. Показанный остаток относится к бюджету чата.*
+<a id="ru-known-price-warning-examples"></a>
+
+В следующих примерах используются известные текущие цены каталога и демонстрационные бюджеты чатов. Сообщение не отправлялось.
+
+| Прогноз | Linux | Эмулятор Android |
+| --- | --- | --- |
+| Почти исчерпан | [Открыть](assets/screenshots/v011-55-linux-budget-near-zero-ru.png) | [Открыть](assets/screenshots/v011-55-android-budget-near-zero-ru.png) |
+| Возможное превышение | [Открыть](assets/screenshots/v011-55-linux-budget-exceed-ru.png) | [Открыть](assets/screenshots/v011-55-android-budget-exceed-ru.png) |
+
+<a href="assets/screenshots/v011-55-linux-price-unknown-ru.png"><img src="assets/screenshots/v011-55-linux-price-unknown-ru.png" alt="Рассмотрение запроса при недоступной цене модели" width="640"></a>
+
+*Демонстрационный чат в Linux. Этот отдельный пример требует рассмотрения из-за недоступной цены модели. Остаток относится к местному бюджету чата.*
+
+[Пример неизвестной цены в Android](assets/screenshots/v011-55-android-price-unknown-ru.png).
 
 ## Обычное платное подтверждение
 
 Платные чаты обычно требуют подтверждения перед отправкой. **Без подтверждений** отключает этот обычный диалог для выбранного чата с первого запроса, включая повторы. Известные текущие цены модели могут приниматься без отдельного диалога изменения цен.
 
 Предупреждения бюджета, токеновые лимиты, проверка ключа и защита при неизвестной цене продолжают действовать. Переключатель ничего не отправляет. Отключите его, чтобы снова проверять следующий платный запрос.
+
+<a id="ru-ordinary-paid-example"></a>
+
+Обычное подтверждение перед платным запросом
+
+[Linux](assets/screenshots/v011-55-linux-paid-confirmation-ru.png) · [Эмулятор Android](assets/screenshots/v011-55-android-paid-confirmation-ru.png).
+
+[Linux](assets/screenshots/v011-55-linux-without-confirmation-ru.png) · [Эмулятор Android](assets/screenshots/v011-55-android-without-confirmation-ru.png)
+
+Примеры показывают настройку **Без подтверждений** и её пояснение в демонстрационном чате. Переключение настройки не отправляет сообщение.
 
 ## Токены и суммы
 
