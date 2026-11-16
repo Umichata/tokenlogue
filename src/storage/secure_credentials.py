@@ -248,11 +248,16 @@ class FletSecureCredentials:
             if value is not None:
                 return NewChatPolicy(value)
             legacy = await self._storage.get(DEFAULT_PROVIDER_STORAGE_NAME)
-            return (
-                NewChatPolicy(legacy)
-                if legacy in {provider.value for provider in ProviderId}
-                else NewChatPolicy.MANUAL
-            )
+            if legacy in {provider.value for provider in ProviderId}:
+                return NewChatPolicy(legacy)
+            if any(
+                [
+                    await self._storage.contains_key(name)
+                    for name in PROVIDER_KEY_STORAGE_NAMES.values()
+                ]
+            ):
+                return NewChatPolicy.for_provider(await self.get_default_provider())
+            return NewChatPolicy.MANUAL
         except Exception:
             raise SecureCredentialsError(tr("service.secure_read_failed")) from None
 

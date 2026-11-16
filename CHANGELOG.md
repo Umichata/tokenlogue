@@ -13,7 +13,7 @@
 
 - Separate OpenRouter and VSEGPT forms with a compact **Provider** dropdown for viewing.
 - Daily token charts separate API usage, estimates and incomplete or undated data.
-- **Choose each time** selects a provider for each new chat while retaining existing explicit preferences.
+- **Choose each time** selects a provider for each new chat while retaining existing service preferences.
 - Catalogue failures show a specific safe cause and support refreshing the list. VSEGPT no longer shows an unusable free-mode card when no fully free chat contract is confirmed.
 - Provider-aware model choices and saved filters on **Tokens** and **Spending**.
 - Independent USD and RUB panels and protection against stale statistics replacing the current view.

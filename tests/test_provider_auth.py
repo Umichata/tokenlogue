@@ -23,7 +23,11 @@ from providers.models import ProviderId  # noqa: E402
 from storage.data_access import DataAccess  # noqa: E402
 from storage.data_protection import DATA_KEY_ALIAS, DataProtection  # noqa: E402
 from storage.database import AuthDatabase  # noqa: E402
-from storage.secure_credentials import FletSecureCredentials  # noqa: E402
+from storage.secure_credentials import (  # noqa: E402
+    DEFAULT_PROVIDER_STORAGE_NAME,
+    NEW_CHAT_POLICY_STORAGE_NAME,
+    FletSecureCredentials,
+)
 from tests.test_auth_service import StubValidator  # noqa: E402
 from tests.test_secure_credentials import FakeSecureStorage  # noqa: E402
 
@@ -209,6 +213,31 @@ class VsegptOnlyAuthTests(unittest.IsolatedAsyncioTestCase):
         current = self.database.get_auth_state()
         assert current is not None
         self.assertEqual(current.registration_id, state.registration_id)
+
+    async def test_legacy_pin_profile_without_provider_metadata_keeps_its_existing_service(
+        self,
+    ):
+        await self.register()
+        self.storage.values.pop(NEW_CHAT_POLICY_STORAGE_NAME)
+        self.storage.values.pop(DEFAULT_PROVIDER_STORAGE_NAME)
+        self.service.lock_access()
+        reloaded = FletSecureCredentials(self.storage)
+        restarted = AuthService(
+            self.validator,
+            reloaded,
+            self.database,
+            pin_hasher=self.hasher,
+            protection=self.protection,
+        )
+        self.addCleanup(restarted.lock_access)
+        self.assertEqual((await restarted.initialize()).initial_route, InitialRoute.PIN)
+        result = await restarted.login("0123")
+        self.assertEqual(result.status, AuthStatus.AUTHENTICATED)
+        self.assertEqual(result.api_key, self.key)
+        self.assertIs(await reloaded.get_default_provider(), ProviderId.VSEGPT)
+        self.assertIs(await reloaded.get_new_chat_policy(), NewChatPolicy.VSEGPT)
+        self.assertNotIn(NEW_CHAT_POLICY_STORAGE_NAME, self.storage.values)
+        self.assertNotIn(DEFAULT_PROVIDER_STORAGE_NAME, self.storage.values)
 
     async def test_known_invalid_vsegpt_key_cannot_be_saved_even_with_unverified_choice(
         self,

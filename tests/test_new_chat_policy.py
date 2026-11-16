@@ -65,7 +65,9 @@ class CreationPolicyStorageTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(await self.credentials.get_api_key(), VV_OLD)
         self.assertNotIn("manual", PROVIDER_KEY_STORAGE_NAMES)
 
-    async def test_explicit_legacy_preferences_survive_and_absence_is_manual(self):
+    async def test_explicit_legacy_preferences_survive_and_only_an_empty_store_defaults_manual(
+        self,
+    ):
         for provider in ProviderId:
             with self.subTest(provider=provider):
                 self.storage.values = {DEFAULT_PROVIDER_STORAGE_NAME: provider.value}
@@ -77,9 +79,50 @@ class CreationPolicyStorageTests(unittest.IsolatedAsyncioTestCase):
             PROVIDER_KEY_STORAGE_NAMES[ProviderId.OPENROUTER]: OR_OLD
         }
         self.assertIs(
-            await self.credentials.get_new_chat_policy(), NewChatPolicy.MANUAL
+            await self.credentials.get_new_chat_policy(), NewChatPolicy.OPENROUTER
         )
         self.assertEqual(await self.credentials.get_api_key(), OR_OLD)
+        self.storage.values = {}
+        self.assertIs(
+            await self.credentials.get_new_chat_policy(), NewChatPolicy.MANUAL
+        )
+
+    async def test_legacy_key_slots_without_any_preference_keep_the_concrete_service_on_restart(
+        self,
+    ):
+        cases = (
+            ({ProviderId.OPENROUTER: OR_OLD}, ProviderId.OPENROUTER),
+            (
+                {ProviderId.OPENROUTER: OR_OLD, ProviderId.VSEGPT: VV_OLD},
+                ProviderId.OPENROUTER,
+            ),
+            ({ProviderId.VSEGPT: VV_OLD}, ProviderId.VSEGPT),
+        )
+        for keys, expected in cases:
+            with self.subTest(slots=tuple(keys)):
+                self.storage.values = {
+                    PROVIDER_KEY_STORAGE_NAMES[provider]: key
+                    for provider, key in keys.items()
+                }
+                prior = dict(self.storage.values)
+                credentials = FletSecureCredentials(self.storage)
+                profiles = ProviderProfiles(credentials, FakeAPI())
+                for _restart in range(2):
+                    key = await credentials.get_api_key()
+                    assert key is not None
+                    self.assertEqual(key, keys[expected])
+                    await profiles.activate(
+                        key, KeyValidityState.VALID, KeyLimitInfo.unknown()
+                    )
+                    self.assertIs(profiles.default_provider, expected)
+                    self.assertIs(
+                        profiles.creation_policy, NewChatPolicy.for_provider(expected)
+                    )
+                    self.assertEqual(profiles.key_for(expected), keys[expected])
+                    profiles.deactivate()
+                    credentials = FletSecureCredentials(self.storage)
+                    profiles = ProviderProfiles(credentials, FakeAPI())
+                self.assertEqual(self.storage.values, prior)
 
     async def test_policy_can_choose_an_unconfigured_service_without_moving_login_slot(
         self,

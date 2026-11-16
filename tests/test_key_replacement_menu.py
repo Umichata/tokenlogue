@@ -197,7 +197,7 @@ class KeyReplacementMenuTests(unittest.IsolatedAsyncioTestCase):
             )
             self.assertEqual(
                 self.fixture.storage.values[NEW_CHAT_POLICY_STORAGE_NAME],
-                NewChatPolicy.MANUAL.value,
+                NewChatPolicy.OPENROUTER.value,
             )
             metadata = json.loads(
                 self.fixture.storage.values[
@@ -213,6 +213,23 @@ class KeyReplacementMenuTests(unittest.IsolatedAsyncioTestCase):
         state = self.fixture.database.get_auth_state()
         assert state is not None
         self.assertTrue(self.fixture.hasher.verify("0123", state.pin_record))
+
+    async def test_legacy_openrouter_pin_profile_keeps_creation_service_without_metadata(
+        self,
+    ):
+        self.assertNotIn(DEFAULT_PROVIDER_STORAGE_NAME, self.fixture.storage.values)
+        self.assertNotIn(NEW_CHAT_POLICY_STORAGE_NAME, self.fixture.storage.values)
+        self.assertIs(
+            await self.credentials.get_new_chat_policy(), NewChatPolicy.OPENROUTER
+        )
+        await self.relogin()
+        reloaded = FletSecureCredentials(self.fixture.storage)
+        self.assertIs(await reloaded.get_default_provider(), ProviderId.OPENROUTER)
+        self.assertIs(await reloaded.get_new_chat_policy(), NewChatPolicy.OPENROUTER)
+        self.assertEqual(
+            await reloaded.get_api_key(), self.original_storage[API_KEY_STORAGE_NAME]
+        )
+        self.assertEqual(self.fixture.storage.values, self.original_storage)
 
     async def confirm_from_menu(self) -> None:
         _view, button = await self.menu_button()
