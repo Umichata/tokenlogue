@@ -89,6 +89,51 @@ class SelectionConnectionTests(unittest.IsolatedAsyncioTestCase):
             **kwargs,
         )
 
+    async def test_short_viewport_can_scroll_search_back_and_connection_actions(self):
+        cancel = AsyncMock()
+        view = self.models(
+            on_cancel=cancel,
+            on_check_key=AsyncMock(),
+            on_refresh=AsyncMock(),
+        )
+        viewport = next(
+            control
+            for control in walk(view.control)
+            if isinstance(control, ft.ListView)
+        )
+        actions = (
+            view.search,
+            view.cancel_button,
+            view.check_key_button,
+            view.refresh_button,
+        )
+
+        def assert_actions_can_scroll_together():
+            controls = list(walk(viewport))
+            for action in actions:
+                self.assertIsNotNone(action)
+                self.assertTrue(any(control is action for control in controls))
+
+        assert_actions_can_scroll_together()
+        original_search, original_back = view.search, view.cancel_button
+        view.search.value = "beta"
+        view._filter(ft.Event(name="change", control=view.search))
+        view.set_connection_state(KeyValidityState.INVALID, KeyLimitInfo.unknown())
+        view.set_catalog(ModelCatalog((), (), False))
+        assert_actions_can_scroll_together()
+        self.assertIs(view.search, original_search)
+        self.assertIs(view.cancel_button, original_back)
+        self.assertIs(view.results, viewport)
+        self.assertEqual(view.search.value, "beta")
+        self.assertEqual(
+            sum(control is original_search for control in walk(view.control)), 1
+        )
+        self.assertEqual(
+            sum(control is original_back for control in walk(view.control)), 1
+        )
+        await _click(view.cancel_button)
+        cancel.assert_awaited_once()
+
     async def test_mode_check_is_real_callback_busy_once_then_updates_current_access(
         self,
     ):

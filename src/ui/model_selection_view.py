@@ -506,43 +506,34 @@ class ModelSelectionView:
             prefix_icon=ft.Icons.SEARCH,
             on_change=self._filter,
         )
+        self._header = ft.Column(
+            controls=[
+                BrandHeader(),
+                ft.Text(
+                    tr("connection.change_provider")
+                    if changing_provider
+                    else tr("selection.models.vsegpt")
+                    if self.provider_id is ProviderId.VSEGPT
+                    else tr(
+                        "catalog.select_free"
+                        if mode is ChatMode.FREE
+                        else "catalog.select_paid"
+                    ),
+                    theme_style=ft.TextThemeStyle.HEADLINE_SMALL,
+                ),
+                self.search,
+                self.cancel_button,
+            ]
+        )
         self.results = ft.ListView(expand=True, spacing=10)
         self._render_results(self._models)
         self.control = ft.SafeArea(
             expand=True,
             maintain_bottom_view_padding=True,
-            content=ft.Column(
+            content=ft.Container(
                 expand=True,
-                spacing=12,
-                controls=[
-                    ft.Container(
-                        padding=20,
-                        content=ft.Column(
-                            controls=[
-                                BrandHeader(),
-                                ft.Text(
-                                    tr("connection.change_provider")
-                                    if changing_provider
-                                    else tr("selection.models.vsegpt")
-                                    if self.provider_id is ProviderId.VSEGPT
-                                    else tr(
-                                        "catalog.select_free"
-                                        if mode is ChatMode.FREE
-                                        else "catalog.select_paid"
-                                    ),
-                                    theme_style=ft.TextThemeStyle.HEADLINE_SMALL,
-                                ),
-                                self.search,
-                                self.cancel_button,
-                            ]
-                        ),
-                    ),
-                    ft.Container(
-                        expand=True,
-                        padding=ft.Padding(20, 0, 20, 20),
-                        content=self.results,
-                    ),
-                ],
+                padding=20,
+                content=self.results,
             ),
         )
 
@@ -582,7 +573,9 @@ class ModelSelectionView:
     def _render_results(self, models: tuple[CatalogModel, ...]) -> None:
         if self._disposed:
             return
-        leading: list[ft.Control] = [self.connection_status.control]
+        # One viewport keeps every action reachable even in short landscapes.
+        # Reuse the header so filtering never reparents the search or Back controls.
+        leading: list[ft.Control] = [self._header, self.connection_status.control]
         if self.refresh_button is not None:
             self.refresh_button.disabled = (
                 self.connection_status.busy or self._refreshing
