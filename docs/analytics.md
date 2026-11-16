@@ -24,7 +24,7 @@ The model list follows the selected service and period. The same model ID from O
 
 | Linux | Android emulator |
 | --- | --- |
-| <a href="assets/screenshots/v011-linux-tokens-en.png"><img src="assets/screenshots/v011-linux-tokens-en.png" alt="Token usage filtered by provider on Linux" width="560"></a> | <a href="assets/screenshots/v011-android-tokens-en.png"><img src="assets/screenshots/v011-android-tokens-en.png" alt="Token usage filtered by provider in an Android emulator" width="300"></a> |
+| <a href="assets/screenshots/v011-linux-daily-tokens-en.png"><img src="assets/screenshots/v011-linux-daily-tokens-en.png" alt="Token usage filtered by provider on Linux" width="560"></a> | <a href="assets/screenshots/v011-android-daily-tokens-en.png"><img src="assets/screenshots/v011-android-daily-tokens-en.png" alt="Token usage filtered by provider in an Android emulator" width="300"></a> |
 
 *Demonstration data. Android images show an emulator.*
 
@@ -40,7 +40,7 @@ Historical requests without a reliable dispatch date appear only in **All time**
 
 | Linux | Android emulator |
 | --- | --- |
-| <a href="assets/screenshots/v011-linux-spending-en.png"><img src="assets/screenshots/v011-linux-spending-en.png" alt="Daily spending in separate currencies on Linux" width="560"></a> | <a href="assets/screenshots/v011-android-spending-en.png"><img src="assets/screenshots/v011-android-spending-en.png" alt="Daily spending in separate currencies in an Android emulator" width="300"></a> |
+| <a href="assets/screenshots/v011-linux-spending-filter-en.png"><img src="assets/screenshots/v011-linux-spending-filter-en.png" alt="Daily spending in separate currencies on Linux" width="560"></a> | <a href="assets/screenshots/v011-android-spending-filter-en.png"><img src="assets/screenshots/v011-android-spending-filter-en.png" alt="Daily spending in separate currencies in an Android emulator" width="300"></a> |
 
 *Demonstration data. Android images show an emulator.*
 

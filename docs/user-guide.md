@@ -38,7 +38,11 @@ Switching pages saves the draft and keeps the current chat. Android Back returns
 
 Use **+** to start a chat. With **Choose each time**, first choose OpenRouter or VSEGPT. A saved service preference skips that question. Then choose an available mode, model and limits. This creation policy applies only to new chats. Use **Chat connection** to change the service of an existing chat explicitly. To use a different model within the same service, create another chat.
 
-OpenRouter free mode can use automatic model selection or models whose applicable prices are all zero. VSEGPT pricing can use other billing units. An unknown price is not a free model. VSEGPT offers paid model selection with a RUB budget. A fully free text-chat contract is not confirmed, so the app does not offer an inactive free-mode card. Catalogue errors explain the failure and offer **Refresh list**. OpenRouter automatic free selection remains available without a model list, subject to service access and quota. Refreshing a list never retries a chat message automatically.
+OpenRouter free mode uses automatic selection or models whose applicable prices are all zero. Access still depends on authorization, model availability and service limits. A negative account balance can block free requests. Zero and an unknown balance are different states. See the current [OpenRouter limits](https://openrouter.ai/docs/api_reference/limits).
+
+VSEGPT offers paid model selection with a RUB budget. Billing may use other units, and an unknown price is not zero. A fully free text-chat billing contract is not confirmed, so free mode is not offered for this service.
+
+When a catalogue cannot load, the app shows a specific reason and **Refresh list**. Refreshing a list never retries a chat message automatically. OpenRouter automatic free selection remains available without the list, subject to the same access rules.
 
 Use the conversation list to reopen a chat. **Rename** preserves its history and draft. **Delete chat** asks for confirmation and removes that chat, its draft and its local statistics. Header shortcuts can hide when the keyboard leaves too little height. The **⋮** menu holds model details, limits, key information and profile actions.
 
@@ -47,6 +51,22 @@ Use the conversation list to reopen a chat. **Rename** preserves its history and
 *Demonstration conversation actions in an Android emulator. Model names come from the service catalogue.*
 
 <a id="en-chat-connection"></a>
+<a id="en-new-chat-provider"></a>
+
+### Choose a provider for a new chat
+
+| Linux | Android emulator |
+| --- | --- |
+| <a href="assets/screenshots/v011-linux-new-chat-provider-en.png"><img src="assets/screenshots/v011-linux-new-chat-provider-en.png" alt="Provider choice for a new chat on Linux" width="560"></a> | <a href="assets/screenshots/v011-android-new-chat-provider-en.png"><img src="assets/screenshots/v011-android-new-chat-provider-en.png" alt="Provider choice for a new chat in an Android emulator" width="300"></a> |
+
+| Linux | Android emulator |
+| --- | --- |
+| <a href="assets/screenshots/v011-linux-vsegpt-modes-en.png"><img src="assets/screenshots/v011-linux-vsegpt-modes-en.png" alt="VSEGPT paid model selection on Linux" width="560"></a> | <a href="assets/screenshots/v011-android-vsegpt-modes-en.png"><img src="assets/screenshots/v011-android-vsegpt-modes-en.png" alt="VSEGPT paid model selection in an Android emulator" width="300"></a> |
+
+*Demonstration profiles in the actual Linux bundle and Android emulator. No paid request was sent.*
+
+[OpenRouter free mode without a catalogue](assets/screenshots/v011-linux-openrouter-free-mode-en.png) is shown on Linux with an unverified demonstration key and unavailable network. This illustration does not establish authorization or successful generation.
+
 ## Chat connection and provider changes
 
 Open **⋮** in the selected chat. **Chat connection** shows its provider and key status, with a masked reference when a key is saved. Each provider has one protected key shared by all its chats. A sufficiently long key shows only its last four characters, otherwise it stays fully masked. **Configure OpenRouter key** or **Configure VSEGPT key** opens the matching service card.

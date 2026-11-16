@@ -16,7 +16,7 @@ Use the **Provider** dropdown with **All**, **OpenRouter** and **VSEGPT** to sho
 
 | Linux | Android emulator |
 | --- | --- |
-| <a href="assets/screenshots/v011-linux-providers-en.png"><img src="assets/screenshots/v011-linux-providers-en.png" alt="VSEGPT key form selected on Linux" width="560"></a> | <a href="assets/screenshots/v011-android-providers-en.png"><img src="assets/screenshots/v011-android-providers-en.png" alt="Separate provider forms in an Android emulator" width="300"></a> |
+| <a href="assets/screenshots/v011-linux-provider-policy-en.png"><img src="assets/screenshots/v011-linux-provider-policy-en.png" alt="VSEGPT key form selected on Linux" width="560"></a> | <a href="assets/screenshots/v011-android-provider-policy-en.png"><img src="assets/screenshots/v011-android-provider-policy-en.png" alt="Separate provider forms in an Android emulator" width="300"></a> |
 
 *Demonstration data. Android images show an emulator.*
 
@@ -53,3 +53,5 @@ VSEGPT has no supported separate key-limit indicator. This does not make a worki
 **Refresh balance** updates the named service. Loading, unavailable and outdated amounts stay distinct. A failed refresh keeps the last known amount marked as outdated. A known zero is shown as zero. Missing subscriptions, insufficient funds and authorization failures have their own states.
 
 A free validation is not a paid generation. Saving an unverified key starts no chat request. Read [chat budgets](user-guide.md) and [data protection](security.md) before sending sensitive information.
+
+If OpenRouter supplies a daily free-request count, its card shows the remaining allowance for the UTC day. This counts requests, separately from account credits, the key spending cap and chat tokens. An unavailable count is not replaced with zero.
