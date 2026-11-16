@@ -539,7 +539,7 @@ class WorkspacePagesTests(unittest.IsolatedAsyncioTestCase):
         page = SpendingPage(
             on_filter=AsyncMock(), filters=AnalyticsFilter(period="all")
         )
-        for selector in (page.period, page.model):
+        for selector in (page.period, page.model, page.provider.control):
             for option in selector.options:
                 object.__setattr__(option, "_frozen", True)
         set_language("en")
@@ -547,9 +547,7 @@ class WorkspacePagesTests(unittest.IsolatedAsyncioTestCase):
         page.sync_language()
         self.assertEqual(page.period.value, "all")
         self.assertEqual(page.period.options[0].text, "7 days")
-        all_label = page.provider.control.segments[0].label
-        assert isinstance(all_label, ft.Text)
-        self.assertEqual(all_label.value, "All")
+        self.assertEqual(page.provider.control.options[0].text, "All")
         self.assertEqual(page.model.options[0].text, "All models")
 
     async def test_analytics_money_display_rounds_without_losing_nonzero_amounts(self):

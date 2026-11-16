@@ -18,6 +18,7 @@ from auth.models import (  # noqa: E402
 )
 from auth.pin import PinHasher  # noqa: E402
 from auth.service import AuthService  # noqa: E402
+from providers.creation import NewChatPolicy  # noqa: E402
 from providers.models import ProviderId  # noqa: E402
 from storage.data_access import DataAccess  # noqa: E402
 from storage.data_protection import DATA_KEY_ALIAS, DataProtection  # noqa: E402
@@ -71,6 +72,9 @@ class VsegptOnlyAuthTests(unittest.IsolatedAsyncioTestCase):
         result = await self.service.complete_setup("0123", token)
         self.assertEqual(result.status, AuthStatus.AUTHENTICATED)
         self.assertTrue(self.access.unlocked)
+        self.assertIs(
+            await self.credentials.get_new_chat_policy(), NewChatPolicy.MANUAL
+        )
         return result
 
     async def test_unverified_choice_is_required_before_pin_or_secure_persistence(self):
@@ -122,6 +126,9 @@ class VsegptOnlyAuthTests(unittest.IsolatedAsyncioTestCase):
         result = await self.service.login("0123")
         self.assertEqual(result.status, AuthStatus.AUTHENTICATED)
         self.assertEqual(result.api_key, self.key)
+        self.assertIs(
+            await self.credentials.get_new_chat_policy(), NewChatPolicy.MANUAL
+        )
         self.assertTrue(self.access.unlocked)
         self.assertEqual(self.validator.calls, calls)
         self.assertEqual(self.storage.values[DATA_KEY_ALIAS], key_record)

@@ -12,7 +12,7 @@
 
 ## Choose what to view
 
-Use **All · OpenRouter · VSEGPT** to show both service cards or one. The filter belongs to this page and is retained when you leave and return. It does not choose the provider of a chat.
+Use the **Provider** dropdown with **All**, **OpenRouter** and **VSEGPT** to show both service cards or one. The filter belongs to this page and is retained when you leave and return. It does not choose the provider of a chat.
 
 | Linux | Android emulator |
 | --- | --- |
@@ -37,7 +37,7 @@ Each card retains only its own unfinished candidate while unlocked. Changing the
 
 ## Choose the provider for new chats
 
-**Provider for new chats** is separate from the viewing filter and does not change existing chats. Use [Chat connection](user-guide.md#en-chat-connection) in a chat’s **⋮** menu to change that chat’s provider with an explicit model and budget review. Configure a missing key for the intended service before continuing. An error never moves history to another provider automatically.
+**Provider for new chats** is separate from the viewing filter and does not change existing chats. Choose **Choose each time** to select a service whenever you start a chat, or choose one service to use it directly. New profiles start with manual selection. An existing explicit preference is retained. Choosing a service for one chat does not change this setting. If its key is missing, the app opens that service’s form. Cancel returns without creating an empty chat or losing the old draft. Use [Chat connection](user-guide.md#en-chat-connection) in a chat’s **⋮** menu to change that chat’s provider with an explicit model and budget review. Configure a missing key for the intended service before continuing. An error never moves history to another provider automatically.
 
 ## Read balance and key status
 

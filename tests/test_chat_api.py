@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import ssl
 import sys
 import unittest
 from decimal import Decimal
@@ -348,6 +349,115 @@ class ChatCompletionsClientTests(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(result.error_type, expected)
                 self.assertEqual(result.retry_after, 3)
                 self.assertNotIn("provider detail", repr(result))
+
+    async def test_structured_provider_errors_distinguish_budget_quota_model_and_policy(
+        self,
+    ):
+        cases = (
+            (
+                402,
+                {"limit_source": "openrouter_key_limit"},
+                ChatErrorType.KEY_LIMIT_EXCEEDED,
+            ),
+            (
+                403,
+                {"limit_source": "openrouter_workspace_budget"},
+                ChatErrorType.KEY_LIMIT_EXCEEDED,
+            ),
+            (
+                403,
+                {"limit_source": "openrouter_guardrail_budget"},
+                ChatErrorType.KEY_LIMIT_EXCEEDED,
+            ),
+            (
+                402,
+                {"limit_source": "openrouter_credits"},
+                ChatErrorType.PAYMENT_REQUIRED,
+            ),
+            (429, {"error_type": "insufficient_quota"}, ChatErrorType.QUOTA_EXHAUSTED),
+            (
+                429,
+                {"error_type": "rate_limit_exceeded"},
+                ChatErrorType.RATE_LIMIT_EXCEEDED,
+            ),
+            (
+                403,
+                {"error_type": "content_policy_violation"},
+                ChatErrorType.CONTENT_POLICY_VIOLATION,
+            ),
+            (404, {}, ChatErrorType.MODEL_UNAVAILABLE),
+            (
+                503,
+                {"error_type": "provider_overloaded"},
+                ChatErrorType.PROVIDER_OVERLOADED,
+            ),
+            (
+                503,
+                {"limit_source": [], "error_type": []},
+                ChatErrorType.PROVIDER_UNAVAILABLE,
+            ),
+        )
+        for status, metadata, expected in cases:
+            with self.subTest(status=status, expected=expected):
+                result = await self._complete_with_response(
+                    httpx.Response(
+                        status,
+                        json={
+                            "error": {
+                                "code": status,
+                                "metadata": metadata,
+                                "message": "never display private response",
+                            }
+                        },
+                        headers={"Retry-After": "17"},
+                    )
+                )
+                self.assertEqual(result.error_type, expected)
+                self.assertEqual(result.retry_after, 17)
+                self.assertNotIn("private response", repr(result))
+
+    async def test_http_200_embedded_failure_retains_typed_reason_usage_and_retry_after(
+        self,
+    ):
+        for nested in (False, True):
+            error = {
+                "code": 403,
+                "metadata": {"limit_source": "openrouter_key_limit"},
+                "message": "private account detail",
+            }
+            payload: dict[str, object] = {
+                "usage": {"prompt_tokens": 7, "completion_tokens": 1, "total_tokens": 8}
+            }
+            if nested:
+                payload["choices"] = [{"finish_reason": "error", "error": error}]
+            else:
+                payload["error"] = error
+            result = await self._complete_with_response(
+                httpx.Response(200, json=payload, headers={"Retry-After": "19"})
+            )
+            self.assertFalse(result.successful)
+            self.assertEqual(result.error_type, ChatErrorType.KEY_LIMIT_EXCEEDED)
+            self.assertEqual(result.total_tokens, 8)
+            self.assertEqual(result.retry_after, 19)
+            self.assertNotIn("private account detail", repr(result))
+
+    async def test_tls_dispatch_failure_does_not_retry_or_reveal_exception(self):
+        calls = []
+
+        def handler(request):
+            calls.append(request)
+            raise httpx.ConnectError("private TLS diagnostics") from ssl.SSLError()
+
+        result = await _client(handler).complete(
+            TEST_CREDENTIAL,
+            MODEL_ID,
+            (ContextMessage(MessageRole.USER, "hello"),),
+            128,
+            ProviderPriceLimit.zero(),
+        )
+        self.assertEqual(result.error_type, ChatErrorType.TLS_ERROR)
+        self.assertEqual(len(calls), 1)
+        self.assertNotIn("private TLS", repr(result))
 
     async def test_403_content_policy_does_not_become_authentication_error(
         self,

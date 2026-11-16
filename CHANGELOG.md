@@ -11,7 +11,10 @@
 
 ### Changes from 0.1.0
 
-- Separate OpenRouter and VSEGPT forms with an **All · OpenRouter · VSEGPT** viewing filter.
+- Separate OpenRouter and VSEGPT forms with a compact **Provider** dropdown for viewing.
+- Daily token charts separate API usage, estimates and incomplete or undated data.
+- **Choose each time** selects a provider for each new chat while retaining existing explicit preferences.
+- Catalogue failures show a specific safe cause and support refreshing the list. VSEGPT no longer shows an unusable free-mode card when no fully free chat contract is confirmed.
 - Provider-aware model choices and saved filters on **Tokens** and **Spending**.
 - Independent USD and RUB panels and protection against stale statistics replacing the current view.
 - Shorter English and Russian messages for keys, balances and errors.

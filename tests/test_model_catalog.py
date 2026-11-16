@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
+import ssl
 import sys
 import tempfile
 import unittest
@@ -22,6 +24,7 @@ from api.models import (  # noqa: E402
 )
 from auth.models import KeyLimitInfo, KeyValidityState  # noqa: E402
 from chat.accounting import estimate_max_cost  # noqa: E402
+from chat.catalog import CatalogFetchResult, CatalogStatus  # noqa: E402
 from chat.models import FREE_ROUTER_MODEL, ChatMode, is_free_model  # noqa: E402
 from chat.service import ChatService  # noqa: E402
 from storage.chat_repository import SqliteChatRepository  # noqa: E402
@@ -413,6 +416,153 @@ class ModelCatalogTests(unittest.IsolatedAsyncioTestCase):
         catalog = await _catalog_from_handler(handler)
 
         _assert_closed_fallback(self, catalog)
+
+    async def test_typed_outcomes_keep_empty_schema_http_and_network_distinct(self):
+        async def outcome(value):
+            def handler(request):
+                if isinstance(value, BaseException):
+                    raise value
+                return value
+
+            return await ModelCatalogClient(
+                transport=httpx.MockTransport(handler)
+            ).fetch_catalog(TEST_CREDENTIAL)
+
+        for response, expected in (
+            (httpx.Response(200, json={"data": []}), CatalogStatus.EMPTY),
+            (
+                httpx.Response(200, json={"unexpected": []}),
+                CatalogStatus.INVALID_RESPONSE,
+            ),
+            (httpx.Response(200, content=b"not-json"), CatalogStatus.INVALID_RESPONSE),
+            (httpx.ConnectError("private details"), CatalogStatus.NETWORK_ERROR),
+            (httpx.ReadTimeout("private details"), CatalogStatus.TIMEOUT),
+        ):
+            with self.subTest(expected=expected):
+                result = await outcome(response)
+                self.assertEqual(result.status, expected)
+                self.assertEqual(result.available, expected is CatalogStatus.EMPTY)
+                self.assertNotIn("private details", repr(result))
+        for status in (401, 402, 403, 429, 500, 503, 302):
+            with self.subTest(status=status):
+                result = await outcome(
+                    httpx.Response(status, headers={"Retry-After": "7"})
+                )
+                self.assertEqual(result.status, CatalogStatus.HTTP_ERROR)
+                self.assertEqual(result.http_status, status)
+                self.assertEqual(result.retry_after, 7)
+
+        def tls_failure(_request):
+            raise httpx.ConnectError("private certificate detail") from ssl.SSLError()
+
+        result = await ModelCatalogClient(
+            transport=httpx.MockTransport(tls_failure)
+        ).fetch_catalog(TEST_CREDENTIAL)
+        self.assertEqual(result.status, CatalogStatus.TLS_ERROR)
+        self.assertNotIn("private certificate detail", repr(result))
+
+    async def test_wrong_provider_is_rejected_before_network_and_redirect_not_followed(
+        self,
+    ):
+        calls = []
+
+        def handler(request):
+            calls.append(request)
+            return httpx.Response(
+                302, headers={"Location": "https://untrusted.invalid/models"}
+            )
+
+        client = ModelCatalogClient(transport=httpx.MockTransport(handler))
+        result = await client.fetch_catalog("sk-or-vis-local-fixture")
+        self.assertEqual(result.status, CatalogStatus.KEY_MISMATCH)
+        self.assertEqual(calls, [])
+        result = await client.fetch_catalog(TEST_CREDENTIAL)
+        self.assertEqual(result.http_status, 302)
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(calls[0].url.host, "openrouter.ai")
+
+    async def test_explicit_refresh_bypasses_negative_ttl_but_respects_retry_after(
+        self,
+    ):
+        calls, clock = [], MutableClock()
+
+        def handler(request):
+            calls.append(request)
+            if len(calls) == 1:
+                return httpx.Response(503)
+            if len(calls) == 2:
+                return httpx.Response(429, headers={"Retry-After": "40"})
+            return httpx.Response(
+                200, json={"data": [_model("vendor/free", "Free", "0", "0")]}
+            )
+
+        service = ModelCatalogService(
+            ModelCatalogClient(transport=httpx.MockTransport(handler)), clock=clock
+        )
+        first = await service.get_catalog(TEST_CREDENTIAL)
+        self.assertFalse(first.available)
+        await service.get_catalog(TEST_CREDENTIAL, force_refresh=True)
+        self.assertEqual(len(calls), 1)
+        clock.value += 3
+        limited = await service.get_catalog(TEST_CREDENTIAL, force_refresh=True)
+        self.assertEqual(limited.http_status, 429)
+        self.assertEqual(len(calls), 2)
+        clock.value += 3
+        waiting = await service.get_catalog(TEST_CREDENTIAL, force_refresh=True)
+        self.assertEqual(waiting.retry_after, 37)
+        self.assertEqual(len(calls), 2)
+        clock.value += 38
+        success = await service.get_catalog(TEST_CREDENTIAL, force_refresh=True)
+        self.assertTrue(success.available)
+        self.assertEqual(len(calls), 3)
+        self.assertIs(success, await service.get_catalog(TEST_CREDENTIAL))
+
+    async def test_freshness_invalidation_keeps_refusal_interval_but_lock_clears_it(
+        self,
+    ):
+        calls, clock = [], MutableClock()
+
+        def handler(request):
+            calls.append(request)
+            return httpx.Response(429, headers={"Retry-After": "40"})
+
+        service = ModelCatalogService(
+            ModelCatalogClient(transport=httpx.MockTransport(handler)), clock=clock
+        )
+        await service.get_catalog(TEST_CREDENTIAL)
+        service.clear_cache(preserve_backoff=True)
+        clock.value += 3
+        result = await service.get_catalog(TEST_CREDENTIAL, force_refresh=True)
+        self.assertEqual(result.http_status, 429)
+        self.assertEqual(result.retry_after, 37)
+        self.assertEqual(len(calls), 1)
+        service.clear_cache()
+        self.assertIsNone(service.peek_catalog(TEST_CREDENTIAL))
+        await service.get_catalog(TEST_CREDENTIAL, force_refresh=True)
+        self.assertEqual(len(calls), 2)
+
+    async def test_typed_inflight_refresh_is_discarded_after_session_revocation(self):
+        started, release = asyncio.Event(), asyncio.Event()
+
+        class Reader:
+            async def fetch_models(self, api_key: str):
+                raise AssertionError("typed path required")
+
+            async def fetch_catalog(self, _key):
+                started.set()
+                await release.wait()
+                return CatalogFetchResult(CatalogStatus.SUCCESS, (FREE_ROUTER_MODEL,))
+
+        service = ModelCatalogService(Reader())
+        task = asyncio.create_task(
+            service.get_catalog(TEST_CREDENTIAL, force_refresh=True)
+        )
+        await started.wait()
+        service.clear_cache()
+        release.set()
+        result = await task
+        self.assertFalse(result.available)
+        self.assertIsNone(service.peek_catalog(TEST_CREDENTIAL))
 
     async def test_memory_cache_honors_ttl_and_can_be_cleared(self) -> None:
         calls = 0

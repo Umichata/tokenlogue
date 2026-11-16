@@ -20,6 +20,7 @@ from api.openrouter import (  # noqa: E402
     KeyValidationStatus,
     OpenRouterClient,
 )
+from auth.key_validation import interpret_key_validation  # noqa: E402
 
 TEST_CREDENTIAL = "sk-or-v1-unit-test-credential"
 
@@ -41,6 +42,43 @@ class OpenRouterClientTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result.status, KeyValidationStatus.ACCEPTED)
         self.assertEqual(result.limit_remaining, Decimal("12.34"))
         self.assertTrue(result.accepted)
+
+    async def test_optional_daily_quota_is_confirmed_without_assuming_missing_zero(
+        self,
+    ):
+        cases = (
+            (None, None),
+            ({"used": 3, "limit": 17, "remaining": 14}, (3, 17, 14)),
+            ({"used": 17, "limit": 17, "remaining": 0}, (17, 17, 0)),
+            ({"used": 20, "limit": 17, "remaining": 0}, (20, 17, 0)),
+            ({"used": 3, "limit": 17}, None),
+            ({"used": 3, "limit": 17, "remaining": 0}, None),
+            ({"used": True, "limit": 17, "remaining": 16}, None),
+            ({"used": -1, "limit": 17, "remaining": 18}, None),
+            ({"used": 1.5, "limit": 17, "remaining": 15.5}, None),
+            ({"used": "0", "limit": 17, "remaining": 17}, None),
+        )
+        for raw, expected in cases:
+            with self.subTest(expected=expected, raw=raw):
+                data: dict[str, object] = {"limit_remaining": None}
+                if raw is not None:
+                    data["free_model_daily_requests"] = raw
+                result = await self._validate(
+                    lambda _request: httpx.Response(200, json={"data": data})
+                )
+                self.assertTrue(result.accepted)
+                quota = result.daily_request_quota
+                _validity, limit = interpret_key_validation(result)
+                self.assertEqual(limit.daily_request_quota, quota)
+                if expected is None:
+                    self.assertIsNone(quota)
+                else:
+                    self.assertIsNotNone(quota)
+                    assert quota is not None
+                    self.assertEqual(
+                        (quota.used, quota.limit, quota.remaining), expected
+                    )
+                self.assertIsNone(result.limit_remaining)
 
     async def test_accepts_null_limit(self) -> None:
         result = await self._validate(

@@ -36,9 +36,9 @@ Switching pages saves the draft and keeps the current chat. Android Back returns
 
 ## Create and manage a chat
 
-Use **+** to choose free or paid mode, an available model and limits. The default provider applies only to new chats. Use **Chat connection** to change the service of an existing chat explicitly. To use a different model within the same service, create another chat.
+Use **+** to start a chat. With **Choose each time**, first choose OpenRouter or VSEGPT. A saved service preference skips that question. Then choose an available mode, model and limits. This creation policy applies only to new chats. Use **Chat connection** to change the service of an existing chat explicitly. To use a different model within the same service, create another chat.
 
-OpenRouter free mode can use automatic model selection or models whose applicable prices are all zero. VSEGPT pricing can use other billing units. An unknown price is not a free model.
+OpenRouter free mode can use automatic model selection or models whose applicable prices are all zero. VSEGPT pricing can use other billing units. An unknown price is not a free model. VSEGPT offers paid model selection with a RUB budget. A fully free text-chat contract is not confirmed, so the app does not offer an inactive free-mode card. Catalogue errors explain the failure and offer **Refresh list**. OpenRouter automatic free selection remains available without a model list, subject to service access and quota. Refreshing a list never retries a chat message automatically.
 
 Use the conversation list to reopen a chat. **Rename** preserves its history and draft. **Delete chat** asks for confirmation and removes that chat, its draft and its local statistics. Header shortcuts can hide when the keyboard leaves too little height. The **⋮** menu holds model details, limits, key information and profile actions.
 

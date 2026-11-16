@@ -21,6 +21,7 @@
 
 - Keep OpenRouter and VSEGPT keys separately in protected storage.
 - Review the provider and masked shared key in **⋮**, then [change that chat’s provider explicitly](docs/user-guide.md#en-chat-connection).
+- View daily tokens with separate API usage and local estimates, and choose a service for each new chat.
 - Use **Home**, **Providers**, **Tokens** and **Spending** without losing the current chat or draft.
 - View one service or both with **All · OpenRouter · VSEGPT**. The viewing filter does not change the provider of a chat.
 - Track local token usage and daily costs by provider and model. USD and RUB remain separate.

@@ -45,7 +45,7 @@ artifact = "tokenlogue"
 org = "io.github.umichata"
 bundle_id = "io.github.umichata.tokenlogue"
 # Номер сборки растёт независимо от пользовательской версии.
-build_number = 50
+build_number = 51
 company = "Umichata"
 copyright = "Copyright © 2026 Viktor Zemkov"
 
@@ -66,7 +66,7 @@ exclude = [
 ]
 
 [tool.flet.flutter.pubspec]
-version = "0.1.1+50"
+version = "0.1.1+51"
 
 # Сохраняем совместимость с JNI 1.0.0, закреплённым в Flet 0.86.5.
 [tool.flet.flutter.pubspec.dependency_overrides]

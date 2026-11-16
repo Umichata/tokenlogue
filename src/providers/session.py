@@ -18,6 +18,7 @@ from chat.account_balance import (
     AccountBalanceSnapshot,
     has_authenticated_vsegpt_balance,
 )
+from providers.creation import NewChatPolicy
 from providers.credentials import masked_key_display
 from providers.models import ProviderId, detect_key, provider_spec
 from storage.secure_credentials import FletSecureCredentials
@@ -70,6 +71,7 @@ class ProviderProfiles:
         self._epoch = 0
         self._active = False
         self._default_provider = ProviderId.OPENROUTER
+        self._creation_policy = NewChatPolicy.MANUAL
         self._keys: dict[ProviderId, str] = {}
         self._revisions: dict[ProviderId, str] = {}
         self._checks: dict[ProviderId, tuple[str, KeyValidationResult, object]] = {}
@@ -95,6 +97,10 @@ class ProviderProfiles:
     @property
     def default_provider(self) -> ProviderId:
         return self._default_provider
+
+    @property
+    def creation_policy(self) -> NewChatPolicy:
+        return self._creation_policy
 
     def set_on_change(self, callback: Callable[[], None]) -> None:
         self._on_change = callback
@@ -161,6 +167,7 @@ class ProviderProfiles:
                 )
         async with self._default_lock:
             default = await self._credentials.get_default_provider()
+            creation_policy = await self._credentials.get_new_chat_policy()
         if epoch != self._epoch:
             raise ProviderSessionExpired()
         provider = detect_key(initial_key)
@@ -184,6 +191,7 @@ class ProviderProfiles:
         self._revisions = revisions
         self._states = states
         self._default_provider = default
+        self._creation_policy = creation_policy
         for provider in ProviderId:
             self._balances[provider].begin_session(provider)
         self._active = True
@@ -264,10 +272,24 @@ class ProviderProfiles:
             if not self._active or not self.key_for(provider):
                 raise ProviderSessionExpired()
             epoch = self._epoch
-            await self._credentials.set_default_provider(provider)
+            await self._credentials.set_default_provider(
+                provider, creation_policy=NewChatPolicy.for_provider(provider)
+            )
             if not self._active or epoch != self._epoch:
                 raise ProviderSessionExpired()
             self._default_provider = provider
+            self._creation_policy = NewChatPolicy.for_provider(provider)
+            self._notify()
+
+    async def set_creation_policy(self, policy: NewChatPolicy) -> None:
+        async with self._default_lock:
+            if not self._active:
+                raise ProviderSessionExpired()
+            epoch = self._epoch
+            await self._credentials.set_new_chat_policy(policy)
+            if not self._active or epoch != self._epoch:
+                raise ProviderSessionExpired()
+            self._creation_policy = policy
             self._notify()
 
     def apply_validation(

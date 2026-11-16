@@ -17,6 +17,8 @@ class ChatErrorType(str, Enum):
     REFUSAL = "refusal"
     TIMEOUT = "timeout"
     NETWORK_ERROR = "network_error"
+    TLS_ERROR = "tls_error"
+    QUOTA_EXHAUSTED = "quota_exhausted"
     RATE_LIMIT_EXCEEDED = "rate_limit_exceeded"
     PROVIDER_UNAVAILABLE = "provider_unavailable"
     PROVIDER_OVERLOADED = "provider_overloaded"
@@ -48,6 +50,8 @@ SAFE_ERROR_MESSAGES: dict[ChatErrorType, str] = {
     ChatErrorType.REFUSAL: tr("service.error.refusal"),
     ChatErrorType.TIMEOUT: tr("service.error.timeout"),
     ChatErrorType.NETWORK_ERROR: tr("service.error.network"),
+    ChatErrorType.TLS_ERROR: tr("service.error.tls"),
+    ChatErrorType.QUOTA_EXHAUSTED: tr("service.error.quota"),
     ChatErrorType.RATE_LIMIT_EXCEEDED: tr("service.error.rate"),
     ChatErrorType.PROVIDER_UNAVAILABLE: tr("service.error.unavailable"),
     ChatErrorType.PROVIDER_OVERLOADED: tr("service.error.overloaded"),

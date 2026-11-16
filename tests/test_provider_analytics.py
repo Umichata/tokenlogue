@@ -489,6 +489,196 @@ class AnalyticsProjectionTests(unittest.TestCase):
         self.assertLess(snapshot.usage_rows[0].requests, 5000)
         self.assertEqual(len(snapshot.spending[0].days), 30)
 
+    def test_daily_tokens_deduplicate_dispatch_and_separate_partial_api_from_estimates(
+        self,
+    ):
+        confirmed = attempt(
+            1,
+            sent_at=NOW,
+            chronology_known=True,
+            prompt_tokens=5,
+            completion_tokens=2,
+            total_tokens=7,
+            cached_tokens=3,
+            reasoning_tokens=1,
+            usage_source="api",
+        )
+        partial = replace(
+            confirmed,
+            sequence=3,
+            provider_id=ProviderId.VSEGPT,
+            currency=Currency.RUB,
+            prompt_tokens=2,
+            completion_tokens=3,
+            total_tokens=None,
+            connection_revision=1,
+        )
+        estimate = replace(
+            confirmed,
+            sequence=4,
+            prompt_tokens=11,
+            completion_tokens=13,
+            total_tokens=24,
+            usage_source="estimated",
+        )
+        snapshot = build_analytics(
+            [confirmed, confirmed, replace(confirmed, sequence=2), partial, estimate],
+            AnalyticsFilter(timezone_name="UTC"),
+            NOW,
+        )
+        daily = snapshot.daily_tokens[-1].usage
+        self.assertEqual(daily.requests, 4)
+        self.assertEqual(daily.api.requests, 3)
+        self.assertEqual(
+            (
+                daily.api.prompt_tokens,
+                daily.api.completion_tokens,
+                daily.api.total_tokens,
+            ),
+            (12, 7, 14),
+        )
+        self.assertEqual(daily.api.partial_requests, 1)
+        self.assertEqual(daily.unknown_usage_requests, 1)
+        self.assertEqual(
+            (
+                daily.estimated.prompt_tokens,
+                daily.estimated.completion_tokens,
+                daily.estimated.total_tokens,
+            ),
+            (11, 13, 24),
+        )
+        self.assertEqual(daily.estimated.partial_requests, 0)
+        # Neither missing API totals nor cached/reasoning subsets are added.
+        self.assertEqual(sum(row.total_tokens or 0 for row in snapshot.usage_rows), 14)
+        self.assertEqual(snapshot.undated_tokens.requests, 0)
+
+    def test_daily_empty_unknown_partial_and_confirmed_zero_remain_distinct(self):
+        records = [
+            attempt(
+                1,
+                sent_at=NOW,
+                chronology_known=True,
+                prompt_tokens=0,
+                completion_tokens=0,
+                total_tokens=0,
+                usage_source="api",
+            ),
+            attempt(2, sent_at=NOW - timedelta(days=1), chronology_known=True),
+            attempt(
+                3,
+                sent_at=NOW - timedelta(days=2),
+                chronology_known=True,
+                prompt_tokens=5,
+                completion_tokens=6,
+                total_tokens=None,
+                usage_source="api",
+            ),
+        ]
+        daily = build_analytics(
+            records, AnalyticsFilter(timezone_name="UTC"), NOW
+        ).daily_tokens
+        self.assertEqual(daily[-1].usage.api.total_tokens, 0)
+        self.assertEqual(daily[-1].usage.unknown_usage_requests, 0)
+        self.assertEqual(daily[-2].usage.requests, 1)
+        self.assertIsNone(daily[-2].usage.api.total_tokens)
+        self.assertEqual(daily[-2].usage.unknown_usage_requests, 1)
+        self.assertEqual(daily[-3].usage.api.prompt_tokens, 5)
+        self.assertEqual(daily[-3].usage.api.completion_tokens, 6)
+        self.assertIsNone(daily[-3].usage.api.total_tokens)
+        self.assertEqual(daily[-3].usage.api.partial_requests, 1)
+        self.assertEqual(daily[-4].usage.requests, 0)
+        self.assertEqual(daily[-4].usage.unknown_usage_requests, 0)
+        self.assertIsNone(daily[-4].usage.api.total_tokens)
+
+    def test_daily_token_timezone_period_and_undated_use_original_dispatch_only(self):
+        record = attempt(
+            1,
+            sent_at=datetime(2026, 11, 8, 16, tzinfo=UTC),
+            chronology_known=True,
+            total_tokens=9,
+            usage_source="api",
+        )
+        older = replace(record, sequence=2, sent_at=NOW - timedelta(days=15))
+        undated = replace(record, sequence=3, sent_at=None)
+        naive = replace(record, sequence=4, sent_at=NOW.replace(tzinfo=None))
+        unknown_chronology = replace(
+            record, sequence=5, sent_at=NOW, chronology_known=False
+        )
+        records = [record, older, undated, naive, unknown_chronology]
+        utc = build_analytics(records, AnalyticsFilter(timezone_name="UTC"), NOW)
+        yakutsk = build_analytics(
+            records, AnalyticsFilter(timezone_name="Asia/Yakutsk"), NOW
+        )
+        self.assertEqual(sum(day.usage.requests for day in utc.daily_tokens), 0)
+        self.assertEqual(yakutsk.daily_tokens[0].day.isoformat(), "2026-11-09")
+        self.assertEqual(yakutsk.daily_tokens[0].usage.api.total_tokens, 9)
+        monthly = build_analytics(
+            records, AnalyticsFilter(period="30d", timezone_name="UTC"), NOW
+        )
+        self.assertEqual(len(monthly.daily_tokens), 30)
+        self.assertEqual(sum(day.usage.requests for day in monthly.daily_tokens), 2)
+        self.assertEqual(monthly.undated_tokens.requests, 0)
+        all_time = build_analytics(
+            records, AnalyticsFilter(period="all", timezone_name="UTC"), NOW
+        )
+        self.assertEqual(all_time.undated_tokens.requests, 3)
+        self.assertEqual(all_time.undated_tokens.api.total_tokens, 27)
+        self.assertEqual(
+            sum(day.usage.api.total_tokens or 0 for day in all_time.daily_tokens), 18
+        )
+        undated_total = all_time.undated_tokens.api.total_tokens
+        assert undated_total is not None
+        self.assertEqual(
+            sum(row.total_tokens or 0 for row in all_time.usage_rows),
+            18 + undated_total,
+        )
+
+    def test_daily_same_model_filters_by_historical_provider_after_connection_switch(
+        self,
+    ):
+        records = [
+            replace(item, connection_revision=index)
+            for index, item in enumerate(self.provider_history())
+        ]
+        for provider, amount in ((ProviderId.OPENROUTER, 11), (ProviderId.VSEGPT, 29)):
+            snapshot = build_analytics(
+                records,
+                AnalyticsFilter(
+                    model_id="shared/model",
+                    model_provider_id=provider,
+                    timezone_name="UTC",
+                ),
+                NOW,
+            )
+            self.assertEqual(
+                sum(day.usage.requests for day in snapshot.daily_tokens), 1
+            )
+            self.assertEqual(snapshot.daily_tokens[-1].usage.api.total_tokens, amount)
+            self.assertEqual(snapshot.usage_rows[0].provider_id, provider)
+            self.assertEqual(snapshot.usage_rows[0].total_tokens, amount)
+            self.assertEqual(snapshot.undated_tokens.requests, 0)
+
+    def test_daily_dst_fold_groups_both_actual_attempts_once(self):
+        records = [
+            attempt(
+                index,
+                sent_at=datetime(2026, 11, 1, hour, 30, tzinfo=UTC),
+                chronology_known=True,
+                total_tokens=index,
+                usage_source="estimated",
+            )
+            for index, hour in ((1, 5), (2, 6))
+        ]
+        snapshot = build_analytics(
+            records,
+            AnalyticsFilter(period="all", timezone_name="America/New_York"),
+            datetime(2026, 11, 2, 12, tzinfo=UTC),
+        )
+        self.assertEqual(snapshot.daily_tokens[0].day.isoformat(), "2026-11-01")
+        self.assertEqual(snapshot.daily_tokens[0].usage.requests, 2)
+        self.assertEqual(snapshot.daily_tokens[0].usage.estimated.total_tokens, 3)
+        self.assertIsNone(snapshot.daily_tokens[0].usage.api.total_tokens)
+
 
 class ProviderJournalTests(unittest.TestCase):
     def setUp(self):
@@ -713,6 +903,16 @@ class ProviderJournalTests(unittest.TestCase):
         assert vsegpt_budget is not None
         self.assertEqual(vsegpt_budget.cost_used, Decimal("4"))
         self.assertEqual(self.budget().total_tokens_used, 30)
+        self.assertEqual(snapshot.daily_tokens[-1].usage.requests, 3)
+        self.assertEqual(snapshot.daily_tokens[-1].usage.api.total_tokens, 30)
+        for provider, expected in (
+            (ProviderId.OPENROUTER, 20),
+            (ProviderId.VSEGPT, 10),
+        ):
+            filtered = build_analytics(
+                rows, AnalyticsFilter(provider_id=provider, timezone_name="UTC"), NOW
+            )
+            self.assertEqual(filtered.daily_tokens[-1].usage.api.total_tokens, expected)
 
     def test_result_replay_and_late_refinement_are_idempotent_and_keep_send_time(self):
         self.create()
@@ -780,6 +980,10 @@ class ProviderJournalTests(unittest.TestCase):
         self.assertEqual(self.turn().actual_model_id, "retry-actual")
         self.assertEqual(self.budget().total_tokens_used, 15)
         self.assertEqual(self.budget().cost_used, 3)
+        snapshot = build_analytics(saved, AnalyticsFilter(timezone_name="UTC"), NOW)
+        self.assertEqual(snapshot.daily_tokens[-1].usage.requests, 2)
+        self.assertEqual(snapshot.daily_tokens[-1].usage.api.total_tokens, 15)
+        self.assertEqual(sum(day.usage.requests for day in snapshot.daily_tokens), 2)
 
     def test_unsent_cancel_has_no_attempt_and_chat_deletion_removes_analytics(self):
         self.create()

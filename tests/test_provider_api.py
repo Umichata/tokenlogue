@@ -543,6 +543,44 @@ class ProviderCatalogTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(model.prompt_price_per_token, Decimal("0"))
         self.assertNotIn("Authorization", requests[0].headers)
 
+    async def test_vsegpt_zero_price_aliases_and_media_are_not_free_text_contracts(
+        self,
+    ):
+        # The public catalogue uses the same two pricing fields for aliases and
+        # media. Neither declares complete zero-cost text-chat billing.
+        items = [
+            {
+                "id": model_id,
+                "name": model_id,
+                "context_length": "128000",
+                "pricing": {"prompt": "0", "completion": "0"},
+                "features": [],
+                "chat_na_msg": "",
+            }
+            for model_id in (
+                "perplexity/latest-small-online",
+                "perplexity/latest-large-online",
+                "img-openai/image",
+                "music-suno/song",
+            )
+        ]
+        service = ModelCatalogService(
+            ProviderRouter(
+                transport=httpx.MockTransport(
+                    lambda _request: httpx.Response(200, json={"data": items})
+                )
+            )
+        )
+        catalog = await service.get_catalog(VSEGPT_VIS_KEYS[0])
+        self.assertTrue(catalog.available)
+        self.assertEqual(catalog.free_models, ())
+        self.assertEqual(len(catalog.paid_models), 2)
+        for model in catalog.paid_models:
+            self.assertEqual(model.provider_id, ProviderId.VSEGPT)
+            self.assertEqual(model.currency, Currency.RUB)
+            self.assertFalse(model.pricing_is_complete)
+            self.assertFalse(is_free_model(model))
+
     async def test_cache_isolated_by_provider_and_credential_identity(self) -> None:
         calls: list[str] = []
 

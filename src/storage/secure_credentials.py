@@ -12,6 +12,7 @@ import flet_secure_storage as fss
 
 from auth.models import CredentialState
 from i18n import tr
+from providers.creation import NewChatPolicy
 from providers.models import ProviderId, detect_key
 
 SECURE_STORAGE_NAMESPACE = "io.github.umichata.tokenlogue"
@@ -22,6 +23,7 @@ PROVIDER_KEY_STORAGE_NAMES = {
     ProviderId.VSEGPT: f"{SECURE_STORAGE_NAMESPACE}.vsegpt_api_key.v1",
 }
 DEFAULT_PROVIDER_STORAGE_NAME = f"{SECURE_STORAGE_NAMESPACE}.default_provider.v1"
+NEW_CHAT_POLICY_STORAGE_NAME = f"{SECURE_STORAGE_NAMESPACE}.new_chat_policy.v1"
 PROVIDER_VALIDATION_STORAGE_NAMES = {
     provider: f"{SECURE_STORAGE_NAMESPACE}.{provider.value}_validation.v1"
     for provider in ProviderId
@@ -29,6 +31,7 @@ PROVIDER_VALIDATION_STORAGE_NAMES = {
 ALL_PROVIDER_STORAGE_NAMES = (
     *PROVIDER_KEY_STORAGE_NAMES.values(),
     DEFAULT_PROVIDER_STORAGE_NAME,
+    NEW_CHAT_POLICY_STORAGE_NAME,
     *PROVIDER_VALIDATION_STORAGE_NAMES.values(),
 )
 
@@ -83,8 +86,33 @@ class FletSecureCredentials:
         if old is None:
             raise SecureCredentialsError(tr("service.secure_read_failed"))
         provider = detect_key(api_key) or ProviderId.OPENROUTER
-        await self.save_provider_key(provider, api_key, authorization_confirmed=False)
-        await self.set_default_provider(provider)
+        policy = await self.get_new_chat_policy()
+        names = (
+            PROVIDER_KEY_STORAGE_NAMES[provider],
+            PROVIDER_VALIDATION_STORAGE_NAMES[provider],
+            DEFAULT_PROVIDER_STORAGE_NAME,
+            NEW_CHAT_POLICY_STORAGE_NAME,
+        )
+        try:
+            previous = {name: await self._storage.get(name) for name in names}
+        except Exception:
+            raise SecureCredentialsError(tr("service.secure_read_failed")) from None
+        try:
+            await self.save_provider_key(
+                provider, api_key, authorization_confirmed=False
+            )
+            await self.set_default_provider(provider, creation_policy=policy)
+        except BaseException:
+            async with self._provider_write_lock:
+                for name, value in previous.items():
+                    try:
+                        if value is None:
+                            await self._storage.remove(name)
+                        else:
+                            await self._storage.set(name, value)
+                    except Exception:
+                        pass
+            raise SecureCredentialsError(tr("service.secure_save_failed")) from None
 
     async def inspect_state(self) -> CredentialState:
         """Читает только метаданные регистрации, не извлекая API-ключ."""
@@ -115,6 +143,14 @@ class FletSecureCredentials:
             if await self._storage.get(name) != api_key:
                 raise SecureCredentialsError(tr("service.secure_save_failed"))
             await self._storage.set(DEFAULT_PROVIDER_STORAGE_NAME, provider.value)
+            await self._storage.set(
+                NEW_CHAT_POLICY_STORAGE_NAME, NewChatPolicy.MANUAL.value
+            )
+            if (
+                await self._storage.get(NEW_CHAT_POLICY_STORAGE_NAME)
+                != NewChatPolicy.MANUAL.value
+            ):
+                raise SecureCredentialsError(tr("service.secure_save_failed"))
         except Exception:
             await self._best_effort_remove()
             raise SecureCredentialsError(tr("service.secure_save_failed")) from None
@@ -171,29 +207,77 @@ class FletSecureCredentials:
             raise SecureCredentialsError(tr("service.secure_read_failed")) from None
         return ProviderId.OPENROUTER
 
-    async def set_default_provider(self, provider: ProviderId) -> None:
+    async def set_default_provider(
+        self, provider: ProviderId, *, creation_policy: NewChatPolicy | None = None
+    ) -> None:
         async with self._provider_write_lock:
+            names = [DEFAULT_PROVIDER_STORAGE_NAME]
+            if creation_policy is not None:
+                names.append(NEW_CHAT_POLICY_STORAGE_NAME)
             try:
-                previous = await self._storage.get(DEFAULT_PROVIDER_STORAGE_NAME)
+                previous = {name: await self._storage.get(name) for name in names}
                 if not await self._storage.contains_key(
                     PROVIDER_KEY_STORAGE_NAMES[provider]
                 ):
                     raise SecureCredentialsError(tr("service.secure_read_failed"))
             except Exception:
                 raise SecureCredentialsError(tr("service.secure_save_failed")) from None
+            changes = {DEFAULT_PROVIDER_STORAGE_NAME: provider.value}
+            if creation_policy is not None:
+                changes[NEW_CHAT_POLICY_STORAGE_NAME] = creation_policy.value
             try:
-                await self._storage.set(DEFAULT_PROVIDER_STORAGE_NAME, provider.value)
+                for name, value in changes.items():
+                    await self._storage.set(name, value)
+                    if await self._storage.get(name) != value:
+                        raise SecureCredentialsError(tr("service.secure_save_failed"))
+            except BaseException:
+                for name, value in previous.items():
+                    try:
+                        if value is None:
+                            await self._storage.remove(name)
+                        else:
+                            await self._storage.set(name, value)
+                    except Exception:
+                        pass
+                raise SecureCredentialsError(tr("service.secure_save_failed")) from None
+
+    async def get_new_chat_policy(self) -> NewChatPolicy:
+        """Retain an explicit legacy preference without changing any key slot."""
+        try:
+            value = await self._storage.get(NEW_CHAT_POLICY_STORAGE_NAME)
+            if value is not None:
+                return NewChatPolicy(value)
+            legacy = await self._storage.get(DEFAULT_PROVIDER_STORAGE_NAME)
+            return (
+                NewChatPolicy(legacy)
+                if legacy in {provider.value for provider in ProviderId}
+                else NewChatPolicy.MANUAL
+            )
+        except Exception:
+            raise SecureCredentialsError(tr("service.secure_read_failed")) from None
+
+    async def set_new_chat_policy(self, policy: NewChatPolicy) -> None:
+        """Persist a creation choice even when that service has no saved key yet."""
+        if not isinstance(policy, NewChatPolicy):
+            raise ValueError("invalid_new_chat_policy")
+        async with self._provider_write_lock:
+            try:
+                previous = await self._storage.get(NEW_CHAT_POLICY_STORAGE_NAME)
+            except Exception:
+                raise SecureCredentialsError(tr("service.secure_read_failed")) from None
+            try:
+                await self._storage.set(NEW_CHAT_POLICY_STORAGE_NAME, policy.value)
                 if (
-                    await self._storage.get(DEFAULT_PROVIDER_STORAGE_NAME)
-                    != provider.value
+                    await self._storage.get(NEW_CHAT_POLICY_STORAGE_NAME)
+                    != policy.value
                 ):
                     raise SecureCredentialsError(tr("service.secure_save_failed"))
             except BaseException:
                 try:
                     if previous is None:
-                        await self._storage.remove(DEFAULT_PROVIDER_STORAGE_NAME)
+                        await self._storage.remove(NEW_CHAT_POLICY_STORAGE_NAME)
                     else:
-                        await self._storage.set(DEFAULT_PROVIDER_STORAGE_NAME, previous)
+                        await self._storage.set(NEW_CHAT_POLICY_STORAGE_NAME, previous)
                 except Exception:
                     pass
                 raise SecureCredentialsError(tr("service.secure_save_failed")) from None

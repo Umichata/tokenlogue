@@ -79,6 +79,31 @@ class ModelUsage:
 
 
 @dataclass(frozen=True)
+class TokenUsageTotals:
+    """Known component sums for one source, without inventing missing usage."""
+
+    requests: int
+    prompt_tokens: int | None
+    completion_tokens: int | None
+    total_tokens: int | None
+    partial_requests: int
+
+
+@dataclass(frozen=True)
+class TokenUsageSummary:
+    requests: int
+    api: TokenUsageTotals
+    estimated: TokenUsageTotals
+    unknown_usage_requests: int
+
+
+@dataclass(frozen=True)
+class DailyTokenUsage:
+    day: date
+    usage: TokenUsageSummary
+
+
+@dataclass(frozen=True)
 class DailySpending:
     day: date
     confirmed: Decimal
@@ -109,6 +134,8 @@ class AnalyticsSnapshot:
     end_date: date
     timezone_name: str
     undated_requests: int
+    daily_tokens: tuple[DailyTokenUsage, ...]
+    undated_tokens: TokenUsageSummary
 
 
 def _timezone(name: str | None) -> tuple[tzinfo, str]:
@@ -145,7 +172,7 @@ def _local(value: datetime, zone: tzinfo) -> datetime:
 def _day(attempt: RequestAttempt, zone: tzinfo) -> date | None:
     if not attempt.chronology_known or attempt.sent_at is None:
         return None
-    if attempt.sent_at.tzinfo is None:
+    if attempt.sent_at.tzinfo is None or attempt.sent_at.utcoffset() is None:
         return None
     return _local(attempt.sent_at, zone).date()
 
@@ -159,6 +186,32 @@ def _tokens(attempts: list[RequestAttempt], field: str, source: str) -> int | No
     return sum(values) if values else None
 
 
+def _token_summary(attempts: list[RequestAttempt]) -> TokenUsageSummary:
+    def source_totals(source: str) -> TokenUsageTotals:
+        items = [item for item in attempts if item.usage_source == source]
+        return TokenUsageTotals(
+            len(items),
+            _tokens(items, "prompt_tokens", source),
+            _tokens(items, "completion_tokens", source),
+            _tokens(items, "total_tokens", source),
+            sum(_usage_incomplete(item) for item in items),
+        )
+
+    return TokenUsageSummary(
+        len(attempts),
+        source_totals("api"),
+        source_totals("estimated"),
+        sum(_usage_incomplete(item) for item in attempts),
+    )
+
+
+def _usage_incomplete(item: RequestAttempt) -> bool:
+    return item.usage_source not in {"api", "estimated"} or any(
+        value is None
+        for value in (item.prompt_tokens, item.completion_tokens, item.total_tokens)
+    )
+
+
 def build_analytics(
     attempts: Iterable[RequestAttempt],
     filters: AnalyticsFilter,
@@ -168,7 +221,7 @@ def build_analytics(
         raise ValueError("analytics_period_invalid")
     zone, zone_name = _timezone(filters.timezone_name)
     timestamp = now or datetime.now(UTC)
-    if timestamp.tzinfo is None:
+    if timestamp.tzinfo is None or timestamp.utcoffset() is None:
         raise ValueError("analytics_now_requires_timezone")
     end = _local(timestamp, zone).date()
     # Defensive identity deduplication: a repeated projection/result cannot
@@ -251,18 +304,7 @@ def build_analytics(
             )
             for item in items
         )
-        incomplete = sum(
-            item.usage_source == "unknown"
-            or any(
-                value is None
-                for value in (
-                    item.prompt_tokens,
-                    item.completion_tokens,
-                    item.total_tokens,
-                )
-            )
-            for item in items
-        )
+        incomplete = sum(_usage_incomplete(item) for item in items)
         usage.append(
             ModelUsage(
                 provider,
@@ -290,6 +332,16 @@ def build_analytics(
     )
     panels = []
     day_count = (end - start).days + 1
+    token_records: dict[date, list[RequestAttempt]] = defaultdict(list)
+    undated_tokens = []
+    for item in selected:
+        day = _day(item, zone)
+        (undated_tokens if day is None else token_records[day]).append(item)
+    token_days = tuple(
+        DailyTokenUsage(day, _token_summary(token_records[day]))
+        for offset in range(day_count)
+        for day in (start + timedelta(days=offset),)
+    )
     for currency, items in sorted(currencies.items()):
         daily: dict[date, list[RequestAttempt]] = defaultdict(list)
         undated = []
@@ -365,4 +417,6 @@ def build_analytics(
         end,
         zone_name,
         sum(_day(item, zone) is None for item in selected),
+        token_days,
+        _token_summary(undated_tokens),
     )

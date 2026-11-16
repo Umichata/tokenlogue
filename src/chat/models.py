@@ -7,6 +7,7 @@ from datetime import datetime
 from decimal import Decimal
 from enum import Enum
 
+from chat.catalog import CatalogStatus
 from providers.models import Currency, PriceUnit, ProviderId
 
 PRICE_PER_MILLION = Decimal("1000000")
@@ -146,6 +147,9 @@ class ModelCatalog:
     paid_models: tuple[CatalogModel, ...]
     available: bool
     warning: str | None = None
+    status: CatalogStatus = CatalogStatus.SUCCESS
+    http_status: int | None = None
+    retry_after: int | None = None
 
 
 @dataclass(frozen=True)

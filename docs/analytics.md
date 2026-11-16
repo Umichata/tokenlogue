@@ -3,7 +3,7 @@
 <a id="english"></a>
 <a id="lang-en"></a>
 
-# Tokens and daily spending
+# Daily tokens and spending
 
 [Home](../README.md) · [Documentation](../docs/README.md)
 
@@ -16,7 +16,7 @@
 
 A chat can contain requests made through both services. Each recorded attempt keeps the provider, model, currency and known dispatch date used for that request. Changing the chat’s current connection does not relabel earlier activity. USD and RUB stay separate after returning to a previously used provider.
 
-Each page retains its own **All · OpenRouter · VSEGPT** selection, period and compatible model filter. Choose **7 days**, **30 days** or **All time**. Viewing a service does not change its key, the default for new chats or the provider of the open chat.
+Each page retains its own **Provider** dropdown selection, period and compatible model filter. Choose **All**, **OpenRouter** or **VSEGPT**. Choose **7 days**, **30 days** or **All time**. Viewing a service does not change its key, the default for new chats or the provider of the open chat.
 
 The model list follows the selected service and period. The same model ID from OpenRouter and VSEGPT remains two choices. An incompatible model filter is reset when you change the provider.
 
@@ -28,7 +28,9 @@ The model list follows the selected service and period. The same model ID from O
 
 *Demonstration data. Android images show an emulator.*
 
-The page shows separate provider totals, requests, API-reported input/output/total tokens and a model table. The most-used-model bars show usage for the selected filters.
+**Tokens by day** groups saved attempts by their known local dispatch date using the same filters as the model table. API usage and local estimates have different colours. Tap a day or use the day controls to inspect input, output and total tokens, their source and partial coverage. Longer histories use a movable window. A request with unknown usage is distinct from a day without requests. Missing total is not reconstructed as an API value.
+
+The page also shows separate provider totals, requests, API-reported input/output/total tokens and a model table. The most-used-model bars show usage for the selected filters.
 
 API usage, local estimates and missing values remain separate. Estimated tokens do not inflate API-reported totals. Cached and reasoning details are not added a second time. Known tokens remain visible when a cost is unknown. API fields are not an independent tokenizer check. Character prices are not converted into token counts.
 

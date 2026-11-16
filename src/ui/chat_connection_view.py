@@ -35,11 +35,13 @@ async def _cancel(callback: CancelCallback) -> None:
 class ProviderSwitchDialog:
     def __init__(
         self,
-        current: ProviderId,
+        current: ProviderId | None,
         on_select: ProviderCallback,
         on_cancel: CancelCallback,
         *,
         message: str = "",
+        creating: bool = False,
+        providers: tuple[ProviderId, ...] = tuple(ProviderId),
     ) -> None:
         self._closed = False
         self._busy = False
@@ -63,19 +65,19 @@ class ProviderSwitchDialog:
                 self.dispose()
                 await _cancel(on_cancel)
 
-        for provider in ProviderId:
+        for provider in providers:
             self.provider_buttons[provider] = ft.Button(
                 content=ft.Row(
                     controls=[
                         ft.Icon(
                             ft.Icons.CHECK_CIRCLE_OUTLINE
-                            if provider is current
+                            if provider is current and not creating
                             else ft.Icons.CIRCLE_OUTLINED
                         ),
                         ft.Text(provider_spec(provider).name, expand=True),
                         *(
                             [ft.Text(tr("connection.current"), size=12)]
-                            if provider is current
+                            if provider is current and not creating
                             else []
                         ),
                     ],
@@ -95,13 +97,21 @@ class ProviderSwitchDialog:
             scrollable=True,
             bgcolor=PANEL_BACKGROUND,
             shape=ft.RoundedRectangleBorder(radius=16),
-            title=ft.Text(tr("connection.change_provider")),
+            title=ft.Text(
+                tr("creation.choose_provider")
+                if creating
+                else tr("connection.change_provider")
+            ),
             content=ft.Column(
                 tight=True,
                 spacing=12,
                 horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
                 controls=[
-                    ft.Text(tr("connection.choose_provider")),
+                    ft.Text(
+                        tr("creation.choose_provider_help")
+                        if creating
+                        else tr("connection.choose_provider")
+                    ),
                     *self.provider_buttons.values(),
                     self.message,
                 ],

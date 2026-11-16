@@ -10,6 +10,7 @@ from datetime import UTC, datetime
 from decimal import Decimal
 from pathlib import Path
 from typing import cast
+from unittest.mock import AsyncMock
 
 import flet as ft
 
@@ -211,6 +212,69 @@ class ChatViewTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(zero_view.paid_button.disabled)
         self.assertFalse(null_view.paid_button.disabled)
         self.assertFalse(positive_view.paid_button.disabled)
+
+    async def test_vsegpt_modes_hide_dead_free_card_and_keep_refresh_distinct(self):
+        from i18n import configure_localization, get_preferences, set_language
+        from preferences import PreferencesStore
+
+        previous_preferences = get_preferences()
+        configure_localization(PreferencesStore())
+        self.addCleanup(configure_localization, previous_preferences)
+
+        def mounted(root):
+            yield root
+            content = getattr(root, "content", None)
+            if isinstance(content, ft.Control):
+                yield from mounted(content)
+            for child in getattr(root, "controls", ()):
+                yield from mounted(child)
+
+        callback = AsyncMock()
+        for available in (True, False):
+            for language in ("en", "ru"):
+                set_language(language)
+                refresh = AsyncMock()
+                view = ModeSelectionView(
+                    ModelCatalog((), (), available=available),
+                    KeyValidityState.UNVERIFIED,
+                    KeyLimitInfo.unknown(),
+                    callback,
+                    callback,
+                    provider_id=ProviderId.VSEGPT,
+                    on_refresh=refresh,
+                )
+                controls = list(mounted(view.control))
+                self.assertNotIn(view.free_button, controls)
+                self.assertIn(view.paid_button, controls)
+                self.assertIn(view.refresh_button, controls)
+                assert view.refresh_button is not None
+                handler = cast(
+                    Callable[[ft.Event[ft.TextButton]], Awaitable[None]],
+                    view.refresh_button.on_click,
+                )
+                await handler(ft.Event(name="click", control=view.refresh_button))
+                refresh.assert_awaited_once()
+                callback.assert_not_awaited()
+        set_language("ru")
+
+    def test_unavailable_router_is_only_new_chat_fallback_not_connection_switch(self):
+        callback = AsyncMock()
+        catalog = ModelCatalog((FREE_ROUTER_MODEL,), (), available=False)
+        new_chat = ModeSelectionView(
+            catalog, KeyValidityState.VALID, KeyLimitInfo.unknown(), callback, callback
+        )
+        changing = ModeSelectionView(
+            catalog,
+            KeyValidityState.VALID,
+            KeyLimitInfo.unknown(),
+            callback,
+            callback,
+            changing_provider=True,
+        )
+        self.assertFalse(new_chat.free_button.disabled)
+        self.assertTrue(changing.free_button.disabled)
+        self.assertTrue(new_chat.paid_button.disabled)
+        self.assertTrue(changing.paid_button.disabled)
 
     def test_vsegpt_missing_key_limit_is_normal_and_does_not_disable_paid_models(self):
         async def callback(*_args):

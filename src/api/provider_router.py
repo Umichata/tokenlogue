@@ -17,6 +17,7 @@ from api.openrouter import (
     OpenRouterClient,
 )
 from api.vsegpt import VsegptClient
+from chat.catalog import CatalogFetchResult, CatalogStatus
 from chat.context import ContextMessage
 from chat.errors import ChatErrorType
 from chat.models import CatalogModel, ProviderPriceLimit
@@ -75,6 +76,14 @@ class ProviderRouter:
         if provider_id is None:
             return None
         return await self._catalogs[provider_id].fetch_models(api_key)
+
+    async def fetch_catalog(
+        self, api_key: str, *, selected_provider: ProviderId | None = None
+    ) -> CatalogFetchResult:
+        provider_id = _route(api_key, selected_provider)
+        if provider_id is None:
+            return CatalogFetchResult(CatalogStatus.KEY_MISMATCH)
+        return await self._catalogs[provider_id].fetch_catalog(api_key)
 
     async def complete(
         self,

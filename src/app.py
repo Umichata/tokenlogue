@@ -42,6 +42,7 @@ from platform_security.local_protection import (
     ScreenLockAdapter,
     SleepAdapter,
 )
+from providers.creation import NewChatPolicy
 from providers.models import ProviderId
 from providers.session import ProviderProfiles
 from storage.access_context import finish_worker
@@ -2540,7 +2541,7 @@ class AppController:
             return True
         return False
 
-    async def _select_default_provider(self, provider: ProviderId) -> None:
+    async def _select_default_provider(self, provider: NewChatPolicy) -> None:
         profiles = self._provider_profiles
         epoch = self._private_views_epoch
         async with self._operation_lock:
@@ -2550,7 +2551,7 @@ class AppController:
                 or epoch != self._private_views_epoch
             ):
                 return
-            await profiles.set_default(provider)
+            await profiles.set_creation_policy(provider)
         if self._private_pages_available():
             await self._chat_controller.refresh_provider_state()
 
@@ -2563,7 +2564,7 @@ class AppController:
         profiles, view = self._provider_profiles, self._provider_page
         if profiles is None or view is None or not self._private_pages_available():
             return
-        view.set_default(profiles.default_provider)
+        view.set_default(profiles.creation_policy)
         for provider in ProviderId:
             state = profiles.state(provider)
             balance = state.balance

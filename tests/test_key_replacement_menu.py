@@ -35,6 +35,7 @@ from chat.service import ChatService
 from i18n import configure_localization, localize_tree, set_language
 from platform_security.device_recovery import DeviceRecovery, RecoveryStatus
 from preferences import PreferencesStore
+from providers.creation import NewChatPolicy
 from providers.models import ProviderId
 from storage.chat_repository import SqliteChatRepository
 from storage.data_protection import DATA_KEY_ALIAS
@@ -43,6 +44,7 @@ from storage.message_repository import SqliteMessageRepository
 from storage.secure_credentials import (
     API_KEY_STORAGE_NAME,
     DEFAULT_PROVIDER_STORAGE_NAME,
+    NEW_CHAT_POLICY_STORAGE_NAME,
     PROVIDER_VALIDATION_STORAGE_NAMES,
     FletSecureCredentials,
 )
@@ -186,11 +188,16 @@ class KeyReplacementMenuTests(unittest.IsolatedAsyncioTestCase):
                 added,
                 {
                     DEFAULT_PROVIDER_STORAGE_NAME,
+                    NEW_CHAT_POLICY_STORAGE_NAME,
                     PROVIDER_VALIDATION_STORAGE_NAMES[ProviderId.OPENROUTER],
                 },
             )
             self.assertEqual(
                 self.fixture.storage.values[DEFAULT_PROVIDER_STORAGE_NAME], "openrouter"
+            )
+            self.assertEqual(
+                self.fixture.storage.values[NEW_CHAT_POLICY_STORAGE_NAME],
+                NewChatPolicy.MANUAL.value,
             )
             metadata = json.loads(
                 self.fixture.storage.values[

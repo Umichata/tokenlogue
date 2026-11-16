@@ -7,11 +7,16 @@ import hashlib
 import json
 import time
 from collections.abc import Callable
+from dataclasses import replace
 from decimal import Decimal, InvalidOperation
+from math import ceil
 from typing import Any, Protocol
 
 import httpx
 
+from api.chat_completions import _parse_retry_after
+from api.openrouter import _contains_tls_error
+from chat.catalog import CatalogFetchResult, CatalogStatus
 from chat.models import (
     FREE_ROUTER_MODEL,
     CatalogModel,
@@ -98,9 +103,14 @@ class ModelCatalogClient:
         self.provider_id = ProviderId(provider_id)
 
     async def fetch_models(self, api_key: str) -> tuple[CatalogModel, ...] | None:
+        """Compatibility projection for callers which only need model prices."""
+        result = await self.fetch_catalog(api_key)
+        return result.models if result.available else None
+
+    async def fetch_catalog(self, api_key: str) -> CatalogFetchResult:
         normalized_key = api_key.strip()
         if detect_key(normalized_key) is not self.provider_id:
-            return None
+            return CatalogFetchResult(CatalogStatus.KEY_MISMATCH)
         try:
             async with httpx.AsyncClient(
                 transport=self._transport,
@@ -116,15 +126,33 @@ class ModelCatalogClient:
                         else {}
                     ),
                 )
-        except (httpx.HTTPError, ImportError):
-            return None
+        except httpx.TimeoutException:
+            return CatalogFetchResult(CatalogStatus.TIMEOUT)
+        except httpx.ConnectError as error:
+            return CatalogFetchResult(
+                CatalogStatus.TLS_ERROR
+                if _contains_tls_error(error)
+                else CatalogStatus.NETWORK_ERROR
+            )
+        except (httpx.HTTPError, ImportError, ValueError):
+            return CatalogFetchResult(CatalogStatus.NETWORK_ERROR)
 
+        retry_after = _parse_retry_after(response.headers.get("Retry-After"))
         if response.status_code != 200:
-            return None
-        return (
+            return CatalogFetchResult(
+                CatalogStatus.HTTP_ERROR,
+                http_status=response.status_code,
+                retry_after=retry_after,
+            )
+        models = (
             _parse_catalog(response.content)
             if self.provider_id is ProviderId.OPENROUTER
             else _parse_vsegpt_catalog(response.content)
+        )
+        if models is None:
+            return CatalogFetchResult(CatalogStatus.INVALID_RESPONSE)
+        return CatalogFetchResult(
+            CatalogStatus.SUCCESS if models else CatalogStatus.EMPTY, models
         )
 
 
@@ -150,6 +178,7 @@ class ModelCatalogService:
         self._generation = 0
         self._lock = asyncio.Lock()
         self._identity: tuple[ProviderId | None, bytes] | None = None
+        self._refresh_not_before: dict[tuple[ProviderId | None, bytes], float] = {}
         self._entries: dict[
             tuple[ProviderId | None, bytes], tuple[ModelCatalog, float]
         ] = {}
@@ -169,41 +198,85 @@ class ModelCatalogService:
             return None
         return max(0.0, self._entries[self._identity][1] - self._clock())
 
-    async def get_catalog(self, api_key: str) -> ModelCatalog:
+    async def get_catalog(
+        self, api_key: str, *, force_refresh: bool = False
+    ) -> ModelCatalog:
         generation = self._generation
         provider_id = detect_key(api_key)
         identity = _catalog_identity(api_key)
         self._identity = identity
-        cached = self.peek_catalog()
-        if cached is not None:
-            return cached
+        if not force_refresh:
+            cached = self.peek_catalog(api_key)
+            if cached is not None:
+                return cached
 
         async with self._lock:
             # A waiter from an old protected session must not fetch with its
             # previous credential or consume the next session's cache.
             if generation != self._generation:
-                return _classify_catalog(None, provider_id)
+                return _classify_result(
+                    CatalogFetchResult(CatalogStatus.NETWORK_ERROR), provider_id
+                )
             entry = self._entries.get(identity)
-            if entry is not None and self._clock() < entry[1]:
+            now = self._clock()
+            remaining = self._refresh_not_before.get(identity, 0.0) - now
+            if not force_refresh and entry is not None and now < entry[1]:
                 return entry[0]
+            if entry is not None and remaining > 0:
+                return replace(entry[0], retry_after=ceil(remaining))
             try:
-                models = await self._client.fetch_models(api_key)
+                typed_fetch = getattr(self._client, "fetch_catalog", None)
+                if typed_fetch is not None:
+                    result = await typed_fetch(api_key)
+                else:
+                    models = await self._client.fetch_models(api_key)
+                    result = CatalogFetchResult(
+                        CatalogStatus.NETWORK_ERROR
+                        if models is None
+                        else (CatalogStatus.SUCCESS if models else CatalogStatus.EMPTY),
+                        models or (),
+                    )
+                if not isinstance(result, CatalogFetchResult):
+                    result = CatalogFetchResult(CatalogStatus.INVALID_RESPONSE)
             except Exception:
-                models = None
-            catalog = _classify_catalog(models, provider_id)
+                result = CatalogFetchResult(CatalogStatus.NETWORK_ERROR)
+            catalog = _classify_result(result, provider_id)
             if generation != self._generation:
-                return _classify_catalog(None, provider_id)
+                return _classify_result(
+                    CatalogFetchResult(CatalogStatus.NETWORK_ERROR), provider_id
+                )
             self._cached = catalog
             self._expires_at = self._clock() + self._ttl_seconds
             self._entries[identity] = catalog, self._expires_at
+            # Explicit retries bypass the negative TTL, but neither rapid taps
+            # nor a provider Retry-After are allowed to start another request.
+            self._refresh_not_before[identity] = self._clock() + max(
+                2.0, result.retry_after or 0
+            )
             return catalog
 
-    def clear_cache(self) -> None:
+    def clear_cache(self, *, preserve_backoff: bool = False) -> None:
+        # A new selection may require a fresh price snapshot, but must not
+        # defeat a provider's refusal interval. Lock/session teardown uses the
+        # default and removes even these credential-hash-only entries.
+        now = self._clock()
+        blocked = (
+            {
+                identity: entry
+                for identity, entry in self._entries.items()
+                if not entry[0].available
+                and self._refresh_not_before.get(identity, 0.0) > now
+            }
+            if preserve_backoff
+            else {}
+        )
+        backoff = {identity: self._refresh_not_before[identity] for identity in blocked}
         self._generation += 1
         self._cached = None
         self._expires_at = 0.0
         self._identity = None
-        self._entries.clear()
+        self._entries = blocked
+        self._refresh_not_before = backoff
 
 
 def _parse_vsegpt_catalog(content: bytes) -> tuple[CatalogModel, ...] | None:
@@ -510,4 +583,38 @@ def _classify_catalog(
         free_models=(FREE_ROUTER_MODEL, *free_models),
         paid_models=tuple(paid_models),
         available=True,
+    )
+
+
+def _classify_result(
+    result: CatalogFetchResult, provider_id: ProviderId | None
+) -> ModelCatalog:
+    catalog = _classify_catalog(
+        result.models if result.available else None, provider_id
+    )
+    warning = None
+    if not result.available:
+        message_key = {
+            CatalogStatus.KEY_MISMATCH: "catalog.error.key_mismatch",
+            CatalogStatus.NETWORK_ERROR: "catalog.error.network",
+            CatalogStatus.TIMEOUT: "catalog.error.timeout",
+            CatalogStatus.TLS_ERROR: "catalog.error.tls",
+            CatalogStatus.INVALID_RESPONSE: "catalog.error.schema",
+        }.get(result.status, "catalog.error.http")
+        if result.status is CatalogStatus.HTTP_ERROR:
+            message_key = {
+                401: "catalog.error.auth",
+                402: "catalog.error.balance",
+                403: "catalog.error.policy",
+                429: "catalog.error.rate",
+            }.get(result.http_status or 0, "catalog.error.http")
+        warning = tr(message_key)
+    elif result.status is CatalogStatus.EMPTY:
+        warning = tr("catalog.empty")
+    return replace(
+        catalog,
+        warning=warning,
+        status=result.status,
+        http_status=result.http_status,
+        retry_after=result.retry_after,
     )

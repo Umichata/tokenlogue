@@ -2,12 +2,23 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
+
 from api.openrouter import KeyValidationResult, KeyValidationStatus
 from auth.models import KeyLimitInfo, KeyValidityState
 from providers.models import ProviderId
 
 
 def interpret_key_validation(
+    validation: KeyValidationResult,
+) -> tuple[KeyValidityState, KeyLimitInfo]:
+    validity, limit = _interpret_key_validation(validation)
+    if validity is KeyValidityState.VALID:
+        limit = replace(limit, daily_request_quota=validation.daily_request_quota)
+    return validity, limit
+
+
+def _interpret_key_validation(
     validation: KeyValidationResult,
 ) -> tuple[KeyValidityState, KeyLimitInfo]:
     """Не использует состояние лимита для представления сетевых ошибок."""

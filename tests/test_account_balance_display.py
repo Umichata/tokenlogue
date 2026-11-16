@@ -29,6 +29,7 @@ from chat.metrics import (  # noqa: E402
 )
 from chat.models import ChatMode  # noqa: E402
 from i18n import money, set_language  # noqa: E402
+from providers.creation import NewChatPolicy  # noqa: E402
 from providers.models import Currency, ProviderId  # noqa: E402
 from providers.session import ProviderState  # noqa: E402
 from ui.chat_metrics import ChatMetricsStrip  # noqa: E402
@@ -209,6 +210,7 @@ class MoneySourceToPresentationTests(unittest.IsolatedAsyncioTestCase):
             _private_pages_available=lambda: True,
             _provider_profiles=SimpleNamespace(
                 default_provider=ProviderId.OPENROUTER,
+                creation_policy=NewChatPolicy.OPENROUTER,
                 state=lambda provider: states[provider],
             ),
             _provider_page=SimpleNamespace(

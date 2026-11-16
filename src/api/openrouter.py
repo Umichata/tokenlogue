@@ -12,6 +12,7 @@ from typing import Any
 import httpx
 
 from providers.models import Currency, ProviderId, detect_key
+from providers.quota import DailyRequestQuota
 
 OPENROUTER_KEY_URL = "https://openrouter.ai/api/v1/key"
 OPENROUTER_CREDITS_URL = "https://openrouter.ai/api/v1/credits"
@@ -84,6 +85,7 @@ class KeyValidationResult:
     provider_id: ProviderId = ProviderId.OPENROUTER
     warning: bool = False
     subscription_active: bool | None = None
+    daily_request_quota: DailyRequestQuota | None = None
 
     @property
     def accepted(self) -> bool:
@@ -277,8 +279,11 @@ def _parse_key_response(content: bytes) -> KeyValidationResult:
         return KeyValidationResult(KeyValidationStatus.RESTRICTED)
 
     raw_limit = data["limit_remaining"]
+    quota = _parse_daily_request_quota(data.get("free_model_daily_requests"))
     if raw_limit is None:
-        return KeyValidationResult(KeyValidationStatus.ACCEPTED_WITHOUT_LIMIT)
+        return KeyValidationResult(
+            KeyValidationStatus.ACCEPTED_WITHOUT_LIMIT, daily_request_quota=quota
+        )
 
     limit = _as_decimal(raw_limit)
     if limit is None:
@@ -287,11 +292,34 @@ def _parse_key_response(content: bytes) -> KeyValidationResult:
         return KeyValidationResult(
             KeyValidationStatus.ACCEPTED_LIMIT_EXHAUSTED,
             limit_remaining=limit,
+            daily_request_quota=quota,
         )
     return KeyValidationResult(
         KeyValidationStatus.ACCEPTED,
         limit_remaining=limit,
+        daily_request_quota=quota,
     )
+
+
+def _parse_daily_request_quota(value: Any) -> DailyRequestQuota | None:
+    if not isinstance(value, dict):
+        return None
+    counts: list[int] = []
+    for name in ("used", "limit", "remaining"):
+        number = value.get(name)
+        if (
+            not isinstance(number, Decimal)
+            or not number.is_finite()
+            or number < 0
+            or number != number.to_integral_value()
+            or number > 2**63 - 1
+        ):
+            return None
+        counts.append(int(number))
+    try:
+        return DailyRequestQuota(*counts)
+    except ValueError:
+        return None
 
 
 def _as_decimal(value: Any) -> Decimal | None:

@@ -187,7 +187,7 @@ class FakeCatalogService:
         self._cached = self.catalog
         return self.catalog
 
-    def clear_cache(self) -> None:
+    def clear_cache(self, *, preserve_backoff: bool = False) -> None:
         self.clear_calls += 1
         self._cached = None
 

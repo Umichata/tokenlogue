@@ -7,6 +7,8 @@ from decimal import Decimal
 from enum import Enum
 from typing import TYPE_CHECKING
 
+from providers.quota import DailyRequestQuota
+
 if TYPE_CHECKING:
     from auth.pin_policy import PinLock
     from storage.recovery_code import RecoveryCodeIssue
@@ -115,6 +117,7 @@ class KeyLimitInfo:
 
     state: KeyLimitState
     remaining: Decimal | None = None
+    daily_request_quota: DailyRequestQuota | None = None
 
     def __post_init__(self) -> None:
         if self.state in {KeyLimitState.UNKNOWN, KeyLimitState.NOT_SET}:

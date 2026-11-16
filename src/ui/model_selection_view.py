@@ -72,6 +72,7 @@ class ModeSelectionView:
         *,
         provider_id: ProviderId | None = None,
         changing_provider: bool = False,
+        on_refresh: AsyncCallback | None = None,
     ) -> None:
         async def select_free(_event: ft.Event[ft.Button]) -> None:
             await on_select(ChatMode.FREE)
@@ -103,7 +104,9 @@ class ModeSelectionView:
             icon=ft.Icons.SAVINGS,
             style=primary_button_style(),
             disabled=not (
-                free_mode_allowed(key_validity) and bool(catalog.free_models)
+                free_mode_allowed(key_validity)
+                and bool(catalog.free_models)
+                and (not changing_provider or catalog.available)
             ),
             on_click=select_free,
         )
@@ -113,6 +116,18 @@ class ModeSelectionView:
             style=primary_button_style(),
             disabled=not paid_enabled,
             on_click=select_paid,
+        )
+        free_card = ft.Container(
+            bgcolor=PANEL_BACKGROUND,
+            border_radius=16,
+            padding=20,
+            content=ft.Column(
+                controls=[
+                    ft.Text(tr("mode.free_title"), weight=ft.FontWeight.BOLD),
+                    ft.Text(tr("mode.free_help"), color=MUTED_COLOR),
+                    self.free_button,
+                ]
+            ),
         )
         controls: list[ft.Control] = [
             ft.Text(
@@ -126,20 +141,21 @@ class ModeSelectionView:
                 if changing_provider
                 else tr("mode.choose_first")
             ),
-            ft.Container(
-                bgcolor=PANEL_BACKGROUND,
-                border_radius=16,
-                padding=20,
-                content=ft.Column(
-                    controls=[
-                        ft.Text(tr("mode.free_title"), weight=ft.FontWeight.BOLD),
-                        ft.Text(
-                            tr("mode.free_help"),
-                            color=MUTED_COLOR,
-                        ),
-                        self.free_button,
-                    ]
-                ),
+            *(
+                [free_card]
+                if provider_id is ProviderId.OPENROUTER or bool(catalog.free_models)
+                else [
+                    ft.Text(
+                        (
+                            tr("mode.vsegpt_paid_only")
+                            if catalog.paid_models
+                            else tr("catalog.empty")
+                        )
+                        if catalog.available
+                        else tr("mode.vsegpt_modes_unknown"),
+                        color=MUTED_COLOR,
+                    )
+                ]
             ),
             ft.Container(
                 bgcolor=PANEL_BACKGROUND,
@@ -160,6 +176,23 @@ class ModeSelectionView:
         ]
         if catalog.warning:
             controls.append(ft.Text(fresh_text(catalog.warning), color=ERROR_COLOR))
+        if catalog.retry_after:
+            controls.append(
+                ft.Text(
+                    tr("catalog.retry_wait", seconds=catalog.retry_after),
+                    color=MUTED_COLOR,
+                )
+            )
+        self.refresh_button: ft.TextButton | None = None
+        if on_refresh is not None:
+
+            async def refresh(_event: ft.Event[ft.TextButton]) -> None:
+                await on_refresh()
+
+            self.refresh_button = ft.TextButton(
+                tr("catalog.refresh"), icon=ft.Icons.REFRESH, on_click=refresh
+            )
+            controls.append(self.refresh_button)
         controls.append(ft.TextButton(tr("mode.back_chats"), on_click=cancel))
         self.control = build_auth_screen(controls, header=BrandHeader(), width=560)
 

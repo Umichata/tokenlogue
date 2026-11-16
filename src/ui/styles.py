@@ -136,6 +136,14 @@ def input_style() -> dict[str, Any]:
     )
 
 
+def dropdown_style() -> dict[str, Any]:
+    """Use the shared field surface with the Dropdown-specific Flet contract."""
+    style = input_style()
+    for name in ("cursor_color", "counter_style"):
+        style.pop(name)
+    return style
+
+
 def surface(
     content: ft.Control, *, padding: int = SPACE_LARGE, width: int | None = None
 ) -> ft.Container:

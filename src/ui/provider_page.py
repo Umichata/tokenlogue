@@ -11,6 +11,7 @@ import flet as ft
 
 from auth.models import KeyLimitInfo, KeyLimitState
 from i18n import localize_tree, number, tr
+from providers.creation import NewChatPolicy
 from providers.models import ProviderId, detect_key, provider_spec
 from ui.language_selector import LanguageSelector
 from ui.provider_filter import ProviderFilter
@@ -18,6 +19,7 @@ from ui.styles import (
     ERROR_COLOR,
     MUTED_COLOR,
     WARNING_COLOR,
+    dropdown_style,
     input_style,
     primary_button_style,
     secondary_button_style,
@@ -93,6 +95,7 @@ class _ProviderCard:
         self.balance_note = ft.Text("", size=12, color=MUTED_COLOR)
         self.checked = ft.Text("", size=12, color=MUTED_COLOR)
         self.key_limit = ft.Text("", size=12, color=MUTED_COLOR)
+        self.daily_quota = ft.Text("", size=12, color=MUTED_COLOR, visible=False)
         self.check = ft.Button(
             tr("providers.check"), style=secondary_button_style(), disabled=True
         )
@@ -119,6 +122,7 @@ class _ProviderCard:
                     self.balance,
                     self.balance_note,
                     self.key_limit,
+                    self.daily_quota,
                     self.checked,
                     self.refresh,
                 ],
@@ -136,25 +140,26 @@ class ProviderPage:
         on_check: CheckCallback,
         on_save: SaveCallback,
         on_refresh: ProviderCallback,
-        on_default: ProviderCallback,
-        default_provider: ProviderId = ProviderId.OPENROUTER,
+        on_default: Callable[[NewChatPolicy], Awaitable[None]],
+        default_provider: ProviderId | NewChatPolicy = NewChatPolicy.MANUAL,
     ) -> None:
         self._on_check = on_check
         self._on_save = on_save
         self._on_refresh = on_refresh
         self._on_default = on_default
+        self._saved_creation_policy = NewChatPolicy(default_provider.value)
         self._cleared = False
         self.cards = {provider: _ProviderCard(provider) for provider in ProviderId}
         self.provider_filter = ProviderFilter(on_change=self.set_filter)
         self.default_selector = ft.Dropdown(
             label=tr("providers.default"),
             value=default_provider.value,
-            options=[
-                ft.DropdownOption(key=p.value, text=provider_spec(p).name)
-                for p in ProviderId
-            ],
+            options=self._creation_options(),
+            **dropdown_style(),
             on_select=self._default_changed,
         )
+        self.default_help = ft.Text("", size=12, color=MUTED_COLOR)
+        self._sync_creation_help()
         self.notice = ft.Text("", color=ERROR_COLOR)
         for card in self.cards.values():
             self._wire_card(card)
@@ -173,7 +178,7 @@ class ProviderPage:
                 ft.Text(tr("providers.description"), color=MUTED_COLOR),
                 self.provider_filter.control,
                 self.default_selector,
-                ft.Text(tr("providers.default_help"), size=12, color=MUTED_COLOR),
+                self.default_help,
                 self.notice,
                 *(card.control for card in self.cards.values()),
             ],
@@ -428,19 +433,66 @@ class ProviderPage:
             )
         else:
             card.key_limit.value = ""
+        quota = state.key_limit.daily_request_quota
+        card.daily_quota.visible = (
+            card.provider_id is ProviderId.OPENROUTER and quota is not None
+        )
+        card.daily_quota.value = (
+            tr(
+                "providers.daily_free_quota",
+                remaining=number(quota.remaining),
+                limit=number(quota.limit),
+            )
+            if card.daily_quota.visible and quota is not None
+            else ""
+        )
         card.refresh.disabled = card.busy or not state.has_saved_key
 
-    def set_default(self, provider_id: ProviderId) -> None:
+    @staticmethod
+    def _creation_options() -> list[ft.DropdownOption]:
+        return [
+            ft.DropdownOption(
+                key=NewChatPolicy.MANUAL.value, text=str(tr("creation.manual"))
+            ),
+            *(
+                ft.DropdownOption(key=p.value, text=provider_spec(p).name)
+                for p in ProviderId
+            ),
+        ]
+
+    def _sync_creation_help(self) -> None:
+        policy = NewChatPolicy(
+            self.default_selector.value or NewChatPolicy.MANUAL.value
+        )
+        provider = policy.provider_id
+        self.default_help.value = (
+            tr("creation.manual_help")
+            if provider is None
+            else tr("creation.provider_help", provider=provider_spec(provider).name)
+        )
+
+    def set_default(self, provider_id: ProviderId | NewChatPolicy) -> None:
         if not self._cleared:
+            self._saved_creation_policy = NewChatPolicy(provider_id.value)
             self.default_selector.value = provider_id.value
+            self._sync_creation_help()
 
     async def _default_changed(self, _event: ft.Event) -> None:
         if self._cleared or self.default_selector.value is None:
             return
+        previous = self._saved_creation_policy
         try:
-            await self._on_default(ProviderId(self.default_selector.value))
+            policy = NewChatPolicy(self.default_selector.value)
+            await self._on_default(policy)
+            if not self._cleared:
+                self._saved_creation_policy = policy
+                self.notice.value = ""
+                self._sync_creation_help()
+                self._update()
         except Exception:
             if not self._cleared:
+                self.default_selector.value = previous.value
+                self._sync_creation_help()
                 self.notice.value = tr("providers.operation_failed")
                 self._update()
 
@@ -454,6 +506,8 @@ class ProviderPage:
         if not self._cleared:
             localize_tree(self.control)
             self.provider_filter.sync_language()
+            self.default_selector.options = self._creation_options()
+            self._sync_creation_help()
             for card in self.cards.values():
                 self._render_presentation(card)
                 self._render_detection(card)
@@ -462,6 +516,7 @@ class ProviderPage:
         self._cleared = True
         self.conceal_keys()
         self.provider_filter.control.disabled = True
+        self.default_selector.disabled = True
         self.notice.value = ""
         for card in self.cards.values():
             card.revision += 1
@@ -480,6 +535,7 @@ class ProviderPage:
                 card.balance_note,
                 card.checked,
                 card.key_limit,
+                card.daily_quota,
             ):
                 control.value = ""
             card.check.disabled = card.save.disabled = card.refresh.disabled = True

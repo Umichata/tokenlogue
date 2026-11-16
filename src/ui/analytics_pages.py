@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from collections.abc import Awaitable, Callable
 from dataclasses import replace
+from datetime import date
 from decimal import ROUND_HALF_UP, Decimal, localcontext
 from typing import Literal
 
@@ -16,8 +17,11 @@ from chat.analytics import (
     AnalyticsSnapshot,
     CurrencySpending,
     DailySpending,
+    DailyTokenUsage,
     ModelChoice,
     ModelUsage,
+    TokenUsageSummary,
+    TokenUsageTotals,
 )
 from i18n import localize_tree, number, tr
 from providers.models import ProviderId, provider_spec
@@ -29,6 +33,7 @@ from ui.styles import (
     MUTED_COLOR,
     PRIMARY_COLOR,
     WARNING_COLOR,
+    dropdown_style,
     surface,
 )
 
@@ -166,6 +171,282 @@ class DailyBarChart:
         self.control.content = ft.Container()
 
 
+def _token_summary_controls(summary: TokenUsageSummary) -> list[ft.Control]:
+    controls: list[ft.Control] = [
+        _metric(tr("analytics.requests"), number(summary.requests))
+    ]
+    if not summary.requests:
+        controls.append(ft.Text(tr("analytics.day_no_requests"), color=MUTED_COLOR))
+        return controls
+    unknown_source = (
+        summary.requests - summary.api.requests - summary.estimated.requests
+    )
+    for source, values, color in (
+        ("api", summary.api, PRIMARY_COLOR),
+        ("estimate", summary.estimated, WARNING_COLOR),
+        (
+            "unknown",
+            TokenUsageTotals(unknown_source, None, None, None, unknown_source),
+            MUTED_COLOR,
+        ),
+    ):
+        if not values.requests:
+            continue
+        controls.extend(
+            [
+                ft.Text(tr(f"analytics.token_source.{source}"), color=color),
+                ft.Row(
+                    wrap=True,
+                    spacing=20,
+                    controls=[
+                        _metric(
+                            tr("analytics.token_input"), _tokens(values.prompt_tokens)
+                        ),
+                        _metric(
+                            tr("analytics.token_output"),
+                            _tokens(values.completion_tokens),
+                        ),
+                        _metric(
+                            tr("analytics.token_total"), _tokens(values.total_tokens)
+                        ),
+                    ],
+                ),
+            ]
+        )
+        if values.partial_requests:
+            controls.append(
+                ft.Text(
+                    tr(
+                        "analytics.token_partial_source",
+                        count=number(values.partial_requests),
+                    ),
+                    color=WARNING_COLOR,
+                    size=12,
+                )
+            )
+    if summary.unknown_usage_requests:
+        controls.append(
+            ft.Text(
+                tr(
+                    "analytics.token_partial_day",
+                    count=number(summary.unknown_usage_requests),
+                ),
+                color=WARNING_COLOR,
+            )
+        )
+    return controls
+
+
+class DailyTokenChart:
+    """A bounded canvas window with tap and keyboard-accessible day selection."""
+
+    _WINDOW_DAYS = 31
+
+    def __init__(self, days: tuple[DailyTokenUsage, ...]) -> None:
+        self.days: tuple[DailyTokenUsage, ...] = days
+        self._width = 560.0
+        self._selected = next(
+            (
+                index
+                for index in range(len(days) - 1, -1, -1)
+                if days[index].usage.requests
+            ),
+            max(0, len(days) - 1),
+        )
+        self.canvas = cv.Canvas(width=float("inf"), height=180, on_resize=self._resize)
+        self._range = ft.Text("", size=12, color=MUTED_COLOR)
+        self._scale = ft.Text("", size=12, color=MUTED_COLOR)
+        self._details = ft.Column(tight=True, spacing=8)
+        self.previous = ft.TextButton(
+            tr("analytics.previous_day"),
+            icon=ft.Icons.CHEVRON_LEFT,
+            on_click=lambda _event: self.select_day(self._selected - 1),
+        )
+        self.next = ft.TextButton(
+            tr("analytics.next_day"),
+            icon=ft.Icons.CHEVRON_RIGHT,
+            on_click=lambda _event: self.select_day(self._selected + 1),
+        )
+        self.selector = ft.Slider(
+            min=0,
+            max=max(1, len(days) - 1),
+            divisions=max(1, len(days) - 1),
+            value=self._selected,
+            on_change=self._slide,
+            disabled=len(days) < 2,
+        )
+        self.control = ft.Column(
+            tight=True,
+            spacing=8,
+            controls=[
+                ft.Row(
+                    wrap=True,
+                    controls=[
+                        ft.Text(tr("analytics.token_source.api"), color=PRIMARY_COLOR),
+                        ft.Text(
+                            tr("analytics.token_source.estimate"), color=WARNING_COLOR
+                        ),
+                    ],
+                ),
+                ft.Text(tr("analytics.token_chart_help"), size=12, color=MUTED_COLOR),
+                self._scale,
+                ft.Semantics(
+                    label=tr("analytics.token_chart_accessible"),
+                    content=ft.GestureDetector(
+                        content=self.canvas, on_tap_down=self._tap
+                    ),
+                ),
+                self._range,
+                ft.Semantics(
+                    label=tr("analytics.token_day_select"), content=self.selector
+                ),
+                ft.Row(wrap=True, controls=[self.previous, self.next]),
+                self._details,
+            ],
+        )
+        self.select_day(self._selected, update=False)
+
+    @property
+    def selected_day(self) -> date | None:
+        return self.days[self._selected].day if self.days else None
+
+    def _window(self) -> tuple[int, tuple[DailyTokenUsage, ...]]:
+        start = max(
+            0,
+            min(
+                self._selected - self._WINDOW_DAYS // 2,
+                len(self.days) - self._WINDOW_DAYS,
+            ),
+        )
+        return start, self.days[start : start + self._WINDOW_DAYS]
+
+    def _resize(self, event: cv.CanvasResizeEvent) -> None:
+        self._width = max(1.0, event.width)
+        self._draw()
+        self._update()
+
+    def _tap(self, event: ft.TapEvent) -> None:
+        if not self.days or event.local_position is None:
+            return
+        start, days = self._window()
+        offset = int(max(0, event.local_position.x) / self._width * len(days))
+        self.select_day(start + min(len(days) - 1, offset))
+
+    def _slide(self, event: ft.Event[ft.Slider]) -> None:
+        if event.control.value is not None:
+            self.select_day(round(event.control.value))
+
+    def select_day(self, index: int, *, update: bool = True) -> None:
+        if not self.days:
+            return
+        self._selected = min(max(index, 0), len(self.days) - 1)
+        selected = self.days[self._selected]
+        self.selector.value = self._selected
+        self.previous.disabled = self._selected == 0
+        self.next.disabled = self._selected == len(self.days) - 1
+        self._details.controls = [
+            ft.Text(selected.day.isoformat(), size=18, selectable=True),
+            *_token_summary_controls(selected.usage),
+        ]
+        self._draw()
+        if update:
+            self._update()
+
+    def _draw(self) -> None:
+        start, days = self._window()
+        if not days:
+            self.canvas.shapes = []
+            return
+        width = self._width
+        baseline = 174.0
+        slot = width / len(days)
+        maximum = max(
+            (
+                max(
+                    day.usage.api.total_tokens or 0,
+                    day.usage.estimated.total_tokens or 0,
+                )
+                for day in days
+            ),
+            default=0,
+        )
+        shapes: list[cv.Shape] = [
+            cv.Line(0, baseline, width, baseline, paint=ft.Paint(color=BORDER_COLOR))
+        ]
+        for index, day in enumerate(days):
+            if start + index == self._selected:
+                shapes.append(
+                    cv.Rect(
+                        x=index * slot,
+                        y=0,
+                        width=slot,
+                        height=baseline,
+                        paint=ft.Paint(
+                            color=ft.Colors.with_opacity(0.12, PRIMARY_COLOR)
+                        ),
+                    )
+                )
+            for values, color, offset in (
+                (day.usage.api, PRIMARY_COLOR, 0.08),
+                (day.usage.estimated, WARNING_COLOR, 0.52),
+            ):
+                # A missing total is not derived from its input/output components.
+                if values.total_tokens is None:
+                    continue
+                height = values.total_tokens / maximum * 164 if maximum else 0
+                shapes.append(
+                    cv.Rect(
+                        x=(index + offset) * slot,
+                        y=baseline - max(height, 2),
+                        width=max(0.1, slot * 0.36),
+                        height=max(height, 2),
+                        paint=ft.Paint(color=color),
+                    )
+                )
+            if day.usage.unknown_usage_requests:
+                shapes.append(
+                    cv.Circle(
+                        x=(index + 0.5) * slot,
+                        y=5,
+                        radius=2,
+                        paint=ft.Paint(color=WARNING_COLOR),
+                    )
+                )
+        self.canvas.shapes = shapes
+        self._range.value = tr(
+            "analytics.token_chart_range",
+            start=days[0].day.isoformat(),
+            end=days[-1].day.isoformat(),
+        )
+        any_total = any(
+            values.total_tokens is not None
+            for day in days
+            for values in (day.usage.api, day.usage.estimated)
+        )
+        self._scale.value = (
+            tr("analytics.token_chart_scale", maximum=number(maximum))
+            if any_total
+            else tr("analytics.token_chart_no_totals")
+        )
+
+    def clear(self) -> None:
+        self.days = ()
+        self.canvas.shapes = []
+        self._details.controls = []
+        self._range.value = ""
+        self._scale.value = ""
+        self.selector.value = 0
+        self.selector.disabled = True
+        self.previous.disabled = self.next.disabled = True
+        self.control.controls = []
+
+    def _update(self) -> None:
+        try:
+            self.control.update()
+        except (RuntimeError, AssertionError):
+            pass
+
+
 class _AnalyticsPage:
     def __init__(
         self,
@@ -183,6 +464,7 @@ class _AnalyticsPage:
         self._load_generation = 0
         self._cleared = False
         self._charts: list[DailyBarChart] = []
+        self._token_chart: DailyTokenChart | None = None
         self._usage_limit = 100
         self._day_limits: dict[str, int] = {}
         self.period = ft.Dropdown(
@@ -194,6 +476,7 @@ class _AnalyticsPage:
             ],
             on_select=self._filters_changed,
             col={"xs": 12, "md": 4},
+            **dropdown_style(),
         )
         self.provider = ProviderFilter(
             on_change=self._provider_changed,
@@ -207,6 +490,7 @@ class _AnalyticsPage:
             options=[ft.DropdownOption(key="", text=str(tr("analytics.all_models")))],
             on_select=self._filters_changed,
             col={"xs": 12, "md": 4},
+            **dropdown_style(),
         )
         self.progress = ft.ProgressBar(visible=False, color=PRIMARY_COLOR)
         self.error = ft.Text("", color=ERROR_COLOR)
@@ -225,8 +509,9 @@ class _AnalyticsPage:
                     ],
                 ),
                 ft.Text(tr("analytics.scope"), color=MUTED_COLOR),
-                self.provider.control,
-                ft.ResponsiveRow(controls=[self.period, self.model]),
+                ft.ResponsiveRow(
+                    controls=[self.provider.control, self.period, self.model]
+                ),
                 self.progress,
                 self.error,
                 self._body,
@@ -373,6 +658,10 @@ class _AnalyticsPage:
         )
 
     def _render(self) -> None:
+        selected_day = self._token_chart.selected_day if self._token_chart else None
+        if self._token_chart is not None:
+            self._token_chart.clear()
+            self._token_chart = None
         for chart in self._charts:
             chart.clear()
         self._charts = []
@@ -381,11 +670,13 @@ class _AnalyticsPage:
             self._body.controls = []
             return
         if self._kind == "tokens":
-            self._render_usage(snapshot)
+            self._render_usage(snapshot, selected_day=selected_day)
         else:
             self._render_spending(snapshot)
 
-    def _render_usage(self, snapshot: AnalyticsSnapshot) -> None:
+    def _render_usage(
+        self, snapshot: AnalyticsSnapshot, *, selected_day: date | None = None
+    ) -> None:
         rows = sorted(
             snapshot.usage_rows,
             key=lambda row: (
@@ -394,7 +685,43 @@ class _AnalyticsPage:
                 row.model_id or "",
             ),
         )
-        controls: list[ft.Control] = []
+        self._token_chart = DailyTokenChart(snapshot.daily_tokens)
+        if selected_day is not None:
+            for index, day in enumerate(snapshot.daily_tokens):
+                if day.day == selected_day:
+                    self._token_chart.select_day(index, update=False)
+                    break
+        controls: list[ft.Control] = [
+            ft.Text(
+                tr("analytics.timezone", timezone=snapshot.timezone_name),
+                color=MUTED_COLOR,
+            ),
+            surface(
+                ft.Column(
+                    tight=True,
+                    spacing=12,
+                    controls=[
+                        ft.Text(tr("analytics.tokens_by_day"), size=21),
+                        self._token_chart.control,
+                    ],
+                ),
+                padding=16,
+            ),
+        ]
+        if snapshot.undated_tokens.requests:
+            controls.append(
+                surface(
+                    ft.Column(
+                        tight=True,
+                        spacing=8,
+                        controls=[
+                            ft.Text(tr("analytics.token_undated_summary"), size=18),
+                            *_token_summary_controls(snapshot.undated_tokens),
+                        ],
+                    ),
+                    padding=16,
+                )
+            )
         for provider in ProviderId:
             provider_rows = [row for row in rows if row.provider_id == provider]
             if not provider_rows:
@@ -718,6 +1045,9 @@ class _AnalyticsPage:
         self._load_generation += 1
         self._snapshot = None
         self._model_choices.clear()
+        if self._token_chart is not None:
+            self._token_chart.clear()
+            self._token_chart = None
         for chart in self._charts:
             chart.clear()
         self._charts = []

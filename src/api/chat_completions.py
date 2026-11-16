@@ -12,6 +12,7 @@ from typing import Any
 
 import httpx
 
+from api.openrouter import _contains_tls_error
 from chat.context import ContextMessage
 from chat.errors import ChatErrorType
 from chat.models import ProviderPriceLimit
@@ -210,6 +211,14 @@ class ChatCompletionsClient:
                 ChatErrorType.TIMEOUT,
                 accounting_unknown=True,
             )
+        except httpx.ConnectError as error:
+            return _error_result(
+                requested_model_id,
+                ChatErrorType.TLS_ERROR
+                if _contains_tls_error(error)
+                else ChatErrorType.NETWORK_ERROR,
+                accounting_unknown=True,
+            )
         except httpx.HTTPError:
             return _error_result(
                 requested_model_id,
@@ -263,8 +272,13 @@ class ChatCompletionsClient:
                 retry_after,
                 provider_id=self.provider_id,
             )
-        return _parse_success_response(
+        result = _parse_success_response(
             requested_model_id, response_payload, provider_id=self.provider_id
+        )
+        return (
+            replace(result, retry_after=retry_after)
+            if result.error_type is not None and retry_after is not None
+            else result
         )
 
 
@@ -305,6 +319,13 @@ def _parse_success_response(
             accounting_unknown=usage is None,
         )
     choice = choices[0]
+    if choice.get("error") is not None:
+        return _result_with_usage(
+            requested_model_id,
+            _provider_payload_error_type(choice.get("error"), 200, provider_id),
+            usage,
+            accounting_unknown=usage is None,
+        )
     message = choice.get("message")
     content = message.get("content") if isinstance(message, dict) else None
     generation_id = payload.get("id")
@@ -423,6 +444,7 @@ def _payload_error_type(value: Any, status_code: int) -> ChatErrorType:
     code_mapping = {
         "invalid_request": ChatErrorType.INVALID_REQUEST,
         "authentication": ChatErrorType.AUTHENTICATION,
+        "refusal": ChatErrorType.REFUSAL,
         "payment_required": ChatErrorType.PAYMENT_REQUIRED,
         "permission_denied": ChatErrorType.PERMISSION_DENIED,
         "content_policy_violation": ChatErrorType.CONTENT_POLICY_VIOLATION,
@@ -432,6 +454,18 @@ def _payload_error_type(value: Any, status_code: int) -> ChatErrorType:
         "context_length_exceeded": ChatErrorType.CONTEXT_LENGTH_EXCEEDED,
         "max_tokens_exceeded": ChatErrorType.MAX_TOKENS_EXCEEDED,
         "token_limit_exceeded": ChatErrorType.TOKEN_LIMIT_EXCEEDED,
+        "insufficient_quota": ChatErrorType.QUOTA_EXHAUSTED,
+        "quota_exceeded": ChatErrorType.QUOTA_EXHAUSTED,
+        "daily_quota_exceeded": ChatErrorType.QUOTA_EXHAUSTED,
+        "key_limit_exceeded": ChatErrorType.KEY_LIMIT_EXCEEDED,
+        "budget_exceeded": ChatErrorType.KEY_LIMIT_EXCEEDED,
+        "model_not_found": ChatErrorType.MODEL_UNAVAILABLE,
+        "no_available_endpoints": ChatErrorType.MODEL_UNAVAILABLE,
+        "no_endpoints_found": ChatErrorType.MODEL_UNAVAILABLE,
+        "timeout": ChatErrorType.TIMEOUT,
+        "server": ChatErrorType.PROVIDER_UNAVAILABLE,
+        "not_found": ChatErrorType.MODEL_UNAVAILABLE,
+        "insufficient_credits": ChatErrorType.PAYMENT_REQUIRED,
     }
     if code in code_mapping:
         return code_mapping[code]
@@ -443,6 +477,76 @@ def _payload_error_type(value: Any, status_code: int) -> ChatErrorType:
 def _provider_payload_error_type(
     value: Any, status_code: int, provider_id: ProviderId
 ) -> ChatErrorType:
+    if provider_id is ProviderId.OPENROUTER and isinstance(value, dict):
+        # Structured fields only. Provider message/raw strings may contain
+        # request fragments, so they are neither retained nor displayed.
+        metadata = value.get("metadata")
+        if isinstance(metadata, dict):
+            for code in (402, 403, 429):
+                if value.get("code") in (code, str(code)):
+                    status_code = code
+                    break
+            limit_source = metadata.get("limit_source")
+            if (
+                status_code in {402, 403}
+                and isinstance(limit_source, str)
+                and limit_source
+                in {
+                    "key_limit",
+                    "api_key",
+                    "key_budget",
+                    "guardrail",
+                    "workspace",
+                    "organization",
+                    "member",
+                    "workspace_default_member",
+                    "workspace_default_key",
+                    "openrouter_key_limit",
+                    "openrouter_guardrail_budget",
+                    "openrouter_workspace_budget",
+                }
+            ):
+                return ChatErrorType.KEY_LIMIT_EXCEEDED
+            error_type = metadata.get("error_type")
+            if isinstance(error_type, str) and error_type in {
+                "invalid_request",
+                "authentication",
+                "payment_required",
+                "permission_denied",
+                "content_policy_violation",
+                "refusal",
+                "rate_limit_exceeded",
+                "provider_unavailable",
+                "provider_overloaded",
+                "context_length_exceeded",
+                "max_tokens_exceeded",
+                "token_limit_exceeded",
+                "insufficient_quota",
+                "quota_exceeded",
+                "daily_quota_exceeded",
+                "key_limit_exceeded",
+                "budget_exceeded",
+                "model_not_found",
+                "no_available_endpoints",
+                "no_endpoints_found",
+                "timeout",
+                "server",
+                "not_found",
+                "insufficient_credits",
+            }:
+                return _payload_error_type({"code": error_type}, status_code)
+            limit_type = metadata.get("limit_type")
+            if (
+                status_code == 429
+                and isinstance(limit_type, str)
+                and limit_type
+                in {
+                    "free_model_daily_requests",
+                    "daily_quota",
+                    "daily_requests",
+                }
+            ):
+                return ChatErrorType.QUOTA_EXHAUSTED
     if provider_id is ProviderId.VSEGPT:
         # VSEGPT's official /Docs/API/Errors documents several unrelated
         # failures as HTTP 400. Inspect only known categories and discard text.
@@ -475,6 +579,8 @@ def _http_error_type(status_code: int, _code: str | None) -> ChatErrorType:
         return ChatErrorType.PAYMENT_REQUIRED
     if status_code == 403:
         return ChatErrorType.PERMISSION_DENIED
+    if status_code == 404:
+        return ChatErrorType.MODEL_UNAVAILABLE
     if status_code in {408, 524}:
         return ChatErrorType.TIMEOUT
     if status_code == 429:
