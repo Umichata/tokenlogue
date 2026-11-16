@@ -360,7 +360,9 @@ class ChatViewTests(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn(tr("key.unlimited_notice"), rendered)
         self.assertFalse(any("OpenRouter" in text for text in rendered))
 
-    async def test_key_validity_controls_retry_replace_and_new_chat(self) -> None:
+    async def test_key_validity_controls_current_connection_but_not_creation_entry(
+        self,
+    ) -> None:
         async def callback(*_args: str) -> None:
             return None
 
@@ -412,7 +414,7 @@ class ChatViewTests(unittest.IsolatedAsyncioTestCase):
         await restricted.open_menu()
         self.assertIsNotNone(invalid.retry_key_button)
         self.assertIsNotNone(invalid.replace_key_button)
-        self.assertFalse(invalid._new_chat_allowed)
+        self.assertTrue(invalid._new_chat_allowed)
         self.assertIsNotNone(restricted.retry_key_button)
         self.assertIsNotNone(restricted.replace_key_button)
         self.assertTrue(restricted._new_chat_allowed)
@@ -427,6 +429,32 @@ class ChatViewTests(unittest.IsolatedAsyncioTestCase):
         )
         self.assertEqual(invalid_message, tr("key.invalid_short"))
         self.assertEqual(restricted_message, tr("key.restricted_short"))
+
+        # All rendered creation entries are usable despite the current key,
+        # while an in-flight send or an old disposed callback remains blocked.
+        create = AsyncMock()
+        invalid._on_new_chat = create
+        buttons = list(invalid._new_chat_controls.values())
+        self.assertGreaterEqual(len(buttons), 2)
+        for button in buttons:
+            self.assertFalse(button.disabled)
+            handler = cast(Callable[[ft.Event], Awaitable[None]], button.on_click)
+            await handler(ft.Event(name="click", control=button))
+        self.assertEqual(create.await_count, len(buttons))
+        invalid.set_sending(True)
+        for button in buttons:
+            self.assertTrue(button.disabled)
+            handler = cast(Callable[[ft.Event], Awaitable[None]], button.on_click)
+            await handler(ft.Event(name="click", control=button))
+        self.assertEqual(create.await_count, len(buttons))
+        invalid.set_sending(False)
+        self.assertTrue(all(not button.disabled for button in buttons))
+        invalid.dispose()
+        restricted.dispose()
+        for button in buttons:
+            handler = cast(Callable[[ft.Event], Awaitable[None]], button.on_click)
+            await handler(ft.Event(name="click", control=button))
+        self.assertEqual(create.await_count, len(buttons))
 
     async def test_rename_and_delete_buttons_await_callbacks_with_chat_id(
         self,

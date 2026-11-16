@@ -161,10 +161,10 @@ class ChatWorkspaceView:
             )
             if self._android:
                 self.protection_button.tooltip = tr("protection_panel.open")
-        self._new_chat_allowed = free_mode_allowed(key_validity)
         self._disposed = False
         self._drawer_open = False
         self._sending = False
+        self._new_chat_controls: dict[str, ft.Button | ft.IconButton] = {}
         self._paid_setting_pending = False
         self._chat_generation = 0
         self._menu_revision = 0
@@ -241,6 +241,11 @@ class ChatWorkspaceView:
         return self.composer.value if self.composer is not None else ""
 
     @property
+    def _new_chat_allowed(self) -> bool:
+        # Creation chooses its own provider before checking that provider's key.
+        return not self._disposed and not self._sending
+
+    @property
     def key_replacement_busy(self) -> bool:
         return (
             self._sending
@@ -254,6 +259,8 @@ class ChatWorkspaceView:
 
     def dispose(self) -> None:
         self._disposed = True
+        for button in self._new_chat_controls.values():
+            button.disabled = True
         self._key_display = None
         self._key_refresh_epoch += 1
         self._key_refresh_in_progress = False
@@ -377,7 +384,6 @@ class ChatWorkspaceView:
         if provider_id is not None:
             self._provider_id = provider_id
         self._key_validation_in_progress = key_validation_in_progress
-        self._new_chat_allowed = free_mode_allowed(key_validity)
         self._sync_interaction_components(
             force=previous_chat_id != current_chat_id,
             reset_connection=connection_changed,
@@ -388,6 +394,8 @@ class ChatWorkspaceView:
 
     def set_sending(self, sending: bool) -> None:
         self._sending = sending
+        for button in self._new_chat_controls.values():
+            button.disabled = not self._new_chat_allowed
         if self._protection_status is not None:
             self._protection_panel.refresh(
                 self._protection_status, busy=self.security_busy
@@ -784,12 +792,8 @@ class ChatWorkspaceView:
                 expand=True,
                 controls=[
                     BrandHeader(),
-                    ft.Button(
-                        tr("chat.untitled"),
-                        icon=ft.Icons.ADD,
-                        style=primary_button_style(),
-                        disabled=not self._new_chat_allowed,
-                        on_click=self._handle_new_chat_button,
+                    self._new_chat_control(
+                        "sidebar" if width is not None else "drawer"
                     ),
                     ft.Divider(),
                     chat_list,
@@ -879,14 +883,7 @@ class ChatWorkspaceView:
                     max_lines=1,
                     overflow=ft.TextOverflow.ELLIPSIS,
                 ),
-                ft.IconButton(
-                    icon=ft.Icons.ADD,
-                    tooltip=tr("chat.untitled"),
-                    width=44,
-                    height=48,
-                    disabled=not self._new_chat_allowed,
-                    on_click=self._handle_new_chat_icon,
-                ),
+                self._new_chat_control("header", compact=True),
                 ft.IconButton(
                     icon=ft.Icons.LOCK_OUTLINE,
                     tooltip=tr("chat.lock"),
@@ -955,13 +952,7 @@ class ChatWorkspaceView:
                         color=MUTED_COLOR,
                         text_align=ft.TextAlign.CENTER,
                     ),
-                    ft.Button(
-                        tr("chat.untitled"),
-                        icon=ft.Icons.ADD,
-                        style=primary_button_style(),
-                        disabled=not self._new_chat_allowed,
-                        on_click=self._handle_new_chat_button,
-                    ),
+                    self._new_chat_control("empty"),
                     *(
                         [
                             ft.Text(
@@ -977,7 +968,7 @@ class ChatWorkspaceView:
                                 tr("chat.key_options"), on_click=self._open_options
                             ),
                         ]
-                        if not self._new_chat_allowed
+                        if self._key_validity is KeyValidityState.INVALID
                         else []
                     ),
                     _history_warning(),
@@ -1582,11 +1573,36 @@ class ChatWorkspaceView:
         self.replace_key_button = panel.replace_button
         return panel.control
 
+    def _new_chat_control(self, slot: str, *, compact: bool = False) -> ft.Control:
+        button = (
+            ft.IconButton(
+                icon=ft.Icons.ADD,
+                tooltip=tr("chat.untitled"),
+                width=44,
+                height=48,
+                on_click=self._handle_new_chat_icon,
+            )
+            if compact
+            else ft.Button(
+                tr("chat.untitled"),
+                icon=ft.Icons.ADD,
+                style=primary_button_style(),
+                on_click=self._handle_new_chat_button,
+            )
+        )
+        button.disabled = not self._new_chat_allowed
+        self._new_chat_controls[slot] = button
+        return button
+
     async def _handle_new_chat_button(self, _event: ft.Event[ft.Button]) -> None:
+        if not self._new_chat_allowed:
+            return
         self.close_menu()
         await self._on_new_chat()
 
     async def _handle_new_chat_icon(self, _event: ft.Event[ft.IconButton]) -> None:
+        if not self._new_chat_allowed:
+            return
         self.close_menu()
         await self._on_new_chat()
 

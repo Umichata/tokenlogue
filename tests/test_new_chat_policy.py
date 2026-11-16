@@ -17,7 +17,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from api.models import ModelCatalogService  # noqa: E402
 from auth.models import KeyLimitInfo, KeyValidityState  # noqa: E402
 from chat.catalog import CatalogFetchResult, CatalogStatus  # noqa: E402
-from chat.models import FREE_ROUTER_MODEL, CatalogModel, ChatMode  # noqa: E402
+from chat.models import (  # noqa: E402
+    FREE_ROUTER_MODEL,
+    CatalogModel,
+    ChatMode,
+    ModelCatalog,
+)
+from chat.service import ChatService  # noqa: E402
 from i18n import get_language, localize_tree, set_language, tr  # noqa: E402
 from providers.creation import NewChatPolicy  # noqa: E402
 from providers.models import ProviderId  # noqa: E402
@@ -174,6 +180,8 @@ class CreationPolicyStorageTests(unittest.IsolatedAsyncioTestCase):
 
 class CreationPolicyControllerTests(unittest.IsolatedAsyncioTestCase):
     chats: SqliteChatRepository
+    chat_service: ChatService
+    client: sending_fixtures.FakeCompletionClient
     database: AuthDatabase
     model: CatalogModel
     asyncSetUp = sending_fixtures.ProviderSendingTests.asyncSetUp
@@ -256,6 +264,48 @@ class CreationPolicyControllerTests(unittest.IsolatedAsyncioTestCase):
             SqliteDraftRepository(self.database.path).get_draft("rub").text,
             "Existing unsent draft",
         )
+
+    async def test_rendered_new_chat_entry_ignores_only_the_old_chats_invalid_or_missing_key(
+        self,
+    ):
+        controller, profiles, _, _, _ = await self.manual_controller()
+        old_chat = await self.chat_service.create_chat_with_limits(
+            ChatMode.FREE,
+            FREE_ROUTER_MODEL,
+            catalog=ModelCatalog((FREE_ROUTER_MODEL,), (), available=True),
+            key_validity=KeyValidityState.VALID,
+            key_limit=KeyLimitInfo.unknown(),
+            token_limit=8192,
+            max_completion_tokens=64,
+        )
+        await controller.select_chat(old_chat.id)
+        for missing in (False, True):
+            with self.subTest(current_key_missing=missing):
+                profiles.validity[ProviderId.OPENROUTER] = KeyValidityState.INVALID
+                if missing:
+                    profiles.keys.pop(ProviderId.OPENROUTER)
+                await controller.refresh_provider_state()
+                view = controller._workspace_view
+                assert view is not None
+                self.assertIs(view._key_validity, KeyValidityState.INVALID)
+                create = view._new_chat_controls["header"]
+                self.assertFalse(create.disabled)
+                handler = cast(Callable[[ft.Event], Awaitable[None]], create.on_click)
+                await handler(ft.Event(name="click", control=create))
+                self.assertIsNotNone(controller._creation_selector)
+                await controller.select_creation_provider(ProviderId.VSEGPT)
+                self.assertIs(controller._creation_provider, ProviderId.VSEGPT)
+                self.assertIs(controller._key_validity, KeyValidityState.UNVERIFIED)
+                await controller.select_chat_mode(ChatMode.PAID)
+                self.assertIs(controller._pending_mode, ChatMode.PAID)
+                await controller.cancel_new_chat()
+                self.assertEqual(controller.selected_chat_id, old_chat.id)
+                self.assertEqual(len(self.chats.list_chats()), 2)
+                self.assertEqual(
+                    SqliteDraftRepository(self.database.path).get_draft("rub").text,
+                    "Existing unsent draft",
+                )
+                self.assertEqual(self.client.calls, [])
 
     async def test_explicit_policy_skips_question_and_missing_key_never_falls_back(
         self,
