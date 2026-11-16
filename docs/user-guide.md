@@ -36,11 +36,11 @@ Switching pages saves the draft and keeps the current chat. Android Back returns
 
 ## Create and manage a chat
 
-Use **+** to start a chat. With **Choose each time**, first choose OpenRouter or VSEGPT. A saved service preference skips that question. Then choose an available mode, model and limits. This creation policy applies only to new chats. Use **Chat connection** to change the service of an existing chat explicitly. To use a different model within the same service, create another chat.
+Use **+** to start a chat. With **Choose each time**, first choose OpenRouter or VSEGPT. A saved service preference skips that question. OpenRouter offers free and paid modes. VSEGPT opens its paid model list directly. After choosing a model, review its limits. This creation policy applies only to new chats. Use **Chat connection** to change the service of an existing chat explicitly. To use a different model within the same service, create another chat.
 
 OpenRouter free mode uses automatic selection or models whose applicable prices are all zero. Access still depends on authorization, model availability and service limits. A negative account balance can block free requests. Zero and an unknown balance are different states. See the current [OpenRouter limits](https://openrouter.ai/docs/api_reference/limits).
 
-VSEGPT offers paid model selection with a RUB budget. Billing may use other units, and an unknown price is not zero. A fully free text-chat billing contract is not confirmed, so free mode is not offered for this service.
+VSEGPT works only in paid mode in Tokenlogue. There is no separate mode step. Choose a model, then set a RUB budget and confirm the terms in the limits form. Billing may use other units, and an unknown price is not zero. Opening the model list does not create a chat or send anything.
 
 When a catalogue cannot load, the app shows a specific reason and **Refresh list**. Refreshing a list never retries a chat message automatically. OpenRouter automatic free selection remains available without the list, subject to the same access rules.
 
@@ -61,11 +61,31 @@ Use the conversation list to reopen a chat. **Rename** preserves its history and
 
 | Linux | Android emulator |
 | --- | --- |
-| <a href="assets/screenshots/v011-linux-vsegpt-modes-en.png"><img src="assets/screenshots/v011-linux-vsegpt-modes-en.png" alt="VSEGPT paid model selection on Linux" width="560"></a> | <a href="assets/screenshots/v011-android-vsegpt-modes-en.png"><img src="assets/screenshots/v011-android-vsegpt-modes-en.png" alt="VSEGPT paid model selection in an Android emulator" width="300"></a> |
+| <a href="assets/screenshots/v011-linux-vsegpt-models-en.png"><img src="assets/screenshots/v011-linux-vsegpt-models-en.png" alt="Direct VSEGPT model selection on Linux" width="560"></a> | <a href="assets/screenshots/v011-android-vsegpt-models-en.png"><img src="assets/screenshots/v011-android-vsegpt-models-en.png" alt="Direct VSEGPT model selection in an Android emulator" width="300"></a> |
 
 *Demonstration profiles in the actual Linux bundle and Android emulator. No paid request was sent.*
 
-[OpenRouter free mode without a catalogue](assets/screenshots/v011-linux-openrouter-free-mode-en.png) is shown on Linux with an unverified demonstration key and unavailable network. This illustration does not establish authorization or successful generation.
+<a id="en-check-saved-key"></a>
+
+### Check the saved key
+
+On the OpenRouter mode screen or the VSEGPT model list, choose **Check key** beside the connection status. The app checks the saved key of the selected service. You do not need to enter it again. **Refresh list** separately loads the model catalogue and does not confirm authorization.
+
+A progress indicator and **Checking key…** appear while the request is running. Success updates the status and available actions in the same screen. Network, timeout, TLS, access refusals and invalid keys have distinct messages. You can retry a failed check. Cancel and system Back remain available. Checking sends no chat message and does not select a model.
+
+When VSEGPT balance access is disabled in the service settings, the key stays unverified. Successful authorization does not guarantee funds or available quota. An unavailable OpenRouter balance alone does not revoke a key's chat access.
+
+| Linux | Android emulator |
+| --- | --- |
+| <a href="assets/screenshots/v011-linux-openrouter-key-check-en.png"><img src="assets/screenshots/v011-linux-openrouter-key-check-en.png" alt="Saved unverified key and OpenRouter check button on Linux" width="560"></a> | <a href="assets/screenshots/v011-android-openrouter-key-check-en.png"><img src="assets/screenshots/v011-android-openrouter-key-check-en.png" alt="OpenRouter saved-key check button in an Android emulator" width="300"></a> |
+
+| Linux | Android emulator |
+| --- | --- |
+| <a href="assets/screenshots/v011-linux-openrouter-key-result-en.png"><img src="assets/screenshots/v011-linux-openrouter-key-result-en.png" alt="Real service rejection of a deliberately fake OpenRouter key on Linux" width="560"></a> | <a href="assets/screenshots/v011-android-openrouter-key-result-en.png"><img src="assets/screenshots/v011-android-openrouter-key-result-en.png" alt="Network error during an offline OpenRouter key check in an Android emulator" width="300"></a> |
+
+*Linux uses a separate demonstration profile with a deliberately fake key in protected storage. The real service rejects that key. Android shows a separate protected test profile with networking deliberately disabled, so its check reports a network error. Neither result demonstrates successful authorization. No chat message was sent.*
+
+During manual creation, Back from VSEGPT models returns to the provider choice. With a fixed VSEGPT preference, it cancels creation and returns to chats. While changing a connection, Back returns to the service choice and keeps the existing connection. Back from the limits form returns to the model list. Cancel preserves the previous draft.
 
 ## Chat connection and provider changes
 
@@ -73,7 +93,7 @@ Open **⋮** in the selected chat. **Chat connection** shows its provider and ke
 
 1. Choose **Change provider**, then select OpenRouter or VSEGPT. The current provider is marked.
 2. If the target key is missing, configure it in the offered service card. Return to Home and explicitly choose the provider again to continue.
-3. Choose an available free or paid mode, select a model from that service and review its limits. A paid model needs a budget in its own currency. A matching model ID from another service is not selected automatically.
+3. For OpenRouter, choose free or paid mode. For VSEGPT, choose a model directly. Review the limits. A paid model needs a budget in its own currency. A matching model ID from another service is not selected automatically.
 4. Choose **Review change**. Check the provider, model, currency, amount already spent and remaining chat budget, then choose **Change provider**.
 
 The app checks the catalogue again at confirmation. If it is unavailable or the selected model has changed, the previous connection stays in place. Try later or review the current model before confirming again.

@@ -35,6 +35,8 @@ A failed check or cancelled replacement keeps the saved key. Entering another se
 
 Each card retains only its own unfinished candidate while unlocked. Changing the filter masks it. The reveal button shows your entered candidate only. Locking clears all cards, including hidden inputs. Do not share screenshots containing a key.
 
+You can check an already saved key without re-entering it on the OpenRouter mode screen or the VSEGPT model list. Choose **Check key**. This is separate from refreshing the catalogue. The status changes only after a real check of the selected service. If VSEGPT does not allow balance access, the key stays unverified. See [Check the saved key](user-guide.md#en-check-saved-key).
+
 ## Choose the provider for new chats
 
 **Provider for new chats** is separate from the viewing filter and does not change existing chats. Choose **Choose each time** to select a service whenever you start a chat, or choose one service to use it directly. New profiles start with manual selection. Existing profiles retain their previous service choice, including the older default when no separate preference was saved. Choosing a service for one chat does not change this setting. If its key is missing, the app opens that service’s form. Cancel returns without creating an empty chat or losing the old draft. Use [Chat connection](user-guide.md#en-chat-connection) in a chat’s **⋮** menu to change that chat’s provider with an explicit model and budget review. Configure a missing key for the intended service before continuing. An error never moves history to another provider automatically.
