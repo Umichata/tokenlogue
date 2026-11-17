@@ -92,6 +92,38 @@ class RecoveryViewTests(unittest.IsolatedAsyncioTestCase):
         cancel.assert_awaited_once()
         retry.assert_not_called()
 
+    async def test_open_device_recovery_refreshes_help_error_and_waiting_without_retry(
+        self,
+    ):
+        retry, cancel = AsyncMock(), AsyncMock()
+        view = auth_view.DeviceRecoveryView(
+            retry, cancel, linux=True, message=tr("recovery.failed"), busy=True
+        )
+        control, message, waiting = view.control, view.message, view.waiting
+        for language, busy in (
+            ("en", True),
+            ("ru", True),
+            ("en", False),
+            ("ru", False),
+        ):
+            view.set_busy(busy)
+            set_language(language)
+            localize_tree(view.control)
+            self.assertIs(view.control, control)
+            self.assertIs(view.message, message)
+            self.assertIs(view.waiting, waiting)
+            self.assertEqual(message.value, tr("recovery.failed"))
+            self.assertEqual(waiting.value, tr("recovery.linux_waiting"))
+            self.assertEqual(waiting.visible, busy)
+            self.assertEqual(view.progress.visible, busy)
+            self.assertEqual(view.retry_button.disabled, busy)
+            self.assertFalse(view.cancel_button.disabled)
+            texts = [c.value for c in walk(view.control) if isinstance(c, ft.Text)]
+            self.assertIn(tr("recovery.linux_explanation"), texts)
+            self.assertIn(tr("recovery.lock_cancels_change"), texts)
+        retry.assert_not_awaited()
+        cancel.assert_not_awaited()
+
     async def test_recovery_pin_choice_reuses_fields_and_requires_repeat(self):
         confirm = AsyncMock()
         view = auth_view.PinSetupView(

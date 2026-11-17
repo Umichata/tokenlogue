@@ -26,6 +26,7 @@ from api.openrouter import KeyValidationResult, KeyValidationStatus  # noqa: E40
 from auth.contracts import KeyValidator  # noqa: E402
 from auth.models import KeyLimitInfo, KeyValidityState  # noqa: E402
 from chat.accounting import BudgetState, ChatBudgetService  # noqa: E402
+from chat.catalog import CatalogFetchResult, CatalogStatus  # noqa: E402
 from chat.drafts import ChatDraftService  # noqa: E402
 from chat.errors import ChatErrorType  # noqa: E402
 from chat.models import (  # noqa: E402
@@ -114,6 +115,21 @@ class FakeCatalogClient:
 class FakeKeyValidator:
     async def validate_key(self, api_key: str) -> KeyValidationResult:
         return KeyValidationResult(KeyValidationStatus.ACCEPTED_WITHOUT_LIMIT)
+
+
+class ClassifiedCatalogClient(FakeCatalogClient):
+    def __init__(self, results: list[CatalogFetchResult]) -> None:
+        super().__init__(())
+        self.results = results
+        self.fetches = 0
+
+    async def fetch_catalog(self, api_key: str) -> CatalogFetchResult:
+        self.fetches += 1
+        return self.results.pop(0)
+
+    async def fetch_models(self, api_key: str) -> tuple[CatalogModel, ...]:
+        result = await self.fetch_catalog(api_key)
+        return result.models if result.available else ()
 
 
 class FakeCompletionClient:
@@ -1250,6 +1266,64 @@ class ChatUiIntegrationTests(unittest.IsolatedAsyncioTestCase):
         updated = self.chat_repository.get_chat(chat_id)
         assert updated is not None
         self.assertEqual(updated.prompt_price_per_token, Decimal("0.000002"))
+
+    async def test_repreview_failure_after_price_confirmation_preserves_draft(
+        self,
+    ) -> None:
+        for failed_step in ("reconfirm", "repreview"):
+            with self.subTest(failed_step=failed_step):
+                self.page = FakePage()
+                chat_id = await self._create_chat(ChatMode.PAID)
+                raised = replace(
+                    self.paid_model, prompt_price_per_token=Decimal("0.000003")
+                )
+                success = CatalogFetchResult(CatalogStatus.SUCCESS, (raised,))
+                failure = CatalogFetchResult(CatalogStatus.TIMEOUT)
+                catalog = ClassifiedCatalogClient(
+                    [success, failure]
+                    if failed_step == "reconfirm"
+                    else [success, success, failure]
+                )
+                controller, client = self._controller([], catalog_client=catalog)
+                await self._activate(controller)
+                await controller.select_chat(chat_id)
+                self._set_editor(controller, "draft before price confirmation")
+                before = self.chat_repository.get_chat(chat_id)
+
+                await controller.submit_message("draft before price confirmation")
+                self.assertEqual(len(self.page.dialogs), 1)
+                await controller.confirm_price_change()
+
+                view = controller._workspace_view
+                assert view is not None and view.composer is not None
+                self.assertEqual(
+                    view.composer.status.value, tr("service.error.timeout")
+                )
+                self.assertEqual(view.editor_value, "draft before price confirmation")
+                self.assertEqual(
+                    self.draft_repository.get_draft(chat_id).text,
+                    "draft before price confirmation",
+                )
+                self.assertEqual(client.calls, 0)
+                self.assertEqual(
+                    catalog.fetches, 2 if failed_step == "reconfirm" else 3
+                )
+                self.assertEqual(self.page.dialogs, [])
+                self.assertEqual(self.message_repository.list_turns(chat_id), [])
+                self.assertEqual(self.chat_repository.list_messages(chat_id), [])
+                after = self.chat_repository.get_chat(chat_id)
+                assert before is not None and after is not None
+                self.assertEqual(after.requested_model_id, before.requested_model_id)
+                self.assertEqual(after.connection_revision, before.connection_revision)
+                self.assertEqual(after.provider_id, before.provider_id)
+                self.assertEqual(after.currency, before.currency)
+                self.assertEqual(
+                    after.prompt_price_per_token,
+                    before.prompt_price_per_token
+                    if failed_step == "reconfirm"
+                    else raised.prompt_price_per_token,
+                )
+                await controller.lock_application()
 
     async def test_price_change_after_paid_dialog_still_blocks_post(self) -> None:
         chat_id = await self._create_chat(ChatMode.PAID)

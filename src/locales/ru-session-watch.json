@@ -18,6 +18,7 @@
   "local_protection.sleep_problem": "Блокировка перед сном не сработала",
   "local_protection.running": "Проверка блокировки экрана выполняется.",
   "local_protection.problem_notice": "Автоблокировка не сработала. Проверьте системные настройки и пока блокируйте Tokenlogue вручную.",
+  "local_protection.notice_join": "{first} {second}",
   "local_protection.confirmed_with_sleep": "{screen}. {sleep}.",
   "local_protection.unconfirmed_notice": "Результат подтвердить не удалось. Повторите тест и пока блокируйте Tokenlogue вручную.",
   "local_protection.untested_notice": "Автоблокировка экрана ещё не проверена. Запустите тест блокировки в меню.",

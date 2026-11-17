@@ -175,7 +175,12 @@ def protection_notice(snapshot: ProtectionSnapshot) -> str:
         )
     if snapshot.persistence_error:
         pieces.append(tr("local_protection.save_failed"))
-    return " ".join(pieces)
+    notice = pieces[0]
+    for piece in pieces[1:]:
+        # Keep each translation as a parameter so an already mounted form can
+        # refresh the whole notice without replacing controls or their values.
+        notice = tr("local_protection.notice_join", first=notice, second=piece)
+    return notice
 
 
 def mechanism_label(mechanism: str, result: CheckResult) -> str:

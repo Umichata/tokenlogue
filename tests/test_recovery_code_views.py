@@ -13,6 +13,11 @@ import flet as ft
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from i18n import configure_localization, localize_tree, set_language, tr  # noqa: E402
+from platform_security.local_protection import (  # noqa: E402
+    CheckResult,
+    CheckState,
+    ProtectionSnapshot,
+)
 from preferences import PreferencesStore  # noqa: E402
 from tests.test_chat_menu import walk  # noqa: E402
 from ui.recovery_code_view import (  # noqa: E402
@@ -20,6 +25,7 @@ from ui.recovery_code_view import (  # noqa: E402
     RecoveryCodeEntryView,
     RecoveryCodePinView,
 )
+from ui.security_status import protection_notice  # noqa: E402
 
 # Это заведомо публичное тестовое значение, а не выданный приложением секрет.
 SYNTHETIC_CODE = "ABCD-EFGH-IJKL-MNOP-QRST-UVWX-YZ23-4567"
@@ -154,6 +160,68 @@ class RecoveryCodeViewTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(view.code_text.value, SYNTHETIC_CODE.replace("-", " "))
             self.assertEqual(view.repeat_field.value, "")
         copy.assert_not_called()
+
+    async def test_code_pin_and_display_refresh_joined_help_and_error_while_busy(self):
+        snapshot = ProtectionSnapshot(
+            CheckResult(CheckState.CONFIRMED, "screen_confirmed"),
+            CheckResult(),
+            False,
+            False,
+            False,
+            persistence_error=True,
+        )
+        submit, cancel, copy = AsyncMock(), AsyncMock(), AsyncMock()
+        pin = RecoveryCodePinView(
+            submit, cancel, protection_notice=protection_notice(snapshot)
+        )
+        display = RecoveryCodeDisplayView(
+            SYNTHETIC_CODE,
+            submit,
+            cancel,
+            on_copy=copy,
+            protection_notice=protection_notice(snapshot),
+        )
+        pin.pin_field.value = "0123"
+        display.repeat_field.value = SYNTHETIC_CODE.lower()
+        for view in (pin, display):
+            self.addCleanup(view.dispose)
+            view.show_message(tr("auth.pin_mismatch"))
+        pin_control, code_control = pin.control, display.control
+        pin_field, code_field, code = (
+            pin.pin_field,
+            display.repeat_field,
+            display.code_text,
+        )
+        for language, busy in (
+            ("en", True),
+            ("ru", True),
+            ("en", False),
+            ("ru", False),
+        ):
+            for view in (pin, display):
+                view.set_busy(busy)
+            set_language(language)
+            for view in (pin, display):
+                localize_tree(view.control)
+                self.assertEqual(
+                    view.protection_notice.value, protection_notice(snapshot)
+                )
+                self.assertEqual(view.message.value, tr("auth.pin_mismatch"))
+                self.assertTrue(view.message.visible)
+                self.assertEqual(view.progress.visible, busy)
+            self.assertIs(pin.control, pin_control)
+            self.assertIs(display.control, code_control)
+            self.assertIs(pin.pin_field, pin_field)
+            self.assertIs(display.repeat_field, code_field)
+            self.assertIs(display.code_text, code)
+            self.assertEqual(pin_field.value, "0123")
+            self.assertEqual(code_field.value, SYNTHETIC_CODE.lower())
+            self.assertEqual(code.value, SYNTHETIC_CODE.replace("-", " "))
+            self.assertEqual(pin_field.disabled, busy)
+            self.assertEqual(code_field.disabled, busy)
+        submit.assert_not_awaited()
+        cancel.assert_not_awaited()
+        copy.assert_not_awaited()
 
 
 if __name__ == "__main__":

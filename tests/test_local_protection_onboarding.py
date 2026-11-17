@@ -27,7 +27,7 @@ from chat.accounting import ChatBudgetService  # noqa: E402
 from chat.drafts import ChatDraftService  # noqa: E402
 from chat.sending import MessageSendingService  # noqa: E402
 from chat.service import ChatService  # noqa: E402
-from i18n import configure_localization, set_language  # noqa: E402
+from i18n import configure_localization, localize_tree, set_language, tr  # noqa: E402
 from platform_security.local_protection import (  # noqa: E402
     CheckState,
     ObserverContext,
@@ -44,6 +44,7 @@ from storage.secure_credentials import FletSecureCredentials  # noqa: E402
 from tests import test_app as app_fixtures  # noqa: E402
 from tests import test_auth_service as auth_fixtures  # noqa: E402
 from tests import test_linux_parity as fixtures  # noqa: E402
+from tests.test_chat_menu import walk  # noqa: E402
 from tests.test_secure_credentials import FakeSecureStorage  # noqa: E402
 
 
@@ -514,6 +515,58 @@ class ProtectionOnboardingTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.preferences.local_protection_onboarding, "pending")
         self.assertFalse(adapter.requested.is_set())
         self.assertTrue(self.access.unlocked)
+
+    async def test_open_initial_pin_setup_translates_help_errors_and_busy_without_save(
+        self,
+    ):
+        await self.app.submit_key("sk-or-v1-synthetic-onboarding-key-no-network")
+        view = self.app._pin_setup_view
+        assert view is not None
+        control, first, repeat = view.control, view.pin_field, view.repeat_field
+        token = self.app._pending_setup_token
+        snapshot = self.checks().snapshot
+        stored = dict(self.storage.values)
+        first.value = "0123"
+        repeat.value = "0124"
+        view._repeat_changed(ft.Event(name="change", control=repeat))
+        self.assertTrue(view.message.visible)
+        for language, busy in (
+            ("en", False),
+            ("ru", True),
+            ("en", True),
+            ("ru", False),
+        ):
+            with self.subTest(language=language, busy=busy):
+                view.set_busy(busy)
+                set_language(language)
+                self.app.handle_language_change()
+                localize_tree(view.control)
+                texts = [c.value for c in walk(view.control) if isinstance(c, ft.Text)]
+                self.assertIn(
+                    tr(
+                        "recovery.setup_with_notice",
+                        instructions=tr("auth.pin_instructions"),
+                        notice=self.app._protection_notice(),
+                    ),
+                    texts,
+                )
+                self.assertEqual(view.message.value, tr("auth.pin_mismatch"))
+                self.assertEqual(view.repeat_field.label, tr("auth.repeat_pin"))
+                self.assertIs(self.app._pin_setup_view, view)
+                self.assertIs(view.control, control)
+                self.assertIs(view.pin_field, first)
+                self.assertIs(view.repeat_field, repeat)
+                self.assertEqual(first.value, "0123")
+                self.assertEqual(repeat.value, "0124")
+                self.assertEqual(first.disabled, busy)
+                self.assertEqual(view.progress.visible, busy)
+                self.assertTrue(view.confirm_button.disabled)
+                self.assertEqual(self.app._pending_setup_token, token)
+                self.assertEqual(self.checks().snapshot, snapshot)
+                self.assertEqual(self.storage.values, stored)
+                self.assertIsNone(self.database.get_auth_state())
+                self.assertFalse(self.access.unlocked)
+                self.assertIsNone(self.app._protection_setup_view)
 
     async def test_Android_registration_has_no_desktop_step_or_marker(self):
         self.app.dispose()

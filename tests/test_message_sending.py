@@ -12,6 +12,7 @@ from datetime import UTC, datetime
 from decimal import Decimal
 from pathlib import Path
 from typing import cast
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
@@ -21,6 +22,7 @@ from api.chat_completions import (  # noqa: E402
     ChatCompletionResult,
     ChatCompletionsClient,
 )
+from api.models import ModelCatalogClient  # noqa: E402
 from api.openrouter import KeyValidationResult, KeyValidationStatus  # noqa: E402
 from auth.models import KeyLimitInfo, KeyValidityState, PinRecord  # noqa: E402
 from chat.accounting import (  # noqa: E402
@@ -28,6 +30,7 @@ from chat.accounting import (  # noqa: E402
     BudgetReservation,
     BudgetState,
     ChatBudgetService,
+    ChatLimitConfiguration,
     TurnStatus,
     estimate_max_cost,
 )
@@ -46,6 +49,8 @@ from chat.models import (  # noqa: E402
 )
 from chat.sending import MessageSendingService  # noqa: E402
 from chat.service import ChatService  # noqa: E402
+from i18n import tr  # noqa: E402
+from providers.models import Currency, ProviderId  # noqa: E402
 from storage.chat_repository import SqliteChatRepository  # noqa: E402
 from storage.database import AuthDatabase  # noqa: E402
 from storage.message_repository import SqliteMessageRepository  # noqa: E402
@@ -512,6 +517,131 @@ class MessageSendingTests(unittest.IsolatedAsyncioTestCase):
             paid_confirmed=True,
         )
         self.assertTrue(accepted.successful)
+
+    async def test_catalogue_transport_failure_does_not_mean_model_missing(
+        self,
+    ) -> None:
+        await self._create_and_configure_paid("paid")
+        cases = (
+            (httpx.ReadTimeout("fixture timeout"), ChatErrorType.TIMEOUT),
+            (httpx.ConnectError("fixture offline"), ChatErrorType.NETWORK_ERROR),
+            (httpx.Response(503), ChatErrorType.PROVIDER_UNAVAILABLE),
+            (httpx.Response(429), ChatErrorType.RATE_LIMIT_EXCEEDED),
+            (
+                httpx.Response(200, content=b"not json"),
+                ChatErrorType.MALFORMED_RESPONSE,
+            ),
+            (httpx.Response(200, json={"data": []}), ChatErrorType.MODEL_UNAVAILABLE),
+        )
+        for response, expected in cases:
+            with self.subTest(error=expected):
+                requests = []
+
+                def handler(request: httpx.Request) -> httpx.Response:
+                    requests.append((request.method, str(request.url)))
+                    if isinstance(response, httpx.HTTPError):
+                        raise response
+                    return response
+
+                completion = FakeCompletionClient([])
+                service = MessageSendingService(
+                    self.chat_service,
+                    self.message_repository,
+                    completion,
+                    ModelCatalogClient(transport=httpx.MockTransport(handler)),
+                    self.validator,
+                    now=lambda: NOW,
+                )
+                preview = await service.preview_message(
+                    "paid",
+                    "draft must remain unsent",
+                    api_key=TEST_CREDENTIAL,
+                    key_validity=KeyValidityState.VALID,
+                    key_limit=KeyLimitInfo.from_validated_remaining(None),
+                )
+                self.assertEqual(preview.error_type, expected)
+                self.assertEqual(
+                    requests,
+                    [("GET", "https://openrouter.ai/api/v1/models")],
+                )
+                self.assertEqual(completion.calls, [])
+                self.assertEqual(self.message_repository.list_turns("paid"), [])
+
+    async def test_price_reconfirmation_rejects_wrong_provider_and_currency(
+        self,
+    ) -> None:
+        await self._create_and_configure_paid("paid")
+        before = self.chat_repository.get_chat("paid")
+        completion = FakeCompletionClient([])
+        service = self._service(completion)
+        for model in (
+            replace(self.paid_model, provider_id=ProviderId.VSEGPT),
+            replace(self.paid_model, currency=Currency.RUB),
+        ):
+            with self.subTest(provider=model.provider_id, currency=model.currency):
+                self.catalog.models = (model,)
+                with self.assertRaisesRegex(
+                    ValueError, str(tr("service.model_missing"))
+                ):
+                    await service.reconfirm_model_price(
+                        "paid", api_key=TEST_CREDENTIAL, confirmed=True
+                    )
+                self.assertEqual(self.chat_repository.get_chat("paid"), before)
+        self.assertEqual(completion.calls, [])
+
+    async def test_late_reconfirmation_cannot_reprice_changed_connection_or_key(
+        self,
+    ) -> None:
+        for change in ("connection", "credential"):
+            with self.subTest(change=change):
+                chat_id = "paid-" + change
+                await self._create_and_configure_paid(chat_id)
+                completion = FakeCompletionClient([])
+                service = self._service(completion)
+                credential_current = True
+                service.set_credential_current_check(
+                    lambda _provider, _key: credential_current
+                )
+                raised = replace(
+                    self.paid_model, prompt_price_per_token=Decimal("0.000003")
+                )
+                expected = self.chat_repository.get_chat(chat_id)
+
+                async def delayed_catalogue(_api_key):
+                    nonlocal credential_current, expected
+                    if change == "credential":
+                        credential_current = False
+                    else:
+                        expected = self.chat_repository.switch_connection(
+                            chat_id,
+                            expected_revision=0,
+                            mode=ChatMode.PAID,
+                            model=replace(
+                                self.paid_model,
+                                provider_id=ProviderId.VSEGPT,
+                                currency=Currency.RUB,
+                            ),
+                            configuration=ChatLimitConfiguration(
+                                token_limit=1000,
+                                max_completion_tokens=64,
+                                cost_limit_usd=None,
+                                cost_limit=Decimal("10"),
+                                currency=Currency.RUB,
+                            ),
+                            updated_at=NOW,
+                        )
+                    return (raised,)
+
+                with patch.object(self.catalog, "fetch_models", delayed_catalogue):
+                    with self.assertRaisesRegex(
+                        Exception, ChatErrorType.INTERRUPTED.value
+                    ):
+                        await service.reconfirm_model_price(
+                            chat_id, api_key=TEST_CREDENTIAL, confirmed=True
+                        )
+                self.assertEqual(self.chat_repository.get_chat(chat_id), expected)
+                self.assertEqual(self.message_repository.list_turns(chat_id), [])
+                self.assertEqual(completion.calls, [])
 
     async def test_paid_estimate_cannot_exceed_known_key_limit(self) -> None:
         await self._create_and_configure_paid("paid")

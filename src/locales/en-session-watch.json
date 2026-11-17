@@ -18,6 +18,7 @@
   "local_protection.sleep_problem": "Sleep protection failed",
   "local_protection.running": "Screen lock check in progress.",
   "local_protection.problem_notice": "Automatic locking did not work. Check your system settings and lock Tokenlogue manually for now.",
+  "local_protection.notice_join": "{first} {second}",
   "local_protection.confirmed_with_sleep": "{screen}. {sleep}.",
   "local_protection.unconfirmed_notice": "The result could not be confirmed. Try the check again and lock Tokenlogue manually for now.",
   "local_protection.untested_notice": "Automatic screen locking has not been checked. Use Test screen lock in the menu.",

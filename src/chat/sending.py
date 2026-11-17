@@ -45,6 +45,7 @@ from chat.budget_consent import (
     chat_prices,
     text_digest,
 )
+from chat.catalog import CatalogFetchResult, CatalogStatus
 from chat.context import (
     ContextMessage,
     prepare_history,
@@ -675,11 +676,14 @@ class MessageSendingService:
         chat = await self._chat_service.get_chat(chat_id)
         if chat is None:
             raise KeyError(tr("service.chat_missing"))
-        models = await self._catalog_client.fetch_models(api_key)
+        self._assert_credential_current(chat, api_key)
+        catalog = await self._fetch_current_catalog(api_key)
         await self._assert_connection_current(chat)
         self._assert_credential_current(chat, api_key)
-        current = _find_model(models, chat.requested_model_id, chat.provider_id)
-        if current is None:
+        if not catalog.available:
+            raise ValueError(safe_error_message(_catalog_failure(catalog)))
+        current = _find_model(catalog.models, chat.requested_model_id, chat.provider_id)
+        if current is None or current.currency is not chat.currency:
             raise ValueError(tr("service.model_missing"))
         if not current.pricing_is_complete:
             raise ValueError(tr("service.price_confirmation_unsafe"))
@@ -1241,13 +1245,34 @@ class MessageSendingService:
             and chat.requested_model_id == FREE_ROUTER_MODEL.id
         ):
             return FREE_ROUTER_MODEL
-        models = await self._catalog_client.fetch_models(api_key)
-        model = _find_model(models, chat.requested_model_id, chat.provider_id)
+        catalog = await self._fetch_current_catalog(api_key)
+        if not catalog.available:
+            raise _PreflightFailure(_catalog_failure(catalog))
+        model = _find_model(catalog.models, chat.requested_model_id, chat.provider_id)
         if model is None:
             raise _PreflightFailure(ChatErrorType.MODEL_UNAVAILABLE)
         if model.currency != chat.currency:
             raise _PreflightFailure(ChatErrorType.MODEL_UNAVAILABLE)
         return model
+
+    async def _fetch_current_catalog(self, api_key: str) -> CatalogFetchResult:
+        # Preserve the adapter's outcome. Its legacy projection returns None
+        # for every transport/protocol failure, which is not model absence.
+        typed_fetch = getattr(self._catalog_client, "fetch_catalog", None)
+        if typed_fetch is not None:
+            result = await typed_fetch(api_key)
+            return (
+                result
+                if isinstance(result, CatalogFetchResult)
+                else CatalogFetchResult(CatalogStatus.INVALID_RESPONSE)
+            )
+        models = await self._catalog_client.fetch_models(api_key)
+        return CatalogFetchResult(
+            CatalogStatus.NETWORK_ERROR
+            if models is None
+            else (CatalogStatus.SUCCESS if models else CatalogStatus.EMPTY),
+            models or (),
+        )
 
     def _assert_credential_current(self, chat: Chat, api_key: str) -> None:
         detected = detect_key(api_key)
@@ -1529,6 +1554,22 @@ class MessageSendingService:
     def _publish_key_validity(self, validity: KeyValidityState) -> None:
         if self._on_key_validity_changed is not None:
             self._on_key_validity_changed(validity)
+
+
+def _catalog_failure(result: CatalogFetchResult) -> ChatErrorType:
+    if result.status is CatalogStatus.HTTP_ERROR:
+        return {
+            401: ChatErrorType.AUTHENTICATION,
+            402: ChatErrorType.PAYMENT_REQUIRED,
+            403: ChatErrorType.PERMISSION_DENIED,
+            429: ChatErrorType.RATE_LIMIT_EXCEEDED,
+        }.get(result.http_status or 0, ChatErrorType.PROVIDER_UNAVAILABLE)
+    return {
+        CatalogStatus.TIMEOUT: ChatErrorType.TIMEOUT,
+        CatalogStatus.TLS_ERROR: ChatErrorType.TLS_ERROR,
+        CatalogStatus.KEY_MISMATCH: ChatErrorType.KEY_NOT_VALID,
+        CatalogStatus.INVALID_RESPONSE: ChatErrorType.MALFORMED_RESPONSE,
+    }.get(result.status, ChatErrorType.NETWORK_ERROR)
 
 
 def _find_model(

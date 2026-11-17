@@ -11,7 +11,7 @@ import flet as ft
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from i18n import set_language  # noqa: E402
+from i18n import localize_tree, set_language, tr  # noqa: E402
 from platform_security.local_protection import (  # noqa: E402
     CheckResult,
     CheckState,
@@ -122,3 +122,63 @@ class LocalProtectionMenuTests(unittest.IsolatedAsyncioTestCase):
                 self.assertNotIn(code, notice)
                 notices.append(notice)
             self.assertEqual(len(notices), len(set(notices)))
+
+    def test_open_protection_notice_retranslates_all_parts_in_both_directions(self):
+        snapshots = (
+            ProtectionSnapshot(CheckResult(), CheckResult(), False, False, False),
+            ProtectionSnapshot(
+                CheckResult(CheckState.PROBLEM, "normal_reaction_unproven"),
+                CheckResult(),
+                True,
+                True,
+                False,
+            ),
+            ProtectionSnapshot(
+                CheckResult(CheckState.UNTESTED, "observation_unavailable"),
+                CheckResult(),
+                True,
+                False,
+                False,
+            ),
+            ProtectionSnapshot(
+                CheckResult(CheckState.RUNNING, "screen_test_preparing"),
+                CheckResult(),
+                True,
+                False,
+                True,
+                screen_attempt=CheckResult(CheckState.RUNNING, "screen_test_preparing"),
+            ),
+            ProtectionSnapshot(
+                CheckResult(CheckState.CONFIRMED, "screen_confirmed"),
+                CheckResult(CheckState.CONFIRMED, "sleep_confirmed"),
+                False,
+                False,
+                False,
+                persistence_error=True,
+            ),
+        )
+        set_language("ru")
+        fields = [
+            ft.Text(
+                tr(
+                    "recovery.setup_with_notice",
+                    instructions=tr("auth.pin_instructions"),
+                    notice=protection_notice(snapshot),
+                )
+            )
+            for snapshot in snapshots
+        ]
+        controls = ft.Column([*fields])
+        for language in ("en", "ru", "en"):
+            set_language(language)
+            localize_tree(controls)
+            for field, snapshot in zip(fields, snapshots, strict=True):
+                with self.subTest(language=language, snapshot=snapshot):
+                    self.assertEqual(
+                        field.value,
+                        tr(
+                            "recovery.setup_with_notice",
+                            instructions=tr("auth.pin_instructions"),
+                            notice=protection_notice(snapshot),
+                        ),
+                    )
