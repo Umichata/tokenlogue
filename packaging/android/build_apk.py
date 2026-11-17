@@ -20,7 +20,7 @@ from pathlib import Path, PurePosixPath
 from urllib.parse import urlsplit
 from zipfile import ZipFile
 
-RECIPE_VERSION = "7"
+RECIPE_VERSION = "8"
 TEMPLATE_SIZE = 489103
 TEMPLATE_SHA256 = "8f95dc20ef6d901d9b5ee59f00e33d19f1d2bc6be8d6d3b800c4aab3d7315b73"
 TEMPLATE_URL = (
@@ -29,6 +29,7 @@ TEMPLATE_URL = (
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 NOTICES_MODULE = "packaging/notices/notice_bundle.py"
 NOTICES_ASSETS = "src/assets/third-party-notices"
+NATIVE_MODULE = "packaging/native_wheels/verify.py"
 OWN_FILES = (
     "src/api/provider_router.py",
     "src/api/vsegpt.py",
@@ -62,6 +63,7 @@ OWN_FILES = (
     "packaging/android/package_stage.gradle.kts",
     "packaging/android/crypto-selftest-policy.json",
     NOTICES_MODULE,
+    NATIVE_MODULE,
     "src/auth/pin_policy.py",
     "src/chat/paid_consent.py",
     "src/chat/estimates.py",
@@ -205,6 +207,13 @@ def notice_recipe(repo: Path) -> dict:
     return runpy.run_path(str(module))
 
 
+def native_recipe(repo: Path) -> dict:
+    module = repo / NATIVE_MODULE
+    if module.is_symlink() or not module.is_file():
+        raise ValueError("Missing owned native wheel verifier")
+    return runpy.run_path(str(module))
+
+
 def prepare_template(
     archive: Path,
     destination: Path,
@@ -329,6 +338,9 @@ def snapshot(repo: Path, destination: Path) -> list[dict[str, object]]:
     names = {os.fsdecode(name) for name in listed.split(b"\0") if name}
     names.update(OWN_FILES)
     names.update(notice_recipe(repo)["required_inputs"](repo, "android"))
+    native = native_recipe(repo)
+    native["verify_inputs"](repo, "android")
+    names.update(native["required_inputs"](repo, "android"))
     destination.mkdir(parents=True, exist_ok=False)
     inventory: list[dict[str, object]] = []
     for name in sorted(names):
@@ -354,6 +366,7 @@ def snapshot(repo: Path, destination: Path) -> list[dict[str, object]]:
     # Generate from the isolated inputs, without relying on personal audit paths.
     recipe = notice_recipe(destination)
     recipe["stage_notices"](destination, "android", destination / NOTICES_ASSETS)
+    native_recipe(destination)["verify_inputs"](destination, "android")
     by_name = {str(row["path"]): row for row in inventory}
     for path in sorted((destination / NOTICES_ASSETS).rglob("*")):
         if path.is_file():
@@ -407,6 +420,15 @@ def check_configuration(repo: Path, environment: dict[str, str]) -> None:
         )
     ):
         raise ValueError("Required pinned Android configuration differs")
+    native = native_recipe(repo)
+    native_inputs = native["verify_inputs"](repo, "android")
+    native_paths = {row["package"]: row["path"] for row in native_inputs["wheels"]}
+    if (
+        set(native_paths) != {"cffi", "pycryptodomex", "msgpack"}
+        or android.get("dev_packages") != native_paths
+        or flet.get("dev_packages")
+    ):
+        raise ValueError("Required exact Android native wheel mappings differ")
 
 
 def removed_socks_proxy_names(environment: Mapping[str, str]) -> list[str]:
@@ -493,6 +515,15 @@ def collect_build_results(
         raise ValueError("Expected one regular final APK from the selected ABI build")
     gate = runpy.run_path(str(source / "packaging/android/build_paths.py"))
     gate["verify_apk"](apks[0], prefixes=prefixes, report=run / "build-paths.json")
+    preparation = json.loads((work / "preparation.json").read_text("utf-8"))
+    receipt = native_recipe(source)["verify_apk"](
+        apks[0], source, abi=preparation["arch"]
+    )
+    if receipt.get("status") != "PASS" or receipt.get("artifact_sha256") != sha256(
+        apks[0]
+    ):
+        raise ValueError("Final APK native wheel receipt does not match its bytes")
+    write_json(run / "native-wheels-apk.json", receipt)
     destination = run / "artifacts"
     destination.mkdir()
     shutil.copy2(apks[0], destination / apks[0].name)
@@ -590,7 +621,7 @@ def main() -> int:
     )
     parser.add_argument("--jdk-home", type=Path, required=True)
     parser.add_argument("--sdk-root", type=Path, required=True)
-    parser.add_argument("--arch", choices=("x86_64", "arm64-v8a"), default="x86_64")
+    parser.add_argument("--arch", choices=("x86_64", "arm64-v8a"), default="arm64-v8a")
     parser.add_argument("--build-number", type=int)
     parser.add_argument(
         "--template-zip",
@@ -604,6 +635,8 @@ def main() -> int:
         "--device-recovery", action=argparse.BooleanOptionalAction, default=True
     )
     args = parser.parse_args()
+    if args.arch != "arm64-v8a":
+        parser.error("Reviewed native wheels are available only for arm64-v8a")
     if args.build_number is not None and args.build_number <= 0:
         parser.error("Build number must be a positive integer")
     run = args.run_dir.expanduser().resolve()
@@ -678,6 +711,9 @@ def main() -> int:
                     },
                     "packaged_notices": notice_recipe(source)["verify_notices"](
                         source, "android", source / NOTICES_ASSETS
+                    ),
+                    "native_wheels": native_recipe(source)["verify_inputs"](
+                        source, "android"
                     ),
                     "arch": args.arch,
                     "build_number_override": args.build_number,

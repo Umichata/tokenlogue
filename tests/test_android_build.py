@@ -15,6 +15,8 @@ import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
+from types import SimpleNamespace
+from typing import cast
 from unittest.mock import ANY, patch
 from zipfile import ZipFile, ZipInfo
 
@@ -135,6 +137,15 @@ class AndroidBuildTests(unittest.TestCase):
 
     def copy_notice_inputs(self, repo: Path) -> None:
         for name in helper.notice_recipe(PROJECT)["required_inputs"](
+            PROJECT, "android"
+        ):
+            destination = repo / name
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_bytes((PROJECT / name).read_bytes())
+        self.copy_native_inputs(repo)
+
+    def copy_native_inputs(self, repo: Path) -> None:
+        for name in helper.native_recipe(PROJECT)["required_inputs"](
             PROJECT, "android"
         ):
             destination = repo / name
@@ -375,9 +386,16 @@ class AndroidBuildTests(unittest.TestCase):
             for path in (destination / helper.NOTICES_ASSETS).rglob("*")
             if path.is_file()
         }
+        native_inputs = set(
+            helper.native_recipe(repo)["required_inputs"](repo, "android")
+        )
         self.assertEqual(
             copied,
-            set(names[:4]) | set(helper.OWN_FILES) | notice_inputs | notice_assets,
+            set(names[:4])
+            | set(helper.OWN_FILES)
+            | notice_inputs
+            | notice_assets
+            | native_inputs,
         )
         self.assertEqual(
             (destination / "src/main.py").read_text(), "current uncommitted bytes"
@@ -486,6 +504,114 @@ assert Path(initialization.__file__).resolve() == Path(sys.argv[1]) / 'storage/e
                 ):
                     helper.snapshot(repo, self.root / (variant + "-destination"))
                 self.assertFalse((self.root / (variant + "-destination")).exists())
+
+    def test_missing_or_changed_native_wheel_blocks_snapshot_before_packaging(self):
+        for variant in ("missing", "changed"):
+            with self.subTest(variant=variant):
+                repo = self.root / ("native-" + variant)
+                self.copy_native_inputs(repo)
+                self.copy_notice_inputs(repo)
+                wheel = next(
+                    (repo / "packaging/native_wheels/wheels/android").glob("*.whl")
+                )
+                if variant == "missing":
+                    wheel.unlink()
+                else:
+                    wheel.write_bytes(wheel.read_bytes() + b"changed")
+                destination = self.root / ("native-destination-" + variant)
+                with (
+                    patch.object(helper.subprocess, "check_output", return_value=b""),
+                    self.assertRaises(ValueError),
+                ):
+                    helper.snapshot(repo, destination)
+                self.assertFalse(destination.exists())
+
+    def test_installed_flet_selects_exact_platform_wheels_before_any_installer(self):
+        from flet_cli.commands.build_base import BaseBuildCommand
+
+        class PackagingArgumentsCaptured(Exception):
+            pass
+
+        for platform, config in (("Android", "android"), ("Linux", "linux")):
+            with self.subTest(platform=platform):
+                source = self.root / (platform + " source space Юникод")
+                source.mkdir()
+                mappings = {
+                    row["package"]: row["path"]
+                    for row in helper.native_recipe(PROJECT)["verify_inputs"](
+                        PROJECT, config
+                    )["wheels"]
+                }
+                for relative in mappings.values():
+                    target = source / relative
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    target.write_bytes(b"argument capture only, never installed")
+                settings = {
+                    "project.dependencies": [
+                        "cffi==2.0.0",
+                        "pycryptodomex==3.23.0",
+                        "httpx==0.28.1",
+                    ],
+                    f"tool.flet.{config}.dependencies": ["msgpack==1.1.2"]
+                    if platform == "Android"
+                    else [],
+                    f"tool.flet.{config}.dev_packages": mappings,
+                }
+                calls = []
+
+                def capture(arguments, **kwargs):
+                    calls.append((arguments, kwargs))
+                    raise PackagingArgumentsCaptured
+
+                build = SimpleNamespace(
+                    options=SimpleNamespace(
+                        exclude=None,
+                        android_extract_packages=None,
+                        source_packages=None,
+                        compile_app=None,
+                        compile_packages=None,
+                        cleanup_app=None,
+                        cleanup_packages=None,
+                        cleanup_app_files=None,
+                        cleanup_package_files=None,
+                    ),
+                    get_pyproject=settings.get,
+                    python_app_path=source,
+                    package_app_path=source / "src",
+                    build_dir=source / "build",
+                    flutter_dir=source / "build/flutter",
+                    flutter_packages_dir=source / "build/flutter-packages",
+                    flutter_packages_temp_dir=source / "build/flutter-packages-temp",
+                    template_data={"options": {"target_arch": ["arm64-v8a"]}},
+                    config_platform=config,
+                    package_platform=platform,
+                    target_platform="apk" if platform == "Android" else "linux",
+                    dart_exe="existing-dart-not-executed",
+                    python_release=SimpleNamespace(short="3.12"),
+                    update_status=lambda *a: None,
+                    get_bool_setting=lambda option, key, default: default,
+                    verbose=0,
+                    run=capture,
+                )
+                with self.assertRaises(PackagingArgumentsCaptured):
+                    BaseBuildCommand.package_python_app(cast(BaseBuildCommand, build))
+                self.assertEqual(len(calls), 1)
+                arguments, kwargs = calls[0]
+                self.assertIn("serious_python:main", arguments)
+                self.assertIn("--no-cache-dir", arguments)
+                self.assertNotIn("--skip-site-packages", arguments)
+                for package, relative in mappings.items():
+                    self.assertIn(
+                        f"{package} @ {(source / relative).as_uri()}", arguments
+                    )
+                    self.assertFalse(
+                        any(arg.startswith(package + "==") for arg in arguments)
+                    )
+                self.assertIn("httpx==0.28.1", arguments)
+                self.assertEqual(
+                    kwargs["env"]["SERIOUS_PYTHON_SITE_PACKAGES"],
+                    str(source / "build/site-packages"),
+                )
 
     def test_log_preserves_both_streams_and_failure_exit_code(self) -> None:
         run = self.root / "run"
@@ -637,6 +763,7 @@ assert Path(initialization.__file__).resolve() == Path(sys.argv[1]) / 'storage/e
         apk.parent.mkdir(parents=True)
         apk.write_bytes(b"unpublished compiled output")
         run.mkdir()
+        (work / "preparation.json").write_text('{"arch":"arm64-v8a"}')
         observed = []
 
         def verify(candidate, *, prefixes, report):
@@ -663,11 +790,71 @@ assert Path(initialization.__file__).resolve() == Path(sys.argv[1]) / 'storage/e
             report.write_text('{"status": "VERIFIED"}\n')
             return {"status": "VERIFIED"}
 
-        with patch.object(
-            helper.runpy, "run_path", return_value={"verify_apk": accepted}
+        def native_accepted(candidate, source, *, abi):
+            self.assertEqual(candidate, apk)
+            self.assertEqual(source, work / "source")
+            self.assertEqual(abi, "arm64-v8a")
+            self.assertFalse((run / "artifacts").exists())
+            return {"status": "PASS", "artifact_sha256": helper.sha256(candidate)}
+
+        with (
+            patch.object(
+                helper.runpy, "run_path", return_value={"verify_apk": accepted}
+            ),
+            patch.object(
+                helper, "native_recipe", return_value={"verify_apk": native_accepted}
+            ),
         ):
             helper.collect_build_results(work, run, ("/home/Other user",), success=True)
         self.assertEqual((run / "artifacts" / apk.name).read_bytes(), apk.read_bytes())
+
+    def test_final_native_gate_failure_or_unbound_receipt_prevents_export(self):
+        for failure in ("payload-mismatch", "wrong-artifact", "not-pass"):
+            with self.subTest(failure=failure):
+                work, run = (
+                    self.root / failure / "compiler",
+                    self.root / failure / "reports",
+                )
+                apk = work / "source/build/apk/app-arm64-v8a-release.apk"
+                apk.parent.mkdir(parents=True)
+                apk.write_bytes(b"synthetic final APK carrier")
+                run.mkdir()
+                (work / "preparation.json").write_text('{"arch":"arm64-v8a"}')
+                events = []
+
+                def path_gate(candidate, **kwargs):
+                    self.assertEqual(candidate, apk)
+                    events.append("path")
+
+                def native_gate(candidate, source, *, abi):
+                    self.assertEqual(candidate, apk)
+                    self.assertEqual(source, work / "source")
+                    self.assertEqual(abi, "arm64-v8a")
+                    self.assertFalse((run / "artifacts").exists())
+                    events.append("native")
+                    if failure == "payload-mismatch":
+                        raise ValueError("Native wheel payload mismatch")
+                    return {
+                        "status": "PASS" if failure == "wrong-artifact" else "FAIL",
+                        "artifact_sha256": "0" * 64
+                        if failure == "wrong-artifact"
+                        else helper.sha256(candidate),
+                    }
+
+                with (
+                    patch.object(
+                        helper.runpy, "run_path", return_value={"verify_apk": path_gate}
+                    ),
+                    patch.object(
+                        helper,
+                        "native_recipe",
+                        return_value={"verify_apk": native_gate},
+                    ),
+                    self.assertRaisesRegex(ValueError, "Native wheel|native wheel"),
+                ):
+                    helper.collect_build_results(work, run, (), success=True)
+                self.assertEqual(events, ["path", "native"])
+                self.assertFalse((run / "artifacts").exists())
 
     def test_legacy_flutter_settings_block_unisolated_global_writes(self) -> None:
         legacy = self.root / ".flutter_settings"
@@ -690,8 +877,7 @@ assert Path(initialization.__file__).resolve() == Path(sys.argv[1]) / 'storage/e
         (repo / "pyproject.toml").write_bytes((PROJECT / "pyproject.toml").read_bytes())
         for index, (options, arch, prepare_only) in enumerate(
             (
-                ([], "x86_64", False),
-                (["--arch", "x86_64"], "x86_64", False),
+                ([], "arm64-v8a", False),
                 (["--arch", "arm64-v8a"], "arm64-v8a", False),
                 (["--arch", "arm64-v8a", "--prepare-only"], "arm64-v8a", True),
             )
@@ -740,6 +926,18 @@ assert Path(initialization.__file__).resolve() == Path(sys.argv[1]) / 'storage/e
                     "-vv",
                 ]
                 self.assertEqual(metadata["arch"], arch)
+                self.assertEqual(metadata["recipe_version"], helper.RECIPE_VERSION)
+                self.assertEqual(
+                    metadata["native_wheels"],
+                    helper.native_recipe(source)["verify_inputs"](source, "android"),
+                )
+                by_name = {row["path"]: row for row in metadata["files"]}
+                for name in helper.native_recipe(source)["required_inputs"](
+                    source, "android"
+                ):
+                    self.assertEqual(
+                        by_name[name]["sha256"], helper.sha256(source / name)
+                    )
                 self.assertEqual(metadata["command"], command)
                 self.assertEqual(
                     metadata["build"], "NOT_RUN" if prepare_only else "PENDING"
@@ -775,7 +973,13 @@ assert Path(initialization.__file__).resolve() == Path(sys.argv[1]) / 'storage/e
 
     def test_unsupported_abi_is_rejected_before_preparation_or_flet(self) -> None:
         run = self.root / "unsupported-run"
-        for arch in ("armeabi-v7a", "aarch64", "universal", "x86_64,arm64-v8a"):
+        for arch in (
+            "x86_64",
+            "armeabi-v7a",
+            "aarch64",
+            "universal",
+            "x86_64,arm64-v8a",
+        ):
             with self.subTest(arch=arch):
                 argv = [
                     "build_apk.py",
@@ -943,6 +1147,9 @@ assert Path(initialization.__file__).resolve() == Path(sys.argv[1]) / 'storage/e
             "sdk",
             "--prepare-only",
         ]
+        native_inputs = helper.native_recipe(PROJECT)["verify_inputs"](
+            PROJECT, "android"
+        )
         with (
             patch.object(sys, "argv", argv),
             patch.object(helper, "PROJECT_ROOT", repo),
@@ -971,6 +1178,13 @@ assert Path(initialization.__file__).resolve() == Path(sys.argv[1]) / 'storage/e
                 return_value=(self.root / "template", "identity"),
             ) as prepare,
             patch.object(helper, "snapshot", return_value=[]),
+            patch.object(
+                helper,
+                "native_recipe",
+                return_value={
+                    "verify_inputs": lambda *a: native_inputs,
+                },
+            ),
             patch.object(
                 helper, "notice_recipe", return_value={"verify_notices": lambda *a: {}}
             ),

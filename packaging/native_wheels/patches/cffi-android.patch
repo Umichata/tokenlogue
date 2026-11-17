@@ -1,0 +1,45 @@
+diff --git a/setup.py b/setup.py
+index f9cabaa..c592203 100644
+--- a/setup.py
++++ b/setup.py
+@@ -9,8 +9,7 @@ import setuptools
+ 
+ sources = ['src/c/_cffi_backend.c']
+ libraries = ['ffi']
+-include_dirs = ['/usr/include/ffi',
+-                '/usr/include/libffi']    # may be changed by pkg-config
++include_dirs = [] # Don't use system include dirs when cross compiling
+ define_macros = [('FFI_BUILDING', '1')]   # for linking with libffi static library
+ library_dirs = []
+ extra_compile_args = []
+@@ -144,7 +143,7 @@ if sys.platform == "win32" and uses_msvc():
+         sources.extend(os.path.join(COMPILE_LIBFFI, filename)
+                     for filename in _filenames)
+ else:
+-    use_pkg_config()
++    #use_pkg_config()
+     ask_supports_thread()
+     ask_supports_sync_synchronize()
+ 
+diff --git a/src/c/malloc_closure.h b/src/c/malloc_closure.h
+index bebb93d..f82dbe4 100644
+--- a/src/c/malloc_closure.h
++++ b/src/c/malloc_closure.h
+@@ -42,6 +42,8 @@ emutramp_enabled_check (void)
+         return 0;
+     ret = 0;
+ 
++    /* Chaquopy: getline requires API level 18, but PaX isn't used by Android anyway. */
++    #if __ANDROID_API__ >= 18
+     while (getline (&buf, &len, f) != -1)
+         if (!strncmp (buf, "PaX:", 4))
+             {
+@@ -51,6 +53,8 @@ emutramp_enabled_check (void)
+                 break;
+             }
+     free (buf);
++    #endif
++    
+     fclose (f);
+     return ret;
+ }

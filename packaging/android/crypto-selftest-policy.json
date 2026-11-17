@@ -23,12 +23,13 @@
   },
   "sources": {
     "arm64-v8a": {
-      "wheel_filename": "pycryptodomex-3.23.0-2-cp312-cp312-android_24_arm64_v8a.whl",
-      "wheel_sha256": "6178a0e5a17285a088f4ce7a5db9dd6f073b4e2f5da2aa48d87c78117b229b86",
+      "wheel_filename": "pycryptodomex-3.23.0-1001-cp37-abi3-android_24_arm64_v8a.whl",
+      "wheel_sha256": "3b83f6af24e49428426212d6042049ebe845a7f576f2ce0927cf19c0a06f13ea",
       "wheel_metadata_path": "pycryptodomex-3.23.0.dist-info/WHEEL",
-      "wheel_metadata_sha256": "8a009eb4c1528c4af7cd0c4d97bf11009eef11f302e2f708e852d625aaf46bde",
-      "wheel_record_sha256": "d29616200c499c8e36ad7cce42644d23ec99730ccc9e398b09b1c72c087dd489",
-      "wheel_url": "https://pypi.flet.dev/-/ver_OhOs6/pycryptodomex-3.23.0-2-cp312-cp312-android_24_arm64_v8a.whl"
+      "wheel_metadata_sha256": "3b71eceeeadf87048f70660b627da1cc5d912ac61475a1d77b5ea2cb9652d2c0",
+      "wheel_record_sha256": "5a2c34257692c814b558534dec4c184ae008158a7b2584a0f41d9a37e21b0f47",
+      "wheel_path": "packaging/native_wheels/wheels/android/pycryptodomex-3.23.0-1001-cp37-abi3-android_24_arm64_v8a.whl",
+      "wheel_build_manifest": "packaging/native_wheels/wheels.lock.json"
     },
     "x86_64": {
       "wheel_filename": "pycryptodomex-3.23.0-2-cp312-cp312-android_24_x86_64.whl",

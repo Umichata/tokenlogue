@@ -28,6 +28,29 @@ verify_inputs_unchanged() {
         die "pyproject.toml changed during Linux build"
     [[ "$(sha256_of "$repo_root/uv.lock")" == "$lock_hash_before" ]] || \
         die "uv.lock changed during Linux build"
+    [[ "$(sha256_of "$native_lock")" == "$native_lock_hash_before" ]] || \
+        die "native wheel lock changed during Linux build"
+}
+
+verify_native_inputs() {
+    uv run --locked python "$native_script" inputs \
+        --root "$repo_root" --platform linux \
+        --output "$reports_dir/native-wheels-inputs.json"
+    local wheel_lines
+    wheel_lines="$(uv run --locked python -c '
+import pathlib, runpy, sys, tomllib
+root = pathlib.Path(sys.argv[1])
+verifier = runpy.run_path(sys.argv[2])
+rows = verifier["verify_inputs"](root, "linux")["wheels"]
+expected = {row["package"]: row["path"] for row in rows}
+metadata = tomllib.loads((root / "pyproject.toml").read_text())
+flet = metadata["tool"]["flet"]
+if set(expected) != {"cffi", "pycryptodomex"} or flet.get("dev_packages") or flet["linux"].get("dev_packages") != expected:
+    raise ValueError("Required exact Linux native wheel mappings differ")
+print("\n".join(str(root / name) for name in sorted(expected.values())))
+' "$repo_root" "$native_script")"
+    mapfile -t native_wheels <<< "$wheel_lines"
+    [[ ${#native_wheels[@]} == 2 ]] || die "expected two exact Linux native wheels"
 }
 
 on_exit() {
@@ -72,6 +95,14 @@ prepare_reference_environment() {
         --no-default-groups \
         --no-dev \
         --no-install-project
+    uv pip install \
+        --python "$reference_env/bin/python" \
+        --no-index --no-deps --no-cache --reinstall \
+        "${native_wheels[@]}"
+    uv run --locked python "$native_script" stage \
+        --root "$repo_root" --platform linux \
+        --stage "$reference_env/lib/python3.12/site-packages" \
+        --output "$reports_dir/native-wheels-reference.json"
     uv pip list \
         --python "$reference_env/bin/python" \
         --format json \
@@ -94,6 +125,9 @@ build_flet_bundle() {
         --root "bundle=$repo_root/build/linux" \
         --project "$repo_root/pyproject.toml" \
         --reports-dir "$reports_dir"
+    uv run --locked python "$native_script" linux \
+        --root "$repo_root" --bundle "$repo_root/build/linux" \
+        --output "$reports_dir/native-wheels-bundle.json"
 }
 
 verify_package_inventory() {
@@ -131,6 +165,9 @@ export UV_MANAGED_PYTHON=1
 
 pyproject_hash_before="$(sha256_of "$repo_root/pyproject.toml")"
 lock_hash_before="$(sha256_of "$repo_root/uv.lock")"
+native_script="$repo_root/packaging/native_wheels/verify.py"
+native_lock="$repo_root/packaging/native_wheels/wheels.lock.json"
+native_lock_hash_before="$(sha256_of "$native_lock")"
 trap on_exit EXIT
 uv lock --check
 
@@ -141,6 +178,7 @@ constraints="$release_root/production-constraints.txt"
 expected_raw="$reports_dir/expected-packages.raw.json"
 verify_script="$script_dir/verify_bundle.py"
 mkdir -p -- "$reports_dir"
+verify_native_inputs
 
 phase=${1:-all}
 case "$phase" in

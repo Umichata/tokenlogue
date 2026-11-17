@@ -13,6 +13,7 @@ Tokenlogue поставляет оригинальные уведомления 
 ## Тексты лицензий
 
 - [libffi 3.4.4](inputs/libffi-3.4.4-LICENSE.txt) относится к среде Python для Android.
+- [libffi 3.4.4 в CFFI](inputs/libffi-cffi-3.4.4-LICENSE.txt) статически включена в собственные сборки wheels CFFI для Android и Linux.
 - [Dart bridge 1.10.0](inputs/dart-bridge-1.10.0-LICENSE.txt) связывает среду Python для Android и Dart.
 - Для KaTeX сохранены [лицензия MIT](inputs/flutter_math_fork-0.7.4-katex-LICENSE.txt), [авторские права на шрифты](inputs/KaTeX-COPYRIGHT.txt) и [SIL Open Font License 1.1](inputs/SIL-OFL-1.1.txt).
 - Для Material Icons приведены [оригинальная декларация](inputs/MaterialIcons_LICENSE.txt) и [авторские права Google](inputs/MaterialIcons-COPYRIGHT.txt).
@@ -21,4 +22,4 @@ Tokenlogue поставляет оригинальные уведомления 
 
 Юридические тексты сохранены полностью и без изменений на языке источника. Сопроводительный манифест связывает их с точными компонентами и источниками. Android использует подмножество Material Icons, созданное Flutter. Шрифт Linux совпадает с исходным файлом. Эти преобразования описаны отдельно от юридических текстов.
 
-Уведомление libffi из runtime не определяет библиотеку внутри отдельного wheel CFFI. Это различие и оставшиеся ограничения происхождения описаны в [исходных материалах](../../docs/source-materials.ru.md#russian).
+Уведомление libffi среды Python не определяет библиотеку внутри отдельного wheel CFFI. Собственные сборки CFFI имеют отдельные исходники, патчи и связь с включённой libffi. Подробнее в [исходных материалах](../../docs/source-materials.ru.md#russian).

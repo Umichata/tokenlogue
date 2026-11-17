@@ -15,6 +15,7 @@ Tokenlogue's application code uses the [MIT license](LICENSE). Dependencies reta
 | HTTPX | 0.28.1 | BSD 3-Clause, provider HTTPS requests |
 | PyCryptodomex | 3.23.0 | BSD 2-Clause and public-domain notices, encryption primitives |
 | CFFI | 2.0.0 | MIT, native interface |
+| libffi in source-built CFFI | 3.4.4 | MIT, statically linked native calls |
 | pycparser | 3.11 | BSD 3-Clause, C declarations |
 | tzdata | 2026.6 | Apache 2.0 and IANA public-domain notice, time-zone rules |
 

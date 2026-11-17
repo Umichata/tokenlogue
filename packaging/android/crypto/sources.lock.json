@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "source_materials_status": "REVIEW_REQUIRED",
+  "source_materials_status": "VERIFIED",
   "captured_at": "2026-10-11",
   "python_requirements": {
     "pycryptodomex": "3.23.0",
@@ -136,6 +136,53 @@
   ],
   "android_wheels": [
     {
+      "filename": "cffi-2.0.0-1001-cp312-cp312-android_24_arm64_v8a.whl",
+      "path": "../../native_wheels/wheels/android/cffi-2.0.0-1001-cp312-cp312-android_24_arm64_v8a.whl",
+      "sha256": "6f1d0ad7992a26da4f37a127bb3c9ba093a1ef49f2e6761850dfd8942adbef36",
+      "size": 207386,
+      "python": "cp312 runtime, cp312-cp312-android_24_arm64_v8a",
+      "android_min_api": 24,
+      "abi": "arm64-v8a",
+      "producer": "Tokenlogue pinned source build",
+      "build_registry": "../../native_wheels/wheels.lock.json",
+      "recipe": "../../native_wheels/build.py"
+    },
+    {
+      "filename": "msgpack-1.1.2-1001-cp312-cp312-android_24_arm64_v8a.whl",
+      "path": "../../native_wheels/wheels/android/msgpack-1.1.2-1001-cp312-cp312-android_24_arm64_v8a.whl",
+      "sha256": "f41da3581218a9cd9d146872d808b49c6bab8e86492265e05d0bef360af176f1",
+      "size": 82526,
+      "python": "cp312 runtime, cp312-cp312-android_24_arm64_v8a",
+      "android_min_api": 24,
+      "abi": "arm64-v8a",
+      "producer": "Tokenlogue pinned source build",
+      "build_registry": "../../native_wheels/wheels.lock.json",
+      "recipe": "../../native_wheels/build.py"
+    },
+    {
+      "filename": "pycryptodomex-3.23.0-1001-cp37-abi3-android_24_arm64_v8a.whl",
+      "path": "../../native_wheels/wheels/android/pycryptodomex-3.23.0-1001-cp37-abi3-android_24_arm64_v8a.whl",
+      "sha256": "3b83f6af24e49428426212d6042049ebe845a7f576f2ce0927cf19c0a06f13ea",
+      "size": 1653832,
+      "python": "cp312 runtime, cp37-abi3-android_24_arm64_v8a",
+      "android_min_api": 24,
+      "abi": "arm64-v8a",
+      "producer": "Tokenlogue pinned source build",
+      "build_registry": "../../native_wheels/wheels.lock.json",
+      "recipe": "../../native_wheels/build.py"
+    }
+  ],
+  "mobile_forge_revision": "0fadbfab0d63d11164030dfddc955ed980e32e2c",
+  "open_questions": [
+    "Full independent reproduction of the complete application and toolchain is not claimed. This is not an unresolved source-to-wheel binding for the selected own wheels."
+  ],
+  "bounded_crypto_policy": {
+    "field_max_bytes": 16777216,
+    "aad_max_bytes": 16777216,
+    "note": "PyCryptodomex3.24 GCM maximum-length fix reviewed. This bound is below corrected maximum. No claim of library-wide vulnerability absence."
+  },
+  "historical_android_wheels": [
+    {
       "filename": "cffi-2.0.0-1-cp312-cp312-android_24_arm64_v8a.whl",
       "url": "https://pypi.flet.dev/-/ver_19qZEZ/cffi-2.0.0-1-cp312-cp312-android_24_arm64_v8a.whl",
       "sha256": "fd1f4eeb3217fe2aea9b8f027122d7e4baf11d227d9438f2a41828136a125f0a",
@@ -172,15 +219,17 @@
       "abi": "x86_64"
     }
   ],
-  "mobile_forge_revision": "0fadbfab0d63d11164030dfddc955ed980e32e2c",
-  "open_questions": [
-    "The CFFI recipe names host libffi without a version. Exact statically linked libffi source and full build provenance remain unconfirmed.",
-    "Native wheel binary reproducibility and a complete offline Android toolchain build have not been established.",
-    "Earlier source-material completeness limitations remain open."
-  ],
-  "bounded_crypto_policy": {
-    "field_max_bytes": 16777216,
-    "aad_max_bytes": 16777216,
-    "note": "PyCryptodomex3.24 GCM maximum-length fix reviewed. This bound is below corrected maximum. No claim of library-wide vulnerability absence."
+  "historical_android_wheel_status": "REVIEW_REQUIRED: source-to-wheel links and CFFI host-libffi for these old files remain unconfirmed. They are not selected by the current ARM64 recipe.",
+  "status_scope": "Exact source archives, original notices and the currently selected Android ARM64 own source-built wheels. Final-carrier selection and runtime remain separate required gates.",
+  "current_native_build_registry": "../../native_wheels/wheels.lock.json",
+  "current_embedded_cffi_libffi": {
+    "version": "3.4.4",
+    "linkage": "static",
+    "archive_sha256": "d66c56ad259a82cf2a9dfc408b32bf5da52371500b84745f7fb8b645712df676",
+    "license_sha256": "2c9c2acb9743e6b007b91350475308aee44691d96aa20eacef8e199988c8c388",
+    "patches": [
+      "patches/libffi-long_double.patch",
+      "patches/libffi-open_temp_exec_file.patch"
+    ]
   }
 }

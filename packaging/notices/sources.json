@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "source_materials_status": "REVIEW_REQUIRED",
+  "source_materials_status": "VERIFIED",
   "platform_notes": {
     "android": {
       "en": "These licenses accompany the libraries and fonts in the Android package. Original texts are preserved in licenses and font copyright is listed in attribution. The manifest links each component to its exact version and sources.",
@@ -248,6 +248,45 @@
           "ru": "Оригинальная лицензия Apache 2.0 и уведомление IANA об общественном достоянии для tzdata 2026.6. Пакет предоставляет правила часовых поясов, когда в системе нет каталога TZif."
         }
       }
+    },
+    {
+      "id": "libffi-cffi",
+      "version": "3.4.4",
+      "platforms": [
+        "android",
+        "linux"
+      ],
+      "source": {
+        "url": "https://github.com/libffi/libffi/releases/download/v3.4.4/libffi-3.4.4.tar.gz",
+        "archive_sha256": "d66c56ad259a82cf2a9dfc408b32bf5da52371500b84745f7fb8b645712df676",
+        "archive_size": 1362394,
+        "archive_member": "libffi-3.4.4/LICENSE",
+        "notice_sha256": "2c9c2acb9743e6b007b91350475308aee44691d96aa20eacef8e199988c8c388",
+        "version_or_commit": "3.4.4",
+        "binary_scope": "The statically linked libffi in the separately source-built CFFI wheels for Android ARM64 and Linux x86_64. This is independent of the Python runtime libffi.",
+        "build_registry": "packaging/native_wheels/wheels.lock.json"
+      },
+      "files": [
+        {
+          "input": "inputs/libffi-cffi-3.4.4-LICENSE.txt",
+          "output": "licenses/libffi-cffi-3.4.4-LICENSE.txt",
+          "size": 1132,
+          "sha256": "2c9c2acb9743e6b007b91350475308aee44691d96aa20eacef8e199988c8c388",
+          "source_member": "libffi-3.4.4/LICENSE",
+          "transformation": "none, original archive-member bytes"
+        }
+      ],
+      "notes": {
+        "android": {
+          "en": "Original MIT license for libffi 3.4.4 statically linked into this platform’s source-built CFFI wheel. The project records its exact source archive, build inputs and platform patches separately from the Python runtime libffi.",
+          "ru": "Оригинальная лицензия MIT для libffi 3.4.4, статически связанной с собранным из исходников wheel CFFI этой платформы. Проект фиксирует точный исходный архив, входы сборки и платформенные патчи отдельно от libffi среды Python."
+        },
+        "linux": {
+          "en": "Original MIT license for libffi 3.4.4 statically linked into this platform’s source-built CFFI wheel. The project records its exact source archive, build inputs and platform patches separately from the Python runtime libffi.",
+          "ru": "Оригинальная лицензия MIT для libffi 3.4.4, статически связанной с собранным из исходников wheel CFFI этой платформы. Проект фиксирует точный исходный архив, входы сборки и платформенные патчи отдельно от libffi среды Python."
+        }
+      }
     }
-  ]
+  ],
+  "source_materials_scope": "Original supplemental notice texts and their exact archived sources. Native source-built wheel bindings are independently verified by packaging/native_wheels/wheels.lock.json and final carrier gates. Historical wheel review is preserved in packaging/android/crypto/sources.lock.json."
 }

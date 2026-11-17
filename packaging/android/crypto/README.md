@@ -46,8 +46,10 @@ The [Tokenlogue device adapter](../recovery_bridge.dart) and [template configura
 <a id="-what-these-materials-establish"></a>
 ## <img src="../../../docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Component provenance
 
-The source archives and checksums identify the materials supplied for these components. Source-to-binary correspondence for every native wheel is not fully documented, and the collection does not provide a complete offline Android build environment.
+The current ARM64 packaging recipe selects the project’s [source-built native wheels](../../native_wheels/README.md). Their registry binds CFFI, PyCryptodomex and msgpack to exact source archives, patches, compiler inputs and wheel hashes. CFFI statically includes libffi 3.4.4. Its own original license is supplied separately from the Python runtime’s libffi notice.
 
-The Mobile Forge CFFI recipe does not pin the host libffi version. The exact libffi inside the selected CFFI wheel remains unidentified. Details of libffi supplied with the Android Python runtime do not identify that library. Original CFFI notices are included.
+The preserved Mobile Forge recipes and earlier wheel records describe the previous packages. Their unpinned host-libffi dependency does not identify the library inside those historical CFFI wheels. The new source-built wheels replace those inputs without claiming new evidence for the older binaries.
+
+Source availability and a recorded build are distinct from independent reproduction of the complete application. This collection is not a complete offline Android SDK or compiler distribution.
 
 See <a href="../../../docs/source-materials.md#english" title="source materials and remaining provenance limits">source materials and remaining provenance limits&nbsp;<img src="../../../docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> for the wider collection. <a href="../../../THIRD_PARTY_NOTICES.md#english" title="Third-party notices">Third-party notices&nbsp;<img src="../../../docs/assets/ui/inline-link.svg" alt="" width="17" height="17"></a> explain the licensing materials.

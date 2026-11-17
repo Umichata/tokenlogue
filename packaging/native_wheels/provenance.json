@@ -1,0 +1,100 @@
+{
+  "format_version": 1,
+  "producer": "Tokenlogue",
+  "method": "Local compilation from pinned original source archives with an explicit build recipe and isolated compiler workspaces. Not a statement about production of previous publisher wheels.",
+  "recipe": {
+    "path": "packaging/native_wheels/build.py",
+    "sha256": "8c7228140a5b14be149a29523112c732759773f9cfb6f96a75cc345b8be79ffa",
+    "wheel_build_number": 1001,
+    "python_version": "3.12.14",
+    "build_tools": {
+      "setuptools": "83.0.0",
+      "wheel": "0.43.0",
+      "build": "1.2.2.post1",
+      "packaging": "24.2",
+      "pyproject-hooks": "1.2.0",
+      "crossenv_commit": "e5e615651f794d060d9484eab463861fef2a2019",
+      "uv": "0.12.8"
+    }
+  },
+  "android": {
+    "abi": "arm64-v8a",
+    "api": 24,
+    "ndk": "28.2.13676358",
+    "native_payloads": 42,
+    "load_alignment_bytes": 16384,
+    "compiler_path_mapping": true,
+    "runtime_execution": "Separate final application package validation"
+  },
+  "linux": {
+    "abi": "x86_64",
+    "build_os": "Ubuntu22.04 Jammy",
+    "compiler": "GCC11",
+    "native_payloads": 43,
+    "maximum_required_glibc": "2.34",
+    "extension_cpu_flags": [
+      "-march=x86-64",
+      "-mtune=generic"
+    ],
+    "scope": "CPU statements apply to these dependency wheels, not all unrelated bundle components."
+  },
+  "libffi_builds": [
+    {
+      "platform": "android",
+      "archive_sha256": "ca52f5c6cf397bc2db5d8159ca21e052a593d17cbcc97977387f21884cee5b09",
+      "link_map_sha256": "e2bc0800b87740b57e51aa948d8e68f928879810dbcd2fb18750cf8e0b2a5e67",
+      "verified_archive_member_in_link_map": true,
+      "source_archive_sha256": "d66c56ad259a82cf2a9dfc408b32bf5da52371500b84745f7fb8b645712df676"
+    },
+    {
+      "platform": "linux",
+      "archive_sha256": "2300f0890178745e7de27caacf34b9ce7e20eac1389998eae125dd12755c17d9",
+      "link_map_sha256": "1f5565ba7b04c1b20357beab0820528036af2e9da1871214cf9637d8f8cc3976",
+      "verified_archive_member_in_link_map": true,
+      "source_archive_sha256": "d66c56ad259a82cf2a9dfc408b32bf5da52371500b84745f7fb8b645712df676"
+    }
+  ],
+  "wheels": [
+    {
+      "platform": "android",
+      "package": "cffi",
+      "version": "2.0.0",
+      "path": "packaging/native_wheels/wheels/android/cffi-2.0.0-1001-cp312-cp312-android_24_arm64_v8a.whl",
+      "bytes": 207386,
+      "sha256": "6f1d0ad7992a26da4f37a127bb3c9ba093a1ef49f2e6761850dfd8942adbef36"
+    },
+    {
+      "platform": "android",
+      "package": "msgpack",
+      "version": "1.1.2",
+      "path": "packaging/native_wheels/wheels/android/msgpack-1.1.2-1001-cp312-cp312-android_24_arm64_v8a.whl",
+      "bytes": 82526,
+      "sha256": "f41da3581218a9cd9d146872d808b49c6bab8e86492265e05d0bef360af176f1"
+    },
+    {
+      "platform": "android",
+      "package": "pycryptodomex",
+      "version": "3.23.0",
+      "path": "packaging/native_wheels/wheels/android/pycryptodomex-3.23.0-1001-cp37-abi3-android_24_arm64_v8a.whl",
+      "bytes": 1653832,
+      "sha256": "3b83f6af24e49428426212d6042049ebe845a7f576f2ce0927cf19c0a06f13ea"
+    },
+    {
+      "platform": "linux",
+      "package": "cffi",
+      "version": "2.0.0",
+      "path": "packaging/native_wheels/wheels/linux/cffi-2.0.0-1001-cp312-cp312-linux_x86_64.whl",
+      "bytes": 218570,
+      "sha256": "9434e4493128a95f34fad6ffbab88b32be14389008d387f197d79d1550231441"
+    },
+    {
+      "platform": "linux",
+      "package": "pycryptodomex",
+      "version": "3.23.0",
+      "path": "packaging/native_wheels/wheels/linux/pycryptodomex-3.23.0-1001-cp37-abi3-linux_x86_64.whl",
+      "bytes": 1663922,
+      "sha256": "5ae2c99341a821670c0d662fae37c10873694fe1c08851972ecf477eb15563b6"
+    }
+  ],
+  "license_handling": "Original notices retained byte-for-byte. Additional producer metadata is separate. CFFI contains its own exact libffi notice, independently of Python runtime notices."
+}

@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 import os
 import re
+import runpy
+import shutil
 import signal
 import stat
 import subprocess
@@ -201,6 +203,100 @@ class LinuxBuildPipelineTests(unittest.TestCase):
         self.assertIn('reference_env="$release_root/reference-venv"', text)
         self.assertNotRegex(text, re.compile(r"(^|\n)\s*(HOME|home)="))
         self.assertNotIn("sudo", text)
+
+    def test_native_inputs_and_final_carrier_are_gates_of_the_stock_helper(self):
+        source = (APPIMAGE_DIR / "build_linux_bundle.sh").read_text()
+        functions = source.split("\nreject_proxies\n\nscript_dir=", 1)[0]
+        for scenario in ("valid", "changed-input", "wrong-mapping", "changed-final"):
+            with (
+                self.subTest(scenario=scenario),
+                tempfile.TemporaryDirectory(
+                    prefix="tokenlogue native helper Юникод "
+                ) as temporary,
+            ):
+                root = Path(temporary)
+                native = root / "packaging/native_wheels"
+                native_api = runpy.run_path(
+                    str(PROJECT_ROOT / "packaging/native_wheels/verify.py")
+                )
+                for relative in native_api["required_inputs"](PROJECT_ROOT, "linux"):
+                    destination = root / relative
+                    destination.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(PROJECT_ROOT / relative, destination)
+                project = root / "pyproject.toml"
+                project.write_bytes((PROJECT_ROOT / "pyproject.toml").read_bytes())
+                wheels = sorted((native / "wheels/linux").glob("*.whl"))
+                self.assertEqual(len(wheels), 2)
+                if scenario == "changed-input":
+                    wheels[0].write_bytes(wheels[0].read_bytes() + b"unexpected")
+                elif scenario == "wrong-mapping":
+                    project.write_text(
+                        project.read_text().replace(
+                            str(wheels[0].relative_to(root)), "unreviewed-external.whl"
+                        )
+                    )
+                tools = root / "tools"
+                tools.mkdir()
+                uv = tools / "uv"
+                uv.write_text("#!" + sys.executable + "\n" + _NATIVE_HELPER_UV_FIXTURE)
+                uv.chmod(0o755)
+                reports = root / "release/reports"
+                reports.mkdir(parents=True)
+                (root / "constraints.txt").write_text("cffi==2.0.0\n")
+                program = functions + textwrap.dedent(
+                    """
+                    repo_root=$1
+                    release_root="$repo_root/release"
+                    reports_dir="$release_root/reports"
+                    reference_env="$release_root/reference-venv"
+                    python_version=3.12
+                    constraints="$repo_root/constraints.txt"
+                    expected_raw="$reports_dir/expected.raw.json"
+                    native_script="$repo_root/packaging/native_wheels/verify.py"
+                    verify_script="$repo_root/packaging/linux/appimage/verify_bundle.py"
+                    verify_native_inputs
+                    prepare_reference_environment
+                    build_flet_bundle
+                    """
+                )
+                result = subprocess.run(
+                    ["bash", "-c", program, "native-helper-fixture", str(root)],
+                    env={
+                        "PATH": str(tools) + os.pathsep + os.environ["PATH"],
+                        "NATIVE_FIXTURE_ROOT": str(root),
+                        "NATIVE_FIXTURE_SCENARIO": scenario,
+                    },
+                    capture_output=True,
+                    text=True,
+                    timeout=30,
+                )
+                events = (root / "events.jsonl").read_text().splitlines()
+                records = [json.loads(event) for event in events]
+                installed = [
+                    r for r in records if r.get("event") == "reference-install"
+                ]
+                compiled = [r for r in records if r.get("event") == "flet-fixture"]
+                if scenario == "valid":
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assertEqual(len(installed), 1)
+                    self.assertEqual(len(compiled), 1)
+                    self.assertLess(
+                        records.index(installed[0]), records.index(compiled[0])
+                    )
+                    self.assertEqual(
+                        json.loads((reports / "native-wheels-bundle.json").read_text())[
+                            "status"
+                        ],
+                        "PASS",
+                    )
+                elif scenario in {"changed-input", "wrong-mapping"}:
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertEqual(installed, [])
+                    self.assertEqual(compiled, [])
+                else:
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertEqual(len(compiled), 1)
+                    self.assertFalse((reports / "native-wheels-bundle.json").exists())
 
     def test_constraints_are_strict_and_exclude_development(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
@@ -1406,6 +1502,61 @@ class OptionalJniAbiTests(unittest.TestCase):
             if not expected_errors:
                 self.assertIn("result: PASS", result["elf-abi.txt"])
             return result
+
+
+_NATIVE_HELPER_UV_FIXTURE = r"""
+import json
+import os
+from pathlib import Path
+import subprocess
+import sys
+import zipfile
+
+root = Path(os.environ["NATIVE_FIXTURE_ROOT"])
+scenario = os.environ["NATIVE_FIXTURE_SCENARIO"]
+args = sys.argv[1:]
+
+def event(kind):
+    with (root / "events.jsonl").open("a") as stream:
+        stream.write(json.dumps({"event": kind, "arguments": args}) + "\n")
+
+event("uv-call")
+if args[:3] == ["run", "--locked", "python"]:
+    if args[3].endswith("verify_bundle.py"):
+        raise SystemExit(0)
+    raise SystemExit(subprocess.run([sys.executable, *args[3:]], check=False).returncode)
+if args[0] in {"venv", "sync"}:
+    raise SystemExit(0)
+if args[:2] == ["pip", "install"]:
+    for required in ("--no-index", "--no-deps", "--no-cache", "--reinstall", "--python"):
+        assert required in args, required
+    destination = root / "release/reference-venv/lib/python3.12/site-packages"
+    files = [Path(value) for value in args if value.endswith(".whl")]
+    assert len(files) == 2
+    for wheel in files:
+        with zipfile.ZipFile(wheel) as archive:
+            archive.extractall(destination)
+    event("reference-install")
+    raise SystemExit(0)
+if args[:2] == ["pip", "list"]:
+    print("[]")
+    raise SystemExit(0)
+if args[:4] == ["run", "--locked", "flet", "build"]:
+    assert args[4:] == ["linux", "-v", "--yes"]
+    destination = root / "build/linux"
+    for wheel in sorted((root / "packaging/native_wheels/wheels/linux").glob("*.whl")):
+        with zipfile.ZipFile(wheel) as archive:
+            archive.extractall(destination / "site-packages")
+    if scenario == "changed-final":
+        native = next((destination / "site-packages").glob("_cffi_backend*.so"))
+        native.write_bytes(native.read_bytes() + b"post-install corruption")
+    executable = destination / "tokenlogue"
+    executable.write_text("synthetic carrier, never executed\n")
+    executable.chmod(0o755)
+    event("flet-fixture")
+    raise SystemExit(0)
+raise AssertionError(args)
+"""
 
 
 def _constraints_text() -> str:

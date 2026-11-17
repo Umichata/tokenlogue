@@ -120,3 +120,16 @@ exports/
 *.db
 *.sqlite
 *.sqlite3
+
+# Exact source-built native wheels used by the reviewed packaging recipe.
+!/packaging/native_wheels/wheels/
+/packaging/native_wheels/wheels/*
+!/packaging/native_wheels/wheels/android/
+/packaging/native_wheels/wheels/android/*
+!/packaging/native_wheels/wheels/android/cffi-2.0.0-1001-cp312-cp312-android_24_arm64_v8a.whl
+!/packaging/native_wheels/wheels/android/msgpack-1.1.2-1001-cp312-cp312-android_24_arm64_v8a.whl
+!/packaging/native_wheels/wheels/android/pycryptodomex-3.23.0-1001-cp37-abi3-android_24_arm64_v8a.whl
+!/packaging/native_wheels/wheels/linux/
+/packaging/native_wheels/wheels/linux/*
+!/packaging/native_wheels/wheels/linux/cffi-2.0.0-1001-cp312-cp312-linux_x86_64.whl
+!/packaging/native_wheels/wheels/linux/pycryptodomex-3.23.0-1001-cp37-abi3-linux_x86_64.whl

@@ -1,0 +1,5 @@
+# Preserve the literal context whitespace of these exact unified-diff inputs.
+packaging/native_wheels/patches/cffi-android.patch whitespace=-blank-at-eol,-space-before-tab
+packaging/native_wheels/patches/cffi-linux.patch whitespace=-blank-at-eol,-space-before-tab,-blank-at-eof
+packaging/native_wheels/patches/libffi-long_double.patch whitespace=-blank-at-eol,-space-before-tab
+packaging/native_wheels/patches/libffi-open_temp_exec_file.patch whitespace=-blank-at-eol,-space-before-tab

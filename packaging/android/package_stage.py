@@ -258,7 +258,7 @@ def _authenticate(
         raise ValueError("Некорректный manifest входов recipe")
     source = run / "source"
     if (
-        preparation.get("recipe_version") != "7"
+        preparation.get("recipe_version") != "8"
         or preparation.get("arch") != abi
         or preparation.get("source") != str(source)
     ):

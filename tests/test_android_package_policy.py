@@ -248,7 +248,7 @@ class AndroidPackagePolicyTests(unittest.TestCase):
         write_json(
             fixture.run / "preparation.json",
             {
-                "recipe_version": "7",
+                "recipe_version": "8",
                 "arch": ABI,
                 "source": str(fixture.source),
                 "package_policy": {
@@ -528,6 +528,7 @@ class AndroidPackagePolicyTests(unittest.TestCase):
         for variant in (
             "unscoped",
             "source-escape",
+            "previous-recipe",
             "module-changed",
             "policy-changed",
             "wrong-abi",
@@ -541,6 +542,10 @@ class AndroidPackagePolicyTests(unittest.TestCase):
                 elif variant == "source-escape":
                     proof = json.loads(proof_path.read_text())
                     proof["source"] = str(self.root / "outside")
+                    write_json(proof_path, proof)
+                elif variant == "previous-recipe":
+                    proof = json.loads(proof_path.read_text())
+                    proof["recipe_version"] = "7"
                     write_json(proof_path, proof)
                 elif variant == "module-changed":
                     module = fixture.source / OWN_INPUTS[0]

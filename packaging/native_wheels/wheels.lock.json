@@ -1,0 +1,988 @@
+{
+  "format_version": 1,
+  "producer": "Tokenlogue local pinned-source native dependency build",
+  "recipe_version": 1,
+  "source_to_wheel_scope": "Own newly compiled wheels, not attestation for previously distributed publisher wheels. Final carrier and runtime compatibility are separately verified.",
+  "python_version": "3.12.14",
+  "android_api": 24,
+  "android_ndk": "28.2.13676358",
+  "wheel_build_number": 1001,
+  "libffi": {
+    "version": "3.4.4",
+    "source_sha256": "d66c56ad259a82cf2a9dfc408b32bf5da52371500b84745f7fb8b645712df676",
+    "license_sha256": "2c9c2acb9743e6b007b91350475308aee44691d96aa20eacef8e199988c8c388",
+    "android_patches": [
+      "patches/libffi-long_double.patch",
+      "patches/libffi-open_temp_exec_file.patch"
+    ],
+    "linux_patches": [],
+    "linkage": "static"
+  },
+  "support_archive": {
+    "url": "https://github.com/flet-dev/python-build/releases/download/20260921/python-android-mobile-forge-3.12.14.tar.gz",
+    "bytes": 247122045,
+    "sha256": "b96189c126ca96e7e2b3875747a0bb6db53d651499bfa7463cbb644e27da9f7d",
+    "release_asset_id": 580109229
+  },
+  "crossenv": {
+    "commit": "e5e615651f794d060d9484eab463861fef2a2019",
+    "archive_sha256": "d530d93d9d5d6084397692a7db89d34bf8a8071833e77cc8831aa2286bb44f9c"
+  },
+  "recipe_files": [
+    "packaging/android/crypto/recipes/recipes/pycryptodomex/patches/mobile.patch",
+    "packaging/android/crypto/sources/cffi-2.0.0.tar.gz",
+    "packaging/android/crypto/sources/pycryptodomex-3.23.0.tar.gz",
+    "packaging/native_wheels/README.md",
+    "packaging/native_wheels/build-requirements.txt",
+    "packaging/native_wheels/build.py",
+    "packaging/native_wheels/materials.json",
+    "packaging/native_wheels/patches/cffi-android.patch",
+    "packaging/native_wheels/patches/cffi-linux.patch",
+    "packaging/native_wheels/patches/libffi-long_double.patch",
+    "packaging/native_wheels/patches/libffi-open_temp_exec_file.patch",
+    "packaging/native_wheels/provenance.json",
+    "packaging/native_wheels/sources/build-tools/build-1.2.2.post1-py3-none-any.whl",
+    "packaging/native_wheels/sources/build-tools/packaging-24.2-py3-none-any.whl",
+    "packaging/native_wheels/sources/build-tools/pyproject_hooks-1.2.0-py3-none-any.whl",
+    "packaging/native_wheels/sources/build-tools/setuptools-83.0.0-py3-none-any.whl",
+    "packaging/native_wheels/sources/build-tools/wheel-0.43.0-py3-none-any.whl",
+    "packaging/native_wheels/sources/crossenv-e5e615651f794d060d9484eab463861fef2a2019.tar.gz",
+    "packaging/native_wheels/sources/libffi-3.4.4.tar.gz",
+    "packaging/native_wheels/sources/msgpack-1.1.2.tar.gz",
+    "packaging/native_wheels/verify.py"
+  ],
+  "recipe_inputs": [
+    {
+      "path": "packaging/android/crypto/recipes/recipes/pycryptodomex/patches/mobile.patch",
+      "bytes": 3753,
+      "sha256": "216f6cf048c4c9eaa0b31a01a19b68f9b981a252bf3e03b1c59c53f652e4ea01"
+    },
+    {
+      "path": "packaging/android/crypto/sources/cffi-2.0.0.tar.gz",
+      "bytes": 523588,
+      "sha256": "44d1b5909021139fe36001ae048dbdde8214afa20200eda0f64c068cac5d5529"
+    },
+    {
+      "path": "packaging/android/crypto/sources/pycryptodomex-3.23.0.tar.gz",
+      "bytes": 4922157,
+      "sha256": "71909758f010c82bc99b0abf4ea12012c98962fbf0583c2164f8b84533c2e4da"
+    },
+    {
+      "path": "packaging/native_wheels/README.md",
+      "bytes": 9127,
+      "sha256": "c6840fde877061c9be75e98563d12b9f846595419e1f35a61b21bb787d9a86ea"
+    },
+    {
+      "path": "packaging/native_wheels/build-requirements.txt",
+      "bytes": 941,
+      "sha256": "997fd28b7263d82362ef8c6e7d9928ef716793f1a833f628760e1ef53f868282"
+    },
+    {
+      "path": "packaging/native_wheels/build.py",
+      "bytes": 14175,
+      "sha256": "8c7228140a5b14be149a29523112c732759773f9cfb6f96a75cc345b8be79ffa"
+    },
+    {
+      "path": "packaging/native_wheels/materials.json",
+      "bytes": 6468,
+      "sha256": "d0e680405c3c66d9f85a0383d1e0bb6bbd29737f230540896daea4075358b83e"
+    },
+    {
+      "path": "packaging/native_wheels/patches/cffi-android.patch",
+      "bytes": 1402,
+      "sha256": "792aa28c037cf54843ed71d61015f900771d5dfbabab8d1166dd040a7af8b743"
+    },
+    {
+      "path": "packaging/native_wheels/patches/cffi-linux.patch",
+      "bytes": 792,
+      "sha256": "dbe96ba18d4ac37954efa51e6e73e357be0394f57299488790d53baf695d276d"
+    },
+    {
+      "path": "packaging/native_wheels/patches/libffi-long_double.patch",
+      "bytes": 3524,
+      "sha256": "01d6deff864f80f955c2c80b2768a78fa803a76628b3463d161a239cbca6ad43"
+    },
+    {
+      "path": "packaging/native_wheels/patches/libffi-open_temp_exec_file.patch",
+      "bytes": 1234,
+      "sha256": "20570753cecbf39d73889a9be3cff1f56e9053a06049dee8ea9e7b0292b4f724"
+    },
+    {
+      "path": "packaging/native_wheels/provenance.json",
+      "bytes": 3878,
+      "sha256": "9dd7986dca771ccab12fc88dedee009600bea3adc7ed9c011c9544fc68af7c95"
+    },
+    {
+      "path": "packaging/native_wheels/sources/build-tools/build-1.2.2.post1-py3-none-any.whl",
+      "bytes": 22950,
+      "sha256": "1d61c0887fa860c01971625baae8bdd338e517b836a2f70dd1f7aa3a6b2fc5b5"
+    },
+    {
+      "path": "packaging/native_wheels/sources/build-tools/packaging-24.2-py3-none-any.whl",
+      "bytes": 65451,
+      "sha256": "09abb1bccd265c01f4a3aa3f7a7db064b36514d2cba19a2f694fe6150451a759"
+    },
+    {
+      "path": "packaging/native_wheels/sources/build-tools/pyproject_hooks-1.2.0-py3-none-any.whl",
+      "bytes": 10216,
+      "sha256": "9e5c6bfa8dcc30091c74b0cf803c81fdd29d94f01992a7707bc97babb1141913"
+    },
+    {
+      "path": "packaging/native_wheels/sources/build-tools/setuptools-83.0.0-py3-none-any.whl",
+      "bytes": 1008090,
+      "sha256": "29b23c360f22f414dc7336bb39178cc7bcbf6021ed2733cde173f09dba19abb3"
+    },
+    {
+      "path": "packaging/native_wheels/sources/build-tools/wheel-0.43.0-py3-none-any.whl",
+      "bytes": 65775,
+      "sha256": "55c570405f142630c6b9f72fe09d9b67cf1477fcf543ae5b8dcb1f5b7377da81"
+    },
+    {
+      "path": "packaging/native_wheels/sources/crossenv-e5e615651f794d060d9484eab463861fef2a2019.tar.gz",
+      "bytes": 47399,
+      "sha256": "d530d93d9d5d6084397692a7db89d34bf8a8071833e77cc8831aa2286bb44f9c"
+    },
+    {
+      "path": "packaging/native_wheels/sources/libffi-3.4.4.tar.gz",
+      "bytes": 1362394,
+      "sha256": "d66c56ad259a82cf2a9dfc408b32bf5da52371500b84745f7fb8b645712df676"
+    },
+    {
+      "path": "packaging/native_wheels/sources/msgpack-1.1.2.tar.gz",
+      "bytes": 173581,
+      "sha256": "3b60763c1373dd60f398488069bcdc703cd08a711477b5d480eecc9f9626f47e"
+    },
+    {
+      "path": "packaging/native_wheels/verify.py",
+      "bytes": 10328,
+      "sha256": "b45903cdacc662b1fb92a25650a787c3123721de24b5fc320e480b432b70be25"
+    }
+  ],
+  "wheels": [
+    {
+      "platform": "android",
+      "package": "cffi",
+      "version": "2.0.0",
+      "path": "packaging/native_wheels/wheels/android/cffi-2.0.0-1001-cp312-cp312-android_24_arm64_v8a.whl",
+      "bytes": 207386,
+      "sha256": "6f1d0ad7992a26da4f37a127bb3c9ba093a1ef49f2e6761850dfd8942adbef36",
+      "tags": [
+        "cp312-cp312-android_24_arm64_v8a"
+      ],
+      "native_members": [
+        {
+          "path": "_cffi_backend.cpython-312.so",
+          "bytes": 302640,
+          "sha256": "38cff14e1307c35781c5ddf3acfd7931722888b787dd1e33ae7997c13f5e4dc6",
+          "elf_machine": 183,
+          "agp_stripped_sha256": "dbdfb9e5dd6af62878dca29804dfad44f1b087d8228d899977dd73457ee884fd",
+          "agp_stripped_bytes": 269776
+        }
+      ],
+      "metadata_members": [
+        {
+          "path": "cffi-2.0.0.dist-info/METADATA",
+          "bytes": 2559,
+          "sha256": "b98ce7e3417af089bc12d5c73412d9b3b1683ccf8ec73c986c35ac8c9be1ba39"
+        },
+        {
+          "path": "cffi-2.0.0.dist-info/WHEEL",
+          "bytes": 124,
+          "sha256": "40569789e09be1731d1c05fb2f3bc91deb834b7c67555444df426ca071c2091a"
+        },
+        {
+          "path": "cffi-2.0.0.dist-info/entry_points.txt",
+          "bytes": 75,
+          "sha256": "cba8d3c67c9eb8b9cbf9725c0eff2e30bde7eb0c98886460f0c4e9fd0189f47a"
+        },
+        {
+          "path": "cffi-2.0.0.dist-info/licenses/AUTHORS",
+          "bytes": 208,
+          "sha256": "2a67a60bbfb33759d67d645ff131b8e6d6bc4cafc232d751fcac3eda4d314cc8"
+        },
+        {
+          "path": "cffi-2.0.0.dist-info/licenses/LICENSE",
+          "bytes": 1123,
+          "sha256": "5ba24ddc57067f9249add644c3afc41a5d6dc37e23433ef759d95df370b0af63"
+        },
+        {
+          "path": "cffi-2.0.0.dist-info/licenses/libffi/BUILD.json",
+          "bytes": 606,
+          "sha256": "b2d9c973fae430ea2cabd154b799ee10d8142cd6fee0c8c43f5171b7848e5d4a"
+        },
+        {
+          "path": "cffi-2.0.0.dist-info/licenses/libffi/LICENSE",
+          "bytes": 1132,
+          "sha256": "2c9c2acb9743e6b007b91350475308aee44691d96aa20eacef8e199988c8c388"
+        },
+        {
+          "path": "cffi-2.0.0.dist-info/top_level.txt",
+          "bytes": 19,
+          "sha256": "ac4ed6477ad97cd2b1588f7e8e7ea1b0708097b303901f859ae41bc568c57a14"
+        }
+      ]
+    },
+    {
+      "platform": "android",
+      "package": "msgpack",
+      "version": "1.1.2",
+      "path": "packaging/native_wheels/wheels/android/msgpack-1.1.2-1001-cp312-cp312-android_24_arm64_v8a.whl",
+      "bytes": 82526,
+      "sha256": "f41da3581218a9cd9d146872d808b49c6bab8e86492265e05d0bef360af176f1",
+      "tags": [
+        "cp312-cp312-android_24_arm64_v8a"
+      ],
+      "native_members": [
+        {
+          "path": "msgpack/_cmsgpack.cpython-312.so",
+          "bytes": 187872,
+          "sha256": "7a7a73f86adb995ef82ead87f02a0250399d77f71cd47d60a8e62432effe739d",
+          "elf_machine": 183,
+          "agp_stripped_sha256": "b5468b9bc65bab70c3c89d7ea3169f4f6eef4f36a368b8bd23e9da7d0b8b64cc",
+          "agp_stripped_bytes": 155968
+        }
+      ],
+      "metadata_members": [
+        {
+          "path": "msgpack-1.1.2.dist-info/METADATA",
+          "bytes": 8091,
+          "sha256": "856c42ca5c61ed8b440a0e8b10b3ffcc9557397a500ee223c10d9ff9945bf80b"
+        },
+        {
+          "path": "msgpack-1.1.2.dist-info/WHEEL",
+          "bytes": 124,
+          "sha256": "40569789e09be1731d1c05fb2f3bc91deb834b7c67555444df426ca071c2091a"
+        },
+        {
+          "path": "msgpack-1.1.2.dist-info/licenses/COPYING",
+          "bytes": 614,
+          "sha256": "492dedba85da5872f78e6091bcd1fea474d660d35acb4dee964b8aab3f007427"
+        },
+        {
+          "path": "msgpack-1.1.2.dist-info/top_level.txt",
+          "bytes": 8,
+          "sha256": "dadca4498d695dd880db16130d1ea33f0d2a239646c518a1ca17f84b9859c979"
+        }
+      ]
+    },
+    {
+      "platform": "android",
+      "package": "pycryptodomex",
+      "version": "3.23.0",
+      "path": "packaging/native_wheels/wheels/android/pycryptodomex-3.23.0-1001-cp37-abi3-android_24_arm64_v8a.whl",
+      "bytes": 1653832,
+      "sha256": "3b83f6af24e49428426212d6042049ebe845a7f576f2ce0927cf19c0a06f13ea",
+      "tags": [
+        "cp37-abi3-android_24_arm64_v8a"
+      ],
+      "native_members": [
+        {
+          "path": "Cryptodome/Cipher/_ARC4.abi3.so",
+          "bytes": 6512,
+          "sha256": "e42e190cf1c9479bcd43ff0c24e1c9614318377583df3a1f0f6a7a0f9509ff8d",
+          "elf_machine": 183,
+          "agp_stripped_sha256": "e9f4878cd027edba9bd0e224307b5b62d2fab2167522b32f52c8b75d99545826",
+          "agp_stripped_bytes": 5040
+        },
+        {
+          "path": "Cryptodome/Cipher/_Salsa20.abi3.so",
+          "bytes": 7144,
+          "sha256": "4bcb6aadf35670c50de3c9d5bfb0c39fef0d38f7f6f806720dec943dcd427527",
+          "elf_machine": 183,
+          "agp_stripped_sha256": "346a5ce18e958d670982edd20f2edb90c019c544c66478049328a98ca52a1a4c",
+          "agp_stripped_bytes": 5608
+        },
+        {
+          "path": "Cryptodome/Cipher/_chacha20.abi3.so",
+          "bytes": 7880,
+          "sha256": "9891c1d7951856108ce04be0d5e2e0576aaba99e194984e8992364dbb8eabf49",
+          "elf_machine": 183,
+          "agp_stripped_sha256": "dcf6cc06a8b399a17bb153fb7431e04e28827a8562c51f677cf245f0beae734d",
+          "agp_stripped_bytes": 6304
+        },
+        {
+          "path": "Cryptodome/Cipher/_pkcs1_decode.abi3.so",
+          "bytes": 9392,
+          "sha256": "9bfcf04ce8ad66d7c0e9bbd74af1d88937429e04d078cb691e4884fb8e07fa36",
+          "elf_machine": 183,
+          "agp_stripped_sha256": "b103d77682eb46bbe31411f92388d3dc38e2507a4664c4ecc6b869d39a33531f",
+          "agp_stripped_bytes": 7848
+        },
+        {
+          "path": "Cryptodome/Cipher/_raw_aes.abi3.so",
+          "bytes": 24544,
+          "sha256": "7d87e69c4b789ef435753a229791d426fe893c08b6d873b2a484c276611b4494",
+          "elf_machine": 183,
+          "agp_stripped_sha256": "a107dd7161c7c47d1545db3199831f33921e05ac91e9845ece13d0314297e97e",
+          "agp_stripped_bytes": 22680
+        },
+        {
+          "path": "Cryptodome/Cipher/_raw_arc2.abi3.so",
+          "bytes": 8400,
+          "sha256": "63ebe4a311526f2f3deea40ce483835d8be6a568a50a597e1f121870db03d439",
+          "elf_machine": 183,
+          "agp_stripped_sha256": "24a4be6c42e9c68cc0fa5010d5bc86ea99bfde57584603619cec0b4fd621823f",
+          "agp_stripped_bytes": 6784
+        },
+        {
+          "path": "Cryptodome/Cipher/_raw_blowfish.abi3.so",
+          "bytes": 12184,
+          "sha256": "12ddf332596e8cabf27782b454ba5d851e97d3bc5620abfe3ad8a6f611632536",
+          "elf_machine": 183,
+          "agp_stripped_sha256": "faee13921172c1c39354010e2665ecdb59d208c1f02e262292bdbe93d0e27912",
+          "agp_stripped_bytes": 10528
+        },
+        {
+          "path": "Cryptodome/Cipher/_raw_cast.abi3.so",
+          "bytes": 17552,
+          "sha256": "2e2edd939d9e4cbfd59754bb82a609f84f421e3ac8a119fe09e1db654d56e8f0",
+          "elf_machine": 183,
+          "agp_stripped_sha256": "5344d92e3d032e92e8a5cca2bdcdbd273e3c04cb1daed31416518463186eb654",
+          "agp_stripped_bytes": 15688
+        },
+        {
+          "path": "Cryptodome/Cipher/_raw_cbc.abi3.so",
+          "bytes": 7000,
+          "sha256": "dd215c499abb41100d8ca7d261b6a16e1b989121c05daeeb5fa4a0559fb4cdf5",
+          "elf_machine": 183,
+          "agp_stripped_sha256": "fffe4199770b40cd732bb1fc98d0b46b1c40452b8257db05d9d521ab3ad5059d",
+          "agp_stripped_bytes": 5488
+        },
+        {
+          "path": "Cryptodome/Cipher/_raw_cfb.abi3.so",
+          "bytes": 7584,
+          "sha256": "26d7142ba5c53fe8b49bb41081bc419dc65f1ccb367d9c744fcf41bd81c3912f",
+          "elf_machine": 183,
+          "agp_stripped_sha256": "2b350c71544078833f155450d6edaa5b17952bf0cfaf5f36f9fc455fdb80cd96",
+          "agp_stripped_bytes": 5944
+        },
+        {
+          "path": "Cryptodome/Cipher/_raw_ctr.abi3.so",
+          "bytes": 9128,
+          "sha256": "16a744a8ef4a96d79976bff66a884bb947b39e9aa4f2870d77fb4ff763f3d8b8",
+          "elf_machine": 183,
+          "agp_stripped_sha256": "0cdd216f5d2d896c9bc2f47ec5d6ce8b8d7e8c92449a52e32c5cccb74a0e75e3",
+          "agp_stripped_bytes": 7440
+        },
+        {
+          "path": "Cryptodome/Cipher/_raw_des.abi3.so",
+          "bytes": 46048,
+          "sha256": "b42b365886d1df1f854e168f52f107ad23994a4a6f0c11a86d23b94dc512b537",
+          "elf_machine": 183,
+          "agp_stripped_sha256": "2fbf478c3f418d5ec080cfccefa434bbd890432fc5a0de4ea082f18aa31deeaf",
+          "agp_stripped_bytes": 44008
+        },
+        {
+          "path": "Cryptodome/Cipher/_raw_des3.abi3.so",
+          "bytes": 46192,
+          "sha256": "1ee0f0ad2b392dab39d1e3635b709bdf0a53fc052129c49382c902a0a624de31",
+          "elf_machine": 183,
+          "agp_stripped_sha256": "c39f6eb17ab7cd2d5a04a920dc40070e391a2f267840cbaaf878ed492a449977",
+          "agp_stripped_bytes": 44152
+        },
+        {
+          "path": "Cryptodome/Cipher/_raw_ecb.abi3.so",
+          "bytes": 5664,
+          "sha256": "6567792406a1144ef952e6dbc4f4497cd0d89ed27050e90602f415b63c9ee389",
+          "elf_machine": 183,
+          "agp_stripped_sha256": "b0ae4ae38aab512b865c9b8ee1ac25b67056787b706ba822aeac5a0eee69d49b",
+          "agp_stripped_bytes": 4248
+        },
+        {
+          "path": "Cryptodome/Cipher/_raw_eksblowfish.abi3.so",
+          "bytes": 13480,
+          "sha256": "f198f885644c11d1e7c44ece0113781d80476738cbe74b25f0a2b5cf7c603ca2",
+          "elf_machine": 183,
+          "agp_stripped_sha256": "b1e3f4fbf1386579ebe1aca650be4c49748855793c7b34e6a6c59b9e4aef6b2e",
+          "agp_stripped_bytes": 11776
+        },
+        {
+          "path": "Cryptodome/Cipher/_raw_ocb.abi3.so",
+          "bytes": 9880,
+          "sha256": "a5286f6f9ab69d7e216dad57ccdf5c3f407025649264e4ad47886fe8b92e6059",
+          "elf_machine": 183,
+          "agp_stripped_sha256": "c38bc8181e7ece37c73100bfb22c7dc96ee420268cfe8364bde78533b4308a8b",
+          "agp_stripped_bytes": 8200
+        },
+        {
+          "path": "Cryptodome/Cipher/_raw_ofb.abi3.so",
+          "bytes": 6776,
+          "sha256": "8a3b876136b2849ccbb91bd8a39b23754bbc91107e8cbe14662698fa2d4375b6",
+          "elf_machine": 183,
+          "agp_stripped_sha256": "ea5aa18cd4ac7f854e2b7ea8e75c559836edbb53062130dcf303b2ca3c9f4131",
+          "agp_stripped_bytes": 5264
+        },
+        {
+          "path": "Cryptodome/Hash/_BLAKE2b.abi3.so",
+          "bytes": 8536,
+          "sha256": "d1f5920a1dd58e7dbdfb92559338ea32f7d727a43a58c6465390c457cd04154b",
+          "elf_machine": 183,
+          "agp_stripped_sha256": "4a95ee712309fef7082ec80e593ffd251f9c84bab04af3fc37702e1344e73d60",
+          "agp_stripped_bytes": 6816
+        },
+        {
+          "path": "Cryptodome/Hash/_BLAKE2s.abi3.so",
+          "bytes": 8376,
+          "sha256": "d5c648b2781061b8b1f577a020d4c40231289c4f37145b085be9bee6dd5b226d",
+          "elf_machine": 183,
+          "agp_stripped_sha256": "839723c57ddc7c3c925cd02d2b01401a4d031880ab46c05dd98e2a91ebd71e8f",
+          "agp_stripped_bytes": 6624
+        },
+        {
+          "path": "Cryptodome/Hash/_MD2.abi3.so",
+          "bytes": 7848,
+          "sha256": "83e13f10f2a9ad53d945edb9075132056e1a9c8f2552adb34d81c7bab74b0302",
+          "elf_machine": 183,
+          "agp_stripped_sha256": "4e023e412cd0d16ac6a35fec2d50ea816ba28e28e34a529f5fbcff74ec537235",
+          "agp_stripped_bytes": 6184
+        },
+        {
+          "path": "Cryptodome/Hash/_MD4.abi3.so",
+          "bytes": 8736,
+          "sha256": "8253e87be43802b38260128fec2b554fdcf7e550cc131523b3fb98297645136d",
+          "elf_machine": 183,
+          "agp_stripped_sha256": "80d6b458dc6725c19f3614a2e1bb800946002a4464ca4950c7a126bcea1bf6f6",
+          "agp_stripped_bytes": 6984
+        },
+        {
+          "path": "Cryptodome/Hash/_MD5.abi3.so",
+          "bytes": 11192,
+          "sha256": "b5a2a2dffe13f6e17a42c228cc5d6e41fa87006480c9d011406a21ba36bb94f4",
+          "elf_machine": 183,
+          "agp_stripped_sha256": "8661e002faeb642cc5d6f9ed822f958ed6ac240cb65c226d8ec8411639dc3068",
+          "agp_stripped_bytes": 9432
+        },
+        {
+          "path": "Cryptodome/Hash/_RIPEMD160.abi3.so",
+          "bytes": 8688,
+          "sha256": "4abe64f377881c2c332a078ba46b5013168f4cf2f2e722abb5904cd073c75474",
+          "elf_machine": 183,
+          "agp_stripped_sha256": "daa5a8673bb079721d0a46940ed8f374dcc0eaa7dca1f5d27be968f0e8b6bbb1",
+          "agp_stripped_bytes": 6904
+        },
+        {
+          "path": "Cryptodome/Hash/_SHA1.abi3.so",
+          "bytes": 12608,
+          "sha256": "017020e3333095ea31d181c816f4d07a90abeae4651f79ef9c8b47540a3f9477",
+          "elf_machine": 183,
+          "agp_stripped_sha256": "bfa558a8defc8b62f91731abfb2a84a33907bfdf663cde6197eec6b6b571a07e",
+          "agp_stripped_bytes": 10840
+        },
+        {
+          "path": "Cryptodome/Hash/_SHA224.abi3.so",
+          "bytes": 14952,
+          "sha256": "85c54a69796d5e1a988d7b7fbb6cecef2f3c0fd798e76681a4552800af9778a7",
+          "elf_machine": 183,
+          "agp_stripped_sha256": "fc3c919ecfb2203a3e7972581db155fa2df074a620731d1412ae746181d52e39",
+          "agp_stripped_bytes": 13144
+        },
+        {
+          "path": "Cryptodome/Hash/_SHA256.abi3.so",
+          "bytes": 14952,
+          "sha256": "af76b90afbaa88ea2dd6cb68d547dfa39917bdb5e7f7f909c6c9e094d000f48a",
+          "elf_machine": 183,
+          "agp_stripped_sha256": "55cf9fdf014dfa136bc5f5d0327f6d05a717e8ead0a78b8ba694704be65a0790",
+          "agp_stripped_bytes": 13144
+        },
+        {
+          "path": "Cryptodome/Hash/_SHA384.abi3.so",
+          "bytes": 17032,
+          "sha256": "51aa215a88d9d515361b74d7fa68e090ed82415b34c9b6be6462d458c98b11da",
+          "elf_machine": 183,
+          "agp_stripped_sha256": "7c56462012fc764f3920a1adb52cbfd3dfa35e66ad18248e71525530e28620f3",
+          "agp_stripped_bytes": 15224
+        },
+        {
+          "path": "Cryptodome/Hash/_SHA512.abi3.so",
+          "bytes": 17200,
+          "sha256": "c4d3b94cd579bfe617f7b242a01255a9abbfc42d56ec356cc93bdd894f74ada6",
+          "elf_machine": 183,
+          "agp_stripped_sha256": "b032a80dc96d2e481f034474049af8e370aad86187957b17797f98586b552623",
+          "agp_stripped_bytes": 15384
+        },
+        {
+          "path": "Cryptodome/Hash/_ghash_portable.abi3.so",
+          "bytes": 6512,
+          "sha256": "b7461dc44bd034a692a6aa24a28454c89d6114910b3178110a9ef04a4b4b4608",
+          "elf_machine": 183,
+          "agp_stripped_sha256": "8bc61c7271657aecfda492aa32953afa70d7f84b20b09f475cfec15a4224a767",
+          "agp_stripped_bytes": 5024
+        },
+        {
+          "path": "Cryptodome/Hash/_keccak.abi3.so",
+          "bytes": 9576,
+          "sha256": "b53985df4c0c93f689c88509427511c65fc7488a776660a2b347534f667dc840",
+          "elf_machine": 183,
+          "agp_stripped_sha256": "f5bdff5ba0d35296da5e3837eda9d4addb6cfa92e9f1df4a2bb33e6ff582b4f3",
+          "agp_stripped_bytes": 7760
+        },
+        {
+          "path": "Cryptodome/Hash/_poly1305.abi3.so",
+          "bytes": 7968,
+          "sha256": "029227a7bca3608cb0e35addfcd8bad1a48317a750e4b42a5f4a27d1694e77c9",
+          "elf_machine": 183,
+          "agp_stripped_sha256": "770c2a6c011f34fd523a73a46976d3dbb1c76ef4de37e2a59e06afa88a843620",
+          "agp_stripped_bytes": 6296
+        },
+        {
+          "path": "Cryptodome/Math/_modexp.abi3.so",
+          "bytes": 32752,
+          "sha256": "e4af564dd95038516343312702e32e149c513d4e75b1dc558f59335c8ff57592",
+          "elf_machine": 183,
+          "agp_stripped_sha256": "3c9b0dc9ebbd811acfe297c02142947e0c0fcbc1df93195ba1084e16fbe931b6",
+          "agp_stripped_bytes": 29544
+        },
+        {
+          "path": "Cryptodome/Protocol/_scrypt.abi3.so",
+          "bytes": 6872,
+          "sha256": "5dc1457ceeccc14665c7bf7e4225fb0a370d457378846925eb1752e82db3e72d",
+          "elf_machine": 183,
+          "agp_stripped_sha256": "e21c126e3f951ced55cbfc79ed3591f54538a9adcc42f192007e4e9335113ffa",
+          "agp_stripped_bytes": 5424
+        },
+        {
+          "path": "Cryptodome/PublicKey/_curve25519.abi3.so",
+          "bytes": 14736,
+          "sha256": "3f2921caaa71224d13b14751294eb27382b9437daa9ff835c5239464ae2f41be",
+          "elf_machine": 183,
+          "agp_stripped_sha256": "54307b70eea94feb55d55a72d16f4565ecab706f73f046797d78f2613fb42b24",
+          "agp_stripped_bytes": 12904
+        },
+        {
+          "path": "Cryptodome/PublicKey/_curve448.abi3.so",
+          "bytes": 35232,
+          "sha256": "8e36fdf374b9152cb398251e927f29333ea9a1da9c3f53e29688dec6afe25a54",
+          "elf_machine": 183,
+          "agp_stripped_sha256": "c44eef9504ed454a9711d1bd5f52e902174db9eaf23a233b3ea9337dd319f456",
+          "agp_stripped_bytes": 31664
+        },
+        {
+          "path": "Cryptodome/PublicKey/_ec_ws.abi3.so",
+          "bytes": 695512,
+          "sha256": "d4d605b3170d31b8d5cab8b5f907d9ed93fa90e171b7e8f69d28df26df531ef2",
+          "elf_machine": 183,
+          "agp_stripped_sha256": "2295d6b25ee0d6f3028a8e1dd0935a2aee14c8fab4f259fd8dd76a189e7e9cf9",
+          "agp_stripped_bytes": 690512
+        },
+        {
+          "path": "Cryptodome/PublicKey/_ed25519.abi3.so",
+          "bytes": 18528,
+          "sha256": "228a4005b3ea58d98159a06b472975e65976dfd4867db61323c0740e905165da",
+          "elf_machine": 183,
+          "agp_stripped_sha256": "13206cef2f40fc9b77f65c06697ff02a7094f11d0203bf8a96aa058cc6a01142",
+          "agp_stripped_bytes": 16424
+        },
+        {
+          "path": "Cryptodome/PublicKey/_ed448.abi3.so",
+          "bytes": 37272,
+          "sha256": "2c46ae01dda021066c34b06f0dab8978a6c2ac83c0a5d0428761671b5fb02885",
+          "elf_machine": 183,
+          "agp_stripped_sha256": "a6d1b032232def29df3cf93b0c413aff6c14b1d0c831c789c66e14f01be2db69",
+          "agp_stripped_bytes": 33504
+        },
+        {
+          "path": "Cryptodome/Util/_cpuid_c.abi3.so",
+          "bytes": 5304,
+          "sha256": "b0f3681dfe01045ca3acb15311e6faa2954a8bbf89f2ab998d036112a3185108",
+          "elf_machine": 183,
+          "agp_stripped_sha256": "f9e082086ea6412f3a28555161ca8d6749136a33173cc9a5f9d57050baf8eadf",
+          "agp_stripped_bytes": 3976
+        },
+        {
+          "path": "Cryptodome/Util/_strxor.abi3.so",
+          "bytes": 5760,
+          "sha256": "b326be9d5e26f8bb7ee57fc3cc62557d12b6257642b61ec3af35286d41e5436e",
+          "elf_machine": 183,
+          "agp_stripped_sha256": "254749a545bc1bb3ed843958b1c00dd3dca18c0a22dfa4c6445a5e43cf6116a2",
+          "agp_stripped_bytes": 4440
+        }
+      ],
+      "metadata_members": [
+        {
+          "path": "pycryptodomex-3.23.0.dist-info/METADATA",
+          "bytes": 3607,
+          "sha256": "5824ab95cf34d5489b6c5f650bf50b3dc3cb4b2c56c78cc35cde49b2c1197ab2"
+        },
+        {
+          "path": "pycryptodomex-3.23.0.dist-info/WHEEL",
+          "bytes": 122,
+          "sha256": "3b71eceeeadf87048f70660b627da1cc5d912ac61475a1d77b5ea2cb9652d2c0"
+        },
+        {
+          "path": "pycryptodomex-3.23.0.dist-info/licenses/AUTHORS.rst",
+          "bytes": 764,
+          "sha256": "1cb670b6cc5bc3a1c38d7e12cdf944442ca790425cf2a628ffbe3012445fe1e4"
+        },
+        {
+          "path": "pycryptodomex-3.23.0.dist-info/licenses/LICENSE.rst",
+          "bytes": 2926,
+          "sha256": "4e04660d77c1c64e89d79537919fb8240fa21484a7e3db29f358b2c7f84ea073"
+        },
+        {
+          "path": "pycryptodomex-3.23.0.dist-info/top_level.txt",
+          "bytes": 11,
+          "sha256": "78753d6ac7ba8a7d5948112d4c3a65edfc083c838de369dba99d6e153c9c731b"
+        }
+      ]
+    },
+    {
+      "platform": "linux",
+      "package": "cffi",
+      "version": "2.0.0",
+      "path": "packaging/native_wheels/wheels/linux/cffi-2.0.0-1001-cp312-cp312-linux_x86_64.whl",
+      "bytes": 218570,
+      "sha256": "9434e4493128a95f34fad6ffbab88b32be14389008d387f197d79d1550231441",
+      "tags": [
+        "cp312-cp312-linux_x86_64"
+      ],
+      "native_members": [
+        {
+          "path": "_cffi_backend.cpython-312-x86_64-linux-gnu.so",
+          "bytes": 290216,
+          "sha256": "6958c04498a23efeee45229e48f527027ee33cbcda57d9a9976e9f73a94021a0",
+          "elf_machine": 62
+        }
+      ],
+      "metadata_members": [
+        {
+          "path": "cffi-2.0.0.dist-info/METADATA",
+          "bytes": 2559,
+          "sha256": "b98ce7e3417af089bc12d5c73412d9b3b1683ccf8ec73c986c35ac8c9be1ba39"
+        },
+        {
+          "path": "cffi-2.0.0.dist-info/WHEEL",
+          "bytes": 116,
+          "sha256": "824d8ed48c4421810a006e4d083c1feee53f4d118339d0735fd50c33c15c5867"
+        },
+        {
+          "path": "cffi-2.0.0.dist-info/entry_points.txt",
+          "bytes": 75,
+          "sha256": "cba8d3c67c9eb8b9cbf9725c0eff2e30bde7eb0c98886460f0c4e9fd0189f47a"
+        },
+        {
+          "path": "cffi-2.0.0.dist-info/licenses/AUTHORS",
+          "bytes": 208,
+          "sha256": "2a67a60bbfb33759d67d645ff131b8e6d6bc4cafc232d751fcac3eda4d314cc8"
+        },
+        {
+          "path": "cffi-2.0.0.dist-info/licenses/LICENSE",
+          "bytes": 1123,
+          "sha256": "5ba24ddc57067f9249add644c3afc41a5d6dc37e23433ef759d95df370b0af63"
+        },
+        {
+          "path": "cffi-2.0.0.dist-info/licenses/libffi/BUILD.json",
+          "bytes": 312,
+          "sha256": "48bf1c16bed90c211fc13baca5fbe401d650a61a7abe6c18a6a75a7e1a3be394"
+        },
+        {
+          "path": "cffi-2.0.0.dist-info/licenses/libffi/LICENSE",
+          "bytes": 1132,
+          "sha256": "2c9c2acb9743e6b007b91350475308aee44691d96aa20eacef8e199988c8c388"
+        },
+        {
+          "path": "cffi-2.0.0.dist-info/top_level.txt",
+          "bytes": 19,
+          "sha256": "ac4ed6477ad97cd2b1588f7e8e7ea1b0708097b303901f859ae41bc568c57a14"
+        }
+      ]
+    },
+    {
+      "platform": "linux",
+      "package": "pycryptodomex",
+      "version": "3.23.0",
+      "path": "packaging/native_wheels/wheels/linux/pycryptodomex-3.23.0-1001-cp37-abi3-linux_x86_64.whl",
+      "bytes": 1663922,
+      "sha256": "5ae2c99341a821670c0d662fae37c10873694fe1c08851972ecf477eb15563b6",
+      "tags": [
+        "cp37-abi3-linux_x86_64"
+      ],
+      "native_members": [
+        {
+          "path": "Cryptodome/Cipher/_ARC4.abi3.so",
+          "bytes": 15528,
+          "sha256": "5ba16fcc32660fe92f35ce9f689bb0f2766addb45180d65713e448c5ac1dfab4",
+          "elf_machine": 62
+        },
+        {
+          "path": "Cryptodome/Cipher/_Salsa20.abi3.so",
+          "bytes": 15800,
+          "sha256": "93924a27165424377d17e3004cd46441047467f50c9f8905093c6f87e99aa9b6",
+          "elf_machine": 62
+        },
+        {
+          "path": "Cryptodome/Cipher/_chacha20.abi3.so",
+          "bytes": 15680,
+          "sha256": "3e88bb7782f3996d7a90c631e4596d08e51c04171a3bdf2a5c2cb52b7080a683",
+          "elf_machine": 62
+        },
+        {
+          "path": "Cryptodome/Cipher/_pkcs1_decode.abi3.so",
+          "bytes": 15688,
+          "sha256": "ab0f80eaa5880b9d288a9fb6aca42b4b4abe083a2ccb28e02b7371ce52dd3b9a",
+          "elf_machine": 62
+        },
+        {
+          "path": "Cryptodome/Cipher/_raw_aes.abi3.so",
+          "bytes": 32368,
+          "sha256": "4d6724a6fad12766948bdd63e2dfd77a486b40368f3f75823ae2ba789b827fb5",
+          "elf_machine": 62
+        },
+        {
+          "path": "Cryptodome/Cipher/_raw_aesni.abi3.so",
+          "bytes": 15888,
+          "sha256": "a8e39701f96d101fd746ae2210da1ac885c66694f1f4a4d94ec3678518ba6c0d",
+          "elf_machine": 62
+        },
+        {
+          "path": "Cryptodome/Cipher/_raw_arc2.abi3.so",
+          "bytes": 15776,
+          "sha256": "ede18805e836453a5d94a950ece20b4365ed4fa0e7eba1af51f0e2ccd8f676ed",
+          "elf_machine": 62
+        },
+        {
+          "path": "Cryptodome/Cipher/_raw_blowfish.abi3.so",
+          "bytes": 19896,
+          "sha256": "bfeb3abe1b468f17efe7c0f2456588be427c68d790cbb60b41f7535caedcca98",
+          "elf_machine": 62
+        },
+        {
+          "path": "Cryptodome/Cipher/_raw_cast.abi3.so",
+          "bytes": 24216,
+          "sha256": "32fb555cc264e4c37c79495f0aff2e8b3c0c6c3a2d41feb7d3566fbd002e51c1",
+          "elf_machine": 62
+        },
+        {
+          "path": "Cryptodome/Cipher/_raw_cbc.abi3.so",
+          "bytes": 15712,
+          "sha256": "02c8da1c26b0ba8e2326bf3df8169fc44619d719097ddf05c91e7e921e447692",
+          "elf_machine": 62
+        },
+        {
+          "path": "Cryptodome/Cipher/_raw_cfb.abi3.so",
+          "bytes": 15864,
+          "sha256": "e9ee538df454741e9eba22d7372a6d4196968eff85a4c422edf1c9f7d6f2e300",
+          "elf_machine": 62
+        },
+        {
+          "path": "Cryptodome/Cipher/_raw_ctr.abi3.so",
+          "bytes": 15952,
+          "sha256": "c82476382780708a8c52404febdcf1b81947f8bbc59ff591d3c49dc9147ef6f4",
+          "elf_machine": 62
+        },
+        {
+          "path": "Cryptodome/Cipher/_raw_des.abi3.so",
+          "bytes": 48952,
+          "sha256": "ff806ad6f8f72873976ca21efb1fc713e2003214008f6560b4b28709d50bf5c4",
+          "elf_machine": 62
+        },
+        {
+          "path": "Cryptodome/Cipher/_raw_des3.abi3.so",
+          "bytes": 48960,
+          "sha256": "c8981845d7903ae7b888e39188f29118855146518f1a69d95b4f717413ffeec1",
+          "elf_machine": 62
+        },
+        {
+          "path": "Cryptodome/Cipher/_raw_ecb.abi3.so",
+          "bytes": 15176,
+          "sha256": "ee0dd8710bf53e450f3456a77bc52d506beed3b62093dc1a3bfe3ad08131cc8c",
+          "elf_machine": 62
+        },
+        {
+          "path": "Cryptodome/Cipher/_raw_eksblowfish.abi3.so",
+          "bytes": 19912,
+          "sha256": "02dcc6ef5b03484df677db7ce824ac1d39fb53f0f53516b7723af7a40d2ad9e9",
+          "elf_machine": 62
+        },
+        {
+          "path": "Cryptodome/Cipher/_raw_ocb.abi3.so",
+          "bytes": 15976,
+          "sha256": "1f1c685bfcba94299e27ec11a5c78b1c7687e75984a0ac1efd2c50393d278111",
+          "elf_machine": 62
+        },
+        {
+          "path": "Cryptodome/Cipher/_raw_ofb.abi3.so",
+          "bytes": 15664,
+          "sha256": "0f0e23c523e7d89b5c4dd705d9207bb398beff26bfefa853bbec231a973cb77c",
+          "elf_machine": 62
+        },
+        {
+          "path": "Cryptodome/Hash/_BLAKE2b.abi3.so",
+          "bytes": 15888,
+          "sha256": "1807667f806aafdf37c74cd8fb1afb788db802e428b6d6a35481d2d70acb38ca",
+          "elf_machine": 62
+        },
+        {
+          "path": "Cryptodome/Hash/_BLAKE2s.abi3.so",
+          "bytes": 15888,
+          "sha256": "eefe5889be5b9d5af97b446b01111d5b4c0c667dd774a13abf1f05703bd756d3",
+          "elf_machine": 62
+        },
+        {
+          "path": "Cryptodome/Hash/_MD2.abi3.so",
+          "bytes": 15856,
+          "sha256": "8e49397679669b47d339d85920bdc43dcdcf979947e9b9d93cdf0a6bc64ce1ae",
+          "elf_machine": 62
+        },
+        {
+          "path": "Cryptodome/Hash/_MD4.abi3.so",
+          "bytes": 15896,
+          "sha256": "0b3ac8ac69fa142ef27912b0f774a44fd35d3bb0c20ef129c7b17eae98c3a42c",
+          "elf_machine": 62
+        },
+        {
+          "path": "Cryptodome/Hash/_MD5.abi3.so",
+          "bytes": 16000,
+          "sha256": "5bd599f64c591216bb39d31c72100127aec22ddcfb0e6a9fc4cb060a721fa067",
+          "elf_machine": 62
+        },
+        {
+          "path": "Cryptodome/Hash/_RIPEMD160.abi3.so",
+          "bytes": 15960,
+          "sha256": "3f146e182f5b7c4b8c583f3d6b1b43f87fde3330eacc64091d024ea7a3a3a126",
+          "elf_machine": 62
+        },
+        {
+          "path": "Cryptodome/Hash/_SHA1.abi3.so",
+          "bytes": 20104,
+          "sha256": "26a14cca6b6a2fe5d9cccac9902e5c15c9aa6b6c3729dd888a2471fe7735da08",
+          "elf_machine": 62
+        },
+        {
+          "path": "Cryptodome/Hash/_SHA224.abi3.so",
+          "bytes": 24264,
+          "sha256": "a561dcc2540a24fddaba3c82ef50bbd94bd04927dddd4707a18719255a17e597",
+          "elf_machine": 62
+        },
+        {
+          "path": "Cryptodome/Hash/_SHA256.abi3.so",
+          "bytes": 24264,
+          "sha256": "d31b4e1825b79ac74d4db2b19cde6ca99d3ac8d52b4b1c7a82d57c91ad2ec5dd",
+          "elf_machine": 62
+        },
+        {
+          "path": "Cryptodome/Hash/_SHA384.abi3.so",
+          "bytes": 28360,
+          "sha256": "e989ffefbff4f5f28d63557dc999c19d76dcc0d779f8b318a305c6f1010908b1",
+          "elf_machine": 62
+        },
+        {
+          "path": "Cryptodome/Hash/_SHA512.abi3.so",
+          "bytes": 28392,
+          "sha256": "8140d971c9af8cd5a48afb585fa2448fb43ff8f7653ee45f31fa7da33a99c88d",
+          "elf_machine": 62
+        },
+        {
+          "path": "Cryptodome/Hash/_ghash_clmul.abi3.so",
+          "bytes": 15664,
+          "sha256": "6e2745670d63950ad3abb7a7d81d5f9f219632f1d235ca10660de3244b8188d8",
+          "elf_machine": 62
+        },
+        {
+          "path": "Cryptodome/Hash/_ghash_portable.abi3.so",
+          "bytes": 15600,
+          "sha256": "ca091734219eae47b70cf725b812bfc4c577fac96f8778c7108d1a5671bc8c39",
+          "elf_machine": 62
+        },
+        {
+          "path": "Cryptodome/Hash/_keccak.abi3.so",
+          "bytes": 16096,
+          "sha256": "dd7f571ed9dcb432f3a9fd5244115f154ac73d8f3b5db0200d5d9b5f2c180484",
+          "elf_machine": 62
+        },
+        {
+          "path": "Cryptodome/Hash/_poly1305.abi3.so",
+          "bytes": 16008,
+          "sha256": "7bdfebfcac1d6a3fadecbe3b18ad924c9f70654682aa3dfa214a3c3b7bccdbf9",
+          "elf_machine": 62
+        },
+        {
+          "path": "Cryptodome/Math/_modexp.abi3.so",
+          "bytes": 38320,
+          "sha256": "369c08d3cf534e7586c59321f411383030fd9561985ec90170f21e77dd03aea7",
+          "elf_machine": 62
+        },
+        {
+          "path": "Cryptodome/Protocol/_scrypt.abi3.so",
+          "bytes": 15688,
+          "sha256": "5e6df8f6edbfe96dc3decf8f6c30050802bda0f888e32a1688fa1aeb41e94047",
+          "elf_machine": 62
+        },
+        {
+          "path": "Cryptodome/PublicKey/_curve25519.abi3.so",
+          "bytes": 20280,
+          "sha256": "d567f0665daa860a5c57c2cbc29b6ed7a7c67dde91c1eb3aa13c14834e642557",
+          "elf_machine": 62
+        },
+        {
+          "path": "Cryptodome/PublicKey/_curve448.abi3.so",
+          "bytes": 46776,
+          "sha256": "3dc62225386b1587263a1d3d03f19be90c6123e34135fdee581c2fdee8af9cb9",
+          "elf_machine": 62
+        },
+        {
+          "path": "Cryptodome/PublicKey/_ec_ws.abi3.so",
+          "bytes": 703056,
+          "sha256": "6bbcb8f92bf55c83d518e7f71237429dd5a7bc2898b0809285a365331801bc5b",
+          "elf_machine": 62
+        },
+        {
+          "path": "Cryptodome/PublicKey/_ed25519.abi3.so",
+          "bytes": 28568,
+          "sha256": "b1ac02ce00ec1363db3fa92344c1cd7a5076d1ebaf7e89dbb1404ee6bdb498a5",
+          "elf_machine": 62
+        },
+        {
+          "path": "Cryptodome/PublicKey/_ed448.abi3.so",
+          "bytes": 47016,
+          "sha256": "0392ba50509fe2781acd8b9aaa40bd6c77324227bcd5809f3b57ff786a85e400",
+          "elf_machine": 62
+        },
+        {
+          "path": "Cryptodome/Util/_cpuid_c.abi3.so",
+          "bytes": 15440,
+          "sha256": "1d7e53721c1d8d90ef3be803d29614887ffa3de80eb6423b81f1dccd77f2ade5",
+          "elf_machine": 62
+        },
+        {
+          "path": "Cryptodome/Util/_strxor.abi3.so",
+          "bytes": 15080,
+          "sha256": "1b7285c354a4306ee60cab004b269c7d55f71ae07325e1b9f970836e12ad313c",
+          "elf_machine": 62
+        }
+      ],
+      "metadata_members": [
+        {
+          "path": "pycryptodomex-3.23.0.dist-info/METADATA",
+          "bytes": 3564,
+          "sha256": "f4f185e23d5bb5add4b5545ae8cd1bd788d5af0e43040dd377ea45f29a354caf"
+        },
+        {
+          "path": "pycryptodomex-3.23.0.dist-info/WHEEL",
+          "bytes": 114,
+          "sha256": "81aa367fd673d4d2b96f9a64f41c49fc3b1925b6ef7a3edc0598bdf585dcb91f"
+        },
+        {
+          "path": "pycryptodomex-3.23.0.dist-info/licenses/AUTHORS.rst",
+          "bytes": 764,
+          "sha256": "1cb670b6cc5bc3a1c38d7e12cdf944442ca790425cf2a628ffbe3012445fe1e4"
+        },
+        {
+          "path": "pycryptodomex-3.23.0.dist-info/licenses/LICENSE.rst",
+          "bytes": 2926,
+          "sha256": "4e04660d77c1c64e89d79537919fb8240fa21484a7e3db29f358b2c7f84ea073"
+        },
+        {
+          "path": "pycryptodomex-3.23.0.dist-info/top_level.txt",
+          "bytes": 11,
+          "sha256": "78753d6ac7ba8a7d5948112d4c3a65edfc083c838de369dba99d6e153c9c731b"
+        }
+      ]
+    }
+  ],
+  "linux_build_baseline": {
+    "os": "Ubuntu22.04 Jammy",
+    "compiler": "GCC11",
+    "maximum_glibc_symbol": "2.35",
+    "observed_maximum_glibc_symbol": "2.34"
+  }
+}

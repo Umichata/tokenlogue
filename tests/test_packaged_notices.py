@@ -29,6 +29,7 @@ class PackagedNoticesTests(unittest.TestCase):
         )
         self.texts = {
             "runtime.txt": b"Original runtime notice\r\nCopyright 2026\r\n",
+            "cffi-ffi.txt": b"Original CFFI embedded libffi notice\n",
             "font.txt": "Original font notice\nCopyright © 2019\n".encode(),
             "bridge.txt": b"Original bridge notice\n",
             "katex.txt": b"Original KaTeX notice\n",
@@ -51,6 +52,7 @@ class PackagedNoticesTests(unittest.TestCase):
             ("dart-bridge", "bridge.txt", ["android"]),
             ("tzdata", "tzdata.txt", ["android", "linux"]),
             ("katex-fonts", "katex.txt", ["android"]),
+            ("libffi-cffi", "cffi-ffi.txt", ["android", "linux"]),
         ):
             data = self.texts[name]
             (self.inputs / "inputs" / name).write_bytes(data)
@@ -94,6 +96,7 @@ class PackagedNoticesTests(unittest.TestCase):
             set(components),
             {
                 "libffi-runtime",
+                "libffi-cffi",
                 "dart-bridge",
                 "katex-fonts",
                 "material-icons",
@@ -102,7 +105,7 @@ class PackagedNoticesTests(unittest.TestCase):
         )
         self.assertEqual(
             [component["id"] for component in linux_manifest["components"]],
-            ["material-icons", "tzdata"],
+            ["material-icons", "tzdata", "libffi-cffi"],
         )
         expected = {
             "tzdata": (
@@ -181,6 +184,7 @@ class PackagedNoticesTests(unittest.TestCase):
                 "dart-bridge",
                 "tzdata",
                 "katex-fonts",
+                "libffi-cffi",
             ],
         )
         self.assertEqual(
@@ -207,6 +211,36 @@ class PackagedNoticesTests(unittest.TestCase):
         files = notice_bundle.bundle_files(self.root, "linux")
         self.assertEqual(files["licenses/font.txt"], self.texts["font.txt"])
         self.assertNotIn("licenses/runtime.txt", files)
+        self.assertEqual(files["licenses/cffi-ffi.txt"], self.texts["cffi-ffi.txt"])
+
+    def test_source_built_cffi_libffi_notice_is_separate_from_runtime(self):
+        for platform in ("android", "linux"):
+            with self.subTest(platform=platform):
+                files = notice_bundle.bundle_files(ROOT, platform)
+                manifest = json.loads(files["manifest.json"])
+                components = {row["id"]: row for row in manifest["components"]}
+                ffi = components["libffi-cffi"]
+                self.assertEqual(ffi["version"], "3.4.4")
+                original = ROOT / "packaging/notices/inputs/libffi-3.4.4-LICENSE.txt"
+                self.assertEqual(
+                    files["licenses/libffi-cffi-3.4.4-LICENSE.txt"],
+                    original.read_bytes(),
+                )
+                self.assertEqual(
+                    ffi["source"]["archive_sha256"],
+                    "d66c56ad259a82cf2a9dfc408b32bf5da52371500b84745f7fb8b645712df676",
+                )
+                self.assertEqual(
+                    ffi["source"]["build_registry"],
+                    "packaging/native_wheels/wheels.lock.json",
+                )
+                if platform == "linux":
+                    self.assertNotIn("libffi-runtime", components)
+                else:
+                    self.assertNotEqual(
+                        ffi["notice_paths"],
+                        components["libffi-runtime"]["notice_paths"],
+                    )
 
     def test_missing_or_changed_required_input_fails_before_creating_output(self):
         path = self.inputs / "inputs/runtime.txt"
@@ -221,7 +255,7 @@ class PackagedNoticesTests(unittest.TestCase):
                 self.assertFalse(self.destination.exists())
 
     def test_missing_or_wrong_platform_mandatory_component_fails_before_output(self):
-        mandatory = self.registry["components"].pop()
+        mandatory = self.registry["components"].pop(-2)
         self.save_registry()
         with self.assertRaisesRegex(
             notice_bundle.NoticeError, "required notice components.*missing katex-fonts"

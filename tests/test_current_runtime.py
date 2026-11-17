@@ -51,11 +51,7 @@ class CurrentContractTests(unittest.TestCase):
         )
         self.assertLess(
             steps.index(step),
-            next(
-                i
-                for i, step in enumerate(steps)
-                if step["name"] == "Build AppImage"
-            ),
+            next(i for i, step in enumerate(steps) if step["name"] == "Build AppImage"),
         )
 
     def test_notice_registry_matches_current_producer_inputs_and_components(

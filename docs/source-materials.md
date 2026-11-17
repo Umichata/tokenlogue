@@ -78,9 +78,11 @@ These commands run the source application and do not create an APK or AppImage. 
 <a id="-what-the-available-materials-establish"></a>
 ## Component provenance
 
-Source-to-binary correspondence is not fully documented for Android CFFI 2.0.0, PyCryptodomex 3.23.0 and msgpack 1.1.2, or for Linux CFFI 2.0.0 and PyCryptodomex 3.23.0. The exact libffi revision and patches inside the selected CFFI wheels remain unidentified. The libffi in the Python runtime is a separate component.
+The current packaging recipe selects the project’s [source-built native wheels](../packaging/native_wheels/README.md#english). These cover Android CFFI 2.0.0, PyCryptodomex 3.23.0 and msgpack 1.1.2, plus Linux CFFI 2.0.0 and PyCryptodomex 3.23.0. Their registry binds the exact wheel bytes to the recorded recipe, source archives, build tools and patches. Both CFFI builds statically link libffi 3.4.4. Android’s two libffi patches and the unpatched Linux source are identified separately. The Python runtime’s libffi remains a distinct component.
 
-The component index describes the available source materials. A matching source version and checksum identify an archive, but do not establish independent reproduction of every native binary or a complete offline build environment.
+The earlier APK55 and Linux bundle +55 used different wheels. Their incomplete producer links and unidentified CFFI libffi remain historical limitations of those files. Building replacements does not establish missing facts about the older binaries. Check the provenance accompanying your exact package to distinguish the inputs.
+
+The component index describes both reusable source materials and package-specific additions. A matching source version and checksum identify an archive. Recorded builds and final-package checks establish the selected replacement files, but do not claim independent reproduction of every binary or a complete offline SDK distribution.
 
 <a id="-licenses-and-older-collections"></a>
 ## Licenses and notices

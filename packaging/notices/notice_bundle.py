@@ -12,12 +12,13 @@ PLATFORMS = {"android", "linux"}
 REQUIRED_COMPONENTS = {
     "android": {
         "libffi-runtime",
+        "libffi-cffi",
         "dart-bridge",
         "katex-fonts",
         "material-icons",
         "tzdata",
     },
-    "linux": {"material-icons", "tzdata"},
+    "linux": {"material-icons", "tzdata", "libffi-cffi"},
 }
 DIRECTORY = "packaging/notices"
 

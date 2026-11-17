@@ -588,7 +588,7 @@ class SupplementalFontNoticeTests(unittest.TestCase):
             )
             self.assertEqual(
                 [component["id"] for component in supplemental["components"]],
-                ["material-icons", "tzdata"],
+                ["material-icons", "tzdata", "libffi-cffi"],
             )
             expected = notices.notice_bundle.bundle_files(self.project, "linux")
             for name, data in expected.items():
