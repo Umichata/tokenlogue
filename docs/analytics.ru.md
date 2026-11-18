@@ -7,7 +7,7 @@
 
 [Главная](../README.ru.md) · [Документация](../docs/README.ru.md)
 
-> **0.1.1 доступна локально.** Руководство описывает текущие исходники и локальные сборки. [Опубликованный 0.1.0 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9) — прежний выпуск. По его ссылкам нельзя скачать 0.1.1.
+> **[0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1)** содержит APK Android ARM64 и настольный bundle Linux x86_64. Перед установкой проверьте требования платформы и сумму скачанного файла.
 
 
 ## Область и фильтры

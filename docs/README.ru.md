@@ -7,7 +7,7 @@
 
 [Главная](../README.ru.md) · [Документация](../docs/README.ru.md)
 
-> **0.1.1 доступна локально.** Руководство описывает текущие исходники и локальные сборки. [Опубликованный 0.1.0 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9) — прежний выпуск. По его ссылкам нельзя скачать 0.1.1.
+> **[0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1)** содержит APK Android ARM64 и настольный bundle Linux x86_64. Перед установкой проверьте требования платформы и сумму скачанного файла.
 
 
 ## С чего начать
@@ -23,7 +23,7 @@
 
 ## Загрузки и требования
 
-[Опубликованный 0.1.0 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9) содержит [APK Android ARM64](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-android-arm64-v8a-v43.apk), [AppImage Linux x86_64](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage) и [контрольные суммы](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SHA256SUMS). Это пакеты прежнего выпуска. Текущие локальные пакеты 0.1.1 сборки 55 поставляются отдельно. Их имена и суммы указаны в руководствах платформ.
+[0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1) содержит APK Android ARM64 и полный настольный bundle Linux x86_64. Точные имена, суммы и правила обновления приведены в руководствах платформ. Прежний выпуск 0.1.0 остаётся доступен отдельно.
 
 Android требует API 24 или новее. Для Linux нужны совместимый рабочий стол и защищённое хранилище ключей. Перед запуском прочитайте руководство платформы. Архивы исходников для использования приложения не нужны.
 

@@ -7,7 +7,7 @@
 
 [Home](../README.md) · [Documentation](../docs/README.md)
 
-> **0.1.1 is local.** These instructions describe the current source and local builds. [Published 0.1.0 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9) is the earlier release. Its download links do not provide 0.1.1.
+> **[0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1)** provides an Android ARM64 APK and a Linux x86_64 desktop bundle. Read the platform requirements and verify the downloaded file before installing.
 
 
 ## Start here
@@ -23,7 +23,7 @@
 
 ## Downloads and requirements
 
-[Published 0.1.0 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9) includes an [Android ARM64 APK](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-android-arm64-v8a-v43.apk), a [Linux x86_64 AppImage](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage) and [checksums](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SHA256SUMS). These packages are the earlier release. Current local 0.1.1 build 55 packages are separate. Their names and checksums are in the platform guides.
+[0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1) provides an Android ARM64 APK and a complete Linux x86_64 desktop bundle. The platform guides identify the exact files, checksums and update steps. The earlier 0.1.0 release remains available separately.
 
 Android requires API 24 or later. Linux requires a compatible graphical desktop and secure key storage. Follow the platform guide before starting. Source archives are optional for application users.
 

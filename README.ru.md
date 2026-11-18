@@ -13,7 +13,7 @@
 
 [Возможности](#ru-features) · [Интерфейс](#ru-screenshots) · [Установка](#ru-start) · [Руководство](docs/user-guide.ru.md) · [Карта документации](docs/README.ru.md)
 
-> **0.1.1 доступна локально.** Руководство описывает текущие исходники и локальные сборки. [Опубликованный 0.1.0 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9) — прежний выпуск. По его ссылкам нельзя скачать 0.1.1.
+> **[0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1)** содержит APK Android ARM64 и настольный bundle Linux x86_64. Перед установкой проверьте требования платформы и сумму скачанного файла.
 
 
 <a id="ru-features"></a>
@@ -40,12 +40,12 @@
 <a id="ru-start"></a>
 ## Установка и обновление
 
-| Платформа | Текущая локальная версия | Опубликованный пакет |
+| Платформа | Пакет | Установка |
 | --- | --- | --- |
-| Android ARM64 | APK 0.1.1, сборка 55, Android 7.0 / API 24 или новее | [APK 0.1.0](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-android-arm64-v8a-v43.apk) · [Установка](docs/android.ru.md#ru-install) |
-| Linux x86_64 | Настольный bundle 0.1.1, сборка 55 | [AppImage 0.1.0](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage) · [Установка](docs/linux-appimage.ru.md#ru-download) |
+| Android ARM64 | APK 0.1.1, versionCode 56, API 24 или новее | [0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1) · [Руководство](docs/android.ru.md#ru-install) |
+| Linux x86_64 | Настольный bundle 0.1.1+56 | [0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1) · [Руководство](docs/linux-appimage.ru.md#ru-download) |
 
-На странице [опубликованного выпуска](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9) есть [SHA256SUMS](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SHA256SUMS). Сверьте пакет до установки. AppImage не подписана. Для готового приложения не нужны Python, Flutter и архивы исходников.
+На странице выпуска выберите подходящий пакет и проверьте его сумму по руководству платформы. Linux поставляется полным bundle, а не AppImage. Архив не подписан. Для готового приложения не нужны Python, Flutter и исходные архивы.
 
 Совместимый APK с прежней подписью устанавливайте поверх приложения с сохранением данных. В Linux закройте старые копии перед запуском замены от той же учётной записи ОС.
 

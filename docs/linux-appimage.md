@@ -7,45 +7,45 @@
 
 [Home](../README.md) · [Documentation](../docs/README.md)
 
-> **0.1.1 is local.** These instructions describe the current source and local builds. [Published 0.1.0 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9) is the earlier release. Its download links do not provide 0.1.1.
+> **[0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1)** provides an Android ARM64 APK and a Linux x86_64 desktop bundle. Read the platform requirements and verify the downloaded file before installing.
 
 
 ## Requirements
 
-Use Linux x86_64 with a graphical desktop, GTK3 and distribution graphics drivers. Ubuntu 22.04 is the system-library baseline. The published AppImage requires an x86-64-v2 CPU. The local bundle has not been tested on older CPUs. You also need a user D-Bus session and an unlocked Secret Service provider, such as GNOME Keyring. The bundled libsecret client is not a key store.
+Use Linux x86_64 with a graphical desktop, glibc 2.34 or later, libstdc++ providing `GLIBCXX_3.4.29`, GTK3 and distribution graphics drivers. Ubuntu 22.04 is the system-library baseline. The earlier 0.1.0 AppImage requires an x86-64-v2 CPU. The 0.1.1 bundle has not been tested on older CPUs. You also need a user D-Bus session and an unlocked Secret Service provider, such as GNOME Keyring. The bundled libsecret client is not a key store.
 
 Online model use needs a key for the chat's provider. Cinnamon/X11 is the supported screen-lock and sleep-monitoring session. Other desktops and Wayland can limit automatic monitoring. Use manual app locking when monitoring is unavailable.
 
 <a id="en-download"></a>
 <a id="en-local-bundle"></a>
-## Local desktop bundle 0.1.1
+## Desktop bundle 0.1.1
 
-The current desktop build is supplied as a separate archive. There is no ready AppImage 0.1.1. This file is not among the published 0.1.0 downloads and does not require FUSE.
+Download the complete bundle from [0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1). It contains the application and its libraries. It is not an AppImage, does not require FUSE and is unsigned.
 
 | Item | Value |
 | --- | --- |
-| File | `Tokenlogue-0.1.1+55-9117edc-linux-x86_64-bundle.tar.gz` |
-| Version | 0.1.1+55 |
+| File | `Tokenlogue-0.1.1+56-linux-x86_64-bundle.tar.gz` |
+| Version | 0.1.1+56 |
 | Architecture | Linux x86_64 |
-| Size | 35,606,991 bytes |
-| SHA-256 | `59675e0369298fee0007ce057000f105a3c6af3b09b7b2fdf4ae03a086b8b2e2` |
-| Extracted directory | `Tokenlogue-0.1.1+55-linux-x86_64/` |
+| Size | 34,974,386 bytes |
+| SHA-256 | `6ab4f7525ea9ec7287b6d4d3c53e95089d590e856874c9695e793186149e03d9` |
+| Extracted directory | `Tokenlogue-0.1.1+56-linux-x86_64/` |
 
 Close earlier Tokenlogue copies. In the directory containing the supplied archive, verify its checksum.
 
 ```bash
 printf '%s  %s\n' \
-  '59675e0369298fee0007ce057000f105a3c6af3b09b7b2fdf4ae03a086b8b2e2' \
-  'Tokenlogue-0.1.1+55-9117edc-linux-x86_64-bundle.tar.gz' | sha256sum --check -
+  '6ab4f7525ea9ec7287b6d4d3c53e95089d590e856874c9695e793186149e03d9' \
+  'Tokenlogue-0.1.1+56-linux-x86_64-bundle.tar.gz' | sha256sum --check -
 ```
 
 After `OK`, extract the entire bundle into a new directory and run it as your ordinary user. This example assumes `tokenlogue-local` does not already exist. Stop if a command reports an error.
 
 ```bash
 mkdir tokenlogue-local &&
-tar --extract --gzip --file 'Tokenlogue-0.1.1+55-9117edc-linux-x86_64-bundle.tar.gz' \
+tar --extract --gzip --file 'Tokenlogue-0.1.1+56-linux-x86_64-bundle.tar.gz' \
   --directory tokenlogue-local --no-same-owner &&
-./tokenlogue-local/Tokenlogue-0.1.1+55-linux-x86_64/tokenlogue
+./tokenlogue-local/Tokenlogue-0.1.1+56-linux-x86_64/tokenlogue
 ```
 
 Keep the executable with its libraries and data folders. Use the same OS account and existing unlocked secure storage. Replacing the application directory does not require deleting your profile. See [safe updates](#update-safely).
@@ -53,7 +53,7 @@ Keep the executable with its libraries and data folders. Use the same OS account
 <a id="en-published-appimage"></a>
 ## Published AppImage
 
-This public file is **0.1.0**. Local 0.1.1 is supplied as a separate desktop bundle. An archive of project sources is not an installed application.
+This earlier public file is **0.1.0**. Version 0.1.1 is supplied as a desktop bundle. An archive of project sources is not an installed application.
 
 | File | Value |
 | --- | --- |

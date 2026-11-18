@@ -7,42 +7,41 @@
 
 [Главная](../README.ru.md) · [Документация](../docs/README.ru.md)
 
-> **0.1.1 доступна локально.** Руководство описывает текущие исходники и локальные сборки. [Опубликованный 0.1.0 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9) — прежний выпуск. По его ссылкам нельзя скачать 0.1.1.
+> **[0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1)** содержит APK Android ARM64 и настольный bundle Linux x86_64. Перед установкой проверьте требования платформы и сумму скачанного файла.
 
 
 ## Материалы для выбранного пакета
 
-Ссылки ниже относятся к опубликованным пакетам 0.1.0. Текущие локальные APK55 и Linux bundle 0.1.1+55 используют общее ядро с двумя провайдерами и аналитикой. Их точные файлы и суммы указаны в руководствах [Android](android.ru.md#ru-local-package) и [Linux](linux-appimage.ru.md#ru-local-bundle). Это отдельные файлы, не загрузки прежнего выпуска.
+Для APK 0.1.1 и Linux bundle 0.1.1+56 используйте реестр со страницы [0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1). Руководства [Android](android.ru.md#ru-install) и [Linux](linux-appimage.ru.md#ru-download) указывают точные пакеты и суммы.
 
-Точные commit, дерево, lock-файлы и входы берите из provenance своего локального пакета. В опубликованный комплект 0.1.0 не входит архив проекта для этих сборок 0.1.1. Архивы 0.1.0 ниже не являются их точными исходниками. Изменение одной документации не меняет уже собранный бинарник.
+Архив `Tokenlogue-0.1.1+56-build-sources.tar.gz` содержит общие отслеживаемые исходники и упаковку обеих сборок. Точные commit, дерево, действительные графы зависимостей и входы указаны в provenance. Более поздняя редакция документации не становится сборочным входом уже созданных бинарников.
 
 Архив приложения, оригинальные сторонние исходники и доказательства производства бинарника имеют разные роли. Подходящая версия или сумма исходников не доказывают сборку определённого wheel из них. Наличие исходников отличается от полноты происхождения бинарника.
 
-Код приложения Tokenlogue доступен по [лицензии MIT](../LICENSE). Сторонние компоненты сохраняют собственные условия. Готовые APK и AppImage скачиваются отдельно. Для запуска приложения исходники и средства сборки не нужны.
+Код приложения Tokenlogue доступен по [лицензии MIT](../LICENSE). Сторонние компоненты сохраняют собственные условия. Готовые APK и Linux bundle скачиваются отдельно. Для запуска приложения исходники и средства сборки не нужны.
 
 <a id="-исходники-приложения"></a>
 ## Исходники приложения
 
-Выберите исходный архив каждого пакета по [`PROVENANCE.json`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/PROVENANCE.json). Опубликованные Android и Linux используют общее ядро приложения и отдельные ревизии упаковки. Манифест содержит точные commits, деревья исходников и контрольные суммы пакетов.
+В выпуске [0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1) выберите `Tokenlogue-0.1.1+56-build-sources.tar.gz` и проверьте его по манифесту выпуска. Архив включает исходники приложения, lock-файлы, рецепты упаковки и материалы выбранных нативных wheels. Он относится к исходникам поставленных сборок. Отдельная текущая документация может иметь более новую ревизию.
 
-На странице [0.1.0 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9) доступны пакеты приложения и архивы исходников. Для установки скачайте [APK для Android](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-android-arm64-v8a-v43.apk) или [AppImage для Linux](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage) и следуйте руководству для [Android](android.ru.md#ru-published-preview) или [Linux](linux-appimage.ru.md#ru-published-appimage). Сторонние исходники поставляются отдельно в архиве зависимостей с реестром компонентов.
+Для запуска приложения достаточно подходящего APK или Linux bundle. Сторонние исходники не являются установщиком.
 
 <a id="-выбор-подходящего-комплекта"></a>
 ## Архив зависимостей
 
 | Файл | Назначение |
 | --- | --- |
-| [Исходники проекта для Android](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-eafb093-android-project-sources.tar.gz) | Точные отслеживаемые исходники приложения, lock-файлы и упаковка поставленного APK. |
-| [Исходники проекта для Linux](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-a981db9-linux-project-sources.tar.gz) | Точные отслеживаемые исходники приложения, lock-файлы и упаковка поставленной AppImage. |
 | [`Tokenlogue-0.1.0-dependency-sources.tar.gz`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-dependency-sources.tar.gz) | Идентифицированные сторонние исходники, оригинальные уведомления, изменения и рецепты без повторных копий одинаковых файлов. |
-| [`SOURCE_MATERIALS.json`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SOURCE_MATERIALS.json) | Версии, связи компонентов, относительные пути, размеры и SHA-256 материалов. Также описывает границы подтверждения исходников и происхождения бинарников. |
-| [`SHA256SUMS`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SHA256SUMS) | Контрольные суммы загрузок выпуска. |
+| `SOURCE_MATERIALS.json` на странице [0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1) | Версии, связи компонентов, относительные пути, размеры и SHA-256 материалов. Также описывает границы подтверждения исходников и происхождения бинарников. |
+| `Tokenlogue-0.1.1-source-additions.tar.gz` | Шесть точных дополнительных исходных архивов, включая tzdata 2026.6 и Android url_launcher_android 6.3.35. |
+| `SHA256SUMS` текущего выпуска | Контрольные суммы новых загрузок. Для повторно используемого базового архива ниже указан прежний манифест. |
 
 В архиве зависимостей нет дополнительной внешней папки. Он содержит двуязычный `README.md`, `SOURCE_MATERIALS.json`, `BUILD_INPUTS.json`, `RECONSTRUCTION.json`, `SHA256SUMS` и оригинальные файлы в `materials/<SHA-256>/<исходное имя>`. Одинаковый файл хранится один раз и может относиться к нескольким компонентам. Если исходники или уведомление находятся внутри сохранённого архива, реестр указывает точный внутренний путь.
 
 В `BUILD_INPUTS.json` указаны источники, размеры и суммы отдельно получаемых компиляторов, runtime и инструментов. Среди них upstream-загрузки, выбранные пакеты официальных установочных образов Alpine и [входы сборки Linux runtime](https://github.com/Umichata/tokenlogue/releases/tag/runtime-build-inputs-20261110), упакованные Tokenlogue. Для получения этих файлов может потребоваться интернет.
 
-Сохраните архив зависимостей и `SHA256SUMS` выпуска в одной папке. Проверьте выбранный архив до распаковки. Для команды нужны Bash и средства SHA-256.
+Базовый архив повторно используется без изменения. Сохраните его и [прежний SHA256SUMS](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SHA256SUMS) из выпуска 0.1.0 в одной папке. Для нового небольшого дополнения используйте манифест текущего выпуска. Проверьте выбранный архив до распаковки. Для команды нужны Bash и средства SHA-256.
 
 ```bash
 set -o pipefail

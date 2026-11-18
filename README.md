@@ -13,7 +13,7 @@
 
 [Features](#en-features) · [Interface](#en-screenshots) · [Install](#en-start) · [User guide](docs/user-guide.md) · [Documentation map](docs/README.md)
 
-> **0.1.1 is local.** These instructions describe the current source and local builds. [Published 0.1.0 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9) is the earlier release. Its download links do not provide 0.1.1.
+> **[0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1)** provides an Android ARM64 APK and a Linux x86_64 desktop bundle. Read the platform requirements and verify the downloaded file before installing.
 
 
 <a id="en-features"></a>
@@ -40,12 +40,12 @@
 <a id="en-start"></a>
 ## Install and update
 
-| Platform | Current local version | Published package |
+| Platform | Package | Installation |
 | --- | --- | --- |
-| Android ARM64 | 0.1.1 APK, build 55, Android 7.0 / API 24 or later | [0.1.0 APK](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-android-arm64-v8a-v43.apk) · [Installation](docs/android.md#en-install) |
-| Linux x86_64 | 0.1.1 desktop bundle, build 55 | [0.1.0 AppImage](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage) · [Installation](docs/linux-appimage.md#en-download) |
+| Android ARM64 | 0.1.1 APK, versionCode 56, API 24 or later | [0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1) · [Guide](docs/android.md#en-install) |
+| Linux x86_64 | 0.1.1+56 desktop bundle | [0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1) · [Guide](docs/linux-appimage.md#en-download) |
 
-The [published release](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9) provides [SHA256SUMS](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SHA256SUMS). Check the package before installing. AppImage is unsigned. You do not need Python, Flutter or source archives to run a packaged app.
+Choose your platform's package on the release page and check its checksum using the platform guide. Linux is supplied as a complete bundle, rather than an AppImage. The archive is unsigned. You do not need Python, Flutter or source archives to run the packaged app.
 
 Install a compatible Android update over the existing app with the same signature. Keep its data. On Linux, close old copies before starting a replacement under the same OS account.
 

@@ -7,42 +7,41 @@
 
 [Home](../README.md) · [Documentation](../docs/README.md)
 
-> **0.1.1 is local.** These instructions describe the current source and local builds. [Published 0.1.0 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9) is the earlier release. Its download links do not provide 0.1.1.
+> **[0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1)** provides an Android ARM64 APK and a Linux x86_64 desktop bundle. Read the platform requirements and verify the downloaded file before installing.
 
 
 ## Choose materials for your package
 
-The links below belong to the published 0.1.0 packages. The current local APK55 and Linux bundle 0.1.1+55 share the application core with two providers and analytics. The [Android](android.md#en-local-package) and [Linux](linux-appimage.md#en-local-bundle) guides identify their exact files and checksums. They are separate files, not downloads from the earlier release.
+For the 0.1.1 APK and Linux bundle 0.1.1+56, use the index supplied with [0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1). The [Android](android.md#en-install) and [Linux](linux-appimage.md#en-download) guides identify the exact packages and checksums.
 
-Use the provenance supplied with your local package to identify its exact source commit, tree, locks and build inputs. The published 0.1.0 collection does not include a project archive for these 0.1.1 builds. Its archives below are not their exact sources. A documentation-only revision does not change an already built binary.
+`Tokenlogue-0.1.1+56-build-sources.tar.gz` contains the shared tracked sources and packaging for both builds. Provenance records the exact commit, tree, actual dependency graphs and inputs. A later documentation revision does not become an input to an already built binary.
 
 The application source archive, original dependency sources and evidence of binary production have different roles. Matching a version or source checksum does not prove that a particular wheel was compiled from it. Source availability is separate from complete binary provenance.
 
-Tokenlogue's application code uses the [MIT License](../LICENSE). Third-party components keep their original terms. Ready-to-use APK and AppImage packages are separate downloads. You do not need source archives or build tools to run the application.
+Tokenlogue's application code uses the [MIT License](../LICENSE). Third-party components keep their original terms. Ready-to-use APK and Linux bundle packages are separate downloads. You do not need source archives or build tools to run the application.
 
 <a id="-application-sources"></a>
 ## Application sources
 
-Use [`PROVENANCE.json`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/PROVENANCE.json) to select the source archive for each package. The published Android and Linux packages share the application core and use separate packaging revisions. The manifest records the exact commits, source trees and package checksums.
+On [0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1), select `Tokenlogue-0.1.1+56-build-sources.tar.gz` and verify it against the release manifest. The archive contains application sources, locks, packaging recipes and the selected native wheel materials. It represents the sources of the delivered builds. Separate current documentation may have a newer revision.
 
-The [0.1.0 Preview release](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9) lists application packages and source archives. For installation, download the [Android APK](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-android-arm64-v8a-v43.apk) or [Linux AppImage](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage) and follow the [Android](android.md#en-published-preview) or [Linux](linux-appimage.md#en-published-appimage) guide. Third-party sources are supplied separately in a dependency archive with a component index.
+To run the app, choose the APK or Linux bundle. Dependency sources are not installers.
 
 <a id="-find-the-matching-collection"></a>
 ## Dependency archive
 
 | File | Purpose |
 | --- | --- |
-| [Android project sources](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-eafb093-android-project-sources.tar.gz) | Exact tracked application sources, locks and packaging for the supplied APK. |
-| [Linux project sources](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-a981db9-linux-project-sources.tar.gz) | Exact tracked application sources, locks and packaging for the supplied AppImage. |
 | [`Tokenlogue-0.1.0-dependency-sources.tar.gz`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-dependency-sources.tar.gz) | Identified third-party sources, original notices, modifications and recipes in a deduplicated collection. |
-| [`SOURCE_MATERIALS.json`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SOURCE_MATERIALS.json) | Versions, component mappings, relative material paths, sizes and SHA-256 values. It also records the scope of source and binary-provenance evidence. |
-| [`SHA256SUMS`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SHA256SUMS) | Checksums of the release downloads. |
+| `SOURCE_MATERIALS.json` on [0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1) | Versions, component mappings, relative material paths, sizes and SHA-256 values. It also records the scope of source and binary-provenance evidence. |
+| `Tokenlogue-0.1.1-source-additions.tar.gz` | Six exact additional source archives, including tzdata 2026.6 and Android url_launcher_android 6.3.35. |
+| Current release `SHA256SUMS` | Checksums of the new downloads. Use the earlier manifest below for the reused base archive. |
 
 The dependency archive has no extra outer directory. It contains a bilingual `README.md`, `SOURCE_MATERIALS.json`, `BUILD_INPUTS.json`, `RECONSTRUCTION.json`, `SHA256SUMS` and the original files under `materials/<SHA-256>/<original filename>`. An identical file is stored once and can be mapped to several components. The index identifies the exact archive member when a component's source or notice is inside a retained archive.
 
 `BUILD_INPUTS.json` identifies separately obtained compilers, runtimes and tools by source, size and checksum. It includes upstream downloads, selected packages from official Alpine installation images and the [Linux runtime build inputs](https://github.com/Umichata/tokenlogue/releases/tag/runtime-build-inputs-20261110) packaged by Tokenlogue. Obtaining these inputs may require internet access.
 
-Save the dependency archive and the release's `SHA256SUMS` in one directory. Verify the selected archive before extracting it. This command requires Bash and SHA-256 tools.
+The base archive is reused unchanged. Save it and the [earlier SHA256SUMS](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/SHA256SUMS) from 0.1.0 together. Use the current release manifest for the new small supplement. Verify the selected archive before extracting it. This command requires Bash and SHA-256 tools.
 
 ```bash
 set -o pipefail
