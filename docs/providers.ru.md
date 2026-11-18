@@ -1,26 +1,38 @@
-[English](providers.md#english) · [Русский](providers.ru.md#russian)
-
 <a id="russian"></a>
 <a id="lang-ru"></a>
 
+<p align="left">
+<a href="providers.ru.md#russian" title="RU"><img align="right" src="assets/ui/buttons/v3-ru-1a85308e1a5a.svg" alt="RU" width="46" height="30"></a> <a href="providers.md#english" title="EN"><img align="right" src="assets/ui/buttons/v3-ru-724a8b1ba967.svg" alt="EN" width="45" height="30"></a>
+<a href="../README.ru.md" title="Главная"><img src="assets/ui/buttons/v3-ru-3a2f7e4ed2ac.svg" alt="Главная" width="36" height="30"></a> <a href="https://github.com/Umichata/tokenlogue/tree/android" title="Android"><img src="assets/ui/buttons/v3-ru-4a0b64bd4ded.svg" alt="Android" width="83" height="30"></a> <a href="https://github.com/Umichata/tokenlogue/tree/linux" title="Linux"><img src="assets/ui/buttons/v3-ru-e31c456bd05c.svg" alt="Linux" width="65" height="30"></a>
+</p>
+
+<p align="center"><img src="assets/tokenlogue-masthead-ru-v3.svg" alt="Tokenlogue · OpenRouter + VSEGPT · Linux &amp; Android" width="100%"></p>
+
+<p align="left"><a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1" title="Скачать"><img src="assets/ui/buttons/v3-ru-2a07d387e1cd.svg" alt="Скачать" width="86" height="30"></a> <a href="README.ru.md" title="Карта документации"><img src="assets/ui/buttons/v3-ru-69a0ba104f26.svg" alt="Карта документации" width="184" height="30"></a> <a href="user-guide.ru.md" title="Руководство"><img src="assets/ui/buttons/v3-ru-071f2a99d224.svg" alt="Руководство" width="121" height="30"></a> <a href="providers.ru.md" title="Провайдеры"><img src="assets/ui/buttons/v3-ru-75c2bb600681.svg" alt="Провайдеры" width="121" height="30"></a> <a href="analytics.ru.md" title="Статистика"><img src="assets/ui/buttons/v3-ru-dd604a9fe99c.svg" alt="Статистика" width="109" height="30"></a></p>
+
+<a id="ключи-и-балансы-провайдеров"></a>
+
 # Ключи и балансы провайдеров
 
-[Главная](../README.ru.md) · [Документация](../docs/README.ru.md)
 
 > **[0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1)** содержит APK Android ARM64 и настольный bundle Linux x86_64. Перед установкой проверьте требования платформы и сумму скачанного файла.
 
 
-## Выбор просмотра
+<a id="выбор-просмотра"></a>
+
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Выбор просмотра
 
 Выпадающий список **Провайдер** с вариантами **Все**, **OpenRouter** и **VSEGPT** показывает две карточки или один сервис. Выбор относится к этой странице и сохраняется при возвращении. Он не выбирает провайдера чата.
 
 | Linux | Эмулятор Android |
 | --- | --- |
-| <a href="assets/screenshots/v011-55-linux-providers-ru.png"><img src="assets/screenshots/v011-55-linux-providers-ru.png" alt="Отдельные карточки OpenRouter и VSEGPT и выпадающий фильтр в Linux" width="560"></a> | <a href="assets/screenshots/v011-55-android-providers-ru.png"><img src="assets/screenshots/v011-55-android-providers-ru.png" alt="Отдельные формы провайдеров в эмуляторе Android" width="300"></a> |
+| <a href="assets/screenshots/v011-55-linux-providers-ru.png"><img src="assets/ui/frame-top.svg" alt="" width="560"><br><img src="assets/screenshots/v011-55-linux-providers-ru.png" alt="Отдельные карточки OpenRouter и VSEGPT и выпадающий фильтр в Linux" width="560"><br><img src="assets/ui/frame-bottom.svg" alt="" width="560"></a> | <a href="assets/screenshots/v011-55-android-providers-ru.png"><img src="assets/ui/frame-top.svg" alt="" width="300"><br><img src="assets/screenshots/v011-55-android-providers-ru.png" alt="Отдельные формы провайдеров в эмуляторе Android" width="300"><br><img src="assets/ui/frame-bottom.svg" alt="" width="300"></a> |
 
 *Демонстрационные данные. Кадры Android сняты в эмуляторе.*
 
-## Проверка и замена ключа
+<a id="проверка-и-замена-ключа"></a>
+
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Проверка и замена ключа
 
 После первого подключения каждая форма относится к указанному сервису. OpenRouter принимает полные ключи `sk-or-v1-`. VSEGPT принимает `sk-or-vv-` и `sk-or-vis`. После последнего дополнительный дефис не нужен. Для каждого начала необходимо секретное продолжение.
 
@@ -37,13 +49,17 @@
 
 Проверить уже сохранённый ключ можно без повторного ввода на экране режимов OpenRouter и в списке моделей VSEGPT. Нажмите **Проверить ключ**. Это отдельное действие от обновления каталога. Статус меняется только после настоящей проверки выбранного сервиса. Если VSEGPT не разрешает чтение баланса, ключ остаётся непроверенным. См. [Проверка сохранённого ключа](user-guide.ru.md#ru-check-saved-key).
 
-## Провайдер новых чатов
+<a id="провайдер-новых-чатов"></a>
+
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Провайдер новых чатов
 
 В поле **Провайдер новых чатов** выберите **Ручной выбор**, чтобы выбирать сервис при каждом создании, либо укажите конкретный сервис. Новый профиль начинает с ручной политики. В существующем профиле сохраняется прежний сервис, включая старый выбор по умолчанию без отдельной настройки. Выбор сервиса для одного чата не меняет настройку. При отсутствии ключа открывается форма нужного сервиса. Отмена возвращает назад без пустого чата и потери прежнего черновика.
 
 **Провайдер новых чатов** задаётся отдельно от фильтра просмотра и не меняет существующие чаты. Для явной смены провайдера выбранного чата откройте [Подключение чата](user-guide.ru.md#ru-chat-connection) в **⋮** и проверьте модель и бюджет. Перед продолжением настройте отсутствующий ключ нужного сервиса. При ошибке переписка не переносится другому провайдеру автоматически.
 
-## Баланс и состояние ключа
+<a id="баланс-и-состояние-ключа"></a>
+
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Баланс и состояние ключа
 
 | Значение | Смысл |
 | --- | --- |

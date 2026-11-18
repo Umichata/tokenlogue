@@ -1,16 +1,26 @@
-[English](android.md#english) · [Русский](android.ru.md#russian)
-
 <a id="russian"></a>
 <a id="lang-ru"></a>
 
+<p align="left">
+<a href="android.ru.md#russian" title="RU"><img align="right" src="assets/ui/buttons/v3-ru-1a85308e1a5a.svg" alt="RU" width="46" height="30"></a> <a href="android.md#english" title="EN"><img align="right" src="assets/ui/buttons/v3-ru-724a8b1ba967.svg" alt="EN" width="45" height="30"></a>
+<a href="../README.ru.md" title="Главная"><img src="assets/ui/buttons/v3-ru-3a2f7e4ed2ac.svg" alt="Главная" width="36" height="30"></a> <a href="https://github.com/Umichata/tokenlogue/tree/android" title="Android"><img src="assets/ui/buttons/v3-ru-4a0b64bd4ded.svg" alt="Android" width="83" height="30"></a> <a href="https://github.com/Umichata/tokenlogue/tree/linux" title="Linux"><img src="assets/ui/buttons/v3-ru-e31c456bd05c.svg" alt="Linux" width="65" height="30"></a>
+</p>
+
+<p align="center"><img src="assets/tokenlogue-masthead-ru-v3.svg" alt="Tokenlogue · OpenRouter + VSEGPT · Linux &amp; Android" width="100%"></p>
+
+<p align="left"><a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1" title="Скачать"><img src="assets/ui/buttons/v3-ru-2a07d387e1cd.svg" alt="Скачать" width="86" height="30"></a> <a href="README.ru.md" title="Карта документации"><img src="assets/ui/buttons/v3-ru-69a0ba104f26.svg" alt="Карта документации" width="184" height="30"></a> <a href="user-guide.ru.md" title="Руководство"><img src="assets/ui/buttons/v3-ru-071f2a99d224.svg" alt="Руководство" width="121" height="30"></a> <a href="providers.ru.md" title="Провайдеры"><img src="assets/ui/buttons/v3-ru-75c2bb600681.svg" alt="Провайдеры" width="121" height="30"></a> <a href="analytics.ru.md" title="Статистика"><img src="assets/ui/buttons/v3-ru-dd604a9fe99c.svg" alt="Статистика" width="109" height="30"></a></p>
+
+<a id="tokenlogue-для-android"></a>
+
 # Tokenlogue для Android
 
-[Главная](../README.ru.md) · [Документация](../docs/README.ru.md)
 
 > **[0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1)** содержит APK Android ARM64 и настольный bundle Linux x86_64. Перед установкой проверьте требования платформы и сумму скачанного файла.
 
 
-## Требования
+<a id="требования"></a>
+
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Требования
 
 - Android 7.0 / API 24 или новее и поддержка ARM64 `arm64-v8a`.
 - Ключ аккаунта OpenRouter или VSEGPT и интернет для моделей и сообщений.
@@ -20,7 +30,9 @@
 
 <a id="ru-install"></a>
 <a id="ru-local-package"></a>
-## Установка Android 0.1.1
+<a id="установка-android-011"></a>
+
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Установка Android 0.1.1
 
 Скачайте `Tokenlogue-0.1.1-android-arm64-v8a-v56.apk` со страницы [0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1). APK служит установщиком. Для запуска приложения исходные архивы не нужны.
 
@@ -44,23 +56,31 @@ printf '%s  %s\n' \
 Продолжайте только после `OK` для указанного APK. Откройте проверенный файл на Android и подтвердите установку. Разрешайте установку выбранному браузеру или файловому менеджеру только при доверии к пакету. После установки разрешение можно отключить. Если Play Protect сообщает об опасном приложении, остановитесь и [сообщите о предупреждении](https://github.com/Umichata/tokenlogue/issues).
 
 <a id="ru-published-preview"></a>
-## Прежний preview
+<a id="прежний-preview"></a>
+
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Прежний preview
 
 [0.1.0 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9) остаётся отдельным прежним выпуском. Его APK не является новой версией. Правила совместимого обновления приведены ниже.
 
-## Обновление без удаления данных
+<a id="обновление-без-удаления-данных"></a>
+
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Обновление без удаления данных
 
 Установите совместимый новый APK поверх приложения. Идентификатор и сертификат подписи должны сохраняться, а versionCode должен расти.
 
 Не удаляйте приложение и не очищайте данные ради обновления. Можно потерять ключи зашифрованной переписки. При отказе из-за подписи или версии сохраните прежнюю установку и проверьте пакет.
 
-## Начало работы с 0.1.1
+<a id="начало-работы-с-011"></a>
+
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Начало работы с 0.1.1
 
 Выполните [первое подключение](user-guide.ru.md#ru-first-connection), чтобы добавить один сервис и создать PIN. Другой ключ можно добавить позже через [Провайдеры](providers.ru.md). Для профиля только с VSEGPT ключ OpenRouter не нужен.
 
 Нижняя навигация открывает **Главную**, **Провайдеры**, **Токены** и **Расходы**. Back возвращает со вспомогательной страницы на Главную. Отдельная кнопка чатов открывает панель разговоров. Закройте её нажатием вне панели или кнопкой Back. Для доступа к действиям в шапке при нехватке места уберите клавиатуру.
 
-## Доступ и восстановление
+<a id="доступ-и-восстановление"></a>
+
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Доступ и восстановление
 
 Уход в фон блокирует приложение. При возвращении введите PIN, чтобы восстановить сохранённый черновик. Разблокировка Android не открывает Tokenlogue автоматически.
 

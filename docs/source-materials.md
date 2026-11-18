@@ -1,16 +1,26 @@
-[English](source-materials.md#english) · [Русский](source-materials.ru.md#russian)
-
 <a id="english"></a>
 <a id="lang-en"></a>
 
+<p align="left">
+<a href="source-materials.ru.md#russian" title="RU"><img align="right" src="assets/ui/buttons/v3-en-10762eaa75fd.svg" alt="RU" width="46" height="30"></a> <a href="source-materials.md#english" title="EN"><img align="right" src="assets/ui/buttons/v3-en-2022af2877c8.svg" alt="EN" width="45" height="30"></a>
+<a href="../README.md" title="Home"><img src="assets/ui/buttons/v3-en-4e7a793b89e3.svg" alt="Home" width="36" height="30"></a> <a href="https://github.com/Umichata/tokenlogue/tree/android" title="Android"><img src="assets/ui/buttons/v3-en-4a0b64bd4ded.svg" alt="Android" width="83" height="30"></a> <a href="https://github.com/Umichata/tokenlogue/tree/linux" title="Linux"><img src="assets/ui/buttons/v3-en-e31c456bd05c.svg" alt="Linux" width="65" height="30"></a>
+</p>
+
+<p align="center"><img src="assets/tokenlogue-masthead-en-v3.svg" alt="Tokenlogue · OpenRouter + VSEGPT · Linux &amp; Android" width="100%"></p>
+
+<p align="left"><a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1" title="Downloads"><img src="assets/ui/buttons/v3-en-126f5327c4ab.svg" alt="Downloads" width="105" height="30"></a> <a href="README.md" title="Documentation map"><img src="assets/ui/buttons/v3-en-2e9bcfa8f92e.svg" alt="Documentation map" width="173" height="30"></a> <a href="user-guide.md" title="User guide"><img src="assets/ui/buttons/v3-en-896461d1c049.svg" alt="User guide" width="104" height="30"></a> <a href="providers.md" title="Providers"><img src="assets/ui/buttons/v3-en-6aead91ab18a.svg" alt="Providers" width="95" height="30"></a> <a href="analytics.md" title="Analytics"><img src="assets/ui/buttons/v3-en-2a1d3373ceeb.svg" alt="Analytics" width="92" height="30"></a></p>
+
+<a id="source-code-and-dependencies"></a>
+
 # Source code and dependencies
 
-[Home](../README.md) · [Documentation](../docs/README.md)
 
 > **[0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1)** provides an Android ARM64 APK and a Linux x86_64 desktop bundle. Read the platform requirements and verify the downloaded file before installing.
 
 
-## Choose materials for your package
+<a id="choose-materials-for-your-package"></a>
+
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Choose materials for your package
 
 For the 0.1.1 APK and Linux bundle 0.1.1+56, use the index supplied with [0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1). The [Android](android.md#en-install) and [Linux](linux-appimage.md#en-download) guides identify the exact packages and checksums.
 
@@ -21,19 +31,23 @@ The application source archive, original dependency sources and evidence of bina
 Tokenlogue's application code uses the [MIT License](../LICENSE). Third-party components keep their original terms. Ready-to-use APK and Linux bundle packages are separate downloads. You do not need source archives or build tools to run the application.
 
 <a id="-application-sources"></a>
-## Application sources
+<a id="application-sources"></a>
+
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Application sources
 
 On [0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1), select `Tokenlogue-0.1.1+56-build-sources.tar.gz` and verify it against the release manifest. The archive contains application sources, locks, packaging recipes and the selected native wheel materials. It represents the sources of the delivered builds. Separate current documentation may have a newer revision.
 
 To run the app, choose the APK or Linux bundle. Dependency sources are not installers.
 
 <a id="-find-the-matching-collection"></a>
-## Dependency archive
+<a id="dependency-archive"></a>
+
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Dependency archive
 
 | File | Purpose |
 | --- | --- |
 | [`Tokenlogue-0.1.0-dependency-sources.tar.gz`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-dependency-sources.tar.gz) | Identified third-party sources, original notices, modifications and recipes in a deduplicated collection. |
-| `SOURCE_MATERIALS.json` on [0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1) | Versions, component mappings, relative material paths, sizes and SHA-256 values. It also records the scope of source and binary-provenance evidence. |
+| `SOURCE_MATERIALS.json` on <a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1" title="0.1.1 Preview"><img src="assets/ui/buttons/v3-en-cd57105d0b1a.svg" alt="0.1.1 Preview" width="125" height="30"></a> | Versions, component mappings, relative material paths, sizes and SHA-256 values. It also records the scope of source and binary-provenance evidence. |
 | `Tokenlogue-0.1.1-source-additions.tar.gz` | Six exact additional source archives, including tzdata 2026.6 and Android url_launcher_android 6.3.35. |
 | Current release `SHA256SUMS` | Checksums of the new downloads. Use the earlier manifest below for the reused base archive. |
 
@@ -63,7 +77,9 @@ The release manifest checks the downloaded archive. The inner manifest checks it
 
 <a id="en-run-from-source"></a>
 <a id="-run-from-source-on-linux"></a>
-## Run current sources on Linux
+<a id="run-current-sources-on-linux"></a>
+
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Run current sources on Linux
 
 Install Python 3.12 and [uv](https://docs.astral.sh/uv/). Open a terminal in the extracted project directory containing `pyproject.toml` and `uv.lock`. The [Linux desktop and key-store requirements](linux-appimage.md#english) also apply.
 
@@ -75,7 +91,9 @@ uv run --locked flet run
 These commands run the source application and do not create an APK or AppImage. Preparing the environment and downloading Flet desktop components may require internet access. For packaging, use the project recipes and exact locks from the matching project archive. The [Linux packaging guide](../packaging/linux/appimage/README.md#english), [AppImage startup runtime recipe](../packaging/linux/appimage/runtime/README.md#english) and [Android native dependency guide](../packaging/android/crypto/README.md#english) describe the corresponding components.
 
 <a id="-what-the-available-materials-establish"></a>
-## Component provenance
+<a id="component-provenance"></a>
+
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Component provenance
 
 The current packaging recipe selects the project’s [source-built native wheels](../packaging/native_wheels/README.md#english). These cover Android CFFI 2.0.0, PyCryptodomex 3.23.0 and msgpack 1.1.2, plus Linux CFFI 2.0.0 and PyCryptodomex 3.23.0. Their registry binds the exact wheel bytes to the recorded recipe, source archives, build tools and patches. Both CFFI builds statically link libffi 3.4.4. Android’s two libffi patches and the unpatched Linux source are identified separately. The Python runtime’s libffi remains a distinct component.
 
@@ -84,6 +102,8 @@ The earlier APK55 and Linux bundle +55 used different wheels. Their incomplete p
 The component index describes both reusable source materials and package-specific additions. A matching source version and checksum identify an archive. Recorded builds and final-package checks establish the selected replacement files, but do not claim independent reproduction of every binary or a complete offline SDK distribution.
 
 <a id="-licenses-and-older-collections"></a>
-## Licenses and notices
+<a id="licenses-and-notices"></a>
+
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Licenses and notices
 
 The [package license guide](../packaging/linux/appimage/notices.md#english) and [libraries and fonts](../packaging/notices/README.md#english) explain the notices included with the application. Original licenses and copyright statements are preserved in their original language. Component sources and their build metadata are listed separately.

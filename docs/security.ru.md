@@ -1,16 +1,26 @@
-[English](security.md#english) · [Русский](security.ru.md#russian)
-
 <a id="russian"></a>
 <a id="lang-ru"></a>
 
+<p align="left">
+<a href="security.ru.md#russian" title="RU"><img align="right" src="assets/ui/buttons/v3-ru-1a85308e1a5a.svg" alt="RU" width="46" height="30"></a> <a href="security.md#english" title="EN"><img align="right" src="assets/ui/buttons/v3-ru-724a8b1ba967.svg" alt="EN" width="45" height="30"></a>
+<a href="../README.ru.md" title="Главная"><img src="assets/ui/buttons/v3-ru-3a2f7e4ed2ac.svg" alt="Главная" width="36" height="30"></a> <a href="https://github.com/Umichata/tokenlogue/tree/android" title="Android"><img src="assets/ui/buttons/v3-ru-4a0b64bd4ded.svg" alt="Android" width="83" height="30"></a> <a href="https://github.com/Umichata/tokenlogue/tree/linux" title="Linux"><img src="assets/ui/buttons/v3-ru-e31c456bd05c.svg" alt="Linux" width="65" height="30"></a>
+</p>
+
+<p align="center"><img src="assets/tokenlogue-masthead-ru-v3.svg" alt="Tokenlogue · OpenRouter + VSEGPT · Linux &amp; Android" width="100%"></p>
+
+<p align="left"><a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1" title="Скачать"><img src="assets/ui/buttons/v3-ru-2a07d387e1cd.svg" alt="Скачать" width="86" height="30"></a> <a href="README.ru.md" title="Карта документации"><img src="assets/ui/buttons/v3-ru-69a0ba104f26.svg" alt="Карта документации" width="184" height="30"></a> <a href="user-guide.ru.md" title="Руководство"><img src="assets/ui/buttons/v3-ru-071f2a99d224.svg" alt="Руководство" width="121" height="30"></a> <a href="providers.ru.md" title="Провайдеры"><img src="assets/ui/buttons/v3-ru-75c2bb600681.svg" alt="Провайдеры" width="121" height="30"></a> <a href="analytics.ru.md" title="Статистика"><img src="assets/ui/buttons/v3-ru-dd604a9fe99c.svg" alt="Статистика" width="109" height="30"></a></p>
+
+<a id="защита-переписки-и-восстановление-доступа"></a>
+
 # Защита переписки и восстановление доступа
 
-[Главная](../README.ru.md) · [Документация](../docs/README.ru.md)
 
 > **[0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1)** содержит APK Android ARM64 и настольный bundle Linux x86_64. Перед установкой проверьте требования платформы и сумму скачанного файла.
 
 
-## PIN и блокировка
+<a id="pin-и-блокировка"></a>
+
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> PIN и блокировка
 
 Выберите четыре цифры `0`–`9` и повторите их при настройке. Начальный ноль допустим. PIN приложения отличается от пароля ОС и ключа шифрования.
 
@@ -24,22 +34,28 @@
 
 Android закрывает доступ при уходе в фон. Возвращение или разблокировка Android по-прежнему требуют PIN приложения. В Linux поддерживаемое наблюдение Cinnamon/X11 закрывает доступ при блокировке, смене сеанса или сне. Одно сворачивание не блокирует приложение. Другие окружения и Wayland могут ограничивать наблюдение. При необходимости используйте ручную блокировку.
 
-## Проверка защиты Linux
+<a id="проверка-защиты-linux"></a>
+
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Проверка защиты Linux
 
 После начальной настройки **Проверка локальной защиты** объясняет порядок действий. PIN уже сохранён. **Начать проверку** запрашивает обычную блокировку системы. Разблокируйте Linux, введите PIN приложения и посмотрите результат. Можно продолжить с ручной блокировкой и проверить позднее.
 
 Щит открывает панель без блокировки или сна компьютера. Проверки экрана и сна имеют разные результаты. Сохранённый результат не гарантирует доступность наблюдения сейчас. Пароль Linux вводится только в системном окне аутентификации.
 
-<a href="assets/screenshots/v011-55-linux-local-protection-ru.png"><img src="assets/screenshots/v011-55-linux-local-protection-ru.png" alt="Панель защиты Linux с отдельными результатами блокировки экрана и сна" width="640"></a>
+<a href="assets/screenshots/v011-55-linux-local-protection-ru.png"><img src="assets/ui/frame-top.svg" alt="" width="640"><br><img src="assets/screenshots/v011-55-linux-local-protection-ru.png" alt="Панель защиты Linux с отдельными результатами блокировки экрана и сна" width="640"><br><img src="assets/ui/frame-bottom.svg" alt="" width="640"></a>
 
 *В этом примере системное наблюдение не подтверждено. Если оно недоступно, блокируйте приложение вручную.*
 
 <a id="ru-recovery"></a>
-## Восстановление забытого PIN
+<a id="восстановление-забытого-pin"></a>
+
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Восстановление забытого PIN
 
 Восстановление заменяет PIN приложения с сохранением исходного защищённого ключа шифрования. Оно не воссоздаёт потерянный ключ и не восстанавливает базу по одному коду. Отмена до сохранения оставляет прежний PIN.
 
 <a id="ru-linux-code"></a>
+<a id="резервный-код-linux"></a>
+
 ### Резервный код Linux
 
 После входа выберите **Резервный код** в **⋮** и подтвердите PIN. Сохраните показанный код из 32 символов отдельно и повторите для подтверждения. Любой обладатель кода может заменить PIN. История буфера обмена может сохранить скопированный код.
@@ -48,15 +64,19 @@ Android закрывает доступ при уходе в фон. Возвр�
 
 Сохранение нового PIN расходует использованный код. Сохраните и подтвердите предложенную замену. Если приложение сначала закрыто, войдите с новым PIN и выпустите другой код. Для создания кода в уже закрытом профиле сначала нужен действующий способ входа.
 
-<a href="assets/screenshots/v011-55-linux-recovery-verified-ru.png"><img src="assets/screenshots/v011-55-linux-recovery-verified-ru.png" alt="Резервный код Linux проверен перед выбором нового PIN" width="420"></a>
+<a href="assets/screenshots/v011-55-linux-recovery-verified-ru.png"><img src="assets/ui/frame-top.svg" alt="" width="420"><br><img src="assets/screenshots/v011-55-linux-recovery-verified-ru.png" alt="Резервный код Linux проверен перед выбором нового PIN" width="420"><br><img src="assets/ui/frame-bottom.svg" alt="" width="420"></a>
 
 *Отдельный демонстрационный профиль. Резервный код и PIN не показаны.*
 
 [Форма ввода кода](assets/screenshots/v011-55-linux-recovery-ru.png).
 
+<a id="системное-восстановление-linux"></a>
+
 ### Системное восстановление Linux
 
 Отдельное **Системное восстановление Linux** требует policy Tokenlogue для polkit и агента аутентификации. Оно запрашивает новое подтверждение вашей учётной записи Linux. Разблокированная связка ключей и другой администратор не заменяют подтверждение. См. [дополнительную настройку Linux](linux-appimage.ru.md).
+
+<a id="системное-восстановление-android"></a>
 
 ### Системное восстановление Android
 
@@ -64,11 +84,13 @@ Android закрывает доступ при уходе в фон. Возвр�
 
 После подтверждения выберите и повторите новый PIN приложения, затем сохраните. Отмена до сохранения оставляет прежний PIN и переписку. При недоступной системной проверке используйте текущий PIN приложения.
 
-<a href="assets/screenshots/v011-55-android-recovery-new-pin-ru.png"><img src="assets/screenshots/v011-55-android-recovery-new-pin-ru.png" alt="Системная проверка Android пройдена перед выбором нового PIN приложения" width="420"></a>
+<a href="assets/screenshots/v011-55-android-recovery-new-pin-ru.png"><img src="assets/ui/frame-top.svg" alt="" width="420"><br><img src="assets/screenshots/v011-55-android-recovery-new-pin-ru.png" alt="Системная проверка Android пройдена перед выбором нового PIN приложения" width="420"><br><img src="assets/ui/frame-bottom.svg" alt="" width="420"></a>
 
 *Эмулятор Android после обычной системной проверки. Оба поля нового PIN пусты. Доступность зависит от устройства и его блокировки экрана.*
 
-## Шифрование и раздельное хранение
+<a id="шифрование-и-раздельное-хранение"></a>
+
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Шифрование и раздельное хранение
 
 Сохранённые названия чатов, сообщения и черновики шифруются. Случайный ключ находится отдельно в платформенном защищённом хранилище. Он не выводится из четырёхзначного PIN или ключа провайдера. В Linux нужен доступный Secret Service, например GNOME Keyring.
 
@@ -82,7 +104,9 @@ ID провайдеров и моделей, даты, валюты, счётч�
 
 Одна копия базы не содержит отдельный ключ шифрования. Резервное копирование Android отключено. Удаление приложения, очистка данных, потеря хранилища и недействительность Android Keystore могут сделать переписку невосстановимой. Восстановление PIN не воссоздаёт потерянный ключ шифрования. Блокировка также не защищает скомпрометированную ОС и не гарантирует удаления всех копий из памяти, swap и прежних резервных копий.
 
-## Удаление локального профиля
+<a id="удаление-локального-профиля"></a>
+
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Удаление локального профиля
 
 **Удаление необратимо средствами Tokenlogue.** Для сохранения переписки используйте восстановление.
 

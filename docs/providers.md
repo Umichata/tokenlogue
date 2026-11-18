@@ -1,26 +1,38 @@
-[English](providers.md#english) · [Русский](providers.ru.md#russian)
-
 <a id="english"></a>
 <a id="lang-en"></a>
 
+<p align="left">
+<a href="providers.ru.md#russian" title="RU"><img align="right" src="assets/ui/buttons/v3-en-10762eaa75fd.svg" alt="RU" width="46" height="30"></a> <a href="providers.md#english" title="EN"><img align="right" src="assets/ui/buttons/v3-en-2022af2877c8.svg" alt="EN" width="45" height="30"></a>
+<a href="../README.md" title="Home"><img src="assets/ui/buttons/v3-en-4e7a793b89e3.svg" alt="Home" width="36" height="30"></a> <a href="https://github.com/Umichata/tokenlogue/tree/android" title="Android"><img src="assets/ui/buttons/v3-en-4a0b64bd4ded.svg" alt="Android" width="83" height="30"></a> <a href="https://github.com/Umichata/tokenlogue/tree/linux" title="Linux"><img src="assets/ui/buttons/v3-en-e31c456bd05c.svg" alt="Linux" width="65" height="30"></a>
+</p>
+
+<p align="center"><img src="assets/tokenlogue-masthead-en-v3.svg" alt="Tokenlogue · OpenRouter + VSEGPT · Linux &amp; Android" width="100%"></p>
+
+<p align="left"><a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1" title="Downloads"><img src="assets/ui/buttons/v3-en-126f5327c4ab.svg" alt="Downloads" width="105" height="30"></a> <a href="README.md" title="Documentation map"><img src="assets/ui/buttons/v3-en-2e9bcfa8f92e.svg" alt="Documentation map" width="173" height="30"></a> <a href="user-guide.md" title="User guide"><img src="assets/ui/buttons/v3-en-896461d1c049.svg" alt="User guide" width="104" height="30"></a> <a href="providers.md" title="Providers"><img src="assets/ui/buttons/v3-en-6aead91ab18a.svg" alt="Providers" width="95" height="30"></a> <a href="analytics.md" title="Analytics"><img src="assets/ui/buttons/v3-en-2a1d3373ceeb.svg" alt="Analytics" width="92" height="30"></a></p>
+
+<a id="provider-keys-and-balances"></a>
+
 # Provider keys and balances
 
-[Home](../README.md) · [Documentation](../docs/README.md)
 
 > **[0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1)** provides an Android ARM64 APK and a Linux x86_64 desktop bundle. Read the platform requirements and verify the downloaded file before installing.
 
 
-## Choose what to view
+<a id="choose-what-to-view"></a>
+
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Choose what to view
 
 Use the **Provider** dropdown with **All**, **OpenRouter** and **VSEGPT** to show both service cards or one. The filter belongs to this page and is retained when you leave and return. It does not choose the provider of a chat.
 
 | Linux | Android emulator |
 | --- | --- |
-| <a href="assets/screenshots/v011-55-linux-providers-en.png"><img src="assets/screenshots/v011-55-linux-providers-en.png" alt="Separate OpenRouter and VSEGPT cards and provider-view dropdown on Linux" width="560"></a> | <a href="assets/screenshots/v011-55-android-providers-en.png"><img src="assets/screenshots/v011-55-android-providers-en.png" alt="Separate provider forms in an Android emulator" width="300"></a> |
+| <a href="assets/screenshots/v011-55-linux-providers-en.png"><img src="assets/ui/frame-top.svg" alt="" width="560"><br><img src="assets/screenshots/v011-55-linux-providers-en.png" alt="Separate OpenRouter and VSEGPT cards and provider-view dropdown on Linux" width="560"><br><img src="assets/ui/frame-bottom.svg" alt="" width="560"></a> | <a href="assets/screenshots/v011-55-android-providers-en.png"><img src="assets/ui/frame-top.svg" alt="" width="300"><br><img src="assets/screenshots/v011-55-android-providers-en.png" alt="Separate provider forms in an Android emulator" width="300"><br><img src="assets/ui/frame-bottom.svg" alt="" width="300"></a> |
 
 *Demonstration data. Android images show an emulator.*
 
-## Check or replace a key
+<a id="check-or-replace-a-key"></a>
+
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Check or replace a key
 
 After the first setup, each form belongs to its named service. OpenRouter accepts complete `sk-or-v1-` keys. VSEGPT accepts complete `sk-or-vv-` and `sk-or-vis` keys. The latter does not require an extra hyphen. All prefixes need a secret continuation.
 
@@ -37,11 +49,15 @@ Each card retains only its own unfinished candidate while unlocked. Changing the
 
 You can check an already saved key without re-entering it on the OpenRouter mode screen or the VSEGPT model list. Choose **Check key**. This is separate from refreshing the catalogue. The status changes only after a real check of the selected service. If VSEGPT does not allow balance access, the key stays unverified. See [Check the saved key](user-guide.md#en-check-saved-key).
 
-## Choose the provider for new chats
+<a id="choose-the-provider-for-new-chats"></a>
+
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Choose the provider for new chats
 
 **Provider for new chats** is separate from the viewing filter and does not change existing chats. Choose **Choose each time** to select a service whenever you start a chat, or choose one service to use it directly. New profiles start with manual selection. Existing profiles retain their previous service choice, including the older default when no separate preference was saved. Choosing a service for one chat does not change this setting. If its key is missing, the app opens that service’s form. Cancel returns without creating an empty chat or losing the old draft. Use [Chat connection](user-guide.md#en-chat-connection) in a chat’s **⋮** menu to change that chat’s provider with an explicit model and budget review. Configure a missing key for the intended service before continuing. An error never moves history to another provider automatically.
 
-## Read balance and key status
+<a id="read-balance-and-key-status"></a>
+
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Read balance and key status
 
 | Value | Meaning |
 | --- | --- |
