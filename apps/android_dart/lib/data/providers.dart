@@ -1,8 +1,7 @@
-import 'dart:async';
-import 'dart:convert';
-import 'dart:io';
-
+import '../domain/amount.dart';
+import '../domain/catalogue.dart';
 import '../domain/provider.dart';
+import 'transport.dart';
 
 enum KeyStatus {
   accepted,
@@ -14,85 +13,88 @@ enum KeyStatus {
 }
 
 class ProviderApi {
-  Uri _endpoint(Service service, String path) => service == Service.openrouter
-      ? Uri.https('openrouter.ai', '/api/v1/$path')
-      : Uri.https('api.vsegpt.ru', '/v1/$path');
-
-  Future<({int status, Map<String, dynamic> body})> _read(
-    Service service,
-    String key,
-    String path,
-  ) async {
-    if (Service.detect(key) != service) {
-      throw const FormatException('wrong_provider');
-    }
-    final client = HttpClient()
-      ..connectionTimeout = const Duration(seconds: 10)
-      ..findProxy = (_) => 'DIRECT';
-    try {
-      final req = await client
-          .getUrl(_endpoint(service, path))
-          .timeout(const Duration(seconds: 12));
-      req.followRedirects = false;
-      req.headers.set(HttpHeaders.authorizationHeader, 'Bearer ${key.trim()}');
-      final resp = await req.close().timeout(const Duration(seconds: 15));
-      final bytes = <int>[];
-      await for (final chunk in resp.timeout(const Duration(seconds: 15))) {
-        if (bytes.length + chunk.length > 10 * 1024 * 1024) {
-          throw const FormatException('large_response');
-        }
-        bytes.addAll(chunk);
-      }
-      final body = resp.statusCode == 200
-          ? jsonDecode(utf8.decode(bytes))
-          : <String, dynamic>{};
-      if (body is! Map<String, dynamic>) {
-        throw const FormatException('response');
-      }
-      return (status: resp.statusCode, body: body);
-    } finally {
-      client.close(force: true);
-    }
-  }
-
+  ProviderApi([Transport? transport])
+    : transport = transport ?? HttpsTransport();
+  final Transport transport;
   Future<KeyStatus> check(Service service, String key) async {
     if (Service.detect(key) != service) return KeyStatus.invalid;
     try {
-      final response = await _read(
-        service,
-        key,
-        service == Service.openrouter ? 'key' : 'balance',
-      );
-      if (response.status == 401) return KeyStatus.invalid;
-      if (response.status == 403 && service == Service.vsegpt) {
-        return KeyStatus.unverified;
-      }
-      if (response.status == 429) return KeyStatus.limited;
-      if (response.status != 200) return KeyStatus.unavailable;
-      final data = response.body['data'];
-      if (service == Service.vsegpt && response.body['status'] != 'ok') {
+      final response = await transport.request(service, key, Resource.key);
+      final data = response['data'];
+      if (service == Service.vsegpt && response['status'] != 'ok') {
         return KeyStatus.unverified;
       }
       if (data is! Map) return KeyStatus.malformed;
       if (service == Service.vsegpt) {
-        if (num.tryParse('${data['credits']}')?.isFinite != true ||
+        if (Amount.parse(data['credits']) == null ||
             data['subscription_status'] is! String ||
             ![0, 1, 2].contains(data['user_status'])) {
           return KeyStatus.malformed;
         }
       } else if (data['is_management_key'] == true ||
           !data.containsKey('limit_remaining') ||
-          (data['limit_remaining'] != null &&
-              num.tryParse('${data['limit_remaining']}')?.isFinite != true)) {
+          data['limit_remaining'] != null &&
+              Amount.parse(data['limit_remaining']) == null) {
         return KeyStatus.invalid;
       }
       return KeyStatus.accepted;
+    } on ApiFailure catch (e) {
+      if (e.label == 'catalog.error.auth') return KeyStatus.invalid;
+      if (e.label == 'catalog.error.policy' && service == Service.vsegpt) {
+        return KeyStatus.unverified;
+      }
+      if (e.label == 'catalog.error.rate') return KeyStatus.limited;
+      return KeyStatus.unavailable;
+    }
+  }
+
+  Future<({Amount balance, Amount? limit, bool limitKnown})> account(
+    Service service,
+    String key,
+  ) async {
+    final result = await transport.request(service, key, Resource.balance);
+    final data = result['data'];
+    if (data is! Map) throw const ApiFailure('catalog.error.schema');
+    if (service == Service.vsegpt) {
+      if (result['status'] != 'ok') {
+        throw const ApiFailure('catalog.error.policy');
+      }
+      final balance = Amount.parse(data['credits']);
+      if (balance == null) throw const ApiFailure('catalog.error.schema');
+      return (balance: balance, limit: null, limitKnown: false);
+    }
+    final credit = Amount.parse(data['total_credits']),
+        usage = Amount.parse(data['total_usage']);
+    if (credit == null || usage == null) {
+      throw const ApiFailure('catalog.error.schema');
+    }
+    final balance = credit - usage;
+    try {
+      final info = (await transport.request(
+        service,
+        key,
+        Resource.key,
+      ))['data'];
+      if (info is Map && info.containsKey('limit_remaining')) {
+        final limit = Amount.parse(info['limit_remaining']);
+        return (
+          balance: balance,
+          limit: limit,
+          limitKnown: limit != null || info['limit_remaining'] == null,
+        );
+      }
+    } on ApiFailure {
+      /* Credits and key limit are independent observations. */
+    }
+    return (balance: balance, limit: null, limitKnown: false);
+  }
+
+  Future<List<ModelChoice>> models(Service service, String key) async {
+    final data = await transport.request(service, key, Resource.models);
+    try {
+      return catalogue(service, data['data']);
     } on FormatException {
-      return KeyStatus.malformed;
-    } on IOException {
-      return KeyStatus.unavailable;
-    } on TimeoutException {
-      return KeyStatus.unavailable;
+      throw const ApiFailure('catalog.error.schema');
     }
   }
 }

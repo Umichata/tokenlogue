@@ -59,6 +59,65 @@ class ProfileVault {
 
   Future<bool> exists() async => await _read() != null;
 
+  int _recoveryEpoch = 0;
+  String? _grantedProfile;
+  int? _expiresAt;
+  final Stopwatch _timer = Stopwatch()..start();
+
+  Future<bool> canRecover() async =>
+      await channel.invokeMethod<bool>('recoveryAvailable') ?? false;
+
+  void revokeRecovery() {
+    _recoveryEpoch++;
+    _grantedProfile = null;
+    _expiresAt = null;
+    channel.invokeMethod<void>('cancelDevice').catchError((Object _) {});
+  }
+
+  Future<bool> requestRecovery(String reason) async {
+    revokeRecovery();
+    final epoch = _recoveryEpoch;
+    final initial = await _read();
+    if (initial == null || epoch != _recoveryEpoch || !await canRecover()) {
+      return false;
+    }
+    if (epoch != _recoveryEpoch) return false;
+    final ok = await channel
+        .invokeMethod<bool>('authenticateDevice', reason)
+        .timeout(
+          const Duration(seconds: 90),
+          onTimeout: () {
+            revokeRecovery();
+            return false;
+          },
+        );
+    if (ok != true || epoch != _recoveryEpoch) return false;
+    _grantedProfile = initial['id'] as String;
+    _expiresAt = _timer.elapsedMilliseconds + 120000;
+    return true;
+  }
+
+  Future<bool> replacePin(String pin) => _writes.synchronized(() async {
+    final epoch = _recoveryEpoch;
+    final record = await _read();
+    bool granted() =>
+        record != null &&
+        record['id'] == _grantedProfile &&
+        epoch == _recoveryEpoch &&
+        _expiresAt != null &&
+        _timer.elapsedMilliseconds < _expiresAt!;
+    if (!validPin(pin) || !granted()) return false;
+    final salt = base64Encode(randomBytes(16));
+    final verifier = await pinDigest(pin, salt);
+    if (!granted()) return false;
+    revokeRecovery();
+    record!.addAll({'salt': salt, 'verifier': verifier, 'attempts': 0});
+    record.remove('deadline');
+    record.remove('boot');
+    await _write(record);
+    return true;
+  });
+
   Future<void> register(String pin, String credential, bool verified) =>
       _writes.synchronized(() async {
         final service = Service.detect(credential);
@@ -68,6 +127,7 @@ class ProfileVault {
         final salt = base64Encode(randomBytes(16));
         await _write({
           'version': 1,
+          'creating': true,
           'id': base64UrlEncode(randomBytes(18)),
           'dek': base64Encode(randomBytes(32)),
           'salt': salt,
@@ -118,9 +178,19 @@ class ProfileVault {
       record['id'] as String,
       SecretKey(base64Decode(record['dek'] as String)),
       Map<String, dynamic>.from(record['credentials'] as Map),
+      creating: record['creating'] == true,
     );
   });
 
+  Future<void> markReady(UnlockedProfile profile) =>
+      _writes.synchronized(() async {
+        final record = await _read();
+        if (record == null || record['id'] != profile.id) {
+          throw StateError('binding');
+        }
+        record.remove('creating');
+        await _write(record);
+      });
   Future<void> saveKey(
     UnlockedProfile profile,
     Service service,
@@ -147,7 +217,8 @@ class PinLocked implements Exception {
 }
 
 class UnlockedProfile {
-  UnlockedProfile(this.id, this.dek, this.credentials);
+  UnlockedProfile(this.id, this.dek, this.credentials, {this.creating = false});
+  final bool creating;
   final String id;
   final SecretKey dek;
   final Map<String, dynamic> credentials;

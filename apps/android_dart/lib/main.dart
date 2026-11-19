@@ -1,9 +1,14 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sqflite/sqflite.dart';
 import 'data/chat_store.dart';
 import 'data/providers.dart';
+import 'data/session.dart';
+import 'presentation/controls.dart';
+import 'presentation/workspace.dart';
 import 'data/vault.dart';
 import 'domain/provider.dart';
 import 'presentation/theme.dart';
@@ -19,7 +24,17 @@ class Tokenlogue extends StatefulWidget {
   State<Tokenlogue> createState() => _TokenlogueState();
 }
 
-enum Screen { loading, key, setup, pin, home, error }
+enum Screen {
+  loading,
+  key,
+  setup,
+  pin,
+  home,
+  recovery,
+  recovered,
+  deletion,
+  error,
+}
 
 class _TokenlogueState extends State<Tokenlogue> with WidgetsBindingObserver {
   final vault = ProfileVault(), api = ProviderApi();
@@ -32,7 +47,13 @@ class _TokenlogueState extends State<Tokenlogue> with WidgetsBindingObserver {
   int epoch = 0;
   Screen screen = Screen.loading;
   UnlockedProfile? profile;
-  ChatStore? store;
+  Session? session;
+  Future<void> closing = Future.value();
+  final deletion = TextEditingController();
+  bool deviceRecovery = false, deletePending = false;
+  Timer? cooldown;
+  int remainingSeconds = 0;
+  Screen deletionOrigin = Screen.pin;
 
   String t(String key) => words[lang]?[key] as String? ?? key;
   @override
@@ -48,6 +69,13 @@ class _TokenlogueState extends State<Tokenlogue> with WidgetsBindingObserver {
         words[l] =
             jsonDecode(await rootBundle.loadString('assets/locales/$l.json'))
                 as Map<String, dynamic>;
+      }
+      lang =
+          await ProfileVault.channel.invokeMethod<String>('language') ?? 'ru';
+      deviceRecovery = await vault.canRecover();
+      if (await ProfileVault.channel.invokeMethod<bool>('deleting') == true) {
+        deletePending = true;
+        await finishDeletion();
       }
       final existing = await vault.exists();
       if (!existing && await databaseExists(await ChatStore.location())) {
@@ -69,11 +97,12 @@ class _TokenlogueState extends State<Tokenlogue> with WidgetsBindingObserver {
 
   void lock() {
     epoch++;
-    profile?.dispose();
+    vault.revokeRecovery();
+    if (session != null) closing = session!.close();
     profile = null;
-    final previous = store;
-    store = null;
-    previous?.db.close();
+    session = null;
+    deletion.clear();
+
     keyField.clear();
     pinField.clear();
     repeat.clear();
@@ -84,7 +113,14 @@ class _TokenlogueState extends State<Tokenlogue> with WidgetsBindingObserver {
     offerUnverified = false;
     if (mounted) {
       setState(() {
-        if (screen == Screen.home) screen = Screen.pin;
+        if ([
+          Screen.home,
+          Screen.recovery,
+          Screen.recovered,
+          Screen.deletion,
+        ].contains(screen)) {
+          screen = Screen.pin;
+        }
         if (screen == Screen.setup) screen = Screen.key;
       });
     }
@@ -93,8 +129,10 @@ class _TokenlogueState extends State<Tokenlogue> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    profile?.dispose();
-    store?.db.close();
+    vault.revokeRecovery();
+    session?.close();
+    cooldown?.cancel();
+    deletion.dispose();
     keyField.dispose();
     pinField.dispose();
     repeat.dispose();
@@ -123,14 +161,20 @@ class _TokenlogueState extends State<Tokenlogue> with WidgetsBindingObserver {
         notice = result == KeyStatus.unverified
             ? 'providers.unverified_help'
             : 'providers.check_failed';
-        offerUnverified = s == Service.vsegpt && result == KeyStatus.unverified;
+        offerUnverified =
+            s == Service.vsegpt &&
+            {
+              KeyStatus.unverified,
+              KeyStatus.unavailable,
+              KeyStatus.limited,
+            }.contains(result);
       }
     });
   }
 
   Future<void> authenticate() async {
     if (busy || !validPin(pinField.text)) return;
-    final creating = screen == Screen.setup;
+    final creating = screen == Screen.setup || screen == Screen.recovered;
     if (creating && pinField.text != repeat.text) return;
     final current = epoch, pin = pinField.text;
     setState(() {
@@ -138,7 +182,20 @@ class _TokenlogueState extends State<Tokenlogue> with WidgetsBindingObserver {
       notice = '';
     });
     try {
-      if (creating) await vault.register(pin, pendingKey, verified);
+      await closing;
+      if (epoch != current) return;
+      if (screen == Screen.setup) {
+        await vault.register(pin, pendingKey, verified);
+      }
+      if (screen == Screen.recovered && !await vault.replacePin(pin)) {
+        if (epoch == current) {
+          setState(() {
+            screen = Screen.pin;
+            notice = 'recovery.expired';
+          });
+        }
+        return;
+      }
       if (epoch != current) {
         if (creating && mounted) setState(() => screen = Screen.pin);
         return;
@@ -152,26 +209,139 @@ class _TokenlogueState extends State<Tokenlogue> with WidgetsBindingObserver {
         setState(() => notice = 'auth.pin_mismatch');
         return;
       }
+      if (!await databaseExists(await ChatStore.location()) &&
+          !unlocked.creating) {
+        unlocked.dispose();
+        throw StateError('missing_database');
+      }
       final opened = await ChatStore.open(unlocked);
+      if (unlocked.creating) await vault.markReady(unlocked);
       if (epoch != current || !mounted) {
         await opened.db.close();
         unlocked.dispose();
         return;
       }
       profile = unlocked;
-      store = opened;
+      session = Session(unlocked, opened, api);
       pendingKey = '';
       pinField.clear();
       repeat.clear();
       setState(() => screen = Screen.home);
-    } on PinLocked catch (_) {
-      if (epoch == current) setState(() => notice = 'auth.enter_pin');
+    } on PinLocked catch (e) {
+      if (epoch == current) {
+        remainingSeconds = (e.milliseconds + 999) ~/ 1000;
+        notice = 'auth.lock_countdown';
+        cooldown?.cancel();
+        cooldown = Timer.periodic(const Duration(seconds: 1), (timer) {
+          if (!mounted || remainingSeconds <= 1) {
+            timer.cancel();
+            if (mounted) {
+              setState(() {
+                remainingSeconds = 0;
+                notice = 'auth.lock_expired';
+              });
+            }
+            return;
+          }
+          setState(() => remainingSeconds--);
+        });
+      }
     } catch (_) {
       if (epoch == current) setState(() => screen = Screen.error);
     } finally {
       if (mounted && epoch == current) setState(() => busy = false);
     }
   }
+
+  Future<void> setLanguage(String next) async {
+    if (next != 'en' && next != 'ru') return;
+    await ProfileVault.channel.invokeMethod<void>('setLanguage', next);
+    if (mounted) setState(() => lang = next);
+  }
+
+  Future<void> startRecovery() async {
+    final g = epoch;
+    setState(() {
+      busy = true;
+      notice = '';
+    });
+    try {
+      final ok = await vault.requestRecovery(t('recovery.explanation'));
+      if (!mounted || g != epoch || screen != Screen.recovery) return;
+      setState(() {
+        screen = ok ? Screen.recovered : Screen.pin;
+        notice = ok ? 'recovery.verified_notice' : 'recovery.cancelled';
+      });
+    } catch (_) {
+      if (mounted && g == epoch) {
+        setState(() {
+          screen = Screen.pin;
+          notice = 'recovery.failed';
+        });
+      }
+    } finally {
+      if (mounted && g == epoch) setState(() => busy = false);
+    }
+  }
+
+  void cancelRecovery() {
+    epoch++;
+    vault.revokeRecovery();
+    pinField.clear();
+    repeat.clear();
+    setState(() {
+      screen = Screen.pin;
+      notice = 'recovery.cancelled';
+      busy = false;
+    });
+  }
+
+  void askDelete() {
+    deletionOrigin = screen;
+    deletion.clear();
+    setState(() => screen = Screen.deletion);
+  }
+
+  Future<void> finishDeletion() async {
+    await closing;
+    await deleteDatabase(await ChatStore.location());
+    await ProfileVault.channel.invokeMethod<void>('finishDelete');
+    deletePending = false;
+  }
+
+  Future<void> deleteProfile() async {
+    if (busy ||
+        !deletePending && deletion.text != t('profile_deletion.phrase')) {
+      return;
+    }
+    lock();
+    setState(() {
+      busy = true;
+      screen = Screen.deletion;
+    });
+    try {
+      await ProfileVault.channel.invokeMethod<void>('beginDelete');
+      deletePending = true;
+      await finishDeletion();
+      if (mounted) {
+        setState(() {
+          screen = Screen.key;
+          notice = 'profile_deletion.success';
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => notice = 'profile_deletion.unavailable');
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  String statusText() => notice == 'auth.lock_countdown'
+      ? interpolate(t(notice), {
+          'time':
+              '${remainingSeconds ~/ 60}:${(remainingSeconds % 60).toString().padLeft(2, "0")}',
+        })
+      : t(notice);
 
   Widget password(
     TextEditingController c,
@@ -221,15 +391,26 @@ class _TokenlogueState extends State<Tokenlogue> with WidgetsBindingObserver {
             style: TextStyle(fontSize: 22, fontWeight: FontWeight.w500),
           ),
         ),
-        DropdownButton<String>(
-          value: lang,
-          items: const [
-            DropdownMenuItem(value: 'en', child: Text('EN')),
-            DropdownMenuItem(value: 'ru', child: Text('RU')),
-          ],
-          onChanged: (s) {
-            if (s != null) setState(() => lang = s);
-          },
+        SizedBox(
+          width: 104,
+          child: DropdownButtonFormField<String>(
+            initialValue: lang,
+            decoration: InputDecoration(
+              labelText: t('language.label'),
+              isDense: true,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 8,
+              ),
+            ),
+            items: const [
+              DropdownMenuItem(value: 'ru', child: Text('RU')),
+              DropdownMenuItem(value: 'en', child: Text('EN')),
+            ],
+            onChanged: (v) {
+              if (v != null) setLanguage(v);
+            },
+          ),
         ),
       ],
     ),
@@ -243,14 +424,25 @@ class _TokenlogueState extends State<Tokenlogue> with WidgetsBindingObserver {
           t('providers.setup_description'),
           style: const TextStyle(color: muted),
         ),
-        password(keyField, t('providers.key'), focus: true),
+        SecretField(
+          controller: keyField,
+          label: t('providers.key'),
+          hint: t('providers.key_hint'),
+          t: t,
+          focus: true,
+          enabled: !busy,
+          changed: (_) => setState(() {
+            offerUnverified = false;
+            notice = '';
+          }),
+        ),
         Text(
           service == null
               ? t('providers.enter_key')
               : t('providers.detected').replaceAll('{provider}', service.label),
           style: const TextStyle(color: muted),
         ),
-        if (notice.isNotEmpty) Text(t(notice)),
+        if (notice.isNotEmpty) Text(statusText()),
         if (busy) const LinearProgressIndicator(),
         FilledButton.icon(
           onPressed: busy || service == null ? null : check,
@@ -272,10 +464,70 @@ class _TokenlogueState extends State<Tokenlogue> with WidgetsBindingObserver {
           ),
       ];
     }
-    final creating = screen == Screen.setup;
+    if (screen == Screen.deletion) {
+      return [
+        Text(t('profile_deletion.title'), style: const TextStyle(fontSize: 28)),
+        Text(t('profile_deletion.description')),
+        Text(t('profile_deletion.remote_notice')),
+        Text(t('profile_deletion.backup_notice')),
+        if (!deletePending) ...[
+          SelectableText(t('profile_deletion.phrase')),
+          TextField(
+            controller: deletion,
+            decoration: InputDecoration(
+              labelText: t('profile_deletion.phrase_prompt'),
+            ),
+            onChanged: (_) => setState(() {}),
+          ),
+        ],
+        if (notice.isNotEmpty) Text(statusText()),
+        FilledButton(
+          onPressed:
+              !busy &&
+                  (deletePending ||
+                      deletion.text == t('profile_deletion.phrase'))
+              ? deleteProfile
+              : null,
+          child: Text(
+            t(
+              deletePending
+                  ? 'profile_deletion.retry'
+                  : 'profile_deletion.confirm',
+            ),
+          ),
+        ),
+        if (!deletePending)
+          TextButton(
+            onPressed: busy
+                ? null
+                : () => setState(() => screen = deletionOrigin),
+            child: Text(t('profile_deletion.cancel')),
+          ),
+      ];
+    }
+    if (screen == Screen.recovery) {
+      return [
+        Text(t('recovery.explanation')),
+        FilledButton(
+          onPressed: busy || !deviceRecovery ? null : startRecovery,
+          child: Text(t('recovery.confirm_device')),
+        ),
+        TextButton(
+          onPressed: cancelRecovery,
+          child: Text(t('recovery.cancel')),
+        ),
+      ];
+    }
+    final creating = screen == Screen.setup || screen == Screen.recovered;
     return [
       Text(
-        t(creating ? 'auth.choose_pin' : 'auth.sign_in'),
+        t(
+          screen == Screen.recovered
+              ? 'recovery.choose_new_pin'
+              : creating
+              ? 'auth.choose_pin'
+              : 'auth.sign_in',
+        ),
         style: const TextStyle(fontSize: 28),
       ),
       Text(
@@ -283,8 +535,25 @@ class _TokenlogueState extends State<Tokenlogue> with WidgetsBindingObserver {
         style: const TextStyle(color: muted),
       ),
       password(pinField, 'PIN', numeric: true),
+      if (creating)
+        TextButton.icon(
+          onPressed: busy
+              ? null
+              : () {
+                  final v = Random.secure()
+                      .nextInt(10000)
+                      .toString()
+                      .padLeft(4, '0');
+                  setState(() {
+                    pinField.text = v;
+                    repeat.text = v;
+                  });
+                },
+          icon: const Icon(Icons.casino_outlined),
+          label: Text(t('auth.suggest_pin')),
+        ),
       if (creating) password(repeat, t('auth.repeat_pin'), numeric: true),
-      if (notice.isNotEmpty) Text(t(notice)),
+      if (notice.isNotEmpty) Text(statusText()),
       if (busy) const LinearProgressIndicator(),
       FilledButton(
         onPressed:
@@ -293,63 +562,105 @@ class _TokenlogueState extends State<Tokenlogue> with WidgetsBindingObserver {
                 (creating && repeat.text != pinField.text)
             ? null
             : authenticate,
-        child: Text(t(creating ? 'auth.save_pin' : 'auth.sign_in')),
+        child: Text(
+          t(
+            screen == Screen.recovered
+                ? 'recovery.save_new_pin'
+                : creating
+                ? 'auth.save_pin'
+                : 'auth.sign_in',
+          ),
+        ),
       ),
+      if (screen == Screen.recovered)
+        TextButton(
+          onPressed: cancelRecovery,
+          child: Text(t('recovery.cancel')),
+        ),
+      if (screen == Screen.pin) ...[
+        TextButton(
+          onPressed: () => setState(() {
+            screen = Screen.recovery;
+            notice = '';
+          }),
+          child: Text(t('recovery.forgot_pin')),
+        ),
+        if (!deviceRecovery) Text(t('recovery.unavailable')),
+        TextButton(
+          onPressed: askDelete,
+          child: Text(t('profile_deletion.entry')),
+        ),
+      ],
+      if (screen == Screen.setup)
+        TextButton(
+          onPressed: () {
+            pendingKey = '';
+            pinField.clear();
+            repeat.clear();
+            setState(() => screen = Screen.key);
+          },
+          child: Text(t('common.back')),
+        ),
     ];
   }
 
   @override
   Widget build(BuildContext context) => MaterialApp(
+    key: ValueKey((epoch, screen == Screen.home)),
     title: 'Tokenlogue Dart',
     theme: buildTheme(),
     debugShowCheckedModeBanner: false,
-    home: Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            header(),
-            Expanded(
-              child: switch (screen) {
-                Screen.loading => const Center(
-                  child: CircularProgressIndicator(),
-                ),
-                Screen.error => Center(
-                  child: Text(t('service.key_save_failed')),
-                ),
-                Screen.home => Center(
-                  child: IconButton(
-                    onPressed: lock,
-                    icon: const Icon(Icons.lock),
-                    tooltip: t('auth.lock'),
-                  ),
-                ),
-                _ => ListView(
-                  padding: const EdgeInsets.fromLTRB(16, 24, 16, 32),
-                  children: [
-                    Align(
-                      alignment: Alignment.topCenter,
-                      child: Container(
-                        width: 420,
-                        padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(
-                          color: panel,
-                          border: Border.all(color: border),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          spacing: 16,
-                          children: fields(),
-                        ),
+    home: screen == Screen.home && session != null
+        ? Workspace(
+            session: session!,
+            api: api,
+            vault: vault,
+            t: t,
+            onLock: lock,
+            onDelete: askDelete,
+            language: lang,
+            setLanguage: setLanguage,
+          )
+        : Scaffold(
+            body: SafeArea(
+              child: Column(
+                children: [
+                  header(),
+                  Expanded(
+                    child: switch (screen) {
+                      Screen.loading => const Center(
+                        child: CircularProgressIndicator(),
                       ),
-                    ),
-                  ],
-                ),
-              },
+                      Screen.error => Center(
+                        child: Text(t('service.key_save_failed')),
+                      ),
+                      _ => ListView(
+                        padding: const EdgeInsets.fromLTRB(16, 24, 16, 32),
+                        children: [
+                          Align(
+                            alignment: Alignment.topCenter,
+                            child: Container(
+                              width: 420,
+                              padding: const EdgeInsets.all(24),
+                              decoration: BoxDecoration(
+                                color: panel,
+                                border: Border.all(color: border),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                spacing: 16,
+                                children: fields(),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    },
+                  ),
+                ],
+              ),
             ),
-          ],
-        ),
-      ),
-    ),
+          ),
   );
 }

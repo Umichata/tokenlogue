@@ -4,6 +4,7 @@ import 'package:cryptography/cryptography.dart';
 import 'package:sqflite/sqflite.dart';
 import '../domain/provider.dart';
 import 'vault.dart';
+import 'journal.dart';
 
 class FieldCipher {
   FieldCipher(this.profile);
@@ -81,7 +82,10 @@ class ChatStore {
   static Future<ChatStore> open(UnlockedProfile profile) async {
     final db = await openDatabase(
       await location(),
-      version: 1,
+      version: 2,
+      onUpgrade: (db, old, next) async {
+        if (old == 1) await schema2(db);
+      },
       onConfigure: (db) async {
         await db.execute('PRAGMA foreign_keys=ON');
       },
@@ -110,6 +114,7 @@ class ChatStore {
           'CREATE TABLE attempts(id TEXT PRIMARY KEY NOT NULL,turn_id TEXT NOT NULL REFERENCES turns(id) ON DELETE CASCADE,provider TEXT NOT NULL,currency TEXT NOT NULL,requested_model TEXT NOT NULL,actual_model TEXT,dispatch_ms INTEGER,state TEXT NOT NULL,reserved_tokens INTEGER NOT NULL,reserved_cost TEXT,usage_in INTEGER,usage_out INTEGER,usage_total INTEGER,usage_source TEXT,cost TEXT,cost_source TEXT,snapshot BLOB NOT NULL)',
         );
         await db.execute('CREATE INDEX attempts_time ON attempts(dispatch_ms)');
+        await schema2(db);
       },
     );
     final rows = await db.query('profile');
@@ -117,6 +122,10 @@ class ChatStore {
       await db.close();
       throw StateError('binding');
     }
+    await db.update('attempts', {
+      'state': 'unknown',
+      'error': 'service.error.interrupted',
+    }, where: 'state="pending"');
     return ChatStore._(db, FieldCipher(profile));
   }
 
