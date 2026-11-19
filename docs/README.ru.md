@@ -20,6 +20,8 @@
 
 <a id="с-чего-начать"></a>
 
+Для отдельного приложения Tokenlogue Dart перейдите к [руководству по Android Dart](android-dart/README.ru.md). Ниже описаны выпуски на Python.
+
 ## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> С чего начать
 
 | Задача | Руководство |

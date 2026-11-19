@@ -20,6 +20,8 @@
 
 <a id="start-here"></a>
 
+For the separate Tokenlogue Dart app, see the [Android Dart guide](android-dart/README.md). The guides below describe the Python editions.
+
 ## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Start here
 
 | Task | Guide |
