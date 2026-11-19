@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+set -euo pipefail
+: "${ANDROID_HOME:?Set the Android SDK path}" "${JAVA_HOME:?Set the JDK path}"
+output="${1:?Specify a new absolute output APK}"
+[[ "$output" = /* && ! -e "$output" ]]
+here="$(cd -- "$(dirname "$0")" && pwd -P)"
+work="$(mktemp -d /tmp/tokenlogue-ui-probe.XXXXXXXX)"
+trap 'rm -rf -- "$work"' EXIT
+umask 077
+api="$ANDROID_HOME/platforms/android-36/android.jar"
+tools="$ANDROID_HOME/build-tools/36.0.0"
+mkdir "$work/classes" "$work/dex"
+"$JAVA_HOME/bin/javac" --release 8 -cp "$api" -d "$work/classes" "$here/PublicWindowProbe.java"
+"$JAVA_HOME/bin/jar" cf "$work/classes.jar" -C "$work/classes" .
+"$tools/d8" --min-api 24 --lib "$api" --output "$work/dex" "$work/classes.jar"
+"$tools/aapt2" link -I "$api" --manifest "$here/AndroidManifest.xml" -o "$work/unsigned.apk"
+(cd "$work/dex"; zip -qj "$work/unsigned.apk" classes.dex)
+"$tools/zipalign" 4 "$work/unsigned.apk" "$work/aligned.apk"
+export TOKENLOGUE_QA_PASS
+TOKENLOGUE_QA_PASS="$(openssl rand -hex 32)"
+"$JAVA_HOME/bin/keytool" -genkeypair -storetype PKCS12 -keystore "$work/probe.p12" -storepass:env TOKENLOGUE_QA_PASS -alias ui-qa -keyalg RSA -keysize 2048 -validity 365 -dname 'CN=Disposable UI automation'
+"$tools/apksigner" sign --ks "$work/probe.p12" --ks-pass env:TOKENLOGUE_QA_PASS --out "$output" "$work/aligned.apk"

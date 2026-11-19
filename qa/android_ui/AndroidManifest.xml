@@ -1,0 +1,6 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="io.github.umichata.tokenlogue.qa">
+  <uses-sdk android:minSdkVersion="24" android:targetSdkVersion="36"/>
+  <queries><package android:name="io.github.umichata.tokenlogue"/><package android:name="io.github.umichata.tokenlogue.dart"/></queries>
+  <application android:label="Tokenlogue UI QA" android:allowBackup="false"/>
+  <instrumentation android:name=".PublicWindowProbe" android:targetPackage="io.github.umichata.tokenlogue.qa"/>
+</manifest>
