@@ -179,6 +179,12 @@ class _WorkspaceState extends State<Workspace> {
           profile: originalProfile,
           policy: policy,
           changing: change,
+          onConfigureKey: (s) {
+            if (alive) {
+              providerFilter = s;
+              unawaited(selectPage(1));
+            }
+          },
           existingTokens: change
               ? settings['token_limit'] as int? ?? 8192
               : 8192,
@@ -571,20 +577,44 @@ class _WorkspaceState extends State<Workspace> {
     await showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(t('protection_panel.open')),
-        content: Text(
-          t(
-            available
-                ? 'recovery.protection_notice_android'
-                : 'recovery.protection_notice_android_unavailable',
+        alignment: Alignment.topRight,
+        backgroundColor: panel,
+        insetPadding: const EdgeInsets.fromLTRB(12, 64, 12, 12),
+        title: Row(
+          children: [
+            Expanded(
+              child: Text(
+                t('session_watch.menu_title'),
+                style: Theme.of(ctx).textTheme.titleMedium,
+              ),
+            ),
+            IconButton(
+              tooltip: t('protection_panel.close'),
+              onPressed: () => Navigator.pop(ctx),
+              icon: const Icon(Icons.close),
+            ),
+          ],
+        ),
+        scrollable: true,
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 340),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: 12,
+            children: [
+              Text(t('protection_panel.android_policy')),
+              Text(
+                t(
+                  available
+                      ? 'recovery.protection_notice_android'
+                      : 'recovery.protection_notice_android_unavailable',
+                ),
+                style: const TextStyle(color: muted),
+              ),
+            ],
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(t('common.back')),
-          ),
-        ],
       ),
     );
   }

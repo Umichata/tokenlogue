@@ -139,26 +139,32 @@ class ProfileVault {
     return true;
   });
 
-  Future<void> register(String pin, String credential, bool verified) =>
-      _writes.synchronized(() async {
-        final service = Service.detect(credential);
-        if (service == null || !validPin(pin) || await _read() != null) {
-          throw StateError('registration');
-        }
-        final salt = base64Encode(randomBytes(16));
-        await _write({
-          'version': 1,
-          'creating': true,
-          'id': base64UrlEncode(randomBytes(18)),
-          'dek': base64Encode(randomBytes(32)),
-          'salt': salt,
-          'verifier': await pinDigest(pin, salt),
-          'attempts': 0,
-          'credentials': {
-            service.name: {'key': credential.trim(), 'verified': verified},
-          },
-        });
-      });
+  Future<void> register(
+    String pin,
+    String credential,
+    bool verified, {
+    required bool Function() canCommit,
+  }) => _writes.synchronized(() async {
+    final service = Service.detect(credential);
+    if (service == null || !validPin(pin) || await _read() != null) {
+      throw StateError('registration');
+    }
+    final salt = base64Encode(randomBytes(16));
+    final hash = await pinDigest(pin, salt);
+    if (!canCommit()) throw StateError('registration_expired');
+    await _write({
+      'version': 1,
+      'creating': true,
+      'id': base64UrlEncode(randomBytes(18)),
+      'dek': base64Encode(randomBytes(32)),
+      'salt': salt,
+      'verifier': hash,
+      'attempts': 0,
+      'credentials': {
+        service.name: {'key': credential.trim(), 'verified': verified},
+      },
+    });
+  });
 
   Future<int> readCooldown() => _writes.synchronized(() async {
     final record = await _read();

@@ -28,7 +28,9 @@ class SelectChat extends StatefulWidget {
     this.existingOutput = 1024,
     this.moneyFor,
     this.changing = false,
+    this.onConfigureKey,
   });
+  final ValueChanged<Service>? onConfigureKey;
   final Translate t;
   final ProviderApi api;
   final UnlockedProfile profile;
@@ -220,7 +222,22 @@ class _SelectChatState extends State<SelectChat> {
                   label: Text(t('selection.key.check')),
                 ),
                 if (checking || loading) const LinearProgressIndicator(),
-                if (error.isNotEmpty) Text(t(error)),
+                if (error.isNotEmpty)
+                  Text(interpolate(t(error), {'provider': service!.label})),
+                if (widget.profile.keyFor(service!) == null &&
+                    widget.onConfigureKey != null)
+                  OutlinedButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      widget.onConfigureKey!(service!);
+                    },
+                    child: Text(
+                      interpolate(t('connection.configure_key'), {
+                        'provider': service!.label,
+                      }),
+                    ),
+                  ),
+
                 TextButton.icon(
                   onPressed: loading ? null : refresh,
                   icon: const Icon(Icons.refresh),
@@ -267,7 +284,17 @@ class _SelectChatState extends State<SelectChat> {
                             ? t('model.free_router')
                             : m.name,
                       ),
-                      subtitle: Text(m.id),
+                      subtitle: Text(
+                        [
+                          m.id,
+                          if (m.rates.isEmpty)
+                            t('estimate.cost_unknown')
+                          else ...[
+                            "${t('price.prompt_million')} · ${m.maximum('prompt').times(1000000)} ${m.service.currency}",
+                            "${t('price.completion_million')} · ${m.maximum('completion').times(1000000)} ${m.service.currency}",
+                          ],
+                        ].join('\n'),
+                      ),
                       trailing: TextButton(
                         onPressed: () => select(m),
                         child: Text(t('catalog.select')),

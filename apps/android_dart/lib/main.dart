@@ -178,23 +178,29 @@ class _TokenlogueState extends State<Tokenlogue> with WidgetsBindingObserver {
     });
   }
 
-  Future<void> authenticate() async {
-    if (busy || !validPin(pinField.text)) return;
-    final creating = screen == Screen.setup || screen == Screen.recovered;
+  Future<void> authenticate(Screen origin, int generation) async {
+    bool current() => mounted && screen == origin && epoch == generation;
+    if (!current() ||
+        !{Screen.pin, Screen.setup, Screen.recovered}.contains(origin) ||
+        busy ||
+        !validPin(pinField.text)) {
+      return;
+    }
+    final creating = origin == Screen.setup || origin == Screen.recovered;
     if (creating && pinField.text != repeat.text) return;
-    final current = epoch, pin = pinField.text;
+    final pin = pinField.text;
     setState(() {
       busy = true;
       notice = '';
     });
     try {
       await closing;
-      if (epoch != current) return;
-      if (screen == Screen.setup) {
-        await vault.register(pin, pendingKey, verified);
+      if (!current()) return;
+      if (origin == Screen.setup) {
+        await vault.register(pin, pendingKey, verified, canCommit: current);
       }
-      if (screen == Screen.recovered && !await vault.replacePin(pin)) {
-        if (epoch == current) {
+      if (origin == Screen.recovered && !await vault.replacePin(pin)) {
+        if (current()) {
           setState(() {
             screen = Screen.pin;
             notice = 'recovery.expired';
@@ -202,12 +208,9 @@ class _TokenlogueState extends State<Tokenlogue> with WidgetsBindingObserver {
         }
         return;
       }
-      if (epoch != current) {
-        if (creating && mounted) setState(() => screen = Screen.pin);
-        return;
-      }
+      if (!current()) return;
       final unlocked = await vault.unlock(pin);
-      if (epoch != current || !mounted) {
+      if (!current()) {
         unlocked?.dispose();
         return;
       }
@@ -222,7 +225,7 @@ class _TokenlogueState extends State<Tokenlogue> with WidgetsBindingObserver {
       }
       final opened = await ChatStore.open(unlocked);
       if (unlocked.creating) await vault.markReady(unlocked);
-      if (epoch != current || !mounted) {
+      if (!current()) {
         await opened.db.close();
         unlocked.dispose();
         return;
@@ -236,7 +239,7 @@ class _TokenlogueState extends State<Tokenlogue> with WidgetsBindingObserver {
       repeat.clear();
       setState(() => screen = Screen.home);
     } on PinRejected catch (e) {
-      if (epoch == current) {
+      if (current()) {
         setState(() {
           attemptsRemaining = e.remaining;
           notice = 'auth.pin_attempts_remaining';
@@ -244,11 +247,11 @@ class _TokenlogueState extends State<Tokenlogue> with WidgetsBindingObserver {
         });
       }
     } on PinLocked catch (e) {
-      if (epoch == current) showCooldown(e.milliseconds);
+      if (current()) showCooldown(e.milliseconds);
     } catch (_) {
-      if (epoch == current) setState(() => screen = Screen.error);
+      if (current()) setState(() => screen = Screen.error);
     } finally {
-      if (mounted && epoch == current) setState(() => busy = false);
+      if (mounted && epoch == generation) setState(() => busy = false);
     }
   }
 
@@ -287,6 +290,7 @@ class _TokenlogueState extends State<Tokenlogue> with WidgetsBindingObserver {
   }
 
   Future<void> startRecovery() async {
+    if (screen != Screen.recovery || busy) return;
     final g = epoch;
     setState(() {
       busy = true;
@@ -334,6 +338,11 @@ class _TokenlogueState extends State<Tokenlogue> with WidgetsBindingObserver {
   }
 
   void askDelete() {
+    if (busy) return;
+    epoch++;
+    vault.revokeRecovery();
+    pinField.clear();
+    repeat.clear();
     deletionOrigin = screen;
     deletion.clear();
     setState(() => screen = Screen.deletion);
@@ -475,6 +484,7 @@ class _TokenlogueState extends State<Tokenlogue> with WidgetsBindingObserver {
     ),
   );
   List<Widget> fields() {
+    final origin = screen, generation = epoch;
     if (screen == Screen.key) {
       final service = Service.detect(keyField.text);
       return [
@@ -639,7 +649,7 @@ class _TokenlogueState extends State<Tokenlogue> with WidgetsBindingObserver {
                 !validPin(pinField.text) ||
                 (creating && repeat.text != pinField.text)
             ? null
-            : authenticate,
+            : () => authenticate(origin, generation),
         child: Text(
           t(
             screen == Screen.recovered
@@ -657,21 +667,32 @@ class _TokenlogueState extends State<Tokenlogue> with WidgetsBindingObserver {
         ),
       if (screen == Screen.pin) ...[
         TextButton(
-          onPressed: () => setState(() {
-            screen = Screen.recovery;
-            notice = '';
-          }),
+          onPressed: busy
+              ? null
+              : () {
+                  if (screen != Screen.pin) return;
+                  epoch++;
+                  vault.revokeRecovery();
+                  pinField.clear();
+                  repeat.clear();
+                  _revealedPins.clear();
+                  setState(() {
+                    screen = Screen.recovery;
+                    notice = '';
+                  });
+                },
           child: Text(t('recovery.forgot_pin')),
         ),
         if (!deviceRecovery) Text(t('recovery.unavailable')),
         TextButton(
-          onPressed: askDelete,
+          onPressed: busy ? null : askDelete,
           child: Text(t('profile_deletion.entry')),
         ),
       ],
       if (screen == Screen.setup)
         TextButton(
           onPressed: () {
+            epoch++;
             pendingKey = '';
             pinField.clear();
             repeat.clear();
@@ -689,6 +710,7 @@ class _TokenlogueState extends State<Tokenlogue> with WidgetsBindingObserver {
     theme: buildTheme(),
     debugShowCheckedModeBanner: false,
     home: Semantics(
+      key: ValueKey(screen),
       container: true,
       explicitChildNodes: true,
       identifier: 'tokenlogue.screen.${screen.name}',
