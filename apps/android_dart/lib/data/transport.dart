@@ -101,6 +101,23 @@ class HttpsTransport implements Transport {
           }
           buffer.add(chunk);
         }
+        final bytes = buffer.takeBytes();
+        if (response.statusCode == 400 && service == Service.vsegpt) {
+          try {
+            final raw = jsonDecode(utf8.decode(bytes));
+            final msg = raw is Map && raw['error'] is Map
+                ? raw['error']['message']
+                : null;
+            if (msg is String &&
+                msg.toLowerCase().contains('api key') &&
+                (msg.toLowerCase().contains('not found') ||
+                    msg.toLowerCase().contains('original openai'))) {
+              throw const ApiFailure('catalog.error.auth');
+            }
+          } on FormatException {
+            /* Keep the HTTP classification for malformed error bodies. */
+          }
+        }
         if (response.statusCode != 200) {
           final label = switch (response.statusCode) {
             401 => 'catalog.error.auth',
@@ -114,7 +131,7 @@ class HttpsTransport implements Transport {
             uncertain: started && response.statusCode >= 500,
           );
         }
-        final object = decodeProviderJson(utf8.decode(buffer.takeBytes()));
+        final object = decodeProviderJson(utf8.decode(bytes));
         if (object is! Payload) {
           throw ApiFailure('catalog.error.schema', uncertain: started);
         }

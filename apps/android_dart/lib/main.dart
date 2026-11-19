@@ -388,29 +388,36 @@ class _TokenlogueState extends State<Tokenlogue> with WidgetsBindingObserver {
         const Expanded(
           child: Text(
             'Tokenlogue',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w500),
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
           ),
         ),
-        SizedBox(
+        DropdownMenu<String>(
           width: 104,
-          child: DropdownButtonFormField<String>(
-            initialValue: lang,
-            decoration: InputDecoration(
-              labelText: t('language.label'),
-              isDense: true,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 8,
-              ),
-            ),
-            items: const [
-              DropdownMenuItem(value: 'ru', child: Text('RU')),
-              DropdownMenuItem(value: 'en', child: Text('EN')),
-            ],
-            onChanged: (v) {
-              if (v != null) setLanguage(v);
-            },
+          menuHeight: 176,
+          initialSelection: lang,
+          textStyle: const TextStyle(fontSize: 13, color: ink),
+          label: Text(
+            t('language.label'),
+            style: const TextStyle(fontSize: 11, color: muted),
           ),
+          inputDecorationTheme: InputDecorationTheme(
+            isDense: true,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 8,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: border),
+            ),
+          ),
+          dropdownMenuEntries: const [
+            DropdownMenuEntry(value: 'ru', label: 'RU'),
+            DropdownMenuEntry(value: 'en', label: 'EN'),
+          ],
+          onSelected: (v) {
+            if (v != null) setLanguage(v);
+          },
         ),
       ],
     ),
@@ -419,7 +426,14 @@ class _TokenlogueState extends State<Tokenlogue> with WidgetsBindingObserver {
     if (screen == Screen.key) {
       final service = Service.detect(keyField.text);
       return [
-        Text(t('providers.title'), style: const TextStyle(fontSize: 28)),
+        Text(
+          t('providers.title'),
+          style: const TextStyle(
+            fontSize: 26,
+            fontWeight: FontWeight.w600,
+            height: 1.2,
+          ),
+        ),
         Text(
           t('providers.setup_description'),
           style: const TextStyle(color: muted),
@@ -443,7 +457,7 @@ class _TokenlogueState extends State<Tokenlogue> with WidgetsBindingObserver {
           style: const TextStyle(color: muted),
         ),
         if (notice.isNotEmpty) Text(statusText()),
-        if (busy) const LinearProgressIndicator(),
+        if (busy) const LinearProgressIndicator() else const SizedBox.shrink(),
         FilledButton.icon(
           onPressed: busy || service == null ? null : check,
           icon: const Icon(Icons.verified_user),
@@ -466,7 +480,14 @@ class _TokenlogueState extends State<Tokenlogue> with WidgetsBindingObserver {
     }
     if (screen == Screen.deletion) {
       return [
-        Text(t('profile_deletion.title'), style: const TextStyle(fontSize: 28)),
+        Text(
+          t('profile_deletion.title'),
+          style: const TextStyle(
+            fontSize: 26,
+            fontWeight: FontWeight.w600,
+            height: 1.2,
+          ),
+        ),
         Text(t('profile_deletion.description')),
         Text(t('profile_deletion.remote_notice')),
         Text(t('profile_deletion.backup_notice')),
@@ -528,7 +549,11 @@ class _TokenlogueState extends State<Tokenlogue> with WidgetsBindingObserver {
               ? 'auth.choose_pin'
               : 'auth.sign_in',
         ),
-        style: const TextStyle(fontSize: 28),
+        style: const TextStyle(
+          fontSize: 26,
+          fontWeight: FontWeight.w600,
+          height: 1.2,
+        ),
       ),
       Text(
         t(creating ? 'auth.pin_instructions' : 'auth.enter_pin'),

@@ -50,6 +50,17 @@ extension Journal on ChatStore {
     'SELECT a.*,t.chat FROM attempts a JOIN turns t ON a.turn_id=t.id ${chat == null ? '' : 'WHERE t.chat=?'} ORDER BY a.dispatch_ms,a.rowid',
     chat == null ? [] : [chat],
   );
+  Future<List<Map<String, String>>> dispatchSnapshot(JournalRow attempt) async {
+    final text = await crypto.open(
+      attempt['snapshot'] as Uint8List,
+      attempt['id'] as String,
+      'dispatch',
+      1,
+    );
+    final raw = jsonDecode(text) as List;
+    return [for (final m in raw) Map<String, String>.from(m as Map)];
+  }
+
   Future<JournalRow> settings(String chat) async =>
       (await db.query('chats', where: 'id=?', whereArgs: [chat])).single;
   Future<Amount?> limitFor(String chat, Service s) async => Amount.parse(
@@ -253,7 +264,7 @@ extension Journal on ChatStore {
         'dispatch_ms': now,
         'state': 'pending',
         'reserved_tokens': plan.prompt + plan.completion,
-        'reserved_cost': plan.reserve?.toString(),
+        'reserved_cost': plan.reservationAmount.toString(),
         'draft_revision': retryTurn == null ? rev : null,
         'snapshot': snapshot,
       });

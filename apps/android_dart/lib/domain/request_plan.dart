@@ -19,10 +19,12 @@ class RequestPlan {
     this.reserve,
     this.warning,
     this.projected,
+    this.reservationAmount,
   );
   final List<Map<String, String>> messages;
   final int prompt, completion;
   final Amount? reserve, projected;
+  final Amount reservationAmount;
   final bool warning;
 
   factory RequestPlan.prepare({
@@ -103,6 +105,10 @@ class RequestPlan {
       budget == null || quote == null
           ? null
           : budget - spent - reserved - quote,
+      quote ??
+          ((budget! - spent - reserved).coefficient.isNegative
+              ? Amount.zero
+              : budget - spent - reserved),
     );
   }
 }

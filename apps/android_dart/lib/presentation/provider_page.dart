@@ -239,13 +239,16 @@ class _ServiceCardState extends State<_ServiceCard> {
                 }.contains(status));
     return panelCard([
       Text(s.label, style: Theme.of(context).textTheme.titleLarge),
-      Text(
-        t(
-          !saved
-              ? 'providers.status.not_configured'
-              : page.profile.credentials[s.name]['verified'] == true
-              ? 'providers.status.connected'
-              : 'providers.status.unverified',
+      Semantics(
+        container: true,
+        child: Text(
+          t(
+            !saved
+                ? 'providers.status.not_configured'
+                : page.profile.credentials[s.name]['verified'] == true
+                ? 'providers.status.connected'
+                : 'providers.status.unverified',
+          ),
         ),
       ),
       SecretField(
@@ -298,16 +301,20 @@ class _ServiceCardState extends State<_ServiceCard> {
         ],
       ),
       if (page.accounts.loading.contains(s)) const LinearProgressIndicator(),
-      Text(
-        account == null
-            ? interpolate(t('providers.balance_unavailable'), {
-                'provider': s.label,
-              })
-            : interpolate(t('providers.balance'), {
-                'provider': s.label,
-                'currency': s.currency,
-                'amount': account.amount,
-              }),
+      Semantics(
+        container: true,
+        liveRegion: true,
+        child: Text(
+          account == null
+              ? interpolate(t('providers.balance_unavailable'), {
+                  'provider': s.label,
+                })
+              : interpolate(t('providers.balance'), {
+                  'provider': s.label,
+                  'currency': s.currency,
+                  'amount': account.amount,
+                }),
+        ),
       ),
       if (stale)
         Text(

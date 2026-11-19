@@ -41,9 +41,11 @@ class ChatService {
   final ChatStore store;
   final ProviderApi api;
   bool closed = false;
+  int _generation = 0;
   final _busy = <String>{};
   final Map<PreparedSend, String> _authorizations = {};
   void invalidate() {
+    _generation++;
     _authorizations.clear();
   }
 
@@ -59,6 +61,7 @@ class ChatService {
     if (closed || _busy.contains(chat.id)) {
       throw const PlanRejected('service.error.turn_active');
     }
+    final generation = _generation;
     final rows = await store.journal(chat: chat.id);
     final total = totals(rows, chat.service);
     if (total.blocked) {
@@ -67,6 +70,7 @@ class ChatService {
     final settings = await store.settings(chat.id);
     final history = await store.history(chat.id);
     var text = chat.draft.trim();
+    List<Map<String, String>>? previousContext;
     if (retry != null) {
       final last = rows.where((a) => a['turn_id'] == retry).lastOrNull;
       if (last == null ||
@@ -75,6 +79,7 @@ class ChatService {
           last['requested_model'] != chat.model) {
         throw const PlanRejected('service.error.retry');
       }
+      previousContext = await store.dispatchSnapshot(last);
       text = history
           .firstWhere((m) => m.turn == retry && m.role == 'user')
           .body;
@@ -89,7 +94,7 @@ class ChatService {
             chat.service,
             key,
           )).where((m) => m.id == chat.model).firstOrNull;
-    if (key != _key(chat.service)) {
+    if (generation != _generation || key != _key(chat.service)) {
       throw const PlanRejected('service.error.key_state');
     }
     if (model == null) throw const PlanRejected('service.error.model_missing');
@@ -107,6 +112,22 @@ class ChatService {
           .where((m) => m.role == 'assistant' && m.turn == u.turn)
           .firstOrNull;
       if (a != null) pairs.add((user: u.body, assistant: a.body));
+    }
+    if (previousContext != null) {
+      if (previousContext.isEmpty ||
+          previousContext.last['role'] != 'user' ||
+          previousContext.last['content'] != text ||
+          previousContext.length.isEven) {
+        throw const PlanRejected('service.error.retry');
+      }
+      pairs.clear();
+      for (var i = 0; i < previousContext.length - 1; i += 2) {
+        final user = previousContext[i], answer = previousContext[i + 1];
+        if (user['role'] != 'user' || answer['role'] != 'assistant') {
+          throw const PlanRejected('service.error.retry');
+        }
+        pairs.add((user: user['content']!, assistant: answer['content']!));
+      }
     }
     final balance = await store.limitFor(chat.id, chat.service);
     Amount? remaining;
@@ -142,8 +163,12 @@ class ChatService {
       reserved: total.held,
       keyRemaining: remaining,
     );
-    if (key != _key(chat.service)) {
+    if (generation != _generation || key != _key(chat.service)) {
       throw const PlanRejected('service.error.key_state');
+    }
+    if (previousContext != null &&
+        jsonEncode(previousContext) != jsonEncode(plan.messages)) {
+      throw const PlanRejected('service.error.context');
     }
     final send = PreparedSend(
       chat.id,
@@ -171,6 +196,27 @@ class ChatService {
         (!send.skip || plan.warning || model.rates.isEmpty) &&
         !confirmed) {
       throw const PlanRejected('service.error.paid_confirm');
+    }
+    if (!model.free) {
+      final current = (await store.chats())
+          .where((c) => c.id == send.chat)
+          .firstOrNull;
+      if (current == null) throw const PlanRejected('connection.stale');
+      final refreshed = await preview(current, retry: send.retry);
+      final currentKey = _authorizations.remove(refreshed);
+      if (currentKey != key ||
+          refreshed.version != send.version ||
+          refreshed.rev != send.rev ||
+          refreshed.plan.prompt != plan.prompt ||
+          refreshed.plan.completion != plan.completion ||
+          refreshed.plan.reservationAmount != plan.reservationAmount ||
+          refreshed.plan.projected != plan.projected ||
+          refreshed.plan.warning != plan.warning ||
+          refreshed.skip != send.skip ||
+          jsonEncode(refreshed.model.toJson()) != jsonEncode(model.toJson()) ||
+          jsonEncode(refreshed.plan.messages) != jsonEncode(plan.messages)) {
+        throw const PlanRejected('paid.confirm_required');
+      }
     }
     if (!_busy.add(send.chat)) {
       throw const PlanRejected('service.error.turn_active');

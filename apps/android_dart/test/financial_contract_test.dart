@@ -6,7 +6,7 @@ import 'package:tokenlogue_dart/domain/analytics.dart';
 import 'package:tokenlogue_dart/data/transport.dart';
 
 void main() {
-  final a = (String s) => Amount.parse(s)!;
+  Amount a(String s) => Amount.parse(s)!;
   test(
     'prices preserve decimal spelling from JSON and exact 10% threshold',
     () {

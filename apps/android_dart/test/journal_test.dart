@@ -24,8 +24,9 @@ class FixtureTransport implements Transport {
     Payload? body,
   ]) async {
     expect(Service.detect(key), service);
-    if (resource != Resource.completion)
+    if (resource != Resource.completion) {
       throw StateError('Unexpected network request');
+    }
     expect(service, Service.openrouter);
     expect(body!['model'], 'openrouter/free');
     expect(

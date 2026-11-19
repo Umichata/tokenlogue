@@ -499,6 +499,12 @@ class _WorkspaceState extends State<Workspace> {
                 child: Text(t(action)),
               ),
           ],
+          if (c != null && !c.free)
+            SwitchListTile(
+              value: settings['skip_paid'] == 1,
+              title: Text(t('metrics.without_confirmation')),
+              onChanged: (_) => Navigator.pop(ctx, 'toggle_confirm'),
+            ),
           for (final action in [
             'language.label',
             'protection_panel.open',
@@ -517,6 +523,8 @@ class _WorkspaceState extends State<Workspace> {
     );
     if (!alive) return;
     switch (value) {
+      case 'toggle_confirm':
+        if (c != null) await toggleConfirmations(c, settings['skip_paid'] != 1);
       case 'connection.configure_key':
         providerFilter = c?.service;
         await selectPage(1);
@@ -612,13 +620,186 @@ class _WorkspaceState extends State<Workspace> {
       ],
     ),
   );
+  String accountText(Service s) {
+    final a = accounts.values[s];
+    if (a == null) {
+      return interpolate(t('providers.balance_unavailable'), {
+        'provider': s.label,
+      });
+    }
+    final label = accounts.stale.contains(s)
+        ? 'metrics.account_stale'
+        : accounts.loading.contains(s)
+        ? 'metrics.account_updating'
+        : 'metrics.account_current';
+    return interpolate(t(label), {
+      'provider': s.label,
+      'amount': '${a.amount} ${s.currency}',
+    });
+  }
+
+  String keyLimitText(Service s) {
+    final a = accounts.values[s];
+    if (a == null || !a.known) return t('providers.key_remaining_unknown');
+    return a.limit == null
+        ? t('providers.key_limit_not_set')
+        : interpolate(t('providers.key_remaining'), {
+            'amount': a.limit,
+            'currency': s.currency,
+          });
+  }
+
+  String estimate(ChatRecord c, List<JournalRow> rows) {
+    final text = composer.text.trim();
+    if (text.isEmpty) return t('estimate.empty');
+    final config = settings['price'];
+    if (config is! String) return t('estimate.unavailable');
+    final model = ModelChoice.fromJson(jsonDecode(config) as Payload),
+        total = totals(rows, c.service);
+    try {
+      final pairs = <ChatPair>[];
+      for (final m in messages.where((m) => m.role == 'user')) {
+        final a = messages
+            .where((a) => a.turn == m.turn && a.role == 'assistant')
+            .firstOrNull;
+        if (a != null) pairs.add((user: m.body, assistant: a.body));
+      }
+      final plan = RequestPlan.prepare(
+        model: model,
+        text: text,
+        history: pairs,
+        availableTokens:
+            (settings['token_limit'] as int? ?? 8192) -
+            total.used -
+            total.reserved,
+        outputLimit: settings['response_limit'] as int,
+        budget: budget,
+        spent: total.spent,
+        reserved: total.held,
+        keyRemaining: null,
+      );
+      return [
+        interpolate(t('estimate.input'), {'count': plan.prompt}),
+        interpolate(t('estimate.reply'), {'count': plan.completion}),
+        if (!c.free)
+          plan.reserve == null
+              ? t('estimate.cost_unknown')
+              : interpolate(t('estimate.cost'), {
+                  'amount': '${plan.reserve} ${c.service.currency}',
+                }),
+      ].join(' · ');
+    } on PlanRejected {
+      return t('estimate.over_limit');
+    }
+  }
+
+  Future<void> toggleConfirmations(ChatRecord c, bool enabled) async {
+    if (c.free) return;
+    final key = c.id, rev = settings['connection_rev'];
+    if (enabled &&
+        !await confirm(
+          context,
+          t('paid.no_confirmation'),
+          t('paid.no_confirmation_help'),
+          t('common.cancel'),
+          t('chat.save'),
+        )) {
+      return;
+    }
+    if (!alive || key != selected) return;
+    final n = await store.db.rawUpdate(
+      'UPDATE chats SET skip_paid=?,connection_rev=connection_rev+1 WHERE id=? AND connection_rev=?',
+      [enabled ? 1 : 0, key, rev],
+    );
+    if (n != 1) throw const PlanRejected('connection.stale');
+    widget.session.sending.invalidate();
+    await load();
+  }
+
+  Widget editor(ChatRecord c, List<JournalRow> local, BudgetTotal total) {
+    final canSend =
+        !sending && !total.blocked && composer.text.trim().isNotEmpty;
+    final short =
+        MediaQuery.sizeOf(context).height -
+            MediaQuery.viewInsetsOf(context).bottom <
+        430;
+    return ColoredBox(
+      color: panel,
+      child: Padding(
+        padding: EdgeInsets.all(short ? 4 : 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Expanded(
+                  child: Focus(
+                    onKeyEvent: (_, event) {
+                      if (event is KeyDownEvent &&
+                          (event.logicalKey == LogicalKeyboardKey.enter ||
+                              event.logicalKey ==
+                                  LogicalKeyboardKey.numpadEnter) &&
+                          !HardwareKeyboard.instance.isShiftPressed) {
+                        if (canSend) unawaited(run(send));
+                        return KeyEventResult.handled;
+                      }
+                      return KeyEventResult.ignored;
+                    },
+                    child: TextField(
+                      controller: composer,
+                      minLines: 1,
+                      maxLines: short ? 2 : 5,
+                      keyboardType: TextInputType.multiline,
+                      textInputAction: TextInputAction.send,
+                      onSubmitted: (_) {
+                        if (canSend) unawaited(run(send));
+                      },
+                      decoration: InputDecoration(
+                        labelText: t('composer.message'),
+                        hintText: t('composer.hint'),
+                      ),
+                      onChanged: (_) {
+                        widget.session.sending.invalidate();
+                        update();
+                        unawaited(run(editText));
+                      },
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                FilledButton.icon(
+                  onPressed: canSend ? () => run(send) : null,
+                  icon: const Icon(Icons.send),
+                  label: Text(t('composer.send')),
+                ),
+              ],
+            ),
+            if (!short)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Tooltip(
+                  message: t('estimate.help'),
+                  child: Text(
+                    estimate(c, local),
+                    style: const TextStyle(color: muted, fontSize: 12),
+                  ),
+                ),
+              ),
+            if (sending) const LinearProgressIndicator(),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget conversation(bool wide) {
     final c = chat, local = rows.where((r) => r['chat'] == selected).toList();
     final total = c == null ? null : totals(local, c.service);
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 8),
           child: Row(
             children: [
               IconButton(
@@ -660,6 +841,22 @@ class _WorkspaceState extends State<Workspace> {
             ],
           ),
         ),
+        if (c != null)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            child: Text(
+              interpolate(t('workspace.current_model'), {
+                'provider': c.service.label,
+                'model': c.model == ModelChoice.router.id
+                    ? t('model.free_router')
+                    : c.model,
+              }),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(color: muted, fontSize: 12),
+            ),
+          ),
         if (c != null) ...[
           Align(
             alignment: Alignment.centerLeft,
@@ -685,22 +882,47 @@ class _WorkspaceState extends State<Workspace> {
           Container(
             width: double.infinity,
             color: panel,
-            padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 12),
-            child: Text(
-              c.free
-                  ? interpolate(t('metrics.free_summary'), {
-                      'count':
-                          (settings['token_limit'] as int? ?? 8192) -
-                          total!.used -
-                          total.reserved,
-                      'last': local.lastOrNull?['usage_total'] ?? '—',
-                    })
-                  : interpolate(t('metrics.paid_summary'), {
-                      'amount': budget == null
-                          ? '—'
-                          : '${budget! - total!.spent - total.held} ${c.service.currency}',
-                      'last': local.lastOrNull?['cost'] ?? '—',
-                    }),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            child: Wrap(
+              spacing: 10,
+              runSpacing: 4,
+              children: [
+                Text(
+                  c.free
+                      ? interpolate(t('metrics.free_summary'), {
+                          'count':
+                              (settings['token_limit'] as int? ?? 8192) -
+                              total!.used -
+                              total.reserved,
+                          'last': local.lastOrNull?['usage_total'] ?? '—',
+                        })
+                      : interpolate(t('metrics.paid_summary'), {
+                          'amount': budget == null
+                              ? '—'
+                              : '${budget! - total!.spent - total.held} ${c.service.currency}',
+                          'last': local.lastOrNull?['cost'] ?? '—',
+                        }),
+                ),
+                Tooltip(
+                  message: t('metrics.account_help'),
+                  child: Text(
+                    accountText(c.service),
+                    style: const TextStyle(fontSize: 12, color: muted),
+                  ),
+                ),
+                if (!c.free && c.service == Service.openrouter)
+                  Text(
+                    keyLimitText(c.service),
+                    style: const TextStyle(fontSize: 12, color: muted),
+                  ),
+                if (!c.free)
+                  FilterChip(
+                    selected: settings['skip_paid'] == 1,
+                    label: Text(t('metrics.without_confirmation')),
+                    onSelected: (enabled) =>
+                        run(() => toggleConfirmations(c, enabled)),
+                  ),
+              ],
             ),
           ),
         ],
@@ -778,44 +1000,7 @@ class _WorkspaceState extends State<Workspace> {
                   ],
                 ),
         ),
-        if (c != null)
-          ColoredBox(
-            color: panel,
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: composer,
-                      minLines: 1,
-                      maxLines: 5,
-                      keyboardType: TextInputType.multiline,
-                      decoration: InputDecoration(
-                        labelText: t('composer.message'),
-                      ),
-                      onChanged: (_) {
-                        widget.session.sending.invalidate();
-                        update();
-                        unawaited(run(editText));
-                      },
-                    ),
-                  ),
-                  IconButton.filled(
-                    onPressed:
-                        !sending &&
-                            !total!.blocked &&
-                            composer.text.trim().isNotEmpty
-                        ? () => run(send)
-                        : null,
-                    icon: const Icon(Icons.send),
-                    tooltip: t('composer.send'),
-                  ),
-                ],
-              ),
-            ),
-          ),
+        if (c != null) editor(c, local, total!),
         Text(
           t('chat.history_warning'),
           textAlign: TextAlign.center,
@@ -837,7 +1022,7 @@ class _WorkspaceState extends State<Workspace> {
     final wide = MediaQuery.sizeOf(context).width >= 760;
     final home = Row(
       children: [
-        if (wide && !showChats) SizedBox(width: 280, child: list()),
+        if (wide && !showChats) SizedBox(width: 320, child: list()),
         Expanded(child: !wide && showChats ? list() : conversation(wide)),
       ],
     );

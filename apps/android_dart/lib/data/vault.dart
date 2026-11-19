@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:synchronized/synchronized.dart';
 
 import '../domain/provider.dart';
+import '../domain/pin_cooldown.dart';
 
 Uint8List randomBytes(int length) {
   final random = Random.secure();
@@ -146,13 +147,10 @@ class ProfileVault {
     final clock = await channel.invokeListMethod<int>('clock');
     if (clock == null || clock.length != 2) throw StateError('clock');
     final elapsed = clock[0], boot = clock[1];
-    if (record['attempts'] == 3) {
-      final deadline = record['deadline'] as int;
-      final remaining = record['boot'] == boot
-          ? deadline - elapsed
-          : 300000 - elapsed;
-      if (remaining > 0) throw PinLocked(remaining);
-      record['attempts'] = 0;
+    final remaining = PinCooldown.normalize(record, elapsed, boot);
+    if (remaining > 0) {
+      await _write(record);
+      throw PinLocked(remaining);
     }
     final digest = validPin(pin)
         ? await pinDigest(pin, record['salt'] as String)
@@ -163,16 +161,13 @@ class ProfileVault {
     )) {
       record['attempts'] = (record['attempts'] as int) + 1;
       if (record['attempts'] == 3) {
-        record['boot'] = boot;
-        record['deadline'] = elapsed + 300000;
+        PinCooldown.arm(record, elapsed, boot);
       }
       await _write(record);
       if (record['attempts'] == 3) throw const PinLocked(300000);
       return null;
     }
-    record['attempts'] = 0;
-    record.remove('boot');
-    record.remove('deadline');
+    PinCooldown.clear(record);
     await _write(record);
     return UnlockedProfile(
       record['id'] as String,

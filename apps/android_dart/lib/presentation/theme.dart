@@ -18,9 +18,35 @@ ThemeData buildTheme() {
     useMaterial3: true,
     brightness: Brightness.dark,
     scaffoldBackgroundColor: pageBackground,
+    dividerColor: border,
+    hoverColor: elevated,
+    focusColor: border,
+    disabledColor: muted,
+    textTheme: const TextTheme(
+      headlineMedium: TextStyle(
+        fontSize: 26,
+        fontWeight: FontWeight.w600,
+        color: ink,
+        height: 1.2,
+      ),
+      titleLarge: TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.w600,
+        color: ink,
+      ),
+      titleMedium: TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+        color: ink,
+      ),
+      bodyLarge: TextStyle(fontSize: 16, color: ink, height: 1.45),
+      bodyMedium: TextStyle(fontSize: 14, color: ink, height: 1.45),
+      bodySmall: TextStyle(fontSize: 12, color: muted, height: 1.4),
+    ),
     colorScheme: const ColorScheme.dark(
       primary: primary,
       onPrimary: Color(0xff102923),
+      secondary: primary,
       surface: panel,
       onSurface: ink,
       onSurfaceVariant: muted,
@@ -28,7 +54,11 @@ ThemeData buildTheme() {
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
-        minimumSize: const Size(44, 48),
+        minimumSize: const Size(44, 44),
+        disabledBackgroundColor: elevated,
+        disabledForegroundColor: muted,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
     ),

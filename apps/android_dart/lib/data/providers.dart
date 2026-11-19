@@ -22,6 +22,14 @@ class ProviderApi {
       final response = await transport.request(service, key, Resource.key);
       final data = response['data'];
       if (service == Service.vsegpt && response['status'] != 'ok') {
+        final raw = response['error'];
+        final message = raw is Map ? raw['message'] : null;
+        if (message is String &&
+            message.toLowerCase().contains('api key') &&
+            (message.toLowerCase().contains('not found') ||
+                message.toLowerCase().contains('original openai'))) {
+          return KeyStatus.invalid;
+        }
         return KeyStatus.unverified;
       }
       if (data is! Map) return KeyStatus.malformed;

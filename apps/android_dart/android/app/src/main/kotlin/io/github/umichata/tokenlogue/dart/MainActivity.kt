@@ -20,6 +20,11 @@ import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 
 class MainActivity : FlutterActivity() {
+    override fun onCreate(savedInstanceState: android.os.Bundle?) {
+        super.onCreate(savedInstanceState)
+        if (Build.VERSION.SDK_INT >= 33) setRecentsScreenshotEnabled(false)
+    }
+
     private val alias = "io.github.umichata.tokenlogue.dart.vault.v1"
     private val vault by lazy { getSharedPreferences(alias, MODE_PRIVATE) }
 
