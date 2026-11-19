@@ -117,7 +117,7 @@ class _TokenlogueState extends State<Tokenlogue> with WidgetsBindingObserver {
           Screen.home,
           Screen.recovery,
           Screen.recovered,
-          Screen.deletion,
+          if (!deletePending) Screen.deletion,
         ].contains(screen)) {
           screen = Screen.pin;
         }
@@ -268,10 +268,20 @@ class _TokenlogueState extends State<Tokenlogue> with WidgetsBindingObserver {
     try {
       final ok = await vault.requestRecovery(t('recovery.explanation'));
       if (!mounted || g != epoch || screen != Screen.recovery) return;
+      FocusManager.instance.primaryFocus?.unfocus();
+      pinField.clear();
+      repeat.clear();
       setState(() {
         screen = ok ? Screen.recovered : Screen.pin;
         notice = ok ? 'recovery.verified_notice' : 'recovery.cancelled';
       });
+    } on TimeoutException {
+      if (mounted && epoch == g) {
+        setState(() {
+          screen = Screen.pin;
+          notice = 'recovery.expired';
+        });
+      }
     } catch (_) {
       if (mounted && g == epoch) {
         setState(() {
@@ -635,57 +645,63 @@ class _TokenlogueState extends State<Tokenlogue> with WidgetsBindingObserver {
     title: 'Tokenlogue Dart',
     theme: buildTheme(),
     debugShowCheckedModeBanner: false,
-    home: screen == Screen.home && session != null
-        ? Workspace(
-            session: session!,
-            api: api,
-            vault: vault,
-            t: t,
-            onLock: lock,
-            onDelete: askDelete,
-            language: lang,
-            setLanguage: setLanguage,
-          )
-        : Scaffold(
-            body: SafeArea(
-              child: Column(
-                children: [
-                  header(),
-                  Expanded(
-                    child: switch (screen) {
-                      Screen.loading => const Center(
-                        child: CircularProgressIndicator(),
-                      ),
-                      Screen.error => Center(
-                        child: Text(t('service.key_save_failed')),
-                      ),
-                      _ => ListView(
-                        padding: const EdgeInsets.fromLTRB(16, 24, 16, 32),
-                        children: [
-                          Align(
-                            alignment: Alignment.topCenter,
-                            child: Container(
-                              width: 420,
-                              padding: const EdgeInsets.all(24),
-                              decoration: BoxDecoration(
-                                color: panel,
-                                border: Border.all(color: border),
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                spacing: 16,
-                                children: fields(),
+    home: Semantics(
+      container: true,
+      explicitChildNodes: true,
+      identifier: 'tokenlogue.screen.${screen.name}',
+      child: screen == Screen.home && session != null
+          ? Workspace(
+              session: session!,
+              api: api,
+              vault: vault,
+              t: t,
+              onLock: lock,
+              onDelete: askDelete,
+              language: lang,
+              setLanguage: setLanguage,
+            )
+          : Scaffold(
+              body: SafeArea(
+                child: Column(
+                  children: [
+                    header(),
+                    Expanded(
+                      child: switch (screen) {
+                        Screen.loading => const Center(
+                          child: CircularProgressIndicator(),
+                        ),
+                        Screen.error => Center(
+                          child: Text(t('service.key_save_failed')),
+                        ),
+                        _ => ListView(
+                          padding: const EdgeInsets.fromLTRB(16, 24, 16, 32),
+                          children: [
+                            Align(
+                              alignment: Alignment.topCenter,
+                              child: Container(
+                                width: 420,
+                                padding: const EdgeInsets.all(24),
+                                decoration: BoxDecoration(
+                                  color: panel,
+                                  border: Border.all(color: border),
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  spacing: 16,
+                                  children: fields(),
+                                ),
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                    },
-                  ),
-                ],
+                          ],
+                        ),
+                      },
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
+    ),
   );
 }

@@ -490,6 +490,12 @@ class _WorkspaceState extends State<Workspace> {
               ),
             ),
             for (final action in [
+              if (MediaQuery.sizeOf(context).height -
+                      MediaQuery.viewInsetsOf(context).bottom <
+                  560) ...[
+                'chat.rename',
+                'chat.delete_chat',
+              ],
               'connection.configure_key',
               'connection.change_provider',
               'limits.dialog',
@@ -523,6 +529,10 @@ class _WorkspaceState extends State<Workspace> {
     );
     if (!alive) return;
     switch (value) {
+      case 'chat.rename':
+        await rename();
+      case 'chat.delete_chat':
+        await remove();
       case 'toggle_confirm':
         if (c != null) await toggleConfirmations(c, settings['skip_paid'] != 1);
       case 'connection.configure_key':
@@ -565,7 +575,7 @@ class _WorkspaceState extends State<Workspace> {
     );
   }
 
-  Widget list() => ColoredBox(
+  Widget list() => Material(
     color: panel,
     child: Column(
       children: [
@@ -796,217 +806,241 @@ class _WorkspaceState extends State<Workspace> {
   Widget conversation(bool wide) {
     final c = chat, local = rows.where((r) => r['chat'] == selected).toList();
     final total = c == null ? null : totals(local, c.service);
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          child: Row(
-            children: [
-              IconButton(
-                onPressed: () => setState(() => showChats = !showChats),
-                icon: const Icon(Icons.menu),
-                tooltip: t('chat.open_list'),
-              ),
-              Expanded(
-                child: Text(
-                  c?.title ?? 'Tokenlogue',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              IconButton(
-                onPressed: () => run(() => newChat()),
-                icon: const Icon(Icons.add),
-                tooltip: t('chat.untitled'),
-              ),
-              IconButton(
-                onPressed: widget.onLock,
-                icon: const Icon(Icons.lock_outline),
-                tooltip: t('chat.lock'),
-              ),
-              IconButton(
-                onPressed: () => run(protection),
-                icon: const Icon(Icons.shield_outlined, color: Colors.amber),
-                tooltip: t('protection_panel.open'),
-              ),
-              IconButton(
-                onPressed: () => run(menu),
-                icon: const Icon(Icons.more_vert),
-                tooltip: t('chat.options'),
-              ),
-            ],
-          ),
-        ),
-        if (c != null)
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            child: Text(
-              interpolate(t('workspace.current_model'), {
-                'provider': c.service.label,
-                'model': c.model == ModelChoice.router.id
-                    ? t('model.free_router')
-                    : c.model,
-              }),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: muted, fontSize: 12),
-            ),
-          ),
-        if (c != null) ...[
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Wrap(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final short = constraints.maxHeight < 480;
+        final scrollTogether =
+            short || MediaQuery.textScalerOf(context).scale(16) > 20;
+        final head = <Widget>[
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Row(
               children: [
-                TextButton.icon(
-                  onPressed: () => run(rename),
-                  icon: const Icon(Icons.edit_outlined),
-                  label: Text(t('chat.rename')),
+                IconButton(
+                  onPressed: () => setState(() => showChats = !showChats),
+                  icon: const Icon(Icons.menu),
+                  tooltip: t('chat.open_list'),
                 ),
-                TextButton.icon(
-                  style: TextButton.styleFrom(
-                    foregroundColor: Colors.redAccent,
-                  ),
-                  onPressed: () => run(remove),
-                  icon: const Icon(Icons.delete_outline),
-                  label: Text(t('chat.delete_chat')),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 8),
-          Container(
-            width: double.infinity,
-            color: panel,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            child: Wrap(
-              spacing: 10,
-              runSpacing: 4,
-              children: [
-                Text(
-                  c.free
-                      ? interpolate(t('metrics.free_summary'), {
-                          'count':
-                              (settings['token_limit'] as int? ?? 8192) -
-                              total!.used -
-                              total.reserved,
-                          'last': local.lastOrNull?['usage_total'] ?? '—',
-                        })
-                      : interpolate(t('metrics.paid_summary'), {
-                          'amount': budget == null
-                              ? '—'
-                              : '${budget! - total!.spent - total.held} ${c.service.currency}',
-                          'last': local.lastOrNull?['cost'] ?? '—',
-                        }),
-                ),
-                Tooltip(
-                  message: t('metrics.account_help'),
+                Expanded(
                   child: Text(
-                    accountText(c.service),
-                    style: const TextStyle(fontSize: 12, color: muted),
+                    c?.title ?? 'Tokenlogue',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
-                if (!c.free && c.service == Service.openrouter)
-                  Text(
-                    keyLimitText(c.service),
-                    style: const TextStyle(fontSize: 12, color: muted),
-                  ),
-                if (!c.free)
-                  FilterChip(
-                    selected: settings['skip_paid'] == 1,
-                    label: Text(t('metrics.without_confirmation')),
-                    onSelected: (enabled) =>
-                        run(() => toggleConfirmations(c, enabled)),
-                  ),
+                IconButton(
+                  onPressed: () => run(() => newChat()),
+                  icon: const Icon(Icons.add),
+                  tooltip: t('chat.untitled'),
+                ),
+                IconButton(
+                  onPressed: widget.onLock,
+                  icon: const Icon(Icons.lock_outline),
+                  tooltip: t('chat.lock'),
+                ),
+                IconButton(
+                  onPressed: () => run(protection),
+                  icon: const Icon(Icons.shield_outlined, color: Colors.amber),
+                  tooltip: t('protection_panel.open'),
+                ),
+                IconButton(
+                  onPressed: () => run(menu),
+                  icon: const Icon(Icons.more_vert),
+                  tooltip: t('chat.options'),
+                ),
               ],
             ),
           ),
-        ],
-        if (error.isNotEmpty)
-          Text(error, style: const TextStyle(color: Colors.amber)),
-        Expanded(
-          child: c == null
-              ? Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(t('chat.empty')),
-                      Text(t('chat.create_help')),
-                      FilledButton(
-                        onPressed: () => run(() => newChat()),
-                        child: Text(t('chat.untitled')),
-                      ),
-                    ],
-                  ),
-                )
-              : ListView(
-                  padding: const EdgeInsets.all(16),
+          if (c != null)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              child: Text(
+                interpolate(t('workspace.current_model'), {
+                  'provider': c.service.label,
+                  'model': c.model == ModelChoice.router.id
+                      ? t('model.free_router')
+                      : c.model,
+                }),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: muted, fontSize: 12),
+              ),
+            ),
+          if (c != null) ...[
+            if (!short)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Wrap(
                   children: [
-                    if (messages.isEmpty) Text(t('history.empty')),
-                    for (final m in messages)
-                      Card(
-                        color: m.role == 'user' ? elevated : panel,
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      m.role == 'user'
-                                          ? t('protection_panel.you')
-                                          : 'Tokenlogue',
-                                    ),
-                                  ),
-                                  IconButton(
-                                    onPressed: () => Clipboard.setData(
-                                      ClipboardData(text: m.body),
-                                    ),
-                                    icon: const Icon(Icons.copy),
-                                    tooltip: t('protection_panel.copy_message'),
-                                  ),
-                                ],
-                              ),
-                              MessageBody(
-                                source: m.body,
-                                copyLabel: t('protection_panel.copy_message'),
-                              ),
-                            ],
-                          ),
-                        ),
+                    TextButton.icon(
+                      onPressed: () => run(rename),
+                      icon: const Icon(Icons.edit_outlined),
+                      label: Text(t('chat.rename')),
+                    ),
+                    TextButton.icon(
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.redAccent,
                       ),
-                    for (final a in local)
-                      if (['unknown', 'unknownCost'].contains(a['state']))
-                        TextButton(
-                          onPressed: () =>
-                              run(() => release(a['id'] as String)),
-                          child: Text(t('reserve.release_unknown')),
-                        )
-                      else if (a['state'] == 'failed')
-                        TextButton(
-                          onPressed: sending
-                              ? null
-                              : () => run(
-                                  () => send(retry: a['turn_id'] as String),
-                                ),
-                          child: Text(t('common.retry')),
-                        ),
+                      onPressed: () => run(remove),
+                      icon: const Icon(Icons.delete_outline),
+                      label: Text(t('chat.delete_chat')),
+                    ),
                   ],
                 ),
-        ),
-        if (c != null) editor(c, local, total!),
-        Text(
-          t('chat.history_warning'),
-          textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 12, color: muted),
-        ),
-      ],
+              ),
+            if (!short) const SizedBox(height: 8),
+            Container(
+              width: double.infinity,
+              color: panel,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              child: Wrap(
+                spacing: 10,
+                runSpacing: 4,
+                children: [
+                  Text(
+                    c.free
+                        ? interpolate(t('metrics.free_summary'), {
+                            'count':
+                                (settings['token_limit'] as int? ?? 8192) -
+                                total!.used -
+                                total.reserved,
+                            'last': local.lastOrNull?['usage_total'] ?? '—',
+                          })
+                        : interpolate(t('metrics.paid_summary'), {
+                            'amount': budget == null
+                                ? '—'
+                                : '${budget! - total!.spent - total.held} ${c.service.currency}',
+                            'last': local.lastOrNull?['cost'] ?? '—',
+                          }),
+                  ),
+                  Tooltip(
+                    message: t('metrics.account_help'),
+                    child: Text(
+                      accountText(c.service),
+                      style: const TextStyle(fontSize: 12, color: muted),
+                    ),
+                  ),
+                  if (!c.free && c.service == Service.openrouter)
+                    Text(
+                      keyLimitText(c.service),
+                      style: const TextStyle(fontSize: 12, color: muted),
+                    ),
+                  if (!c.free)
+                    FilterChip(
+                      selected: settings['skip_paid'] == 1,
+                      label: Text(t('metrics.without_confirmation')),
+                      onSelected: (enabled) =>
+                          run(() => toggleConfirmations(c, enabled)),
+                    ),
+                ],
+              ),
+            ),
+          ],
+          if (error.isNotEmpty)
+            Text(error, style: const TextStyle(color: Colors.amber)),
+        ];
+        final history = c == null
+            ? Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(t('chat.empty')),
+                    Text(t('chat.create_help')),
+                    FilledButton(
+                      onPressed: () => run(() => newChat()),
+                      child: Text(t('chat.untitled')),
+                    ),
+                  ],
+                ),
+              )
+            : ListView(
+                primary: false,
+                shrinkWrap: scrollTogether,
+                physics: scrollTogether
+                    ? const NeverScrollableScrollPhysics()
+                    : null,
+                padding: const EdgeInsets.all(16),
+                children: [
+                  if (messages.isEmpty) Text(t('history.empty')),
+                  for (final m in messages)
+                    Card(
+                      color: m.role == 'user' ? elevated : panel,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    m.role == 'user'
+                                        ? t('protection_panel.you')
+                                        : 'Tokenlogue',
+                                  ),
+                                ),
+                                IconButton(
+                                  onPressed: () => Clipboard.setData(
+                                    ClipboardData(text: m.body),
+                                  ),
+                                  icon: const Icon(Icons.copy),
+                                  tooltip: t('protection_panel.copy_message'),
+                                ),
+                              ],
+                            ),
+                            MessageBody(
+                              source: m.body,
+                              copyLabel: t('protection_panel.copy_message'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  for (final a in local)
+                    if (['unknown', 'unknownCost'].contains(a['state']))
+                      TextButton(
+                        onPressed: () => run(() => release(a['id'] as String)),
+                        child: Text(t('reserve.release_unknown')),
+                      )
+                    else if (a['state'] == 'failed')
+                      TextButton(
+                        onPressed: sending
+                            ? null
+                            : () => run(
+                                () => send(retry: a['turn_id'] as String),
+                              ),
+                        child: Text(t('common.retry')),
+                      ),
+                ],
+              );
+        final foot = <Widget>[
+          if (c != null) editor(c, local, total!),
+          if (!short)
+            Text(
+              t('chat.history_warning'),
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 12, color: muted),
+            ),
+        ];
+        if (scrollTogether) {
+          return ListView(
+            padding: EdgeInsets.zero,
+            children: [...head, history, ...foot],
+          );
+        }
+        return Column(
+          children: [
+            ...head,
+            Expanded(child: history),
+            ...foot,
+          ],
+        );
+      },
     );
   }
 

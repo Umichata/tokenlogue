@@ -5,6 +5,7 @@ import '../domain/provider.dart';
 import '../domain/amount.dart';
 import '../domain/catalogue.dart';
 import '../domain/request_plan.dart';
+import '../domain/usage.dart';
 import 'chat_store.dart';
 import 'vault.dart';
 
@@ -47,12 +48,18 @@ extension Journal on ChatStore {
   }
 
   Future<List<JournalRow>> journal({String? chat}) => db.rawQuery(
-    'SELECT a.*,t.chat FROM attempts a JOIN turns t ON a.turn_id=t.id ${chat == null ? '' : 'WHERE t.chat=?'} ORDER BY a.dispatch_ms,a.rowid',
+    'SELECT a.id,a.turn_id,a.provider,a.currency,a.requested_model,a.actual_model,a.dispatch_ms,a.state,a.reserved_tokens,a.reserved_cost,a.usage_in,a.usage_out,a.usage_total,a.usage_source,a.cost,a.cost_source,a.draft_revision,a.error,t.chat FROM attempts a JOIN turns t ON a.turn_id=t.id ${chat == null ? '' : 'WHERE t.chat=?'} ORDER BY a.dispatch_ms,a.rowid',
     chat == null ? [] : [chat],
   );
   Future<List<Map<String, String>>> dispatchSnapshot(JournalRow attempt) async {
+    final snapshot = (await db.query(
+      'attempts',
+      columns: ['snapshot'],
+      where: 'id=? AND turn_id=?',
+      whereArgs: [attempt['id'], attempt['turn_id']],
+    )).single;
     final text = await crypto.open(
-      attempt['snapshot'] as Uint8List,
+      snapshot['snapshot'] as Uint8List,
       attempt['id'] as String,
       'dispatch',
       1,
@@ -272,13 +279,25 @@ extension Journal on ChatStore {
     return (attempt: attempt, turn: turn);
   }
 
-  Future<void> fail(String attempt, String label, bool unknown) async {
+  Future<void> fail(
+    String attempt,
+    String label,
+    bool unknown, {
+    ReportedUsage usage = const ReportedUsage(),
+  }) async {
     await db.update(
       'attempts',
       {
         'state': unknown ? 'unknown' : 'failed',
         'error': label,
-        if (!unknown) ...{'reserved_tokens': 0, 'reserved_cost': '0'},
+        'usage_in': usage.input,
+        'usage_out': usage.output,
+        'usage_total': usage.total,
+        'usage_source': usage.hasTokens ? 'api' : 'unknown',
+        'cost': usage.cost?.toString(),
+        'cost_source': usage.cost == null ? 'unknown' : 'api',
+        if (!unknown || usage.total != null) 'reserved_tokens': 0,
+        if (!unknown || usage.cost != null) 'reserved_cost': '0',
       },
       where: 'id=? AND state="pending"',
       whereArgs: [attempt],

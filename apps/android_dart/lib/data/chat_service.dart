@@ -3,6 +3,7 @@ import '../domain/amount.dart';
 import '../domain/catalogue.dart';
 import '../domain/provider.dart';
 import '../domain/request_plan.dart';
+import '../domain/usage.dart';
 import 'chat_store.dart';
 import 'journal.dart';
 import 'providers.dart';
@@ -262,51 +263,50 @@ class ChatService {
         );
         final choices = result['choices'];
         final actual = result['model'];
-        if (result['error'] != null ||
-            actual is! String ||
+        final usage = ReportedUsage.parse(result['usage'], model.service);
+        ApiFailure rejected(Object? code) => ApiFailure(
+          completionError(code, 200),
+          usage: usage,
+          uncertain: usage.cost == null || usage.total == null,
+        );
+        if (result['error'] != null) throw rejected(result['error']);
+        if (actual is! String ||
             actual.isEmpty ||
             choices is! List ||
             choices.isEmpty ||
             choices.first is! Map) {
-          throw const ApiFailure('service.error.completion', uncertain: true);
+          throw rejected(null);
         }
-        final choice = choices.first as Map;
-        final message = choice['message'];
-        if (choice['error'] != null ||
-            !['stop', 'length'].contains(choice['finish_reason']) ||
+        final choice = choices.first as Map, message = choice['message'];
+        if (choice['error'] != null) throw rejected(choice['error']);
+        if (choice['finish_reason'] == 'content_filter') {
+          throw rejected({'code': 'content_policy_violation'});
+        }
+        if (choice['finish_reason'] == 'refusal') {
+          throw rejected({'code': 'refusal'});
+        }
+        if (!['stop', 'length'].contains(choice['finish_reason']) ||
             message is! Map ||
             message['content'] is! String ||
             message['role'] != 'assistant') {
-          throw const ApiFailure('service.error.completion', uncertain: true);
+          throw rejected(null);
         }
-        final usage = result['usage'];
-        int? count(String k) {
-          final v = usage is Map ? usage[k] : null;
-          return v is int && v >= 0 ? v : null;
-        }
-
-        final cost = model.service == Service.openrouter && usage is Map
-            ? Amount.parse(usage['cost'])
-            : null;
-        final safeCost = cost != null && !cost.coefficient.isNegative
-            ? cost
-            : null;
         await store.settle(
           chat: send.chat,
           turn: ids.turn,
           attempt: ids.attempt,
           answer: message['content'] as String,
           actual: actual,
-          input: count('prompt_tokens'),
-          output: count('completion_tokens'),
-          total: count('total_tokens'),
-          cost: safeCost,
-          costSource: safeCost == null ? 'unknown' : 'api',
-          usageSource: count('total_tokens') == null ? 'unknown' : 'api',
-          unknown: count('total_tokens') == null || safeCost == null,
+          input: usage.input,
+          output: usage.output,
+          total: usage.total,
+          cost: usage.cost,
+          costSource: usage.cost == null ? 'unknown' : 'api',
+          usageSource: usage.total == null ? 'unknown' : 'api',
+          unknown: usage.total == null || usage.cost == null,
         );
       } on ApiFailure catch (e) {
-        await store.fail(ids.attempt, e.label, e.uncertain);
+        await store.fail(ids.attempt, e.label, e.uncertain, usage: e.usage);
         rethrow;
       }
     } finally {

@@ -56,10 +56,8 @@ class ProviderApi {
     }
   }
 
-  Future<({Amount balance, Amount? limit, bool limitKnown})> account(
-    Service service,
-    String key,
-  ) async {
+  Future<({Amount balance, Amount? limit, bool limitKnown, String status})>
+  account(Service service, String key) async {
     final result = await transport.request(service, key, Resource.balance);
     final data = result['data'];
     if (data is! Map) throw const ApiFailure('catalog.error.schema');
@@ -69,7 +67,21 @@ class ProviderApi {
       }
       final balance = Amount.parse(data['credits']);
       if (balance == null) throw const ApiFailure('catalog.error.schema');
-      return (balance: balance, limit: null, limitKnown: false);
+      final subscription = data['subscription_status'],
+          account = data['user_status'];
+      if (subscription is! String || ![0, 1, 2].contains(account)) {
+        throw const ApiFailure('catalog.error.schema');
+      }
+      final status = subscription != 'ok'
+          ? 'subscription_required'
+          : account == 2
+          ? (balance.compareTo(Amount.zero) <= 0
+                ? 'insufficient_funds'
+                : 'account_disabled')
+          : account == 1
+          ? 'warning'
+          : 'ready';
+      return (balance: balance, limit: null, limitKnown: false, status: status);
     }
     final credit = Amount.parse(data['total_credits']),
         usage = Amount.parse(data['total_usage']);
@@ -89,12 +101,13 @@ class ProviderApi {
           balance: balance,
           limit: limit,
           limitKnown: limit != null || info['limit_remaining'] == null,
+          status: 'ready',
         );
       }
     } on ApiFailure {
       /* Credits and key limit are independent observations. */
     }
-    return (balance: balance, limit: null, limitKnown: false);
+    return (balance: balance, limit: null, limitKnown: false, status: 'ready');
   }
 
   Future<List<ModelChoice>> models(Service service, String key) async {

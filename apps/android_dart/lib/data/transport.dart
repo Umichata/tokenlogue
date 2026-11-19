@@ -4,13 +4,19 @@ import 'dart:io';
 import 'dart:typed_data';
 import '../domain/amount.dart';
 import '../domain/provider.dart';
+import '../domain/usage.dart';
 
 typedef Payload = Map<String, dynamic>;
 
 class ApiFailure implements Exception {
-  const ApiFailure(this.label, {this.uncertain = false});
+  const ApiFailure(
+    this.label, {
+    this.uncertain = false,
+    this.usage = const ReportedUsage(),
+  });
   final String label;
   final bool uncertain;
+  final ReportedUsage usage;
 }
 
 /// Parse non-integral JSON numbers as their original decimal spelling.
@@ -119,6 +125,31 @@ class HttpsTransport implements Transport {
           }
         }
         if (response.statusCode != 200) {
+          if (completion) {
+            Object? data;
+            try {
+              data = decodeProviderJson(utf8.decode(bytes));
+            } on FormatException {
+              data = null;
+            }
+            final usage = ReportedUsage.parse(
+              data is Map ? data['usage'] : null,
+              service,
+            );
+            final uncertain =
+                started &&
+                ({408, 500, 502, 503, 504}.contains(response.statusCode) ||
+                    usage.hasAny &&
+                        (usage.total == null || usage.cost == null));
+            throw ApiFailure(
+              completionError(
+                data is Map ? data['error'] : null,
+                response.statusCode,
+              ),
+              uncertain: uncertain,
+              usage: usage,
+            );
+          }
           final label = switch (response.statusCode) {
             401 => 'catalog.error.auth',
             402 => 'catalog.error.balance',
@@ -138,11 +169,20 @@ class HttpsTransport implements Transport {
         return object;
       })().timeout(Duration(seconds: completion ? 100 : 20));
     } on TimeoutException {
-      throw ApiFailure('catalog.error.timeout', uncertain: started);
+      throw ApiFailure(
+        completion ? 'service.error.timeout' : 'catalog.error.timeout',
+        uncertain: started,
+      );
     } on HandshakeException {
-      throw ApiFailure('catalog.error.tls', uncertain: started);
+      throw ApiFailure(
+        completion ? 'service.error.tls' : 'catalog.error.tls',
+        uncertain: started,
+      );
     } on IOException {
-      throw ApiFailure('catalog.error.network', uncertain: started);
+      throw ApiFailure(
+        completion ? 'service.error.network' : 'catalog.error.network',
+        uncertain: started,
+      );
     } on FormatException {
       throw ApiFailure('catalog.error.schema', uncertain: started);
     } finally {

@@ -5,6 +5,7 @@ import 'package:sqflite/sqflite.dart';
 import '../domain/provider.dart';
 import 'vault.dart';
 import 'journal.dart';
+import 'profile_binding.dart';
 
 class FieldCipher {
   FieldCipher(this.profile);
@@ -77,8 +78,7 @@ class ChatStore {
   ChatStore._(this.db, this.crypto);
   final Database db;
   final FieldCipher crypto;
-  static Future<String> location() async =>
-      '${await getDatabasesPath()}/tokenlogue-dart-v1.db';
+  static Future<String> location() => profileDatabasePath();
   static Future<ChatStore> open(UnlockedProfile profile) async {
     final db = await openDatabase(
       await location(),

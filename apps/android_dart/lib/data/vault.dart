@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:isolate';
 import 'dart:math';
@@ -9,6 +10,7 @@ import 'package:synchronized/synchronized.dart';
 
 import '../domain/provider.dart';
 import '../domain/pin_cooldown.dart';
+import 'profile_binding.dart';
 
 Uint8List randomBytes(int length) {
   final random = Random.secure();
@@ -35,6 +37,8 @@ Future<String> pinDigest(String pin, String salt) async {
 }
 
 class ProfileVault {
+  ProfileVault({this.readBinding = existingProfileBinding});
+  final Future<String?> Function() readBinding;
   static const channel = MethodChannel(
     'io.github.umichata.tokenlogue.dart.vault.v1/platform',
   );
@@ -61,7 +65,7 @@ class ProfileVault {
   Future<bool> exists() async => await _read() != null;
 
   int _recoveryEpoch = 0;
-  String? _grantedProfile;
+  String? _grantedProfile, _grantedVerifier;
   int? _expiresAt;
   final Stopwatch _timer = Stopwatch()..start();
 
@@ -71,6 +75,7 @@ class ProfileVault {
   void revokeRecovery() {
     _recoveryEpoch++;
     _grantedProfile = null;
+    _grantedVerifier = null;
     _expiresAt = null;
     channel.invokeMethod<void>('cancelDevice').catchError((Object _) {});
   }
@@ -82,18 +87,25 @@ class ProfileVault {
     if (initial == null || epoch != _recoveryEpoch || !await canRecover()) {
       return false;
     }
-    if (epoch != _recoveryEpoch) return false;
+    if (await readBinding() != initial['id'] || epoch != _recoveryEpoch) {
+      return false;
+    }
     final ok = await channel
         .invokeMethod<bool>('authenticateDevice', reason)
         .timeout(
           const Duration(seconds: 90),
           onTimeout: () {
-            revokeRecovery();
-            return false;
+            if (epoch == _recoveryEpoch) revokeRecovery();
+            throw TimeoutException('device_recovery');
           },
         );
-    if (ok != true || epoch != _recoveryEpoch) return false;
+    if (ok != true ||
+        await readBinding() != initial['id'] ||
+        epoch != _recoveryEpoch) {
+      return false;
+    }
     _grantedProfile = initial['id'] as String;
+    _grantedVerifier = initial['verifier'] as String;
     _expiresAt = _timer.elapsedMilliseconds + 120000;
     return true;
   }
@@ -104,13 +116,21 @@ class ProfileVault {
     bool granted() =>
         record != null &&
         record['id'] == _grantedProfile &&
+        record['verifier'] == _grantedVerifier &&
         epoch == _recoveryEpoch &&
         _expiresAt != null &&
         _timer.elapsedMilliseconds < _expiresAt!;
-    if (!validPin(pin) || !granted()) return false;
+    if (await readBinding() != _grantedProfile || !granted()) {
+      if (epoch == _recoveryEpoch) revokeRecovery();
+      return false;
+    }
+    if (!validPin(pin)) return false;
     final salt = base64Encode(randomBytes(16));
     final verifier = await pinDigest(pin, salt);
-    if (!granted()) return false;
+    if (await readBinding() != _grantedProfile || !granted()) {
+      if (epoch == _recoveryEpoch) revokeRecovery();
+      return false;
+    }
     revokeRecovery();
     record!.addAll({'salt': salt, 'verifier': verifier, 'attempts': 0});
     record.remove('deadline');

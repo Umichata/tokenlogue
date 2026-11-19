@@ -10,9 +10,19 @@ class AccountState extends ChangeNotifier {
   final UnlockedProfile profile;
   final ProviderApi api;
   final values =
-      <Service, ({String amount, String? limit, bool known, DateTime time})>{};
+      <
+        Service,
+        ({
+          String amount,
+          String? limit,
+          bool known,
+          DateTime time,
+          String status,
+        })
+      >{};
   final loading = <Service>{}, stale = <Service>{};
   final generation = <Service, int>{};
+  final errors = <Service, String>{};
   bool active = true;
   Future<void> refresh(Service service) async {
     final key = profile.keyFor(service);
@@ -34,10 +44,15 @@ class AccountState extends ChangeNotifier {
         limit: result.limit?.toString(),
         known: result.limitKnown,
         time: DateTime.now(),
+        status: result.status,
       );
       stale.remove(service);
-    } on ApiFailure {
-      if (current()) stale.add(service);
+      errors.remove(service);
+    } on ApiFailure catch (e) {
+      if (current()) {
+        stale.add(service);
+        errors[service] = e.label;
+      }
     } finally {
       if (current()) {
         loading.remove(service);
@@ -316,6 +331,10 @@ class _ServiceCardState extends State<_ServiceCard> {
                 }),
         ),
       ),
+      if (account != null && account.status != 'ready')
+        Text(t('providers.status.${account.status}')),
+      if (stale && page.accounts.errors[s] != null)
+        Text(t(page.accounts.errors[s]!)),
       if (stale)
         Text(
           t(

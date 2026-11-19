@@ -43,6 +43,7 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun read(): ByteArray? {
+        check(!vault.getBoolean("deleting", false))
         val packed = vault.getString("profile", null) ?: return null
         val bytes = Base64.decode(packed, Base64.NO_WRAP)
         require(bytes.size >= 28)
@@ -53,6 +54,7 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun write(value: ByteArray) {
+        check(!vault.getBoolean("deleting", false))
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         cipher.init(Cipher.ENCRYPT_MODE, key(true))
         cipher.updateAAD(alias.toByteArray(Charsets.UTF_8))
@@ -128,6 +130,7 @@ class MainActivity : FlutterActivity() {
                     }
                     "deleting" -> result.success(vault.getBoolean("deleting", false))
                     "beginDelete" -> {
+                        stopPrompt()
                         check(vault.edit().putBoolean("deleting", true).commit())
                         result.success(null)
                     }

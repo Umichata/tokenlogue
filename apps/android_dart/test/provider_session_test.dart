@@ -39,12 +39,20 @@ void main() {
       final second = state.refresh(Service.vsegpt);
       transport.pending[1].complete({
         'status': 'ok',
-        'data': {'credits': '-0.12'},
+        'data': {
+          'credits': '-0.12',
+          'subscription_status': 'ok',
+          'user_status': 0,
+        },
       });
       await second;
       transport.pending[0].complete({
         'status': 'ok',
-        'data': {'credits': '903.1'},
+        'data': {
+          'credits': '903.1',
+          'subscription_status': 'ok',
+          'user_status': 0,
+        },
       });
       await first;
       expect(state.values[Service.vsegpt]?.amount, '-0.12');
