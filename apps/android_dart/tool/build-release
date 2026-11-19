@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+set -euo pipefail
+: "${FLUTTER_ROOT:?Set FLUTTER_ROOT to Flutter 3.44.8}"
+: "${ANDROID_HOME:?Set ANDROID_HOME to the Android SDK}"
+: "${JAVA_HOME:?Set JAVA_HOME to JDK 17}"
+: "${TOKENLOGUE_DART_SIGNING_PROPERTIES:?Set the path to private signing properties}"
+project="$(cd -- "$(dirname "$0")/.." && pwd -P)"
+output="${1:?Specify a new APK output path}"
+[[ "$output" = /* && ! -e "$output" ]] || { echo "A new absolute output path is required" >&2; exit 2; }
+stage="$(mktemp -d /tmp/tokenlogue-dart-build.XXXXXXXX)"
+trap 'rm -rf -- "$stage"' EXIT
+export PATH="$FLUTTER_ROOT/bin:$JAVA_HOME/bin:$PATH" CI=true FLUTTER_SUPPRESS_ANALYTICS=true
+mkdir -p "$stage/app"
+rsync -a --exclude .git --exclude .idea --exclude .dart_tool --exclude .gradle --exclude build --exclude local.properties --exclude '*.iml' --exclude .flutter-plugins-dependencies "$project/" "$stage/app/"
+cd "$stage/app"
+flutter pub get --enforce-lockfile ${TOKENLOGUE_PUB_OFFLINE:+--offline}
+version="$(awk '/^version:/ {print $2}' pubspec.yaml)"
+printf 'flutter.sdk=%s\nsdk.dir=%s\nflutter.versionName=%s\nflutter.versionCode=%s\n' "$FLUTTER_ROOT" "$ANDROID_HOME" "${version%+*}" "${version#*+}" > android/local.properties
+cd android
+gradle_command="${TOKENLOGUE_GRADLE:-./gradlew}"
+"$gradle_command" --no-daemon ${TOKENLOGUE_GRADLE_OFFLINE:+--offline} -Ptarget-platform=android-arm64 -Ptarget=lib/main.dart -Pdart-obfuscation=false -Ptrack-widget-creation=false -Ptree-shake-icons=true assembleRelease
+apk=../build/app/outputs/flutter-apk/app-release.apk
+[[ -f "$apk" ]]
+# noclobber protects the chosen output even if two builds finish simultaneously.
+(set -C; cat "$apk" > "$output")
