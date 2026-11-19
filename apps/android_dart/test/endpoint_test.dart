@@ -59,6 +59,7 @@ class TestClient extends Fake implements HttpClient {
   TestClient(this.request);
   final TestRequest request;
   final urls = <Uri>[];
+  Object? connectFailure;
   @override
   Duration? connectionTimeout;
   String Function(Uri)? proxy;
@@ -70,6 +71,7 @@ class TestClient extends Fake implements HttpClient {
   @override
   Future<HttpClientRequest> openUrl(String method, Uri uri) async {
     urls.add(uri);
+    if (connectFailure != null) throw connectFailure!;
     return request;
   }
 
@@ -164,6 +166,35 @@ void main() {
         );
         expect(client.urls, hasLength(1));
       }, createHttpClient: (_) => client);
+    },
+  );
+  test(
+    'TLS and connection timeout reject before transferring a completion',
+    () async {
+      for (final (exception, label) in [
+        (const HandshakeException('synthetic'), 'service.error.tls'),
+        (TimeoutException('synthetic'), 'service.error.timeout'),
+      ]) {
+        final client = TestClient(TestRequest(TestReply(200, {})))
+          ..connectFailure = exception;
+        await HttpOverrides.runZoned(() async {
+          await expectLater(
+            HttpsTransport().request(
+              Service.vsegpt,
+              'sk-or-visLOCAL_TEST',
+              Resource.completion,
+              {'model': 'unit'},
+            ),
+            throwsA(
+              isA<ApiFailure>()
+                  .having((e) => e.label, 'category', label)
+                  .having((e) => e.uncertain, 'dispatched', false),
+            ),
+          );
+          expect(client.request.bytes, isEmpty);
+          expect(client.urls, hasLength(1));
+        }, createHttpClient: (_) => client);
+      }
     },
   );
 }

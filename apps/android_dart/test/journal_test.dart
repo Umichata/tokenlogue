@@ -14,6 +14,7 @@ import 'package:tokenlogue_dart/domain/request_plan.dart';
 
 class FixtureTransport implements Transport {
   int calls = 0;
+  final contexts = <Object?>[];
   ApiFailure? failure;
   void Function()? duringSend;
   @override
@@ -34,6 +35,7 @@ class FixtureTransport implements Transport {
       '{"prompt":0,"completion":0,"request":0}',
     );
     calls++;
+    contexts.add(body['messages']);
     duringSend?.call();
     if (failure != null) throw failure!;
     return {
@@ -187,6 +189,41 @@ void main() {
         store.dispatchSnapshot((await store.journal(chat: 'two')).single),
         throwsA(isA<SecretBoxAuthenticationError>()),
       );
+    },
+  );
+  test(
+    'explicit retry uses the original messages and preserves the next draft',
+    () async {
+      final initial = (await store.chats()).single;
+      http.failure = const ApiFailure('service.error.network');
+      await expectLater(
+        service.dispatch(await service.preview(initial), confirmed: false),
+        throwsA(isA<ApiFailure>()),
+      );
+      final failed = (await store.journal()).single;
+      expect(failed['state'], 'failed');
+      expect(failed['reserved_tokens'], 0);
+      await store.saveDraft(
+        'one',
+        '  next unsent message 🌱  ',
+        initial.revision,
+      );
+      http.failure = null;
+      final next = (await store.chats()).single;
+      final retry = await service.preview(
+        next,
+        retry: failed['turn_id'] as String,
+      );
+      await service.dispatch(retry, confirmed: false);
+      final journal = await store.journal(),
+          history = await store.history('one');
+      expect(journal.map((a) => a['turn_id']).toSet(), {failed['turn_id']});
+      expect(journal.map((a) => a['state']), ['failed', 'sent']);
+      expect(history.map((m) => m.role), ['user', 'assistant']);
+      expect(history.first.body, initial.draft);
+      expect((await store.chats()).single.draft, next.draft);
+      expect(http.calls, 2);
+      expect(http.contexts.first, http.contexts.last);
     },
   );
 }
