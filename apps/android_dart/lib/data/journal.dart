@@ -31,6 +31,62 @@ Future<void> schema2(DatabaseExecutor db) async {
   );
 }
 
+String messageField(Object? chat, Object? turn, Object? role) =>
+    jsonEncode(['message', chat, turn, role]);
+String dispatchField(
+  Object? chat,
+  Object? turn,
+  Object? provider,
+  Object? currency,
+  Object? model,
+) => jsonEncode(['dispatch', chat, turn, provider, currency, model]);
+
+/// Runs inside sqflite's upgrade transaction. Only ciphertext is written.
+/// A failure authenticating any old row aborts the entire migration.
+Future<void> bindJournalToChat(Database db, FieldCipher cipher) async {
+  final identity = await db.query('profile', columns: ['id']);
+  if (identity.length != 1 ||
+      identity.single['id'] != cipher.profile.id ||
+      (await db.rawQuery('PRAGMA foreign_key_check')).isNotEmpty) {
+    throw StateError('profile_binding');
+  }
+  for (final messages in [true, false]) {
+    final table = messages ? 'messages' : 'attempts',
+        field = messages ? 'body' : 'snapshot';
+    var after = 0;
+    while (true) {
+      final rows = await db.rawQuery(
+        'SELECT r.*,r.rowid AS cursor,t.chat FROM $table r JOIN turns t ON t.id=r.turn_id WHERE r.rowid>? ORDER BY r.rowid LIMIT 64',
+        [after],
+      );
+      if (rows.isEmpty) break;
+      for (final row in rows) {
+        final id = row['id'] as String,
+            turn = row['turn_id'],
+            chat = row['chat'];
+        final old = messages ? '$turn:${row["role"]}' : 'dispatch';
+        final bound = messages
+            ? messageField(chat, turn, row['role'])
+            : dispatchField(
+                chat,
+                turn,
+                row['provider'],
+                row['currency'],
+                row['requested_model'],
+              );
+        final value = await cipher.open(row[field] as Uint8List, id, old, 1);
+        await db.update(
+          table,
+          {field: await cipher.seal(value, id, bound, 2)},
+          where: 'id=?',
+          whereArgs: [id],
+        );
+      }
+      after = rows.last['cursor'] as int;
+    }
+  }
+}
+
 extension Journal on ChatStore {
   Future<String?> preference(String name) async =>
       (await db.query(
@@ -61,8 +117,14 @@ extension Journal on ChatStore {
     final text = await crypto.open(
       snapshot['snapshot'] as Uint8List,
       attempt['id'] as String,
-      'dispatch',
-      1,
+      dispatchField(
+        attempt['chat'],
+        attempt['turn_id'],
+        attempt['provider'],
+        attempt['currency'],
+        attempt['requested_model'],
+      ),
+      2,
     );
     final raw = jsonDecode(text) as List;
     return [for (final m in raw) Map<String, String>.from(m as Map)];
@@ -92,8 +154,8 @@ extension Journal on ChatStore {
           body: await crypto.open(
             m['body'] as Uint8List,
             m['id'] as String,
-            '${m['turn_id']}:${m['role']}',
-            1,
+            messageField(chat, m['turn_id'], m['role']),
+            2,
           ),
         ),
     ];
@@ -204,12 +266,23 @@ extension Journal on ChatStore {
         attempt = newId(),
         message = newId(),
         now = DateTime.now().millisecondsSinceEpoch;
-    final msg = await crypto.seal(text, message, '$turn:user', 1);
+    final msg = await crypto.seal(
+      text,
+      message,
+      messageField(chat, turn, 'user'),
+      2,
+    );
     final snapshot = await crypto.seal(
       jsonEncode(plan.messages),
       attempt,
-      'dispatch',
-      1,
+      dispatchField(
+        chat,
+        turn,
+        model.service.name,
+        model.service.currency,
+        model.id,
+      ),
+      2,
     );
     await db.transaction((tx) async {
       final c = (await tx.query(
@@ -326,7 +399,12 @@ extension Journal on ChatStore {
     required bool unknown,
   }) async {
     final id = newId(),
-        encrypted = await crypto.seal(answer, id, '$turn:assistant', 1);
+        encrypted = await crypto.seal(
+          answer,
+          id,
+          messageField(chat, turn, 'assistant'),
+          2,
+        );
     await db.transaction((tx) async {
       final record = (await tx.query(
         'attempts',

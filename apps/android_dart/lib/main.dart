@@ -44,6 +44,7 @@ class _TokenlogueState extends State<Tokenlogue> with WidgetsBindingObserver {
   final words = <String, Map<String, dynamic>>{};
   String lang = 'ru', notice = '', pendingKey = '';
   bool busy = false, verified = false, offerUnverified = false;
+  final _revealedPins = <TextEditingController>{};
   int epoch = 0;
   Screen screen = Screen.loading;
   UnlockedProfile? profile;
@@ -52,7 +53,7 @@ class _TokenlogueState extends State<Tokenlogue> with WidgetsBindingObserver {
   final deletion = TextEditingController();
   bool deviceRecovery = false, deletePending = false;
   Timer? cooldown;
-  int remainingSeconds = 0;
+  int remainingSeconds = 0, attemptsRemaining = 3;
   Screen deletionOrigin = Screen.pin;
 
   String t(String key) => words[lang]?[key] as String? ?? key;
@@ -82,6 +83,10 @@ class _TokenlogueState extends State<Tokenlogue> with WidgetsBindingObserver {
         throw StateError('missing_binding');
       }
       if (mounted) setState(() => screen = existing ? Screen.pin : Screen.key);
+      if (existing && mounted) {
+        final ms = await vault.readCooldown();
+        if (ms > 0 && mounted) showCooldown(ms);
+      }
     } catch (_) {
       if (mounted) setState(() => screen = Screen.error);
     }
@@ -102,6 +107,7 @@ class _TokenlogueState extends State<Tokenlogue> with WidgetsBindingObserver {
     profile = null;
     session = null;
     deletion.clear();
+    _revealedPins.clear();
 
     keyField.clear();
     pinField.clear();
@@ -221,36 +227,57 @@ class _TokenlogueState extends State<Tokenlogue> with WidgetsBindingObserver {
         unlocked.dispose();
         return;
       }
+      cooldown?.cancel();
+      remainingSeconds = 0;
       profile = unlocked;
       session = Session(unlocked, opened, api);
       pendingKey = '';
       pinField.clear();
       repeat.clear();
       setState(() => screen = Screen.home);
-    } on PinLocked catch (e) {
+    } on PinRejected catch (e) {
       if (epoch == current) {
-        remainingSeconds = (e.milliseconds + 999) ~/ 1000;
-        notice = 'auth.lock_countdown';
-        cooldown?.cancel();
-        cooldown = Timer.periodic(const Duration(seconds: 1), (timer) {
-          if (!mounted || remainingSeconds <= 1) {
-            timer.cancel();
-            if (mounted) {
-              setState(() {
-                remainingSeconds = 0;
-                notice = 'auth.lock_expired';
-              });
-            }
-            return;
-          }
-          setState(() => remainingSeconds--);
+        setState(() {
+          attemptsRemaining = e.remaining;
+          notice = 'auth.pin_attempts_remaining';
+          pinField.clear();
         });
       }
+    } on PinLocked catch (e) {
+      if (epoch == current) showCooldown(e.milliseconds);
     } catch (_) {
       if (epoch == current) setState(() => screen = Screen.error);
     } finally {
       if (mounted && epoch == current) setState(() => busy = false);
     }
+  }
+
+  void showCooldown(int ms) {
+    cooldown?.cancel();
+    final timer = Stopwatch()..start();
+    setState(() {
+      remainingSeconds = (ms + 999) ~/ 1000;
+      notice = 'auth.lock_countdown';
+      pinField.clear();
+    });
+    cooldown = Timer.periodic(const Duration(milliseconds: 250), (tick) {
+      if (!mounted) {
+        tick.cancel();
+        return;
+      }
+      final left = ((ms - timer.elapsedMilliseconds + 999) ~/ 1000).clamp(
+        0,
+        300,
+      );
+      if (left == remainingSeconds) return;
+      setState(() {
+        remainingSeconds = left;
+        if (left == 0) {
+          tick.cancel();
+          notice = 'auth.lock_expired';
+        }
+      });
+    });
   }
 
   Future<void> setLanguage(String next) async {
@@ -346,12 +373,16 @@ class _TokenlogueState extends State<Tokenlogue> with WidgetsBindingObserver {
     }
   }
 
-  String statusText() => notice == 'auth.lock_countdown'
-      ? interpolate(t(notice), {
-          'time':
-              '${remainingSeconds ~/ 60}:${(remainingSeconds % 60).toString().padLeft(2, "0")}',
-        })
-      : t(notice);
+  String statusText() => switch (notice) {
+    'auth.lock_countdown' => interpolate(t(notice), {
+      'time':
+          '${(remainingSeconds ~/ 60).toString().padLeft(2, "0")}:${(remainingSeconds % 60).toString().padLeft(2, "0")}',
+    }),
+    'auth.pin_attempts_remaining' => interpolate(t(notice), {
+      'remaining': attemptsRemaining,
+    }),
+    _ => t(notice),
+  };
 
   Widget password(
     TextEditingController c,
@@ -361,7 +392,7 @@ class _TokenlogueState extends State<Tokenlogue> with WidgetsBindingObserver {
   }) => TextField(
     controller: c,
     autofocus: focus,
-    obscureText: true,
+    obscureText: !_revealedPins.contains(c),
     enabled: !busy,
     autocorrect: false,
     enableSuggestions: false,
@@ -376,6 +407,17 @@ class _TokenlogueState extends State<Tokenlogue> with WidgetsBindingObserver {
     decoration: InputDecoration(
       labelText: label,
       hintText: numeric ? null : t('providers.key_hint'),
+      suffixIcon: IconButton(
+        tooltip: t(
+          _revealedPins.contains(c) ? 'providers.conceal' : 'providers.reveal',
+        ),
+        icon: Icon(
+          _revealedPins.contains(c) ? Icons.visibility_off : Icons.visibility,
+        ),
+        onPressed: () => setState(() {
+          if (!_revealedPins.add(c)) _revealedPins.remove(c);
+        }),
+      ),
     ),
     onChanged: (_) => setState(() {
       notice = '';
@@ -467,7 +509,7 @@ class _TokenlogueState extends State<Tokenlogue> with WidgetsBindingObserver {
           style: const TextStyle(color: muted),
         ),
         if (notice.isNotEmpty) Text(statusText()),
-        if (busy) const LinearProgressIndicator() else const SizedBox.shrink(),
+        if (busy) const BrandLoader() else const SizedBox.shrink(),
         FilledButton.icon(
           onPressed: busy || service == null ? null : check,
           icon: const Icon(Icons.verified_user),
@@ -581,7 +623,7 @@ class _TokenlogueState extends State<Tokenlogue> with WidgetsBindingObserver {
                       .padLeft(4, '0');
                   setState(() {
                     pinField.text = v;
-                    repeat.text = v;
+                    repeat.clear();
                   });
                 },
           icon: const Icon(Icons.casino_outlined),
@@ -589,10 +631,11 @@ class _TokenlogueState extends State<Tokenlogue> with WidgetsBindingObserver {
         ),
       if (creating) password(repeat, t('auth.repeat_pin'), numeric: true),
       if (notice.isNotEmpty) Text(statusText()),
-      if (busy) const LinearProgressIndicator(),
+      if (busy) const BrandLoader(),
       FilledButton(
         onPressed:
             busy ||
+                (remainingSeconds > 0 && screen == Screen.pin) ||
                 !validPin(pinField.text) ||
                 (creating && repeat.text != pinField.text)
             ? null

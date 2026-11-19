@@ -210,7 +210,8 @@ class _SelectChatState extends State<SelectChat> {
             if (step == _Step.mode || step == _Step.model) ...[
               panelCard([
                 Text(service!.label),
-                if (keyStatus.isNotEmpty) Text(t(keyStatus)),
+                if (keyStatus.isNotEmpty)
+                  Text(interpolate(t(keyStatus), {'provider': service!.label})),
                 OutlinedButton.icon(
                   onPressed: checking || widget.profile.keyFor(service!) == null
                       ? null

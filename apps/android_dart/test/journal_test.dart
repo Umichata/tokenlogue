@@ -157,4 +157,36 @@ void main() {
       expect(http.calls, 0);
     },
   );
+  test(
+    'moving a turn between chats fails authentication of messages and dispatch context',
+    () async {
+      final prepared = await service.preview((await store.chats()).single);
+      await service.dispatch(prepared, confirmed: false);
+      await store.configure(
+        id: 'two',
+        title: 'Other',
+        model: ModelChoice.router,
+        tokens: 4096,
+        output: 32,
+        budget: null,
+        skip: false,
+        reconnect: false,
+      );
+      final attempt = (await store.journal()).single;
+      await store.db.update(
+        'turns',
+        {'chat': 'two'},
+        where: 'id=?',
+        whereArgs: [attempt['turn_id']],
+      );
+      await expectLater(
+        store.history('two'),
+        throwsA(isA<SecretBoxAuthenticationError>()),
+      );
+      await expectLater(
+        store.dispatchSnapshot((await store.journal(chat: 'two')).single),
+        throwsA(isA<SecretBoxAuthenticationError>()),
+      );
+    },
+  );
 }

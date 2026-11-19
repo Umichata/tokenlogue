@@ -13,11 +13,26 @@ class DayUsage {
       estimatedTokens = 0,
       unknownTokens = 0,
       unknownCost = 0;
+  int apiInput = 0,
+      apiOutput = 0,
+      estimateInput = 0,
+      estimateOutput = 0,
+      partial = 0;
   Amount confirmed = Amount.zero, estimated = Amount.zero;
   DayUsage(this.date, this.currency);
   void add(Attempt a) {
     attempts++;
-    final total = a['usage_total'];
+    final total = a['usage_total'],
+        input = a['usage_in'],
+        output = a['usage_out'];
+    if (total == null || input == null || output == null) partial++;
+    if (a['usage_source'] == 'estimated') {
+      estimateInput += input as int? ?? 0;
+      estimateOutput += output as int? ?? 0;
+    } else if (a['usage_source'] == 'api') {
+      apiInput += input as int? ?? 0;
+      apiOutput += output as int? ?? 0;
+    }
     if (total is! int) {
       unknownTokens++;
     } else if (a['usage_source'] == 'api') {

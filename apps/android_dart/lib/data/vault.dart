@@ -160,6 +160,16 @@ class ProfileVault {
         });
       });
 
+  Future<int> readCooldown() => _writes.synchronized(() async {
+    final record = await _read();
+    if (record == null || record['attempts'] != 3) return 0;
+    final clock = await channel.invokeListMethod<int>('clock');
+    if (clock == null || clock.length != 2) throw StateError('clock');
+    final remaining = PinCooldown.normalize(record, clock[0], clock[1]);
+    await _write(record);
+    return remaining;
+  });
+
   /// Returns the profile only after a successful PIN check and durable counter update.
   Future<UnlockedProfile?> unlock(String pin) => _writes.synchronized(() async {
     final record = await _read();
@@ -185,7 +195,7 @@ class ProfileVault {
       }
       await _write(record);
       if (record['attempts'] == 3) throw const PinLocked(300000);
-      return null;
+      throw PinRejected(3 - (record['attempts'] as int));
     }
     PinCooldown.clear(record);
     await _write(record);
@@ -224,6 +234,11 @@ class ProfileVault {
     await _write(record);
     if (!profile.disposed) profile.credentials[service.name] = slot;
   });
+}
+
+class PinRejected implements Exception {
+  const PinRejected(this.remaining);
+  final int remaining;
 }
 
 class PinLocked implements Exception {

@@ -82,9 +82,10 @@ class ChatStore {
   static Future<ChatStore> open(UnlockedProfile profile) async {
     final db = await openDatabase(
       await location(),
-      version: 2,
+      version: 3,
       onUpgrade: (db, old, next) async {
         if (old == 1) await schema2(db);
+        if (old < 3) await bindJournalToChat(db, FieldCipher(profile));
       },
       onConfigure: (db) async {
         await db.execute('PRAGMA foreign_keys=ON');

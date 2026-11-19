@@ -112,6 +112,18 @@ with zipfile.ZipFile(apk) as archive:
             "Unexpected runtime or private member",
         )
         require(prefix not in data, "Builder home found")
+        key_candidate = re.search(rb"sk-or-(?:v1-|vv-|vis-?)[A-Za-z0-9_-]{32,}", data)
+        require(
+            key_candidate is None, "Credential-like string requires provenance review"
+        )
+        require(
+            not re.search(rb"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----", data),
+            "Private-key envelope found",
+        )
+        if lower.endswith((".dex", ".so")):
+            require(
+                b"dev/flutter/plugins/integration_test" not in data, "QA plugin present"
+            )
         if name.endswith(".so"):
             require(name.startswith("lib/arm64-v8a/"), "Unexpected ABI")
             loads[name] = elf_loads(data)

@@ -94,3 +94,22 @@ class _SecretFieldState extends State<SecretField> {
     ),
   );
 }
+
+class BrandLoader extends StatelessWidget {
+  const BrandLoader({super.key, this.size = 26});
+  final double size;
+  @override
+  Widget build(BuildContext context) {
+    final reduce = MediaQuery.disableAnimationsOf(context);
+    return Center(
+      child: Image.asset(
+        reduce
+            ? 'assets/branding/tokenlogue-loading-static.png'
+            : 'assets/branding/tokenlogue-loading.webp',
+        width: size,
+        height: size,
+        excludeFromSemantics: true,
+      ),
+    );
+  }
+}

@@ -64,7 +64,13 @@ class _WorkspaceState extends State<Workspace> {
   void initState() {
     super.initState();
     accounts.addListener(update);
-    unawaited(load(first: true));
+    unawaited(
+      load(first: true).catchError((Object e) {
+        if (alive) {
+          widget.onLock();
+        }
+      }),
+    );
   }
 
   void update() {
@@ -192,7 +198,9 @@ class _WorkspaceState extends State<Workspace> {
         !await confirm(
           context,
           t('connection.confirm_title'),
-          t('connection.context_warning'),
+          interpolate(t('connection.context_warning'), {
+            'provider': choice.model.service.label,
+          }),
           t('common.cancel'),
           t('connection.change_provider'),
         )) {
@@ -463,7 +471,9 @@ class _WorkspaceState extends State<Workspace> {
 
   String mask(Service s) {
     final key = widget.session.profile.keyFor(s);
-    if (key == null) return t('connection.missing_key');
+    if (key == null) {
+      return interpolate(t('connection.missing_key'), {'provider': s.label});
+    }
     final prefix = s.prefixes.where(key.startsWith).firstOrNull;
     return prefix != null &&
             key
@@ -502,7 +512,9 @@ class _WorkspaceState extends State<Workspace> {
             ])
               SimpleDialogOption(
                 onPressed: () => Navigator.pop(ctx, action),
-                child: Text(t(action)),
+                child: Text(
+                  interpolate(t(action), {'provider': c.service.label}),
+                ),
               ),
           ],
           if (c != null && !c.free)
@@ -518,7 +530,9 @@ class _WorkspaceState extends State<Workspace> {
           ])
             SimpleDialogOption(
               onPressed: () => Navigator.pop(ctx, action),
-              child: Text(t(action)),
+              child: Text(
+                interpolate(t(action), {'provider': c?.service.label ?? ''}),
+              ),
             ),
           SimpleDialogOption(
             onPressed: () => Navigator.pop(ctx),
@@ -919,7 +933,9 @@ class _WorkspaceState extends State<Workspace> {
                           }),
                   ),
                   Tooltip(
-                    message: t('metrics.account_help'),
+                    message: interpolate(t('metrics.account_help'), {
+                      'provider': c.service.label,
+                    }),
                     child: Text(
                       accountText(c.service),
                       style: const TextStyle(fontSize: 12, color: muted),
@@ -995,7 +1011,7 @@ class _WorkspaceState extends State<Workspace> {
                             ),
                             MessageBody(
                               source: m.body,
-                              copyLabel: t('protection_panel.copy_message'),
+                              copyLabel: t('protection_panel.copy_code'),
                             ),
                           ],
                         ),
