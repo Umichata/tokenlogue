@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io' show Platform;
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -56,16 +57,45 @@ class _TokenlogueState extends State<Tokenlogue> with WidgetsBindingObserver {
   int remainingSeconds = 0, attemptsRemaining = 3;
   Screen deletionOrigin = Screen.pin;
 
+  static const nativeLifecycle = MethodChannel(
+    'io.github.umichata.tokenlogue.dart/lifecycle',
+  );
+  int _nativeGeneration = 0;
+
+  Future<Object?> _nativeLifecycleEvent(MethodCall call) async {
+    if (call.method != 'background' || call.arguments is! int) return null;
+    final incoming = call.arguments as int;
+    if (!mounted || incoming < _nativeGeneration) return null;
+    if (incoming > _nativeGeneration) {
+      _nativeGeneration = incoming;
+      lock();
+    }
+    // The host can resume before Flutter's ordinary pause notification. Acknowledge
+    // only when the private navigator has been removed and the replacement frame drawn.
+    await WidgetsBinding.instance.endOfFrame;
+    if (!mounted ||
+        _nativeGeneration != incoming ||
+        session != null ||
+        screen == Screen.home ||
+        screen == Screen.recovered ||
+        screen == Screen.recovery) {
+      return null;
+    }
+    return incoming;
+  }
+
   String t(String key) => words[lang]?[key] as String? ?? key;
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    nativeLifecycle.setMethodCallHandler(_nativeLifecycleEvent);
     initialize();
   }
 
   Future<void> initialize() async {
     try {
+      if (Platform.isAndroid) await nativeLifecycle.invokeMethod<void>('ready');
       for (final l in ['en', 'ru']) {
         words[l] =
             jsonDecode(await rootBundle.loadString('assets/locales/$l.json'))
@@ -135,6 +165,7 @@ class _TokenlogueState extends State<Tokenlogue> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    nativeLifecycle.setMethodCallHandler(null);
     vault.revokeRecovery();
     session?.close();
     cooldown?.cancel();

@@ -80,7 +80,7 @@ void main() {
       }
 
       await tester.pumpWidget(const Tokenlogue());
-      for (final background in [false, true]) {
+      for (final leave in ['cancel', 'flutter', 'host']) {
         response = Completer<bool>();
         await waitFor('Forgot PIN?');
         await tapVisible('Forgot PIN?');
@@ -95,7 +95,7 @@ void main() {
             .where((v) => v.obscureText);
         expect(fields.length, 2);
         expect(fields.every((v) => v.controller!.text.isEmpty), isTrue);
-        if (background) {
+        if (leave == 'flutter') {
           tester.binding.handleAppLifecycleStateChanged(
             AppLifecycleState.inactive,
           );
@@ -111,6 +111,23 @@ void main() {
             tester.binding.handleAppLifecycleStateChanged(next);
             await tester.pump();
           }
+        } else if (leave == 'host') {
+          bool answered = false;
+          Object? generation;
+          const codec = StandardMethodCodec();
+          final delivered = m.handlePlatformMessage(
+            'io.github.umichata.tokenlogue.dart/lifecycle',
+            codec.encodeMethodCall(const MethodCall('background', 1)),
+            (reply) {
+              generation = codec.decodeEnvelope(reply!);
+              answered = true;
+            },
+          );
+          await tester.pump();
+          await tester.pump();
+          await delivered;
+          expect(answered, isTrue);
+          expect(generation, 1);
         } else {
           await tapVisible('Cancel recovery');
         }

@@ -20,9 +20,19 @@ import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 
 class MainActivity : FlutterActivity() {
+    private val backgroundPrivacy = BackgroundPrivacy(this)
+    private val screenOff = object : android.content.BroadcastReceiver() {
+        override fun onReceive(context: android.content.Context, intent: android.content.Intent) {
+            if (intent.action == android.content.Intent.ACTION_SCREEN_OFF) sealSession()
+        }
+    }
+
     override fun onCreate(savedInstanceState: android.os.Bundle?) {
         super.onCreate(savedInstanceState)
         if (Build.VERSION.SDK_INT >= 33) setRecentsScreenshotEnabled(false)
+        val filter = android.content.IntentFilter(android.content.Intent.ACTION_SCREEN_OFF)
+        if (Build.VERSION.SDK_INT >= 33) registerReceiver(screenOff, filter, RECEIVER_NOT_EXPORTED)
+        else registerReceiver(screenOff, filter)
     }
 
     private val alias = "io.github.umichata.tokenlogue.dart.vault.v1"
@@ -75,8 +85,24 @@ class MainActivity : FlutterActivity() {
         result?.success(false)
     }
 
-    override fun onStop() { stopPrompt(); super.onStop() }
-    override fun onDestroy() { stopPrompt(); super.onDestroy() }
+    private fun sealSession() {
+        backgroundPrivacy.leave()
+        stopPrompt()
+    }
+
+    override fun onUserLeaveHint() { sealSession(); super.onUserLeaveHint() }
+    override fun onPause() { backgroundPrivacy.pause(); super.onPause() }
+    override fun onResume() { super.onResume(); backgroundPrivacy.resume() }
+    override fun onStop() {
+        if (!isChangingConfigurations && !isFinishing) sealSession()
+        super.onStop()
+    }
+    override fun onDestroy() {
+        unregisterReceiver(screenOff)
+        backgroundPrivacy.dispose()
+        stopPrompt()
+        super.onDestroy()
+    }
 
     private fun canRecover(): Boolean {
         if (Build.VERSION.SDK_INT < 30) return false
@@ -115,6 +141,7 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        backgroundPrivacy.attach(flutterEngine.dartExecutor.binaryMessenger)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "$alias/platform").setMethodCallHandler { call, result ->
             try {
                 when (call.method) {

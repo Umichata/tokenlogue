@@ -47,6 +47,7 @@ class _WorkspaceState extends State<Workspace> {
   final composer = TextEditingController();
   late final accounts = AccountState(widget.session.profile, widget.api);
   int page = 0, sequence = 0;
+  int _editVersion = 0, _viewVersion = 0;
   String? selected;
   String policy = 'manual', error = '';
   bool showChats = false, sending = false, loading = true;
@@ -83,15 +84,16 @@ class _WorkspaceState extends State<Workspace> {
     _ => t('providers.operation_failed'),
   };
   Future<void> run(Future<void> Function() action) async {
+    final version = _viewVersion;
     try {
       await action();
     } catch (e) {
-      if (alive) setState(() => error = label(e));
+      if (alive && version == _viewVersion) setState(() => error = label(e));
     }
   }
 
   Future<void> load({String? target, bool first = false}) async {
-    final g = ++sequence;
+    final g = ++sequence, editVersion = _editVersion, oldChat = selected;
     await widget.session.flush();
     final list = await store.chats();
     final saved = target ?? selected ?? await store.preference('selected');
@@ -114,7 +116,8 @@ class _WorkspaceState extends State<Workspace> {
       selected = c?.id;
       loading = false;
       final draft = c?.draft ?? '';
-      if (composer.text != draft) {
+      if ((oldChat != c?.id || _editVersion == editVersion) &&
+          composer.text != draft) {
         composer.value = TextEditingValue(
           text: draft,
           selection: TextSelection.collapsed(offset: draft.length),
@@ -132,12 +135,15 @@ class _WorkspaceState extends State<Workspace> {
   }
 
   Future<void> selectChat(String id) async {
+    _viewVersion++;
+    if (mounted) setState(() => error = '');
     widget.session.sending.invalidate();
     await load(target: id);
     if (alive) setState(() => showChats = false);
   }
 
   Future<void> selectPage(int i) async {
+    _viewVersion++;
     widget.session.sending.invalidate();
     await widget.session.flush();
     if (alive) {
@@ -150,6 +156,7 @@ class _WorkspaceState extends State<Workspace> {
   }
 
   Future<void> editText() async {
+    _editVersion++;
     final c = chat;
     if (c == null) return;
     await widget.session.writeDraft(c.id, composer.text);
