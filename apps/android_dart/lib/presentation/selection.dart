@@ -107,7 +107,7 @@ class _SelectChatState extends State<SelectChat> {
         checking = false;
         keyStatus = status == KeyStatus.accepted
             ? 'selection.key.accepted'
-            : 'selection.key.failed';
+            : status.message;
       });
     }
   }

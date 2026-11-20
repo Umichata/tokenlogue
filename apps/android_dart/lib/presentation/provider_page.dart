@@ -208,7 +208,13 @@ class _ServiceCardState extends State<_ServiceCard> {
 
   Future<void> save() async {
     final key = input.text.trim();
-    if (validated != key || Service.detect(key) != s || busy) return;
+    if (validated != key ||
+        Service.detect(key) != s ||
+        busy ||
+        !(status == KeyStatus.accepted ||
+            status?.maySaveUnverified(s) == true)) {
+      return;
+    }
     setState(() => busy = true);
     try {
       await page.vault.saveKey(
@@ -220,6 +226,7 @@ class _ServiceCardState extends State<_ServiceCard> {
       if (!mounted || page.profile.disposed) return;
       input.clear();
       validated = null;
+      status = null;
       page.accounts.changed(s);
       page.onKeyChanged(s);
       await page.accounts.refresh(s);
@@ -244,14 +251,7 @@ class _ServiceCardState extends State<_ServiceCard> {
         stale = page.accounts.stale.contains(s);
     final canSave =
         validated == input.text.trim() &&
-        status != null &&
-        (status == KeyStatus.accepted ||
-            s == Service.vsegpt &&
-                {
-                  KeyStatus.unverified,
-                  KeyStatus.limited,
-                  KeyStatus.unavailable,
-                }.contains(status));
+        (status == KeyStatus.accepted || status?.maySaveUnverified(s) == true);
     return panelCard([
       Text(s.label, style: Theme.of(context).textTheme.titleLarge),
       Semantics(
@@ -286,16 +286,9 @@ class _ServiceCardState extends State<_ServiceCard> {
               ? t('catalog.error.key_mismatch')
               : interpolate(t('providers.detected'), {'provider': s.label}),
         ),
-      if (status != null)
-        Text(
-          t(
-            status == KeyStatus.accepted
-                ? 'providers.checked'
-                : canSave
-                ? 'providers.unverified_help'
-                : 'providers.check_failed',
-          ),
-        ),
+      if (status case final outcome?) Text(t(outcome.message)),
+      if (canSave && status != KeyStatus.accepted)
+        Text(t('providers.unverified_help')),
       Wrap(
         spacing: 8,
         children: [

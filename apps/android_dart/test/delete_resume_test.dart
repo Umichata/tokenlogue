@@ -11,7 +11,7 @@ import 'package:tokenlogue_dart/main.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   testWidgets(
-    'startup resumes accepted deletion before offering a new profile',
+    'pending deletion retries after restart or from the unfinished deletion screen',
     (tester) async {
       sqfliteFfiInit();
       databaseFactory = databaseFactoryFfi;
@@ -43,7 +43,7 @@ void main() {
             return pending;
           case 'finishDelete':
             finishes++;
-            if (finishes == 1) throw PlatformException(code: 'interrupted');
+            if (finishes < 3) throw PlatformException(code: 'interrupted');
             pending = false;
             return null;
           case 'read':
@@ -74,8 +74,18 @@ void main() {
       expect(find.text('Check key'), findsNothing);
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pumpWidget(const Tokenlogue());
-      await waitUntil(() => find.text('Check key').evaluate().isNotEmpty);
+      await waitUntil(() => find.text('Finish deletion').evaluate().isNotEmpty);
       expect(finishes, 2);
+      expect(find.text('Forgot PIN?'), findsNothing);
+      await tester.dragUntilVisible(
+        find.text('Finish deletion').hitTestable(),
+        find.byType(ListView),
+        const Offset(0, -160),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Finish deletion'));
+      await waitUntil(() => find.text('Check key').evaluate().isNotEmpty);
+      expect(finishes, 3);
       expect(readsWhilePending, 0);
       expect(pending, isFalse);
       await tester.runAsync(() async {

@@ -59,6 +59,39 @@ void main() {
             skip: false,
             reconnect: false,
           );
+          // Use the on-disk message format so loading and scrolling exercise decryption too.
+          for (var i = 0; i < 48; i++) {
+            final turn = 'turn-$i', id = 'message-$i';
+            await store.db.insert('turns', {
+              'id': turn,
+              'chat': 'one',
+              'created': i,
+            });
+            await store.db.insert('messages', {
+              'id': id,
+              'turn_id': turn,
+              'role': 'user',
+              'ordinal': 0,
+              'body': await store.crypto.seal(
+                'Station $i',
+                id,
+                messageField('one', turn, 'user'),
+                2,
+              ),
+            });
+          }
+          await store.configure(
+            id: 'two',
+            title: 'Second itinerary',
+            model: ModelChoice.router,
+            tokens: 8192,
+            output: 32,
+            budget: null,
+            skip: false,
+            reconnect: false,
+          );
+          await store.saveDraft('two', 'Unchanged second draft', 0);
+          await store.setPreference('selected', 'one');
           await store.saveDraft('one', '  сохранённый черновик 🌱\n', 0);
           session = Session(profile, store, ProviderApi(NoAccountTraffic()));
           words =
@@ -101,7 +134,7 @@ void main() {
         );
         for (
           var i = 0;
-          i < 40 &&
+          i < 150 &&
               find
                   .text('Длинное название заметок для поездки')
                   .evaluate()
@@ -115,6 +148,42 @@ void main() {
         }
         expect(find.byType(NavigationBar), findsOneWidget);
         expect(find.text('Длинное название заметок для поездки'), findsWidgets);
+        final compose = find.byWidgetPredicate(
+          (w) => w is TextField && w.keyboardType == TextInputType.multiline,
+        );
+        expect(compose.hitTestable(), findsOneWidget);
+        if (geometry.$1 >= 1000) {
+          for (final value in ['next', 'next leg', ' next leg 🚆  ']) {
+            await tester.enterText(compose, value);
+          }
+          await tester.tap(find.text('Second itinerary').hitTestable());
+          Future<void> waitDraft(String draft) async {
+            for (var i = 0; i < 150; i++) {
+              await tester.runAsync(
+                () => Future<void>.delayed(const Duration(milliseconds: 10)),
+              );
+              await tester.pump();
+              if (tester.widget<TextField>(compose).controller!.text == draft)
+                return;
+            }
+            fail('The selected conversation did not restore its draft');
+          }
+
+          await waitDraft('Unchanged second draft');
+          final first = find.descendant(
+            of: find.byType(ListTile),
+            matching: find.text('Длинное название заметок для поездки'),
+          );
+          await tester.tap(first.hitTestable());
+          await waitDraft(' next leg 🚆  ');
+          await tester.runAsync(() async {
+            final saved = {
+              for (final c in await session.store.chats()) c.id: c.draft,
+            };
+            expect(saved['one'], ' next leg 🚆  ');
+            expect(saved['two'], 'Unchanged second draft');
+          });
+        }
         FlutterError.onError = previousError;
         expect(tester.takeException(), isNull);
         await tester.pumpWidget(const SizedBox.shrink());

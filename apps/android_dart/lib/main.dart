@@ -106,17 +106,26 @@ class _TokenlogueState extends State<Tokenlogue> with WidgetsBindingObserver {
       deviceRecovery = await vault.canRecover();
       if (await ProfileVault.channel.invokeMethod<bool>('deleting') == true) {
         deletePending = true;
-        await finishDeletion();
+        try {
+          await finishDeletion();
+        } catch (_) {
+          if (mounted) {
+            setState(() {
+              screen = Screen.deletion;
+              notice = 'profile_deletion.unavailable';
+            });
+          }
+          return;
+        }
       }
       final existing = await vault.exists();
       if (!existing && await databaseExists(await ChatStore.location())) {
         throw StateError('missing_binding');
       }
-      if (mounted) setState(() => screen = existing ? Screen.pin : Screen.key);
-      if (existing && mounted) {
-        final ms = await vault.readCooldown();
-        if (ms > 0 && mounted) showCooldown(ms);
-      }
+      final ms = existing ? await vault.readCooldown() : 0;
+      if (!mounted) return;
+      setState(() => screen = existing ? Screen.pin : Screen.key);
+      if (ms > 0) showCooldown(ms);
     } catch (_) {
       if (mounted) setState(() => screen = Screen.error);
     }
@@ -143,7 +152,7 @@ class _TokenlogueState extends State<Tokenlogue> with WidgetsBindingObserver {
     pinField.clear();
     repeat.clear();
     pendingKey = '';
-    notice = '';
+    notice = remainingSeconds > 0 ? 'auth.lock_countdown' : '';
     busy = false;
     verified = false;
     offerUnverified = false;
@@ -195,16 +204,8 @@ class _TokenlogueState extends State<Tokenlogue> with WidgetsBindingObserver {
         keyField.clear();
         screen = Screen.setup;
       } else {
-        notice = result == KeyStatus.unverified
-            ? 'providers.unverified_help'
-            : 'providers.check_failed';
-        offerUnverified =
-            s == Service.vsegpt &&
-            {
-              KeyStatus.unverified,
-              KeyStatus.unavailable,
-              KeyStatus.limited,
-            }.contains(result);
+        notice = result.message;
+        offerUnverified = result.maySaveUnverified(s);
       }
     });
   }
@@ -383,6 +384,9 @@ class _TokenlogueState extends State<Tokenlogue> with WidgetsBindingObserver {
     await closing;
     await deleteDatabase(await ChatStore.location());
     await ProfileVault.channel.invokeMethod<void>('finishDelete');
+    cooldown?.cancel();
+    remainingSeconds = 0;
+    attemptsRemaining = 3;
     deletePending = false;
   }
 
@@ -397,8 +401,10 @@ class _TokenlogueState extends State<Tokenlogue> with WidgetsBindingObserver {
       screen = Screen.deletion;
     });
     try {
-      await ProfileVault.channel.invokeMethod<void>('beginDelete');
-      deletePending = true;
+      if (!deletePending) {
+        await ProfileVault.channel.invokeMethod<void>('beginDelete');
+        deletePending = true;
+      }
       await finishDeletion();
       if (mounted) {
         setState(() {
@@ -433,7 +439,7 @@ class _TokenlogueState extends State<Tokenlogue> with WidgetsBindingObserver {
     controller: c,
     autofocus: focus,
     obscureText: !_revealedPins.contains(c),
-    enabled: !busy,
+    enabled: !busy && !(screen == Screen.pin && remainingSeconds > 0),
     autocorrect: false,
     enableSuggestions: false,
     enableIMEPersonalizedLearning: false,
@@ -556,6 +562,7 @@ class _TokenlogueState extends State<Tokenlogue> with WidgetsBindingObserver {
           icon: const Icon(Icons.verified_user),
           label: Text(t('auth.check_key')),
         ),
+        if (offerUnverified) Text(t('providers.unverified_help')),
         if (offerUnverified)
           TextButton(
             onPressed: () {

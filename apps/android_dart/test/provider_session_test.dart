@@ -67,6 +67,53 @@ void main() {
       profile.dispose();
     },
   );
+  test(
+    'indeterminate key checks preserve their cause and only VSEGPT permits explicit unverified save',
+    () async {
+      for (final service in Service.values) {
+        final transport = DelayedProvider(), api = ProviderApi(transport);
+        final key = service == Service.vsegpt
+            ? 'sk-or-vis-unit'
+            : 'sk-or-v1-unit';
+        for (final (cause, expected, maySave) in [
+          ('catalog.error.auth', KeyStatus.invalid, false),
+          ('catalog.error.network', KeyStatus.network, true),
+          ('catalog.error.tls', KeyStatus.tls, true),
+          ('catalog.error.timeout', KeyStatus.timeout, true),
+          ('catalog.error.rate', KeyStatus.limited, true),
+          ('catalog.error.schema', KeyStatus.malformed, false),
+          ('catalog.error.http', KeyStatus.unavailable, true),
+        ]) {
+          final check = api.check(service, key);
+          transport.pending.last.completeError(ApiFailure(cause));
+          final result = await check;
+          expect(result, expected);
+          expect(
+            result.maySaveUnverified(service),
+            maySave && service == Service.vsegpt,
+          );
+        }
+        final badPayload = api.check(service, key);
+        transport.pending.last.complete({'status': 'ok', 'data': {}});
+        expect(await badPayload, KeyStatus.malformed);
+        final policy = api.check(service, key);
+        transport.pending.last.completeError(
+          const ApiFailure('catalog.error.policy'),
+        );
+        final restricted = await policy;
+        expect(
+          restricted.maySaveUnverified(service),
+          service == Service.vsegpt,
+        );
+        expect(
+          restricted,
+          service == Service.vsegpt
+              ? KeyStatus.unverified
+              : KeyStatus.restricted,
+        );
+      }
+    },
+  );
   test('wrong provider and empty suffix never invoke a transport', () async {
     final transport = DelayedProvider(), api = ProviderApi(transport);
     for (final key in [

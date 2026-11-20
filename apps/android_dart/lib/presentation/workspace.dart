@@ -48,7 +48,7 @@ class _WorkspaceState extends State<Workspace> {
   late final accounts = AccountState(widget.session.profile, widget.api);
   int page = 0, sequence = 0;
   int _editVersion = 0, _viewVersion = 0;
-  String? selected;
+  String? selected, _requestedChat;
   String policy = 'manual', error = '';
   bool showChats = false, sending = false, loading = true;
   List<ChatRecord> chats = [];
@@ -93,10 +93,12 @@ class _WorkspaceState extends State<Workspace> {
   }
 
   Future<void> load({String? target, bool first = false}) async {
+    if (target != null) _requestedChat = target;
     final g = ++sequence, editVersion = _editVersion, oldChat = selected;
     await widget.session.flush();
     final list = await store.chats();
-    final saved = target ?? selected ?? await store.preference('selected');
+    final saved =
+        _requestedChat ?? selected ?? await store.preference('selected');
     final c = list.where((c) => c.id == saved).firstOrNull ?? list.firstOrNull;
     final all = await store.journal(),
         history = c == null
@@ -114,6 +116,7 @@ class _WorkspaceState extends State<Workspace> {
       budget = limit;
       policy = p ?? 'manual';
       selected = c?.id;
+      _requestedChat = null;
       loading = false;
       final draft = c?.draft ?? '';
       if ((oldChat != c?.id || _editVersion == editVersion) &&
@@ -135,18 +138,18 @@ class _WorkspaceState extends State<Workspace> {
   }
 
   Future<void> selectChat(String id) async {
-    _viewVersion++;
+    final view = ++_viewVersion;
     if (mounted) setState(() => error = '');
     widget.session.sending.invalidate();
     await load(target: id);
-    if (alive) setState(() => showChats = false);
+    if (alive && view == _viewVersion) setState(() => showChats = false);
   }
 
   Future<void> selectPage(int i) async {
-    _viewVersion++;
+    final view = ++_viewVersion;
     widget.session.sending.invalidate();
     await widget.session.flush();
-    if (alive) {
+    if (alive && view == _viewVersion) {
       setState(() {
         page = i;
         error = '';
@@ -777,13 +780,14 @@ class _WorkspaceState extends State<Workspace> {
     await load();
   }
 
-  Widget editor(ChatRecord c, List<JournalRow> local, BudgetTotal total) {
+  Widget editor(
+    ChatRecord c,
+    List<JournalRow> local,
+    BudgetTotal total,
+    bool short,
+  ) {
     final canSend =
         !sending && !total.blocked && composer.text.trim().isNotEmpty;
-    final short =
-        MediaQuery.sizeOf(context).height -
-            MediaQuery.viewInsetsOf(context).bottom <
-        430;
     return ColoredBox(
       color: panel,
       child: Padding(
@@ -849,6 +853,95 @@ class _WorkspaceState extends State<Workspace> {
               ),
             if (sending) const LinearProgressIndicator(),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget messageCard(
+    ({String turn, String role, String body}) m,
+    JournalRow? attempt,
+  ) {
+    final isUser = m.role == 'user';
+    final estimated = attempt?['usage_source'] == 'estimated';
+    final metadata = <String>[
+      if (!isUser && attempt?['actual_model'] != null)
+        "${t('meta.model')} ${attempt!['actual_model']}",
+      for (final (column, label, estimate) in [
+        ('usage_in', 'meta.prompt_tokens', 'workspace.estimated_input'),
+        ('usage_out', 'meta.completion_tokens', 'workspace.estimated_output'),
+        ('usage_total', 'meta.total', 'workspace.estimated_total'),
+      ])
+        if (attempt?[column] != null)
+          '${t(estimated ? estimate : label)} ${attempt![column]}',
+      if (attempt?['cost'] != null)
+        "${t(attempt!['cost_source'] == 'estimated' ? 'workspace.estimated_cost' : 'meta.cost')} ${attempt['cost']} ${attempt['currency']}",
+    ];
+    return Align(
+      alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+      child: Padding(
+        padding: EdgeInsets.only(left: isUser ? 16 : 0, right: isUser ? 0 : 16),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 760),
+          child: Card(
+            color: m.role == 'user' ? elevated : panel,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          m.role == 'user'
+                              ? t('protection_panel.you')
+                              : 'Tokenlogue',
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () =>
+                            Clipboard.setData(ClipboardData(text: m.body)),
+                        icon: const Icon(Icons.copy),
+                        tooltip: t('protection_panel.copy_message'),
+                      ),
+                    ],
+                  ),
+                  MessageBody(
+                    source: m.body,
+                    copyLabel: t('protection_panel.copy_code'),
+                  ),
+                  if (metadata.isNotEmpty)
+                    Text(
+                      metadata.join(' · '),
+                      style: const TextStyle(color: muted, fontSize: 11),
+                    ),
+                  if (isUser && attempt?['error'] is String)
+                    Text(
+                      t(attempt!['error'] as String),
+                      style: const TextStyle(color: muted),
+                    ),
+                  if (isUser && attempt?['state'] == 'pending')
+                    Text(t('history.sending')),
+                  if (isUser &&
+                      (attempt?['state'] == 'unknown' ||
+                          attempt?['state'] == 'unknownCost'))
+                    TextButton(
+                      onPressed: () =>
+                          run(() => release(attempt!['id'] as String)),
+                      child: Text(t('reserve.release_unknown')),
+                    ),
+                  if (isUser && attempt?['state'] == 'failed')
+                    TextButton(
+                      onPressed: sending
+                          ? null
+                          : () => run(() => send(retry: m.turn)),
+                      child: Text(t('common.retry')),
+                    ),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -997,82 +1090,57 @@ class _WorkspaceState extends State<Workspace> {
           if (error.isNotEmpty)
             Text(error, style: const TextStyle(color: Colors.amber)),
         ];
-        final history = c == null
-            ? Center(
+        final latestByTurn = {
+          for (final attempt in local) attempt['turn_id']: attempt,
+        };
+        final history = CustomScrollView(
+          key: ValueKey(c?.id),
+          primary: false,
+          slivers: [
+            if (scrollTogether)
+              SliverToBoxAdapter(
                 child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(t('chat.empty')),
-                    Text(t('chat.create_help')),
-                    FilledButton(
-                      onPressed: () => run(() => newChat()),
-                      child: Text(t('chat.untitled')),
-                    ),
-                  ],
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: head,
+                ),
+              ),
+            if (c == null)
+              SliverFillRemaining(
+                hasScrollBody: false,
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(t('chat.empty')),
+                      Text(t('chat.create_help')),
+                      FilledButton(
+                        onPressed: () => run(() => newChat()),
+                        child: Text(t('chat.untitled')),
+                      ),
+                    ],
+                  ),
                 ),
               )
-            : ListView(
-                primary: false,
-                shrinkWrap: scrollTogether,
-                physics: scrollTogether
-                    ? const NeverScrollableScrollPhysics()
-                    : null,
+            else
+              SliverPadding(
                 padding: const EdgeInsets.all(16),
-                children: [
-                  if (messages.isEmpty) Text(t('history.empty')),
-                  for (final m in messages)
-                    Card(
-                      color: m.role == 'user' ? elevated : panel,
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    m.role == 'user'
-                                        ? t('protection_panel.you')
-                                        : 'Tokenlogue',
-                                  ),
-                                ),
-                                IconButton(
-                                  onPressed: () => Clipboard.setData(
-                                    ClipboardData(text: m.body),
-                                  ),
-                                  icon: const Icon(Icons.copy),
-                                  tooltip: t('protection_panel.copy_message'),
-                                ),
-                              ],
-                            ),
-                            MessageBody(
-                              source: m.body,
-                              copyLabel: t('protection_panel.copy_code'),
-                            ),
-                          ],
-                        ),
+                sliver: messages.isEmpty
+                    ? SliverToBoxAdapter(child: Text(t('history.empty')))
+                    : SliverList.builder(
+                        itemCount: messages.length,
+                        itemBuilder: (_, index) {
+                          final message = messages[index];
+                          return messageCard(
+                            message,
+                            latestByTurn[message.turn],
+                          );
+                        },
                       ),
-                    ),
-                  for (final a in local)
-                    if (['unknown', 'unknownCost'].contains(a['state']))
-                      TextButton(
-                        onPressed: () => run(() => release(a['id'] as String)),
-                        child: Text(t('reserve.release_unknown')),
-                      )
-                    else if (a['state'] == 'failed')
-                      TextButton(
-                        onPressed: sending
-                            ? null
-                            : () => run(
-                                () => send(retry: a['turn_id'] as String),
-                              ),
-                        child: Text(t('common.retry')),
-                      ),
-                ],
-              );
+              ),
+          ],
+        );
         final foot = <Widget>[
-          if (c != null) editor(c, local, total!),
+          if (c != null) editor(c, local, total!, short),
           if (!short)
             Text(
               t('chat.history_warning'),
@@ -1080,17 +1148,23 @@ class _WorkspaceState extends State<Workspace> {
               style: const TextStyle(fontSize: 12, color: muted),
             ),
         ];
-        if (scrollTogether) {
-          return ListView(
-            padding: EdgeInsets.zero,
-            children: [...head, history, ...foot],
-          );
-        }
         return Column(
           children: [
-            ...head,
+            if (!scrollTogether) ...head,
             Expanded(child: history),
-            ...foot,
+            if (foot.isNotEmpty)
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: constraints.maxHeight * .65,
+                ),
+                child: SingleChildScrollView(
+                  primary: false,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: foot,
+                  ),
+                ),
+              ),
           ],
         );
       },

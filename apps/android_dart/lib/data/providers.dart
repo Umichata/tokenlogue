@@ -4,12 +4,31 @@ import '../domain/provider.dart';
 import 'transport.dart';
 
 enum KeyStatus {
-  accepted,
-  unverified,
-  invalid,
-  limited,
-  unavailable,
-  malformed,
+  accepted('providers.checked'),
+  unverified('selection.key.vsegpt_balance_unavailable'),
+  invalid('service.auth_rejected'),
+  restricted('service.auth_restricted'),
+  limited('service.auth_rate'),
+  network('service.auth_network'),
+  timeout('service.auth_timeout'),
+  tls('service.auth_tls'),
+  unavailable('service.auth_unavailable'),
+  malformed('service.response_format');
+
+  const KeyStatus(this.message);
+  final String message;
+
+  bool maySaveUnverified(Service service) =>
+      service == Service.vsegpt &&
+      switch (this) {
+        unverified ||
+        limited ||
+        network ||
+        timeout ||
+        tls ||
+        unavailable => true,
+        _ => false,
+      };
 }
 
 class ProviderApi {
@@ -39,20 +58,29 @@ class ProviderApi {
             ![0, 1, 2].contains(data['user_status'])) {
           return KeyStatus.malformed;
         }
-      } else if (data['is_management_key'] == true ||
-          !data.containsKey('limit_remaining') ||
-          data['limit_remaining'] != null &&
-              Amount.parse(data['limit_remaining']) == null) {
-        return KeyStatus.invalid;
+      } else {
+        if (!data.containsKey('limit_remaining')) return KeyStatus.malformed;
+        if (data['is_management_key'] == true) return KeyStatus.restricted;
+        if (data['limit_remaining'] != null &&
+            Amount.parse(data['limit_remaining']) == null) {
+          return KeyStatus.malformed;
+        }
       }
       return KeyStatus.accepted;
     } on ApiFailure catch (e) {
-      if (e.label == 'catalog.error.auth') return KeyStatus.invalid;
-      if (e.label == 'catalog.error.policy' && service == Service.vsegpt) {
-        return KeyStatus.unverified;
-      }
-      if (e.label == 'catalog.error.rate') return KeyStatus.limited;
-      return KeyStatus.unavailable;
+      return switch (e.label) {
+        'catalog.error.auth' => KeyStatus.invalid,
+        'catalog.error.policy' =>
+          service == Service.vsegpt
+              ? KeyStatus.unverified
+              : KeyStatus.restricted,
+        'catalog.error.schema' => KeyStatus.malformed,
+        'catalog.error.rate' => KeyStatus.limited,
+        'catalog.error.timeout' => KeyStatus.timeout,
+        'catalog.error.tls' => KeyStatus.tls,
+        'catalog.error.network' => KeyStatus.network,
+        _ => KeyStatus.unavailable,
+      };
     }
   }
 
