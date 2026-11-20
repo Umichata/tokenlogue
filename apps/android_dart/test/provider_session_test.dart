@@ -114,6 +114,64 @@ void main() {
       }
     },
   );
+  test(
+    'OpenRouter key limits and the optional daily count survive a credits refusal independently',
+    () async {
+      final transport = DelayedProvider();
+      final profile = UnlockedProfile('unit', SecretKey(List.filled(32, 4)), {
+        'openrouter': {'key': 'sk-or-v1-unit'},
+      });
+      final state = AccountState(profile, ProviderApi(transport));
+      for (final (raw, remaining) in [
+        ('{"used":3.0,"limit":17,"remaining":14}', 14),
+        ('{"used":20,"limit":17,"remaining":0}', 0),
+        ('{"used":3,"limit":17,"remaining":0}', null),
+        ('{"used":"0","limit":17,"remaining":17}', null),
+        ('{"used":false,"limit":17,"remaining":17}', null),
+        ('{"used":1.5,"limit":17,"remaining":15.5}', null),
+        ('null', null),
+      ]) {
+        final start = transport.pending.length;
+        final refresh = state.refresh(Service.openrouter);
+        transport.pending[start].completeError(
+          const ApiFailure('catalog.error.policy'),
+        );
+        transport.pending[start + 1].complete({
+          'data': {
+            'limit_remaining': null,
+            'free_model_daily_requests': decodeProviderJson(raw),
+          },
+        });
+        await refresh;
+        expect(state.values[Service.openrouter], isNull);
+        expect(state.routerLimits, isNotNull);
+        expect(state.routerLimits!.daily?.remaining, remaining);
+      }
+      final start = transport.pending.length;
+      final old = state.refresh(Service.openrouter);
+      state.changed(Service.openrouter);
+      profile.credentials['openrouter'] = {'key': 'sk-or-v1-unit-B'};
+      final current = state.refresh(Service.openrouter);
+      transport.pending[start + 2].complete({
+        'data': {'total_usage': '1', 'total_credits': '3'},
+      });
+      transport.pending[start + 3].completeError(
+        const ApiFailure('catalog.error.auth'),
+      );
+      await current;
+      transport.pending[start].complete({
+        'data': {'total_usage': '0', 'total_credits': '123'},
+      });
+      transport.pending[start + 1].complete({
+        'data': {'limit_remaining': '9'},
+      });
+      await old;
+      expect(state.routerLimits, isNull);
+      expect(state.values[Service.openrouter]?.amount, '2');
+      state.dispose();
+      profile.dispose();
+    },
+  );
   test('wrong provider and empty suffix never invoke a transport', () async {
     final transport = DelayedProvider(), api = ProviderApi(transport);
     for (final key in [

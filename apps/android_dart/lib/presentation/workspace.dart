@@ -703,12 +703,12 @@ class _WorkspaceState extends State<Workspace> {
   }
 
   String keyLimitText(Service s) {
-    final a = accounts.values[s];
-    if (a == null || !a.known) return t('providers.key_remaining_unknown');
-    return a.limit == null
+    final limits = accounts.routerLimits;
+    if (limits == null) return t('providers.key_remaining_unknown');
+    return limits.amount == null
         ? t('providers.key_limit_not_set')
         : interpolate(t('providers.key_remaining'), {
-            'amount': a.limit,
+            'amount': limits.amount.toString(),
             'currency': s.currency,
           });
   }

@@ -31,6 +31,23 @@ enum KeyStatus {
       };
 }
 
+typedef DailyQuota = ({int remaining, int limit});
+typedef RouterKeyLimits = ({Amount? amount, DailyQuota? daily});
+
+DailyQuota? _dailyQuota(Object? raw) {
+  if (raw is! Map) return null;
+  final used = raw['used'], limit = raw['limit'], remaining = raw['remaining'];
+  if (used is! int ||
+      limit is! int ||
+      remaining is! int ||
+      used < 0 ||
+      limit < 0 ||
+      remaining != (used >= limit ? 0 : limit - used)) {
+    return null;
+  }
+  return (remaining: remaining, limit: limit);
+}
+
 class ProviderApi {
   ProviderApi([Transport? transport])
     : transport = transport ?? HttpsTransport();
@@ -84,15 +101,17 @@ class ProviderApi {
     }
   }
 
-  Future<({Amount balance, Amount? limit, bool limitKnown, String status})>
-  account(Service service, String key) async {
+  Future<({Amount balance, String status})> account(
+    Service service,
+    String key,
+  ) async {
     final result = await transport.request(service, key, Resource.balance);
     final data = result['data'];
+    if (service == Service.vsegpt && result['status'] != 'ok') {
+      throw const ApiFailure('catalog.error.policy');
+    }
     if (data is! Map) throw const ApiFailure('catalog.error.schema');
     if (service == Service.vsegpt) {
-      if (result['status'] != 'ok') {
-        throw const ApiFailure('catalog.error.policy');
-      }
       final balance = Amount.parse(data['credits']);
       if (balance == null) throw const ApiFailure('catalog.error.schema');
       final subscription = data['subscription_status'],
@@ -109,33 +128,36 @@ class ProviderApi {
           : account == 1
           ? 'warning'
           : 'ready';
-      return (balance: balance, limit: null, limitKnown: false, status: status);
+      return (balance: balance, status: status);
     }
     final credit = Amount.parse(data['total_credits']),
         usage = Amount.parse(data['total_usage']);
     if (credit == null || usage == null) {
       throw const ApiFailure('catalog.error.schema');
     }
-    final balance = credit - usage;
-    try {
-      final info = (await transport.request(
-        service,
-        key,
-        Resource.key,
-      ))['data'];
-      if (info is Map && info.containsKey('limit_remaining')) {
-        final limit = Amount.parse(info['limit_remaining']);
-        return (
-          balance: balance,
-          limit: limit,
-          limitKnown: limit != null || info['limit_remaining'] == null,
-          status: 'ready',
-        );
-      }
-    } on ApiFailure {
-      /* Credits and key limit are independent observations. */
+    return (balance: credit - usage, status: 'ready');
+  }
+
+  Future<RouterKeyLimits> routerKeyLimits(String key) async {
+    final info = (await transport.request(
+      Service.openrouter,
+      key,
+      Resource.key,
+    ))['data'];
+    if (info is! Map || !info.containsKey('limit_remaining')) {
+      throw const ApiFailure('catalog.error.schema');
     }
-    return (balance: balance, limit: null, limitKnown: false, status: 'ready');
+    if (info['is_management_key'] == true) {
+      throw const ApiFailure('catalog.error.policy');
+    }
+    final amount = Amount.parse(info['limit_remaining']);
+    if (info['limit_remaining'] != null && amount == null) {
+      throw const ApiFailure('catalog.error.schema');
+    }
+    return (
+      amount: amount,
+      daily: _dailyQuota(info['free_model_daily_requests']),
+    );
   }
 
   Future<List<ModelChoice>> models(Service service, String key) async {

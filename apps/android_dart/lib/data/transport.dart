@@ -27,9 +27,17 @@ Object? decodeProviderJson(String wire) {
   return jsonDecode(
     wire.replaceAllMapped(tokens, (m) {
       final token = m[0]!;
-      return token.startsWith('"') || !token.contains(RegExp('[.eE]'))
-          ? token
-          : jsonEncode(token);
+      if (token.startsWith('"') || !token.contains(RegExp('[.eE]'))) {
+        return token;
+      }
+      // Preserve the JSON number type for exact whole counts such as 3.0.
+      final number = Amount.parse(token);
+      if (number != null &&
+          number.scale == 0 &&
+          number.coefficient.isValidInt) {
+        return number.coefficient.toString();
+      }
+      return jsonEncode(token);
     }),
   );
 }

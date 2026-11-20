@@ -9,17 +9,8 @@ class AccountState extends ChangeNotifier {
   AccountState(this.profile, this.api);
   final UnlockedProfile profile;
   final ProviderApi api;
-  final values =
-      <
-        Service,
-        ({
-          String amount,
-          String? limit,
-          bool known,
-          DateTime time,
-          String status,
-        })
-      >{};
+  final values = <Service, ({String amount, DateTime time, String status})>{};
+  RouterKeyLimits? routerLimits;
   final loading = <Service>{}, stale = <Service>{};
   final generation = <Service, int>{};
   final errors = <Service, String>{};
@@ -36,23 +27,47 @@ class AccountState extends ChangeNotifier {
         !profile.disposed &&
         token == generation[service] &&
         key == profile.keyFor(service);
-    try {
-      final result = await api.account(service, key);
-      if (!current()) return;
-      values[service] = (
-        amount: result.balance.toString(),
-        limit: result.limit?.toString(),
-        known: result.limitKnown,
-        time: DateTime.now(),
-        status: result.status,
-      );
-      stale.remove(service);
-      errors.remove(service);
-    } on ApiFailure catch (e) {
-      if (current()) {
+    Future<void> balance() async {
+      try {
+        final result = await api.account(service, key);
+        if (!current()) return;
+        values[service] = (
+          amount: result.balance.toString(),
+          time: DateTime.now(),
+          status: result.status,
+        );
+        stale.remove(service);
+        errors.remove(service);
+      } on ApiFailure catch (e) {
+        if (!current()) return;
         stale.add(service);
-        errors[service] = e.label;
+        errors[service] = switch (e.label) {
+          'catalog.error.auth' => 'providers.balance_status.invalid',
+          'catalog.error.policy' =>
+            'providers.balance_status.restricted.${service.name}',
+          'catalog.error.rate' => 'service.auth_rate',
+          'catalog.error.schema' => 'service.response_format',
+          'catalog.error.timeout' => 'service.auth_timeout',
+          'catalog.error.tls' => 'service.auth_tls',
+          _ => 'providers.balance_status.network_error',
+        };
       }
+    }
+
+    Future<void> limits() async {
+      try {
+        final value = await api.routerKeyLimits(key);
+        if (current()) routerLimits = value;
+      } on ApiFailure {
+        if (current()) routerLimits = null;
+      }
+    }
+
+    try {
+      await Future.wait([
+        balance(),
+        if (service == Service.openrouter) limits(),
+      ]);
     } finally {
       if (current()) {
         loading.remove(service);
@@ -64,6 +79,8 @@ class AccountState extends ChangeNotifier {
   void changed(Service service) {
     generation[service] = (generation[service] ?? 0) + 1;
     values.remove(service);
+    errors.remove(service);
+    if (service == Service.openrouter) routerLimits = null;
     stale.remove(service);
     loading.remove(service);
     if (active) notifyListeners();
@@ -249,6 +266,7 @@ class _ServiceCardState extends State<_ServiceCard> {
         saved = page.profile.keyFor(s) != null;
     final account = page.accounts.values[s],
         stale = page.accounts.stale.contains(s);
+    final limits = page.accounts.routerLimits;
     final canSave =
         validated == input.text.trim() &&
         (status == KeyStatus.accepted || status?.maySaveUnverified(s) == true);
@@ -325,28 +343,29 @@ class _ServiceCardState extends State<_ServiceCard> {
         ),
       ),
       if (account != null && account.status != 'ready')
-        Text(t('providers.status.${account.status}')),
+        Text(t('providers.balance_status.${account.status}')),
       if (stale && page.accounts.errors[s] != null)
         Text(t(page.accounts.errors[s]!)),
-      if (stale)
+      if (stale && account != null) Text(t('providers.balance_status.stale')),
+      if (s == Service.openrouter) ...[
         Text(
-          t(
-            account == null
-                ? 'providers.balance_status.network_error'
-                : 'providers.balance_status.stale',
-          ),
-        ),
-      if (s == Service.openrouter)
-        Text(
-          account == null || !account.known
+          limits == null
               ? t('providers.key_remaining_unknown')
-              : account.limit == null
+              : limits.amount == null
               ? t('providers.key_limit_not_set')
               : interpolate(t('providers.key_remaining'), {
-                  'amount': account.limit,
+                  'amount': limits.amount.toString(),
                   'currency': 'USD',
                 }),
         ),
+        if (limits?.daily case final daily?)
+          Text(
+            interpolate(t('providers.daily_free_quota'), {
+              'remaining': daily.remaining,
+              'limit': daily.limit,
+            }),
+          ),
+      ],
       OutlinedButton.icon(
         onPressed: saved && !busy ? () => page.accounts.refresh(s) : null,
         icon: const Icon(Icons.refresh),
