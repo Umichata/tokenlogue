@@ -24,7 +24,7 @@ Your draft belongs to its chat. The Send action passes the selected conversation
 
 ## Limits and spending
 
-An account balance, an OpenRouter key limit and a chat budget each describe a different amount. Token and cost estimates are approximate. When a predicted remainder reaches the warning threshold, review the amounts, cancel, change the budget or explicitly send. Changing a budget does not submit the draft. If a dispatched request has an unknown outcome, review its local reservation before deciding to release it. Releasing a reservation does not refund a provider charge.
+An account balance, an OpenRouter key limit and a chat budget each describe a different amount. On the Providers page, OpenRouter can also report how many free requests remain for the UTC day. The count appears only when the service supplies it. Token and cost estimates are approximate. When a predicted remainder reaches the warning threshold, review the amounts, cancel, change the budget or explicitly send. Changing a budget does not submit the draft. If a dispatched request has an unknown outcome, review its local reservation before deciding to release it. Releasing a reservation does not refund a provider charge.
 
 Open **Tokens** or **Spending** to filter the journal by provider, model and period. Select a day for details. OpenRouter uses USD and VSEGPT uses RUB. An unknown amount or missing date is shown separately.
 
