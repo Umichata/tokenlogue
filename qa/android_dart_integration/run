@@ -3,6 +3,11 @@ set -euo pipefail
 : "${FLUTTER_ROOT:?Set the Flutter SDK path}"
 device="${1:?Specify the serial of a disposable Android emulator}"
 [[ "$device" =~ ^emulator-[0-9]+$ ]] || { echo "A QA emulator is required" >&2; exit 2; }
+case "${2:-workspace}" in
+    workspace) scenario=onboarding_test.dart ;;
+    legacy) scenario=legacy_recovery_test.dart ;;
+    *) echo "Choose workspace or legacy" >&2; exit 2 ;;
+esac
 here="$(cd -- "$(dirname "$0")" && pwd -P)"
 stage="$(mktemp -d /tmp/tokenlogue-dart-integration.XXXXXXXX)"
 trap 'rm -rf -- "$stage"' EXIT
@@ -19,6 +24,6 @@ sed -i 's/^package io.github.umichata.tokenlogue.dart$/package io.github.umichat
 
 sed -i '/^dev_dependencies:/a\  integration_test:\n    sdk: flutter' pubspec.yaml
 mkdir -p integration_test
-cp "$here/onboarding_test.dart" "$here/history_scenario.dart" integration_test/
+cp "$here/$scenario" "$here/history_scenario.dart" integration_test/
 "$FLUTTER_ROOT/bin/flutter" pub get --offline
-"$FLUTTER_ROOT/bin/flutter" test --no-pub -d "$device" integration_test/onboarding_test.dart
+"$FLUTTER_ROOT/bin/flutter" test --no-pub -d "$device" "integration_test/$scenario"
