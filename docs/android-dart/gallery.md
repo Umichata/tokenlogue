@@ -26,9 +26,9 @@ These Android screenshots follow a demonstration profile from the first connecti
 
 <img src="../assets/ui/frame-top.svg" alt="" width="100%">
 
-| Conversation and draft | Large text and the on-screen keyboard |
-| --- | --- |
-| <a href="images/v9/chat-en.png"><img src="images/v9/chat-en.png" alt="Conversation and draft" width="196"></a> | <a href="images/v9/chat-large-keyboard-en.png"><img src="images/v9/chat-large-keyboard-en.png" alt="Large text and the on-screen keyboard" width="196"></a> |
+| Conversation and draft | Large text and the on-screen keyboard | Chat menu and demonstration key mask |
+| --- | --- | --- |
+| <a href="images/v9/chat-en.png"><img src="images/v9/chat-en.png" alt="Conversation and draft" width="196"></a> | <a href="images/v9/chat-large-keyboard-en.png"><img src="images/v9/chat-large-keyboard-en.png" alt="Large text and the on-screen keyboard" width="196"></a> | <a href="images/v9/demo-connection-en.png"><img src="images/v9/demo-connection-en.png" alt="Chat menu and demonstration key mask" width="196"></a> |
 
 <img src="../assets/ui/frame-bottom.svg" alt="" width="100%">
 
@@ -54,9 +54,13 @@ These Android screenshots follow a demonstration profile from the first connecti
 
 <img src="../assets/ui/frame-top.svg" alt="" width="100%">
 
-| Tokens by day | Spending by day |
-| --- | --- |
-| <a href="images/v9/tokens-en.png"><img src="images/v9/tokens-en.png" alt="Tokens by day" width="196"></a> | <a href="images/v9/spending-en.png"><img src="images/v9/spending-en.png" alt="Spending by day" width="196"></a> |
+| Tokens by day | Spending by day | Budget warning before sending |
+| --- | --- | --- |
+| <a href="images/v9/tokens-en.png"><img src="images/v9/tokens-en.png" alt="Tokens by day" width="196"></a> | <a href="images/v9/spending-en.png"><img src="images/v9/spending-en.png" alt="Spending by day" width="196"></a> | <a href="images/v9/warning-en.png"><img src="images/v9/warning-en.png" alt="Budget warning before sending" width="196"></a> |
+
+| Edit the chat limit |
+| --- |
+| <a href="images/v9/edit-budget-en.png"><img src="images/v9/edit-budget-en.png" alt="Edit the chat limit" width="196"></a> |
 
 <img src="../assets/ui/frame-bottom.svg" alt="" width="100%">
 

@@ -26,9 +26,9 @@
 
 <img src="../assets/ui/frame-top.svg" alt="" width="100%">
 
-| Переписка и черновик |
-| --- |
-| <a href="images/v9/chat-ru.png"><img src="images/v9/chat-ru.png" alt="Переписка и черновик" width="196"></a> |
+| Переписка и черновик | Меню чата и маска демонстрационного ключа |
+| --- | --- |
+| <a href="images/v9/chat-ru.png"><img src="images/v9/chat-ru.png" alt="Переписка и черновик" width="196"></a> | <a href="images/v9/demo-connection-ru.png"><img src="images/v9/demo-connection-ru.png" alt="Меню чата и маска демонстрационного ключа" width="196"></a> |
 
 <img src="../assets/ui/frame-bottom.svg" alt="" width="100%">
 
@@ -54,9 +54,13 @@
 
 <img src="../assets/ui/frame-top.svg" alt="" width="100%">
 
-| Токены по дням | Расходы по дням |
-| --- | --- |
-| <a href="images/v9/tokens-ru.png"><img src="images/v9/tokens-ru.png" alt="Токены по дням" width="196"></a> | <a href="images/v9/spending-ru.png"><img src="images/v9/spending-ru.png" alt="Расходы по дням" width="196"></a> |
+| Токены по дням | Расходы по дням | Предупреждение о бюджете перед отправкой |
+| --- | --- | --- |
+| <a href="images/v9/tokens-ru.png"><img src="images/v9/tokens-ru.png" alt="Токены по дням" width="196"></a> | <a href="images/v9/spending-ru.png"><img src="images/v9/spending-ru.png" alt="Расходы по дням" width="196"></a> | <a href="images/v9/warning-ru.png"><img src="images/v9/warning-ru.png" alt="Предупреждение о бюджете перед отправкой" width="196"></a> |
+
+| Изменение лимита чата |
+| --- |
+| <a href="images/v9/edit-budget-ru.png"><img src="images/v9/edit-budget-ru.png" alt="Изменение лимита чата" width="196"></a> |
 
 <img src="../assets/ui/frame-bottom.svg" alt="" width="100%">
 
