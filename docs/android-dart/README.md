@@ -22,6 +22,8 @@ Choose **New chat**, a service, a model and the limits. OpenRouter offers free a
 
 Your draft belongs to its chat. The Send action passes the selected conversation context to the chosen service. Copy a message or a code block using its copy button. Deleting a chat also deletes its local history, draft and statistics.
 
+From an open chat, choose **⋮ → Refresh key and balance** to check its saved connection. The menu shows the provider, a masked key and the result of the check. You can also change the interface language from the Providers, Tokens and Spending pages.
+
 ## Limits and spending
 
 An account balance, an OpenRouter key limit and a chat budget each describe a different amount. On the Providers page, OpenRouter can also report how many free requests remain for the UTC day. The count appears only when the service supplies it. Token and cost estimates are approximate. When a predicted remainder reaches the warning threshold, review the amounts, cancel, change the budget or explicitly send. Changing a budget does not submit the draft. If a dispatched request has an unknown outcome, review its local reservation before deciding to release it. Releasing a reservation does not refund a provider charge.

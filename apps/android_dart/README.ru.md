@@ -10,8 +10,8 @@
 
 ```bash
 mkdir -p "$PWD/../../out/android-dart"
-tool/build-release "$PWD/../../out/android-dart/Tokenlogue-0.1.1-android-dart-arm64-v8a-v9.apk"
-sha256sum "$PWD/../../out/android-dart/Tokenlogue-0.1.1-android-dart-arm64-v8a-v9.apk"
+tool/build-release "$PWD/../../out/android-dart/Tokenlogue-0.1.1-android-dart-arm64-v8a-v10.apk"
+sha256sum "$PWD/../../out/android-dart/Tokenlogue-0.1.1-android-dart-arm64-v8a-v10.apk"
 ```
 
 Для каждой сборки выбирайте новое выходное имя. При передаче обновления проверяйте отпечаток сертификата и контрольную сумму файла. Храните четыре параметра подписи и keystore вне дерева исходников. У локальных сборок с собственной подписью отдельная последовательность обновлений.
@@ -26,8 +26,8 @@ flutter test --no-pub
 В release входят Flutter, значки Material, интеграция SQLite и пакеты Dart, включая cryptography и markdown. Уведомления находятся внутри APK в `assets/flutter_assets/NOTICES.Z`. Для проверки пакета нужны инструменты Android SDK. Укажите путь к Android Build Tools 36.0.0 в `buildTools`, а SHA-256 сертификата подписи в `cert`, затем выполните команду.
 
 ```bash
-python3 tool/check_apk.py ../../out/android-dart/Tokenlogue-0.1.1-android-dart-arm64-v8a-v9.apk \
-  --build-tools "$buildTools" --certificate "$cert" --build-number 9 --output apk-check.json
+python3 tool/check_apk.py ../../out/android-dart/Tokenlogue-0.1.1-android-dart-arm64-v8a-v10.apk \
+  --build-tools "$buildTools" --certificate "$cert" --build-number 10 --output apk-check.json
 ```
 
 Статические проверки ELF и ZIP охватывают выравнивание для страниц 4 и 16 КиБ. Для проверки нативного запуска ARM64 с ядром 16 КиБ требуется соответствующее устройство. [Работа с приложением](../../docs/android-dart/README.ru.md) · [Проект](../../README.ru.md)
