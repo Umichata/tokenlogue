@@ -28,9 +28,9 @@
 
 <img src="docs/assets/ui/frame-top.svg" alt="" width="100%">
 
-| Первое подключение на русском | Чат о поездке с английским интерфейсом |
+| Переписка и черновик | Токены по дням |
 | --- | --- |
-| <a href="docs/android-dart/images/onboarding-tablet-ru.png"><img src="docs/android-dart/images/onboarding-tablet-ru.png" alt="Настройка Tokenlogue Dart на планшете Android" width="215"></a> | <a href="docs/android-dart/images/chat-en.png"><img src="docs/android-dart/images/chat-en.png" alt="Чат о поездке и черновик в английском интерфейсе Tokenlogue Dart" width="215"></a> |
+| <a href="docs/android-dart/images/v9/chat-ru.png"><img src="docs/android-dart/images/v9/chat-ru.png" alt="Демонстрационный чат о поездке и сохранённый черновик" width="215"></a> | <a href="docs/android-dart/images/v9/tokens-ru.png"><img src="docs/android-dart/images/v9/tokens-ru.png" alt="График токенов по дням в Tokenlogue Dart" width="215"></a> |
 
 <img src="docs/assets/ui/frame-bottom.svg" alt="" width="100%">
 

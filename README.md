@@ -30,7 +30,7 @@
 
 | Chat and draft | Tokens by day |
 | --- | --- |
-| <a href="docs/android-dart/images/chat-en.png"><img src="docs/android-dart/images/chat-en.png" alt="Tokenlogue Dart conversation" width="215"></a> | <a href="docs/android-dart/images/tokens-en.png"><img src="docs/android-dart/images/tokens-en.png" alt="Daily token chart in Tokenlogue Dart" width="215"></a> |
+| <a href="docs/android-dart/images/v9/chat-en.png"><img src="docs/android-dart/images/v9/chat-en.png" alt="Tokenlogue Dart conversation" width="215"></a> | <a href="docs/android-dart/images/v9/tokens-en.png"><img src="docs/android-dart/images/v9/tokens-en.png" alt="Daily token chart in Tokenlogue Dart" width="215"></a> |
 
 <img src="docs/assets/ui/frame-bottom.svg" alt="" width="100%">
 
