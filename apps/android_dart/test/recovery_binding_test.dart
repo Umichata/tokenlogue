@@ -38,6 +38,8 @@ void main() {
               jsonDecode(utf8.decode(call.arguments as Uint8List))
                   as Map<String, dynamic>;
           return null;
+        case 'clock':
+          return [1000, 1];
         case 'recoveryAvailable':
           return true;
         case 'cancelDevice':
@@ -110,4 +112,29 @@ void main() {
       expect(await vault.replacePin('0099'), isFalse);
     },
   );
+  test('reopening a recovered profile requires the replacement PIN', () async {
+    const previousPin = '0123';
+    const replacementPin = '4567';
+    record['verifier'] = await pinDigest(previousPin, record['salt'] as String);
+    final original = await vault.unlock(previousPin);
+    expect(original, isNotNull);
+    original!.dispose();
+
+    final pending = vault.requestRecovery('local test');
+    await promptOpen.future;
+    decision.complete(true);
+    expect(await pending, isTrue);
+    expect(await vault.replacePin(replacementPin), isTrue);
+
+    final reopened = ProfileVault(readBinding: () async => binding);
+    await expectLater(
+      reopened.unlock(previousPin),
+      throwsA(isA<PinRejected>()),
+    );
+    final restored = await reopened.unlock(replacementPin);
+    expect(restored, isNotNull);
+    expect(restored!.id, binding);
+    expect(restored.credentials.keys, contains('vsegpt'));
+    restored.dispose();
+  });
 }
