@@ -19,6 +19,6 @@ sed -i 's/^package io.github.umichata.tokenlogue.dart$/package io.github.umichat
 
 sed -i '/^dev_dependencies:/a\  integration_test:\n    sdk: flutter' pubspec.yaml
 mkdir -p integration_test
-cp "$here/onboarding_test.dart" integration_test/
+cp "$here/onboarding_test.dart" "$here/history_scenario.dart" integration_test/
 "$FLUTTER_ROOT/bin/flutter" pub get --offline
 "$FLUTTER_ROOT/bin/flutter" test --no-pub -d "$device" integration_test/onboarding_test.dart

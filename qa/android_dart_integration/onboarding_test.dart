@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:tokenlogue_dart/main.dart' as app;
 
+import 'history_scenario.dart';
+
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   testWidgets(
@@ -45,4 +47,5 @@ void main() {
       );
     },
   );
+  registerHistoryScenario();
 }
