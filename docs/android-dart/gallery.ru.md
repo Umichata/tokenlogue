@@ -16,7 +16,7 @@
 
 | Проверка сохранённого ключа |
 | --- |
-| <a href="images/v9/openrouter-check-ru.png"><img src="images/v9/openrouter-check-ru.png" alt="Проверка сохранённого ключа · 0.1.1+9" width="196"></a> |
+| <a href="images/v10/openrouter-check-ru.png"><img src="images/v10/openrouter-check-ru.png" alt="Проверка сохранённого ключа · 0.1.1+10" width="196"></a> |
 
 <img src="../assets/ui/frame-bottom.svg" alt="" width="100%">
 
@@ -30,6 +30,10 @@
 | --- | --- |
 | <a href="images/v10/chat-ru.png"><img src="images/v10/chat-ru.png" alt="Переписка и черновик · 0.1.1+10" width="196"></a> | <a href="images/v10/demo-connection-ru.png"><img src="images/v10/demo-connection-ru.png" alt="Меню чата и маска демонстрационного ключа · 0.1.1+10" width="196"></a> |
 
+| Подтверждение смены подключения |
+| --- |
+| <a href="images/v10/connection-review-ru.png"><img src="images/v10/connection-review-ru.png" alt="Подтверждение смены подключения" width="196"></a> |
+
 <img src="../assets/ui/frame-bottom.svg" alt="" width="100%">
 
 <a name="models"></a>
@@ -40,11 +44,11 @@
 
 | Выбор сервиса для нового чата | Режимы OpenRouter | Бесплатные модели OpenRouter |
 | --- | --- | --- |
-| <a href="images/v10/choose-provider-ru.png"><img src="images/v10/choose-provider-ru.png" alt="Выбор сервиса для нового чата · 0.1.1+10" width="196"></a> | <a href="images/v10/openrouter-mode-ru.png"><img src="images/v10/openrouter-mode-ru.png" alt="Режимы OpenRouter · 0.1.1+10" width="196"></a> | <a href="images/v9/openrouter-free-ru.png"><img src="images/v9/openrouter-free-ru.png" alt="Бесплатные модели OpenRouter · 0.1.1+9" width="196"></a> |
+| <a href="images/v10/choose-provider-ru.png"><img src="images/v10/choose-provider-ru.png" alt="Выбор сервиса для нового чата · 0.1.1+10" width="196"></a> | <a href="images/v10/openrouter-mode-ru.png"><img src="images/v10/openrouter-mode-ru.png" alt="Режимы OpenRouter · 0.1.1+10" width="196"></a> | <a href="images/v10/openrouter-free-ru.png"><img src="images/v10/openrouter-free-ru.png" alt="Бесплатные модели OpenRouter · 0.1.1+10" width="196"></a> |
 
 | Платные модели OpenRouter | Обновлённый каталог VSEGPT |
 | --- | --- |
-| <a href="images/v9/openrouter-paid-ru.png"><img src="images/v9/openrouter-paid-ru.png" alt="Платные модели OpenRouter · 0.1.1+9" width="196"></a> | <a href="images/v9/vsegpt-models-ru.png"><img src="images/v9/vsegpt-models-ru.png" alt="Обновлённый каталог VSEGPT · 0.1.1+9" width="196"></a> |
+| <a href="images/v10/openrouter-paid-ru.png"><img src="images/v10/openrouter-paid-ru.png" alt="Платные модели OpenRouter · 0.1.1+10" width="196"></a> | <a href="images/v10/vsegpt-models-ru.png"><img src="images/v10/vsegpt-models-ru.png" alt="Обновлённый каталог VSEGPT · 0.1.1+10" width="196"></a> |
 
 <img src="../assets/ui/frame-bottom.svg" alt="" width="100%">
 
@@ -77,6 +81,10 @@
 | Подтверждение удаления локального профиля | Первое подключение после удаления профиля |
 | --- | --- |
 | <a href="images/v10/delete-confirm-ru.png"><img src="images/v10/delete-confirm-ru.png" alt="Подтверждение удаления локального профиля" width="196"></a> | <a href="images/v10/new-profile-ru.png"><img src="images/v10/new-profile-ru.png" alt="Первое подключение после удаления профиля" width="196"></a> |
+
+| Вход в профиль | Восстановление через Android |
+| --- | --- |
+| <a href="images/v10/sign-in-ru.png"><img src="images/v10/sign-in-ru.png" alt="Вход в профиль" width="196"></a> | <a href="images/v10/recovery-ru.png"><img src="images/v10/recovery-ru.png" alt="Восстановление через Android" width="196"></a> |
 
 <img src="../assets/ui/frame-bottom.svg" alt="" width="100%">
 

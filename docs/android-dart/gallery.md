@@ -16,7 +16,7 @@ These Android screenshots follow a demonstration profile from the first connecti
 
 | Check a saved key |
 | --- |
-| <a href="images/v9/openrouter-check-en.png"><img src="images/v9/openrouter-check-en.png" alt="Check a saved key · 0.1.1+9" width="196"></a> |
+| <a href="images/v10/openrouter-check-en.png"><img src="images/v10/openrouter-check-en.png" alt="Check a saved key · 0.1.1+10" width="196"></a> |
 
 <img src="../assets/ui/frame-bottom.svg" alt="" width="100%">
 
@@ -30,6 +30,10 @@ These Android screenshots follow a demonstration profile from the first connecti
 | --- | --- | --- |
 | <a href="images/v10/chat-en.png"><img src="images/v10/chat-en.png" alt="Conversation and draft · 0.1.1+10" width="196"></a> | <a href="images/v10/chat-large-keyboard-en.png"><img src="images/v10/chat-large-keyboard-en.png" alt="Large text and the on-screen keyboard · 0.1.1+10" width="196"></a> | <a href="images/v10/demo-connection-en.png"><img src="images/v10/demo-connection-en.png" alt="Chat menu and demonstration key mask · 0.1.1+10" width="196"></a> |
 
+| Review the new chat connection |
+| --- |
+| <a href="images/v10/connection-review-en.png"><img src="images/v10/connection-review-en.png" alt="Review the new chat connection" width="196"></a> |
+
 <img src="../assets/ui/frame-bottom.svg" alt="" width="100%">
 
 <a name="models"></a>
@@ -40,11 +44,11 @@ These Android screenshots follow a demonstration profile from the first connecti
 
 | Choose a service for a new chat | OpenRouter modes | Free OpenRouter models |
 | --- | --- | --- |
-| <a href="images/v10/choose-provider-en.png"><img src="images/v10/choose-provider-en.png" alt="Choose a service for a new chat · 0.1.1+10" width="196"></a> | <a href="images/v10/openrouter-mode-en.png"><img src="images/v10/openrouter-mode-en.png" alt="OpenRouter modes · 0.1.1+10" width="196"></a> | <a href="images/v9/openrouter-free-en.png"><img src="images/v9/openrouter-free-en.png" alt="Free OpenRouter models · 0.1.1+9" width="196"></a> |
+| <a href="images/v10/choose-provider-en.png"><img src="images/v10/choose-provider-en.png" alt="Choose a service for a new chat · 0.1.1+10" width="196"></a> | <a href="images/v10/openrouter-mode-en.png"><img src="images/v10/openrouter-mode-en.png" alt="OpenRouter modes · 0.1.1+10" width="196"></a> | <a href="images/v10/openrouter-free-en.png"><img src="images/v10/openrouter-free-en.png" alt="Free OpenRouter models · 0.1.1+10" width="196"></a> |
 
 | Paid OpenRouter models | Refreshed VSEGPT catalogue |
 | --- | --- |
-| <a href="images/v9/openrouter-paid-en.png"><img src="images/v9/openrouter-paid-en.png" alt="Paid OpenRouter models · 0.1.1+9" width="196"></a> | <a href="images/v9/vsegpt-models-en.png"><img src="images/v9/vsegpt-models-en.png" alt="Refreshed VSEGPT catalogue · 0.1.1+9" width="196"></a> |
+| <a href="images/v10/openrouter-paid-en.png"><img src="images/v10/openrouter-paid-en.png" alt="Paid OpenRouter models · 0.1.1+10" width="196"></a> | <a href="images/v10/vsegpt-models-en.png"><img src="images/v10/vsegpt-models-en.png" alt="Refreshed VSEGPT catalogue · 0.1.1+10" width="196"></a> |
 
 <img src="../assets/ui/frame-bottom.svg" alt="" width="100%">
 
@@ -81,6 +85,10 @@ These Android screenshots follow a demonstration profile from the first connecti
 | Confirm local profile deletion |
 | --- |
 | <a href="images/v10/delete-confirm-en.png"><img src="images/v10/delete-confirm-en.png" alt="Confirm local profile deletion" width="196"></a> |
+
+| Unlock your profile |
+| --- |
+| <a href="images/v10/sign-in-en.png"><img src="images/v10/sign-in-en.png" alt="Unlock your profile" width="196"></a> |
 
 <img src="../assets/ui/frame-bottom.svg" alt="" width="100%">
 
