@@ -231,6 +231,36 @@ void main() {
       profile.dispose();
     },
   );
+  test(
+    'VSEGPT subscription and funds are separate from authentication and never become USD',
+    () async {
+      final transport = DelayedProvider(), api = ProviderApi(transport);
+      for (final (subscription, user, funds, expected) in [
+        ('ok', 0, '0', 'ready'),
+        ('ok', 1, '0.04', 'warning'),
+        ('expired', 0, '12', 'subscription_required'),
+        ('ok', 2, '-0.03', 'insufficient_funds'),
+        ('ok', 2, '0.01', 'account_disabled'),
+      ]) {
+        final payload = {
+          'status': 'ok',
+          'data': {
+            'credits': funds,
+            'subscription_status': subscription,
+            'user_status': user,
+          },
+        };
+        final check = api.check(Service.vsegpt, 'sk-or-vis-unit');
+        transport.pending.last.complete(payload);
+        expect(await check, KeyStatus.accepted);
+        final account = api.account(Service.vsegpt, 'sk-or-vis-unit');
+        transport.pending.last.complete(payload);
+        final result = await account;
+        expect(result.status, expected);
+        expect(result.balance.toString(), funds);
+      }
+    },
+  );
   test('wrong provider and empty suffix never invoke a transport', () async {
     final transport = DelayedProvider(), api = ProviderApi(transport);
     for (final key in [
