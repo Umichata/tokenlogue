@@ -82,10 +82,11 @@ class ChatStore {
   static Future<ChatStore> open(UnlockedProfile profile) async {
     final db = await openDatabase(
       await location(),
-      version: 3,
+      version: 4,
       onUpgrade: (db, old, next) async {
         if (old == 1) await schema2(db);
         if (old < 3) await bindJournalToChat(db, FieldCipher(profile));
+        if (old < 4) await schema4(db, FieldCipher(profile));
       },
       onConfigure: (db) async {
         await db.execute('PRAGMA foreign_keys=ON');
@@ -116,6 +117,7 @@ class ChatStore {
         );
         await db.execute('CREATE INDEX attempts_time ON attempts(dispatch_ms)');
         await schema2(db);
+        await schema4(db, FieldCipher(profile));
       },
     );
     final rows = await db.query('profile');
@@ -198,6 +200,7 @@ class ChatStore {
         'chats',
         {
           'title_rev': rev,
+          'placeholder_title': 0,
           'title': await crypto.seal(value, chat, 'title', rev),
         },
         where: 'id=?',

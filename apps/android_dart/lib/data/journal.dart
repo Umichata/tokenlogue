@@ -31,6 +31,35 @@ Future<void> schema2(DatabaseExecutor db) async {
   );
 }
 
+/// Earlier builds stored both localized default titles encrypted. A rename
+/// incremented title_rev even if the user chose the same visible title.
+Future<void> schema4(Database db, FieldCipher cipher) async {
+  final identity = await db.query('profile', columns: ['id']);
+  if (identity.length != 1 || identity.single['id'] != cipher.profile.id) {
+    throw StateError('profile_binding');
+  }
+  await db.execute('ALTER TABLE attempts ADD COLUMN finish_reason TEXT');
+  await db.execute(
+    'ALTER TABLE chats ADD COLUMN placeholder_title INTEGER NOT NULL DEFAULT 0',
+  );
+  final candidates = await db.rawQuery(
+    "SELECT c.id,c.title FROM chats c WHERE c.title_rev=1 AND NOT EXISTS "
+    "(SELECT 1 FROM turns t JOIN messages m ON m.turn_id=t.id WHERE t.chat=c.id AND m.role='assistant')",
+  );
+  for (final row in candidates) {
+    final id = row['id'] as String;
+    final title = await cipher.open(row['title'] as Uint8List, id, 'title', 1);
+    if (title == 'New chat' || title == 'Новый чат') {
+      await db.update(
+        'chats',
+        {'placeholder_title': 1},
+        where: 'id=?',
+        whereArgs: [id],
+      );
+    }
+  }
+}
+
 String messageField(Object? chat, Object? turn, Object? role) =>
     jsonEncode(['message', chat, turn, role]);
 String dispatchField(
@@ -104,7 +133,7 @@ extension Journal on ChatStore {
   }
 
   Future<List<JournalRow>> journal({String? chat}) => db.rawQuery(
-    'SELECT a.id,a.turn_id,a.provider,a.currency,a.requested_model,a.actual_model,a.dispatch_ms,a.state,a.reserved_tokens,a.reserved_cost,a.usage_in,a.usage_out,a.usage_total,a.usage_source,a.cost,a.cost_source,a.draft_revision,a.error,t.chat FROM attempts a JOIN turns t ON a.turn_id=t.id ${chat == null ? '' : 'WHERE t.chat=?'} ORDER BY a.dispatch_ms,a.rowid',
+    'SELECT a.id,a.turn_id,a.provider,a.currency,a.requested_model,a.actual_model,a.finish_reason,a.dispatch_ms,a.state,a.reserved_tokens,a.reserved_cost,a.usage_in,a.usage_out,a.usage_total,a.usage_source,a.cost,a.cost_source,a.draft_revision,a.error,t.chat FROM attempts a JOIN turns t ON a.turn_id=t.id ${chat == null ? '' : 'WHERE t.chat=?'} ORDER BY a.dispatch_ms,a.rowid',
     chat == null ? [] : [chat],
   );
   Future<List<Map<String, String>>> dispatchSnapshot(JournalRow attempt) async {
@@ -171,6 +200,7 @@ extension Journal on ChatStore {
     required Amount? budget,
     required bool skip,
     required bool reconnect,
+    bool placeholderTitle = false,
   }) async {
     if (tokens < 16 ||
         output < 16 ||
@@ -206,6 +236,7 @@ extension Journal on ChatStore {
         await tx.insert('chats', {
           'id': id,
           'title': encrypted,
+          'placeholder_title': placeholderTitle ? 1 : 0,
           'title_rev': 1,
           'created': DateTime.now().millisecondsSinceEpoch,
           ...common,
@@ -389,6 +420,8 @@ extension Journal on ChatStore {
     required String turn,
     required String attempt,
     required String answer,
+    String? firstPrompt,
+    String? finishReason,
     required String actual,
     required int? input,
     required int? output,
@@ -423,6 +456,7 @@ extension Journal on ChatStore {
         'attempts',
         {
           'actual_model': actual,
+          'finish_reason': finishReason,
           'state': unknown ? 'unknownCost' : 'sent',
           'usage_in': input,
           'usage_out': output,
@@ -436,6 +470,32 @@ extension Journal on ChatStore {
         where: 'id=?',
         whereArgs: [attempt],
       );
+      if (firstPrompt != null) {
+        final placeholder = (await tx.query(
+          'chats',
+          columns: ['title_rev'],
+          where: 'id=? AND placeholder_title=1',
+          whereArgs: [chat],
+        )).firstOrNull;
+        if (placeholder != null) {
+          final title = String.fromCharCodes(
+            firstPrompt.trim().replaceAll(RegExp(r'\s+'), ' ').runes.take(60),
+          ).trimRight();
+          if (title.isNotEmpty) {
+            final rev = (placeholder['title_rev'] as int) + 1;
+            await tx.update(
+              'chats',
+              {
+                'title': await crypto.seal(title, chat, 'title', rev),
+                'title_rev': rev,
+                'placeholder_title': 0,
+              },
+              where: 'id=?',
+              whereArgs: [chat],
+            );
+          }
+        }
+      }
       if (record['draft_revision'] != null) {
         final rev = (record['draft_revision'] as int) + 1;
         // Keep monotonic revisions and compare before clearing an edited draft.

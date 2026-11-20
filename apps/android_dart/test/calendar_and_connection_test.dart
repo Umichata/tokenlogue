@@ -38,6 +38,50 @@ void main() {
       jsonDecode(File('assets/locales/en.json').readAsStringSync())
           as Map<String, dynamic>;
   String t(String key) => messages[key] as String;
+  testWidgets(
+    'selected service totals and per-model rankings reflect reported usage',
+    (tester) async {
+      final now = DateTime.now().millisecondsSinceEpoch;
+      final rows = <Attempt>[
+        for (final (provider, model, total) in [
+          ('vsegpt', 'one', 3),
+          ('vsegpt', 'two', 7),
+          ('openrouter', 'one', 2),
+        ])
+          {
+            'dispatch_ms': now,
+            'provider': provider,
+            'currency': provider == 'vsegpt' ? 'RUB' : 'USD',
+            'actual_model': model,
+            'usage_source': 'api',
+            'usage_in': 1,
+            'usage_out': total - 1,
+            'usage_total': total,
+          },
+      ];
+      tester.view.physicalSize = const Size(1000, 2200);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AnalyticsPage(t: t, rows: rows, money: false),
+          ),
+        ),
+      );
+      expect(find.text(t('analytics.top_models')), findsOneWidget);
+      expect(find.textContaining('VSEGPT · two: 7'), findsOneWidget);
+      expect(
+        find.textContaining('${t('analytics.api_total')} 10'),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('${t('analytics.api_requests')} 2'),
+        findsOneWidget,
+      );
+    },
+  );
   test('calendar days and exact journal facts have distinct scopes', () {
     final now = DateTime(2026, 11, 20, 10);
     final rows = <Attempt>[

@@ -47,14 +47,25 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
       money: widget.money,
     );
     final summaries = <String, DayUsage>{};
+    final byProvider = <String, DayUsage>{};
     for (final row in records) {
       if ((days != 0 && !period.contains(row)) ||
           (model != 'all' && modelKey(row) != model)) {
         continue;
       }
+      if (!widget.money) {
+        final service = row['provider'] as String;
+        (byProvider[service] ??= DayUsage('', '')).add(row);
+      }
       final group = widget.money ? row['currency'] as String : modelKey(row);
       (summaries[group] ??= DayUsage('', widget.money ? group : '')).add(row);
     }
+    final topModels =
+        summaries.entries.where((e) => e.value.apiTotalsReported > 0).toList()
+          ..sort((a, b) {
+            final comparison = b.value.apiTokens.compareTo(a.value.apiTokens);
+            return comparison != 0 ? comparison : a.key.compareTo(b.key);
+          });
     final currencies = widget.money
         ? (series.map((d) => d.currency).toSet().toList()..sort())
         : [''];
@@ -196,11 +207,32 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
           ),
         if (!widget.money) ...[
           if (summaries.isEmpty) Text(t('analytics.empty')),
-          for (final group
-              in (summaries.entries.toList()..sort(
-                (a, b) => b.value.apiTokens.compareTo(a.value.apiTokens),
-              )))
-            _DayDetail(t: t, row: group.value, money: false, title: group.key),
+          for (final service in Service.values)
+            if (byProvider[service.name] case final totals?)
+              _DayDetail(t: t, row: totals, money: false, title: service.label),
+          if (topModels.isNotEmpty)
+            Text(
+              t('analytics.top_models'),
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+          for (final group in topModels.take(5))
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(
+                interpolate(t('analytics.model_usage'), {
+                  'provider': Service.values
+                      .byName(group.key.split('/').first)
+                      .label,
+                  'model': group.key.substring(group.key.indexOf('/') + 1),
+                  'tokens': group.value.apiTokens,
+                }),
+              ),
+              subtitle: LinearProgressIndicator(
+                value: topModels.first.value.apiTokens == 0
+                    ? 0
+                    : group.value.apiTokens / topModels.first.value.apiTokens,
+              ),
+            ),
         ],
       ],
     );
@@ -233,6 +265,9 @@ class _DayDetail extends StatelessWidget {
               }),
           ]
         : [
+            "${t('analytics.requests')} ${d.attempts}",
+            "${t('analytics.api_requests')} ${d.apiRequests}",
+            "${t('analytics.unknown_requests')} ${d.unknownRequests}",
             "${t('analytics.token_input')} ${d.apiInputsReported > 0 ? d.apiInput : t('analytics.unknown')} · ${t('analytics.token_output')} ${d.apiOutputsReported > 0 ? d.apiOutput : t('analytics.unknown')}",
             "${t('analytics.api_total')} ${d.apiTotalsReported > 0 ? d.apiTokens : t('analytics.unknown')}",
             if (d.estimatedTokens > 0)

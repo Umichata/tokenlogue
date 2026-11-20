@@ -230,6 +230,7 @@ class _WorkspaceState extends State<Workspace> {
       existing: change ? id : null,
       id: id,
       title: t('chat.untitled'),
+      placeholderTitle: !change,
       model: choice.model,
       tokens: choice.tokens,
       output: choice.output,
@@ -305,13 +306,21 @@ class _WorkspaceState extends State<Workspace> {
           children: [
             TextFormField(
               initialValue: token,
-              decoration: InputDecoration(labelText: t('limits.total')),
+              decoration: InputDecoration(
+                labelText: t('limits.total'),
+                helperText: t('limits.total_help'),
+                helperMaxLines: 4,
+              ),
               keyboardType: TextInputType.number,
               onChanged: (v) => token = v,
             ),
             TextFormField(
               initialValue: cap,
-              decoration: InputDecoration(labelText: t('limits.completion')),
+              decoration: InputDecoration(
+                labelText: t('limits.completion'),
+                helperText: t('limits.completion_help'),
+                helperMaxLines: 4,
+              ),
               keyboardType: TextInputType.number,
               onChanged: (v) => cap = v,
             ),
@@ -319,6 +328,8 @@ class _WorkspaceState extends State<Workspace> {
               TextFormField(
                 initialValue: amount,
                 decoration: InputDecoration(
+                  helperText: t('limits.money_help'),
+                  helperMaxLines: 4,
                   labelText: t(
                     'limits.money',
                   ).replaceAll('USD', c.service.currency),
@@ -962,6 +973,9 @@ class _WorkspaceState extends State<Workspace> {
       ])
         if (attempt?[column] != null)
           '${t(estimated ? estimate : label)} ${attempt![column]}',
+      if (attempt?['cost'] == null &&
+          const {'unknown', 'unknownCost'}.contains(attempt?['state']))
+        "${t('meta.cost')} ${t('analytics.unknown')}",
       if (attempt?['cost'] != null)
         "${t(attempt!['cost_source'] == 'estimated' ? 'workspace.estimated_cost' : 'meta.cost')} ${attempt['cost']} ${attempt['currency']}",
     ];
@@ -1003,6 +1017,11 @@ class _WorkspaceState extends State<Workspace> {
                     Text(
                       metadata.join(' · '),
                       style: const TextStyle(color: muted, fontSize: 11),
+                    ),
+                  if (!isUser && attempt?['finish_reason'] == 'length')
+                    Text(
+                      t('service.response_truncated'),
+                      style: const TextStyle(color: muted),
                     ),
                   if (isUser && attempt?['error'] is String)
                     Text(

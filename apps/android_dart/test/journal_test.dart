@@ -14,6 +14,7 @@ import 'package:tokenlogue_dart/domain/request_plan.dart';
 
 class FixtureTransport implements Transport {
   int calls = 0;
+  String finishReason = 'stop';
   final contexts = <Object?>[];
   ApiFailure? failure;
   void Function()? duringSend;
@@ -44,7 +45,7 @@ class FixtureTransport implements Transport {
       'choices': [
         {
           'message': {'role': 'assistant', 'content': 'neutral answer'},
-          'finish_reason': 'stop',
+          'finish_reason': finishReason,
         },
       ],
       'usage': {
@@ -90,6 +91,55 @@ void main() {
     await store.db.close();
     await temp.delete(recursive: true);
   });
+  test(
+    'first saved reply names only a placeholder and keeps length and accounting through reopen',
+    () async {
+      await store.configure(
+        id: 'two',
+        title: 'New chat',
+        placeholderTitle: true,
+        model: ModelChoice.router,
+        tokens: 8192,
+        output: 128,
+        budget: null,
+        skip: false,
+        reconnect: false,
+      );
+      final long = List.filled(65, '🚆').join();
+      await store.saveDraft('two', '  Trip  \n  ${long} ', 0);
+      http.finishReason = 'length';
+      final chat = (await store.chats()).firstWhere((c) => c.id == 'two');
+      await service.dispatch(await service.preview(chat), confirmed: false);
+      await store.db.close();
+      store = await ChatStore.open(profile());
+      final updated = (await store.chats()).firstWhere((c) => c.id == 'two');
+      expect(updated.title, 'Trip ${List.filled(55, '🚆').join()}');
+      final row = (await store.journal(chat: 'two')).single;
+      expect(
+        [
+          row['finish_reason'],
+          row['actual_model'],
+          row['usage_in'],
+          row['usage_out'],
+          row['usage_total'],
+          row['cost'],
+        ],
+        ['length', 'test/free:free', 12, 4, 16, '0'],
+      );
+      await store.rename('one', 'New chat');
+      service = ChatService(store, ProviderApi(http));
+      await service.dispatch(
+        await service.preview(
+          (await store.chats()).firstWhere((c) => c.id == 'one'),
+        ),
+        confirmed: false,
+      );
+      expect(
+        (await store.chats()).firstWhere((c) => c.id == 'one').title,
+        'New chat',
+      );
+    },
+  );
   test(
     'post-dispatch timeout retains reserve and IDs across a cold open until explicitly released',
     () async {

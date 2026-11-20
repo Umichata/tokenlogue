@@ -1,3 +1,4 @@
+import 'package:tokenlogue_dart/domain/request_plan.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tokenlogue_dart/domain/amount.dart';
 import 'package:tokenlogue_dart/domain/catalogue.dart';
@@ -7,6 +8,39 @@ import 'package:tokenlogue_dart/data/transport.dart';
 
 void main() {
   Amount a(String s) => Amount.parse(s)!;
+  test(
+    'provider output limit survives cache round trip and bounds the actual plan',
+    () {
+      final row = {
+        'id': 'example/limited',
+        'name': 'Limited',
+        'context_length': 4096,
+        'top_provider': {'max_completion_tokens': 47},
+        'pricing': {'prompt': '0', 'completion': '0'},
+        'architecture': {
+          'input_modalities': ['text'],
+          'output_modalities': ['text'],
+        },
+      };
+      final model = ModelChoice.fromJson(
+        catalogue(Service.openrouter, [row]).single.toJson(),
+      );
+      final plan = RequestPlan.prepare(
+        model: model,
+        text: 'Hello',
+        history: [],
+        availableTokens: 500,
+        outputLimit: 250,
+        budget: null,
+        spent: Amount.zero,
+        reserved: Amount.zero,
+        keyRemaining: null,
+      );
+      expect(plan.completion, 47);
+      final legacy = model.toJson()..remove('max_completion_tokens');
+      expect(ModelChoice.fromJson(legacy).maxCompletionTokens, isNull);
+    },
+  );
   test(
     'prices preserve decimal spelling from JSON and exact 10% threshold',
     () {

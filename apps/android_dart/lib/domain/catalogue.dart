@@ -42,10 +42,18 @@ const _vendors = {
 };
 
 class ModelChoice {
-  ModelChoice(this.service, this.id, this.name, this.context, this.rates);
+  ModelChoice(
+    this.service,
+    this.id,
+    this.name,
+    this.context,
+    this.rates, {
+    this.maxCompletionTokens,
+  });
   final Service service;
   final String id, name;
   final int context;
+  final int? maxCompletionTokens;
 
   /// Each row is the base price or a full conditional pricing override.
   final List<Map<String, Amount>> rates;
@@ -83,6 +91,8 @@ class ModelChoice {
     'id': id,
     'name': name,
     'context': context,
+    if (maxCompletionTokens != null)
+      'max_completion_tokens': maxCompletionTokens,
     'rates': [
       for (final r in rates)
         {for (final e in r.entries) e.key: e.value.toString()},
@@ -97,6 +107,7 @@ class ModelChoice {
       for (final r in row['rates'] as List)
         {for (final k in priceFields) k: Amount.parse(r[k])!},
     ],
+    maxCompletionTokens: row['max_completion_tokens'] as int?,
   );
   bool exceeds(ModelChoice old) =>
       service != old.service ||
@@ -200,7 +211,20 @@ List<ModelChoice> catalogue(Service service, Object? items) {
       rows.add(p);
     }
     if (complete && seen.add(id)) {
-      result.add(ModelChoice(service, id, name, context, rows));
+      final top = row['top_provider'];
+      final cap = top is Map
+          ? int.tryParse('${top['max_completion_tokens']}')
+          : null;
+      result.add(
+        ModelChoice(
+          service,
+          id,
+          name,
+          context,
+          rows,
+          maxCompletionTokens: cap != null && cap > 0 ? cap : null,
+        ),
+      );
     }
   }
   return result;

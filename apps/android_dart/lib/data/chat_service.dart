@@ -296,6 +296,8 @@ class ChatService {
           turn: ids.turn,
           attempt: ids.attempt,
           answer: message['content'] as String,
+          firstPrompt: plan.messages.last['content'],
+          finishReason: choice['finish_reason'] as String,
           actual: actual,
           input: usage.input,
           output: usage.output,

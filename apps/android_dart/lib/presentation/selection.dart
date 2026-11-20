@@ -312,7 +312,11 @@ class _SelectChatState extends State<SelectChat> {
                   controller: tokens,
                   readOnly: widget.changing,
                   keyboardType: TextInputType.number,
-                  decoration: InputDecoration(labelText: t('limits.total')),
+                  decoration: InputDecoration(
+                    labelText: t('limits.total'),
+                    helperText: t('limits.total_help'),
+                    helperMaxLines: 4,
+                  ),
                   onChanged: (_) => setState(() {}),
                 ),
                 TextField(
@@ -320,6 +324,8 @@ class _SelectChatState extends State<SelectChat> {
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
                     labelText: t('limits.completion'),
+                    helperText: t('limits.completion_help'),
+                    helperMaxLines: 4,
                   ),
                   onChanged: (_) => setState(() {}),
                 ),
@@ -330,6 +336,8 @@ class _SelectChatState extends State<SelectChat> {
                       decimal: true,
                     ),
                     decoration: InputDecoration(
+                      helperText: t('limits.money_help'),
+                      helperMaxLines: 4,
                       labelText: t(
                         'limits.money',
                       ).replaceAll('USD', service!.currency),

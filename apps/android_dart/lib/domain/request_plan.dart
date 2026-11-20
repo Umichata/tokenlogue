@@ -44,6 +44,8 @@ class RequestPlan {
       0,
       availableTokens < 0 ? 0 : availableTokens,
     );
+    final providerLimit = model.maxCompletionTokens;
+    if (providerLimit != null && output > providerLimit) output = providerLimit;
     if (output < 16) throw const PlanRejected('service.error.tokens');
     var prompt = 32 + estimateText(text);
     if (prompt + 16 > model.context) {

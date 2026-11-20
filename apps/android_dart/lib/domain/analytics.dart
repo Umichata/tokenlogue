@@ -18,6 +18,7 @@ class DayUsage {
       estimateInput = 0,
       estimateOutput = 0,
       partial = 0;
+  int apiRequests = 0, unknownRequests = 0;
   int apiInputsReported = 0, apiOutputsReported = 0, apiTotalsReported = 0;
   int confirmedCosts = 0, estimatedCosts = 0;
   Amount confirmed = Amount.zero, estimated = Amount.zero;
@@ -28,6 +29,13 @@ class DayUsage {
         input = a['usage_in'],
         output = a['usage_out'];
     if (total == null || input == null || output == null) partial++;
+    if (a['usage_source'] == 'api' &&
+        (total is int || input is int || output is int)) {
+      apiRequests++;
+    } else if (a['usage_source'] != 'estimated' ||
+        (total == null && input == null && output == null)) {
+      unknownRequests++;
+    }
     if (a['usage_source'] == 'estimated') {
       estimateInput += input as int? ?? 0;
       estimateOutput += output as int? ?? 0;

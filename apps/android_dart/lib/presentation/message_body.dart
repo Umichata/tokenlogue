@@ -3,6 +3,21 @@ import 'package:flutter/services.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'theme.dart';
 
+/// Keep the author's marker, including nonconsecutive numbers and closing parentheses.
+class _NumberedItem extends md.BlockSyntax {
+  @override
+  final pattern = RegExp(r'^([ \t]*[0-9]{1,9}[.)])[ \t]+(.+)$');
+  @override
+  md.Node parse(md.BlockParser parser) {
+    final item = pattern.firstMatch(parser.current.content)!;
+    parser.advance();
+    return md.Element('p', [
+      md.Text('${item[1]} '),
+      md.UnparsedContent(item[2]!),
+    ]);
+  }
+}
+
 class MessageBody extends StatelessWidget {
   const MessageBody({super.key, required this.source, required this.copyLabel});
   final String source, copyLabel;
@@ -92,7 +107,16 @@ class MessageBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final nodes = md.Document(encodeHtml: false).parseLines(source.split('\n'));
+    final nodes = md.Document(
+      encodeHtml: false,
+      blockSyntaxes: [_NumberedItem()],
+      withDefaultInlineSyntaxes: false,
+      inlineSyntaxes: [
+        md.CodeSyntax(),
+        md.EmphasisSyntax.asterisk(),
+        md.EmphasisSyntax.underscore(),
+      ],
+    ).parseLines(source.split('\n'));
     return Column(
       spacing: 8,
       crossAxisAlignment: CrossAxisAlignment.start,
