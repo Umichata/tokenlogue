@@ -12,7 +12,7 @@
 
 | Первое подключение | Сохранённый ключ OpenRouter | Сохранённый ключ VSEGPT |
 | --- | --- | --- |
-| <a href="images/v10/onboarding-ru.png"><img src="images/v10/onboarding-ru.png" alt="Первое подключение · 0.1.1+10" width="196"></a> | <a href="images/v10/openrouter-saved-ru.png"><img src="images/v10/openrouter-saved-ru.png" alt="Сохранённый ключ OpenRouter · 0.1.1+10" width="196"></a> | <a href="images/v10/vsegpt-saved-ru.png"><img src="images/v10/vsegpt-saved-ru.png" alt="Сохранённый ключ VSEGPT · 0.1.1+10" width="196"></a> |
+| <a href="images/v12/onboarding-ru.png"><img src="images/v12/onboarding-ru.png" alt="Первое подключение · 0.1.1+12" width="196"></a> | <a href="images/v10/openrouter-saved-ru.png"><img src="images/v10/openrouter-saved-ru.png" alt="Сохранённый ключ OpenRouter · 0.1.1+10" width="196"></a> | <a href="images/v10/vsegpt-saved-ru.png"><img src="images/v10/vsegpt-saved-ru.png" alt="Сохранённый ключ VSEGPT · 0.1.1+10" width="196"></a> |
 
 | Проверка сохранённого ключа |
 | --- |
@@ -60,11 +60,11 @@
 
 | Токены по дням | Расходы по дням | Предупреждение о бюджете перед отправкой |
 | --- | --- | --- |
-| <a href="images/v10/tokens-ru.png"><img src="images/v10/tokens-ru.png" alt="Токены по дням · 0.1.1+10" width="196"></a> | <a href="images/v10/spending-ru.png"><img src="images/v10/spending-ru.png" alt="Расходы по дням · 0.1.1+10" width="196"></a> | <a href="images/v10/warning-ru.png"><img src="images/v10/warning-ru.png" alt="Предупреждение о бюджете перед отправкой · 0.1.1+10" width="196"></a> |
+| <a href="images/v10/tokens-ru.png"><img src="images/v10/tokens-ru.png" alt="Токены по дням · 0.1.1+10" width="196"></a> | <a href="images/v10/spending-ru.png"><img src="images/v10/spending-ru.png" alt="Расходы по дням · 0.1.1+10" width="196"></a> | <a href="images/v12/budget-ru.png"><img src="images/v12/budget-ru.png" alt="Проверка бюджета перед отправкой · 0.1.1+12" width="196"></a> |
 
 | Изменение лимита чата |
 | --- |
-| <a href="images/v10/edit-budget-ru.png"><img src="images/v10/edit-budget-ru.png" alt="Изменение лимита чата · 0.1.1+10" width="196"></a> |
+| <a href="images/v12/edit-limits-ru.png"><img src="images/v12/edit-limits-ru.png" alt="Изменение лимитов чата · 0.1.1+12" width="196"></a> |
 
 | Подробности дня в USD | Расходы в рублях без запросов |
 | --- | --- |
@@ -84,7 +84,19 @@
 
 | Вход в профиль | Восстановление через Android |
 | --- | --- |
-| <a href="images/v10/sign-in-ru.png"><img src="images/v10/sign-in-ru.png" alt="Вход в профиль" width="196"></a> | <a href="images/v10/recovery-ru.png"><img src="images/v10/recovery-ru.png" alt="Восстановление через Android" width="196"></a> |
+| <a href="images/v12/sign-in-ru.png"><img src="images/v12/sign-in-ru.png" alt="Вход в Tokenlogue · 0.1.1+12" width="196"></a> | <a href="images/v12/device-recovery-ru.png"><img src="images/v12/device-recovery-ru.png" alt="Запрос системного подтверждения Android · 0.1.1+12" width="196"></a> |
+
+<img src="../assets/ui/frame-bottom.svg" alt="" width="100%">
+
+<a name="chat-dialogs"></a>
+
+## <img src="../assets/ui/section-mark.svg" alt="" width="20" height="20"> Настройки разговора и восстановление доступа
+
+<img src="../assets/ui/frame-top.svg" alt="" width="100%">
+
+| Переименование чата | Подтверждение удаления чата | Выбор нового PIN после подтверждения |
+| --- | --- | --- |
+| <a href="images/v12/rename-ru.png"><img src="images/v12/rename-ru.png" alt="Переименование чата · 0.1.1+12" width="196"></a> | <a href="images/v12/delete-chat-ru.png"><img src="images/v12/delete-chat-ru.png" alt="Подтверждение удаления чата · 0.1.1+12" width="196"></a> | <a href="images/v12/new-pin-ru.png"><img src="images/v12/new-pin-ru.png" alt="Выбор нового PIN после подтверждения · 0.1.1+12" width="196"></a> |
 
 <img src="../assets/ui/frame-bottom.svg" alt="" width="100%">
 

@@ -12,7 +12,7 @@ These Android screenshots follow a demonstration profile from the first connecti
 
 | First connection | Saved OpenRouter key | Saved VSEGPT key |
 | --- | --- | --- |
-| <a href="images/v10/onboarding-en.png"><img src="images/v10/onboarding-en.png" alt="First connection · 0.1.1+10" width="196"></a> | <a href="images/v10/openrouter-saved-en.png"><img src="images/v10/openrouter-saved-en.png" alt="Saved OpenRouter key · 0.1.1+10" width="196"></a> | <a href="images/v10/vsegpt-saved-en.png"><img src="images/v10/vsegpt-saved-en.png" alt="Saved VSEGPT key · 0.1.1+10" width="196"></a> |
+| <a href="images/v12/onboarding-en.png"><img src="images/v12/onboarding-en.png" alt="First connection · 0.1.1+12" width="196"></a> | <a href="images/v10/openrouter-saved-en.png"><img src="images/v10/openrouter-saved-en.png" alt="Saved OpenRouter key · 0.1.1+10" width="196"></a> | <a href="images/v10/vsegpt-saved-en.png"><img src="images/v10/vsegpt-saved-en.png" alt="Saved VSEGPT key · 0.1.1+10" width="196"></a> |
 
 | Check a saved key |
 | --- |
@@ -60,11 +60,11 @@ These Android screenshots follow a demonstration profile from the first connecti
 
 | Tokens by day | Spending by day | Budget warning before sending |
 | --- | --- | --- |
-| <a href="images/v10/tokens-en.png"><img src="images/v10/tokens-en.png" alt="Tokens by day · 0.1.1+10" width="196"></a> | <a href="images/v10/spending-en.png"><img src="images/v10/spending-en.png" alt="Spending by day · 0.1.1+10" width="196"></a> | <a href="images/v10/warning-en.png"><img src="images/v10/warning-en.png" alt="Budget warning before sending · 0.1.1+10" width="196"></a> |
+| <a href="images/v10/tokens-en.png"><img src="images/v10/tokens-en.png" alt="Tokens by day · 0.1.1+10" width="196"></a> | <a href="images/v10/spending-en.png"><img src="images/v10/spending-en.png" alt="Spending by day · 0.1.1+10" width="196"></a> | <a href="images/v12/budget-en.png"><img src="images/v12/budget-en.png" alt="Review the budget before sending · 0.1.1+12" width="196"></a> |
 
 | Edit the chat limit |
 | --- |
-| <a href="images/v10/edit-budget-en.png"><img src="images/v10/edit-budget-en.png" alt="Edit the chat limit · 0.1.1+10" width="196"></a> |
+| <a href="images/v12/edit-limits-en.png"><img src="images/v12/edit-limits-en.png" alt="Edit chat limits · 0.1.1+12" width="196"></a> |
 
 | Daily details in USD | Ruble spending with no requests |
 | --- | --- |
@@ -80,7 +80,7 @@ These Android screenshots follow a demonstration profile from the first connecti
 
 | Recover access with Android |
 | --- |
-| <a href="images/v10/recovery-en.png"><img src="images/v10/recovery-en.png" alt="Recover access with Android · 0.1.1+10" width="196"></a> |
+| <a href="images/v12/device-recovery-en.png"><img src="images/v12/device-recovery-en.png" alt="Request Android device verification · 0.1.1+12" width="196"></a> |
 
 | Confirm local profile deletion |
 | --- |
@@ -88,7 +88,19 @@ These Android screenshots follow a demonstration profile from the first connecti
 
 | Unlock your profile |
 | --- |
-| <a href="images/v10/sign-in-en.png"><img src="images/v10/sign-in-en.png" alt="Unlock your profile" width="196"></a> |
+| <a href="images/v12/sign-in-en.png"><img src="images/v12/sign-in-en.png" alt="Unlock Tokenlogue · 0.1.1+12" width="196"></a> |
+
+<img src="../assets/ui/frame-bottom.svg" alt="" width="100%">
+
+<a name="chat-dialogs"></a>
+
+## <img src="../assets/ui/section-mark.svg" alt="" width="20" height="20"> Conversation and protection dialogs
+
+<img src="../assets/ui/frame-top.svg" alt="" width="100%">
+
+| Rename a conversation | Confirm chat deletion | Choose a new PIN after verification |
+| --- | --- | --- |
+| <a href="images/v12/rename-en.png"><img src="images/v12/rename-en.png" alt="Rename a conversation · 0.1.1+12" width="196"></a> | <a href="images/v12/delete-chat-en.png"><img src="images/v12/delete-chat-en.png" alt="Confirm chat deletion · 0.1.1+12" width="196"></a> | <a href="images/v12/new-pin-en.png"><img src="images/v12/new-pin-en.png" alt="Choose a new PIN after verification · 0.1.1+12" width="196"></a> |
 
 <img src="../assets/ui/frame-bottom.svg" alt="" width="100%">
 

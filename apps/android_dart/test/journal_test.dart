@@ -126,16 +126,28 @@ void main() {
         ],
         ['length', 'test/free:free', 12, 4, 16, '0'],
       );
-      await store.rename('one', 'New chat');
+      await store.configure(
+        id: 'manual',
+        title: 'New chat',
+        placeholderTitle: true,
+        model: ModelChoice.router,
+        tokens: 8192,
+        output: 128,
+        budget: null,
+        skip: false,
+        reconnect: false,
+      );
+      await store.saveDraft('manual', 'Keep the manual title', 0);
+      await store.rename('manual', 'New chat');
       service = ChatService(store, ProviderApi(http));
       await service.dispatch(
         await service.preview(
-          (await store.chats()).firstWhere((c) => c.id == 'one'),
+          (await store.chats()).firstWhere((c) => c.id == 'manual'),
         ),
         confirmed: false,
       );
       expect(
-        (await store.chats()).firstWhere((c) => c.id == 'one').title,
+        (await store.chats()).firstWhere((c) => c.id == 'manual').title,
         'New chat',
       );
     },
