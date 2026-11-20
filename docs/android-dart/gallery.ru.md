@@ -4,6 +4,28 @@
 
 Эти снимки сделаны в Tokenlogue Dart 0.1.1 на эмуляторах Android. Переписка о поездке демонстрационная. Нажмите на изображение, чтобы открыть его в полном размере.
 
+<a name="working-profile"></a>
+
+## Чат, провайдеры и статистика
+
+На этих снимках Android открыт демонстрационный профиль. Черновики и статистика по дням доступны без сети. Чтобы увидеть актуальные сведения об аккаунте, обновите подключение к провайдеру при доступной сети.
+
+| Переписка и сохранённый черновик | Токены по дням | Расходы в валюте провайдера |
+| --- | --- | --- |
+| <a href="images/v9/chat-ru.png"><img src="images/v9/chat-ru.png" alt="Переписка и сохранённый черновик" width="196"></a> | <a href="images/v9/tokens-ru.png"><img src="images/v9/tokens-ru.png" alt="Токены по дням" width="196"></a> | <a href="images/v9/spending-ru.png"><img src="images/v9/spending-ru.png" alt="Расходы в валюте провайдера" width="196"></a> |
+
+| Сохранённое подключение OpenRouter | Сохранённое подключение VSEGPT | Выбор сервиса для нового чата |
+| --- | --- | --- |
+| <a href="images/v9/openrouter-saved-ru.png"><img src="images/v9/openrouter-saved-ru.png" alt="Сохранённое подключение OpenRouter" width="196"></a> | <a href="images/v9/vsegpt-saved-ru.png"><img src="images/v9/vsegpt-saved-ru.png" alt="Сохранённое подключение VSEGPT" width="196"></a> | <a href="images/v9/choose-provider-ru.png"><img src="images/v9/choose-provider-ru.png" alt="Выбор сервиса для нового чата" width="196"></a> |
+
+| Бесплатный и платный режимы OpenRouter | Проверка сохранённого ключа OpenRouter | Бесплатные модели OpenRouter |
+| --- | --- | --- |
+| <a href="images/v9/openrouter-mode-ru.png"><img src="images/v9/openrouter-mode-ru.png" alt="Бесплатный и платный режимы OpenRouter" width="196"></a> | <a href="images/v9/openrouter-check-ru.png"><img src="images/v9/openrouter-check-ru.png" alt="Проверка сохранённого ключа OpenRouter" width="196"></a> | <a href="images/v9/openrouter-free-ru.png"><img src="images/v9/openrouter-free-ru.png" alt="Бесплатные модели OpenRouter" width="196"></a> |
+
+| Платные модели OpenRouter | Обновлённый каталог VSEGPT |
+| --- | --- |
+| <a href="images/v9/openrouter-paid-ru.png"><img src="images/v9/openrouter-paid-ru.png" alt="Платные модели OpenRouter" width="196"></a> | <a href="images/v9/vsegpt-models-ru.png"><img src="images/v9/vsegpt-models-ru.png" alt="Обновлённый каталог VSEGPT" width="196"></a> |
+
 <a name="connect"></a>
 
 ## <img src="../assets/ui/section-mark.svg" alt="" width="20" height="20"> Подключение и защита
