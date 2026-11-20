@@ -163,8 +163,9 @@ void main() {
                 () => Future<void>.delayed(const Duration(milliseconds: 10)),
               );
               await tester.pump();
-              if (tester.widget<TextField>(compose).controller!.text == draft)
+              if (tester.widget<TextField>(compose).controller!.text == draft) {
                 return;
+              }
             }
             fail('The selected conversation did not restore its draft');
           }

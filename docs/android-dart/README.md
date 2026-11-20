@@ -12,6 +12,8 @@ Start with an OpenRouter key beginning with `sk-or-v1-`, or a VSEGPT key beginni
 
 The default for new chats can be **Choose each time**, **OpenRouter** or **VSEGPT**. An existing chat keeps its own connection.
 
+If the service times out or asks you to wait, retry the check later. To keep a VSEGPT key after an inconclusive check, choose **Save unverified key**. A rejected key must be replaced.
+
 <a name="chat"></a>
 
 ## Use a chat
@@ -33,3 +35,5 @@ Use the app PIN when returning from the background. On supported Android 11 or n
 **Delete local profile** removes the Dart app's provider keys, protection material, chats and statistics. This operation is irreversible. To finish it, type the confirmation phrase displayed by the app. A compatible update does not require deleting the profile.
 
 [Build instructions](../../apps/android_dart/README.md) · [Project](../../README.md)
+
+After three incorrect app PINs, wait five minutes before trying again. Closing and reopening the app keeps the waiting period. If you have already confirmed profile deletion and it is interrupted, reopen Tokenlogue. If **Finish deletion** appears, tap it to complete removal.

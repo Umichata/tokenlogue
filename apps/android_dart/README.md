@@ -10,8 +10,8 @@ From this directory, choose an output directory and build the ARM64 release APK.
 
 ```bash
 mkdir -p "$PWD/../../out/android-dart"
-tool/build-release "$PWD/../../out/android-dart/Tokenlogue-0.1.1-android-dart-arm64-v8a-v7.apk"
-sha256sum "$PWD/../../out/android-dart/Tokenlogue-0.1.1-android-dart-arm64-v8a-v7.apk"
+tool/build-release "$PWD/../../out/android-dart/Tokenlogue-0.1.1-android-dart-arm64-v8a-v8.apk"
+sha256sum "$PWD/../../out/android-dart/Tokenlogue-0.1.1-android-dart-arm64-v8a-v8.apk"
 ```
 
 Use a fresh output filename for each build. Compare the certificate fingerprint as well as the file checksum when distributing an update. Keep the four signing properties and keystore outside the source tree. A separately signed local build needs its own update sequence.
@@ -26,8 +26,8 @@ flutter test --no-pub
 The release includes Flutter, Material icons, SQLite integration and Dart packages including cryptography and markdown. Their notices are in `assets/flutter_assets/NOTICES.Z` in the APK. Release checks use the Android SDK tools. With `buildTools` pointing to Android Build Tools 36.0.0 and `cert` set to the signing certificate's SHA-256, run the following command.
 
 ```bash
-python3 tool/check_apk.py ../../out/android-dart/Tokenlogue-0.1.1-android-dart-arm64-v8a-v7.apk \
-  --build-tools "$buildTools" --certificate "$cert" --build-number 7 --output apk-check.json
+python3 tool/check_apk.py ../../out/android-dart/Tokenlogue-0.1.1-android-dart-arm64-v8a-v8.apk \
+  --build-tools "$buildTools" --certificate "$cert" --build-number 8 --output apk-check.json
 ```
 
 Static ELF and ZIP checks cover 4 KiB and 16 KiB alignment. Native ARM64 operation with a 16 KiB kernel still needs a matching device. [Using the app](../../docs/android-dart/README.md) · [Project](../../README.md)
