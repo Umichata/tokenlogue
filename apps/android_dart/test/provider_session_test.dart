@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:cryptography/cryptography.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tokenlogue_dart/data/providers.dart';
 import 'package:tokenlogue_dart/data/transport.dart';
@@ -169,6 +170,64 @@ void main() {
       expect(state.routerLimits, isNull);
       expect(state.values[Service.openrouter]?.amount, '2');
       state.dispose();
+      profile.dispose();
+    },
+  );
+  testWidgets(
+    'an offline VSEGPT check offers an explicit save without reporting a rejected key',
+    (tester) async {
+      final transport = DelayedProvider(), api = ProviderApi(transport);
+      final profile = UnlockedProfile('test', SecretKey(List.filled(32, 9)), {
+        'vsegpt': {'key': 'sk-or-vis-previous', 'verified': true},
+      });
+      final accounts = AccountState(profile, api);
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(900, 1450);
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ProviderPage(
+              t: (key) => key,
+              vault: ProfileVault(),
+              profile: profile,
+              api: api,
+              accounts: accounts,
+              policy: 'manual',
+              setPolicy: (_) {},
+              onKeyChanged: (_) {},
+              initial: Service.vsegpt,
+            ),
+          ),
+        ),
+      );
+      final input = find.byType(TextField);
+      await tester.enterText(input, 'sk-or-vis-demo');
+      await tester.pump();
+      await tester.tap(find.text('providers.check'));
+      await tester.pump();
+      transport.pending.single.completeError(
+        const ApiFailure('catalog.error.network'),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('service.auth_network'), findsOneWidget);
+      expect(find.text('service.auth_rejected'), findsNothing);
+      OutlinedButton saveButton() => tester.widget<OutlinedButton>(
+        find.widgetWithText(OutlinedButton, 'providers.save_unverified'),
+      );
+      expect(saveButton().onPressed, isNotNull);
+      expect(profile.keyFor(Service.vsegpt), 'sk-or-vis-previous');
+      await tester.tap(find.text('providers.check'));
+      await tester.pump();
+      transport.pending.last.completeError(
+        const ApiFailure('catalog.error.auth'),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('service.auth_rejected'), findsOneWidget);
+      expect(saveButton().onPressed, isNull);
+      expect(profile.keyFor(Service.vsegpt), 'sk-or-vis-previous');
+      await tester.pumpWidget(const SizedBox.shrink());
+      accounts.dispose();
       profile.dispose();
     },
   );
