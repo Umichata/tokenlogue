@@ -18,6 +18,21 @@ enum KeyStatus {
   const KeyStatus(this.message);
   final String message;
 
+  static KeyStatus fromFailure(Service service, ApiFailure failure) =>
+      switch (failure.label) {
+        'catalog.error.auth' => KeyStatus.invalid,
+        'catalog.error.policy' =>
+          service == Service.vsegpt
+              ? KeyStatus.unverified
+              : KeyStatus.restricted,
+        'catalog.error.schema' => KeyStatus.malformed,
+        'catalog.error.rate' => KeyStatus.limited,
+        'catalog.error.timeout' => KeyStatus.timeout,
+        'catalog.error.tls' => KeyStatus.tls,
+        'catalog.error.network' => KeyStatus.network,
+        _ => KeyStatus.unavailable,
+      };
+
   bool maySaveUnverified(Service service) =>
       service == Service.vsegpt &&
       switch (this) {
@@ -55,49 +70,14 @@ class ProviderApi {
   Future<KeyStatus> check(Service service, String key) async {
     if (Service.detect(key) != service) return KeyStatus.invalid;
     try {
-      final response = await transport.request(service, key, Resource.key);
-      final data = response['data'];
-      if (service == Service.vsegpt && response['status'] != 'ok') {
-        final raw = response['error'];
-        final message = raw is Map ? raw['message'] : null;
-        if (message is String &&
-            message.toLowerCase().contains('api key') &&
-            (message.toLowerCase().contains('not found') ||
-                message.toLowerCase().contains('original openai'))) {
-          return KeyStatus.invalid;
-        }
-        return KeyStatus.unverified;
-      }
-      if (data is! Map) return KeyStatus.malformed;
-      if (service == Service.vsegpt) {
-        if (Amount.parse(data['credits']) == null ||
-            data['subscription_status'] is! String ||
-            ![0, 1, 2].contains(data['user_status'])) {
-          return KeyStatus.malformed;
-        }
+      if (service == Service.openrouter) {
+        await routerKeyLimits(key);
       } else {
-        if (!data.containsKey('limit_remaining')) return KeyStatus.malformed;
-        if (data['is_management_key'] == true) return KeyStatus.restricted;
-        if (data['limit_remaining'] != null &&
-            Amount.parse(data['limit_remaining']) == null) {
-          return KeyStatus.malformed;
-        }
+        _readVsegptAccount(await transport.request(service, key, Resource.key));
       }
       return KeyStatus.accepted;
     } on ApiFailure catch (e) {
-      return switch (e.label) {
-        'catalog.error.auth' => KeyStatus.invalid,
-        'catalog.error.policy' =>
-          service == Service.vsegpt
-              ? KeyStatus.unverified
-              : KeyStatus.restricted,
-        'catalog.error.schema' => KeyStatus.malformed,
-        'catalog.error.rate' => KeyStatus.limited,
-        'catalog.error.timeout' => KeyStatus.timeout,
-        'catalog.error.tls' => KeyStatus.tls,
-        'catalog.error.network' => KeyStatus.network,
-        _ => KeyStatus.unavailable,
-      };
+      return KeyStatus.fromFailure(service, e);
     }
   }
 
@@ -106,36 +86,48 @@ class ProviderApi {
     String key,
   ) async {
     final result = await transport.request(service, key, Resource.balance);
+    if (service == Service.vsegpt) return _readVsegptAccount(result);
     final data = result['data'];
-    if (service == Service.vsegpt && result['status'] != 'ok') {
-      throw const ApiFailure('catalog.error.policy');
-    }
     if (data is! Map) throw const ApiFailure('catalog.error.schema');
-    if (service == Service.vsegpt) {
-      final balance = Amount.parse(data['credits']);
-      if (balance == null) throw const ApiFailure('catalog.error.schema');
-      final subscription = data['subscription_status'],
-          account = data['user_status'];
-      if (subscription is! String || ![0, 1, 2].contains(account)) {
-        throw const ApiFailure('catalog.error.schema');
-      }
-      final status = subscription != 'ok'
-          ? 'subscription_required'
-          : account == 2
-          ? (balance.compareTo(Amount.zero) <= 0
-                ? 'insufficient_funds'
-                : 'account_disabled')
-          : account == 1
-          ? 'warning'
-          : 'ready';
-      return (balance: balance, status: status);
-    }
     final credit = Amount.parse(data['total_credits']),
         usage = Amount.parse(data['total_usage']);
     if (credit == null || usage == null) {
       throw const ApiFailure('catalog.error.schema');
     }
     return (balance: credit - usage, status: 'ready');
+  }
+
+  ({Amount balance, String status}) _readVsegptAccount(Payload result) {
+    if (result['status'] != 'ok') {
+      final error = result['error'];
+      final message = error is Map ? error['message'] : null;
+      if (message is String &&
+          message.toLowerCase().contains('api key') &&
+          (message.toLowerCase().contains('not found') ||
+              message.toLowerCase().contains('original openai'))) {
+        throw const ApiFailure('catalog.error.auth');
+      }
+      throw const ApiFailure('catalog.error.policy');
+    }
+    final data = result['data'];
+    if (data is! Map) throw const ApiFailure('catalog.error.schema');
+    final balance = Amount.parse(data['credits']);
+    if (balance == null) throw const ApiFailure('catalog.error.schema');
+    final subscription = data['subscription_status'],
+        account = data['user_status'];
+    if (subscription is! String || ![0, 1, 2].contains(account)) {
+      throw const ApiFailure('catalog.error.schema');
+    }
+    final status = subscription != 'ok'
+        ? 'subscription_required'
+        : account == 2
+        ? (balance.compareTo(Amount.zero) <= 0
+              ? 'insufficient_funds'
+              : 'account_disabled')
+        : account == 1
+        ? 'warning'
+        : 'ready';
+    return (balance: balance, status: status);
   }
 
   Future<RouterKeyLimits> routerKeyLimits(String key) async {

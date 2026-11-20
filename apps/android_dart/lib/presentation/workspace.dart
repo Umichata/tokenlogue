@@ -15,6 +15,7 @@ import '../data/transport.dart';
 import '../data/vault.dart';
 import 'analytics_page.dart';
 import 'controls.dart';
+import 'chat_options.dart';
 import 'message_body.dart';
 import 'provider_page.dart';
 import 'selection.dart';
@@ -383,6 +384,89 @@ class _WorkspaceState extends State<Workspace> {
     await load();
   }
 
+  String showAmount(Amount? value, Service service, {bool upperBound = false}) {
+    if (value == null) return t('analytics.unknown');
+    String money(Amount amount) {
+      final digits = amount.toString();
+      return interpolate(
+        t(service == Service.openrouter ? 'money.value' : 'money.currency'),
+        {
+          'amount': widget.language == 'ru'
+              ? digits.replaceAll('.', ',')
+              : digits,
+          'currency': service.currency,
+        },
+      );
+    }
+
+    final minimum = Amount.parse('0.0001')!;
+    if (value.coefficient.isNegative &&
+        (Amount.zero - value).compareTo(minimum) < 0) {
+      return money(value);
+    }
+    if (value.coefficient > BigInt.zero && value.compareTo(minimum) < 0) {
+      return interpolate(t('metrics.less_than'), {'amount': money(minimum)});
+    }
+    return money(value.forDisplay(upperBound: upperBound));
+  }
+
+  Widget _budgetWarningBody(PreparedSend q) {
+    final projected = q.plan.projected;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: 12,
+      children: [
+        Text(q.model.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+        for (final (label, value) in [
+          ('budget_warning.remaining', q.plan.remainingBefore),
+          ('budget_warning.estimate', q.plan.reserve),
+          ('budget_warning.projected', projected),
+        ])
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Text(t(label), style: const TextStyle(color: muted)),
+              ),
+              Flexible(
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    showAmount(
+                      value,
+                      q.model.service,
+                      upperBound: label == 'budget_warning.estimate',
+                    ),
+                    textAlign: TextAlign.end,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        Text(
+          t(
+            q.plan.reserve == null
+                ? 'workspace.unknown_price_warning'
+                : 'budget_warning.help',
+          ),
+          style: TextStyle(
+            color: q.plan.reserve == null ? Colors.amber : muted,
+          ),
+        ),
+        if (projected != null && projected.compareTo(Amount.zero) <= 0)
+          Text(
+            t(
+              projected.coefficient.isNegative
+                  ? 'budget_warning.exceed'
+                  : 'budget_warning.empty',
+            ),
+            style: const TextStyle(color: Colors.amber),
+          ),
+      ],
+    );
+  }
+
   Future<void> send({String? retry}) async {
     if (sending || chat == null) return;
     setState(() {
@@ -408,25 +492,45 @@ class _WorkspaceState extends State<Workspace> {
             title: Text(
               t(q.plan.warning ? 'budget_warning.title' : 'paid.confirm_title'),
             ),
-            content: Text(
-              '${q.model.name}\n${t('paid.prompt_estimate')}: ${q.plan.prompt}\n${t('paid.completion_maximum')}: ${q.plan.completion}\n${t('budget_warning.estimate')}: ${q.plan.reserve ?? '—'} ${q.model.service.currency}\n${t('paid.remaining')}: ${q.plan.projected ?? '—'} ${q.model.service.currency}',
+            backgroundColor: panel,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
             ),
+            content: q.plan.warning
+                ? _budgetWarningBody(q)
+                : Text(
+                    '${q.model.name}\n${t('paid.prompt_estimate')}: ${q.plan.prompt}\n${t('paid.completion_maximum')}: ${q.plan.completion}\n${t('budget_warning.estimate')}: ${showAmount(q.plan.reserve, q.model.service)}',
+                  ),
             actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: Text(t('common.cancel')),
-              ),
               if (q.plan.warning)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    OutlinedButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      child: Text(t('common.cancel')),
+                    ),
+                    FilledButton(
+                      onPressed: () => Navigator.pop(ctx, 'send'),
+                      child: Text(t('budget_warning.send')),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx, 'edit'),
+                      child: Text(t('budget_warning.edit')),
+                    ),
+                  ],
+                )
+              else ...[
                 TextButton(
-                  onPressed: () => Navigator.pop(ctx, 'edit'),
-                  child: Text(t('budget_warning.edit')),
+                  onPressed: () => Navigator.pop(ctx),
+                  child: Text(t('common.cancel')),
                 ),
-              FilledButton(
-                onPressed: () => Navigator.pop(ctx, 'send'),
-                child: Text(
-                  t(q.plan.warning ? 'budget_warning.send' : 'paid.send'),
+                FilledButton(
+                  onPressed: () => Navigator.pop(ctx, 'send'),
+                  child: Text(t('paid.send')),
                 ),
-              ),
+              ],
             ],
           ),
         );
@@ -485,6 +589,24 @@ class _WorkspaceState extends State<Workspace> {
     }
   }
 
+  String activeModelName(ChatRecord c) {
+    final stored = settings['price'];
+    if (stored is String) {
+      try {
+        final info = jsonDecode(stored);
+        if (info is Map &&
+            info['id'] == c.model &&
+            info['service'] == c.service.name &&
+            info['name'] is String) {
+          return info['name'] as String;
+        }
+      } on FormatException {
+        // Older chats can still display their saved model ID.
+      }
+    }
+    return c.model;
+  }
+
   String mask(Service s) {
     final key = widget.session.profile.keyFor(s);
     if (key == null) {
@@ -505,56 +627,20 @@ class _WorkspaceState extends State<Workspace> {
     final c = chat;
     final value = await showDialog<String>(
       context: context,
-      builder: (ctx) => SimpleDialog(
-        title: Text(t('chat.options')),
-        children: [
-          if (c != null) ...[
-            ListTile(
-              title: Text(t('connection.title')),
-              subtitle: Text(
-                '${c.service.label} · ${mask(c.service)}\n${c.model} · ${c.service.currency}',
-              ),
-            ),
-            for (final action in [
-              if (MediaQuery.sizeOf(context).height -
-                      MediaQuery.viewInsetsOf(context).bottom <
-                  560) ...[
-                'chat.rename',
-                'chat.delete_chat',
-              ],
-              'connection.configure_key',
-              'connection.change_provider',
-              'limits.dialog',
-            ])
-              SimpleDialogOption(
-                onPressed: () => Navigator.pop(ctx, action),
-                child: Text(
-                  interpolate(t(action), {'provider': c.service.label}),
-                ),
-              ),
-          ],
-          if (c != null && !c.free)
-            SwitchListTile(
-              value: settings['skip_paid'] == 1,
-              title: Text(t('metrics.without_confirmation')),
-              onChanged: (_) => Navigator.pop(ctx, 'toggle_confirm'),
-            ),
-          for (final action in [
-            'language.label',
-            'protection_panel.open',
-            'profile_deletion.entry',
-          ])
-            SimpleDialogOption(
-              onPressed: () => Navigator.pop(ctx, action),
-              child: Text(
-                interpolate(t(action), {'provider': c?.service.label ?? ''}),
-              ),
-            ),
-          SimpleDialogOption(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(t('common.cancel')),
-          ),
-        ],
+      builder: (_) => ChatOptions(
+        t: t,
+        language: widget.language,
+        accounts: accounts,
+        service: c?.service,
+        maskedKey: c != null && widget.session.profile.keyFor(c.service) != null
+            ? mask(c.service)
+            : null,
+        verified:
+            c != null &&
+            widget.session.profile.credentials[c.service.name]?['verified'] ==
+                true,
+        paid: c != null && !c.free,
+        skipConfirmation: settings['skip_paid'] == 1,
       ),
     );
     if (!alive) return;
@@ -572,8 +658,10 @@ class _WorkspaceState extends State<Workspace> {
         await newChat(change: true);
       case 'limits.dialog':
         await editLimits();
-      case 'language.label':
-        widget.setLanguage(widget.language == 'ru' ? 'en' : 'ru');
+      case 'language.en':
+        widget.setLanguage('en');
+      case 'language.ru':
+        widget.setLanguage('ru');
       case 'profile_deletion.entry':
         widget.onDelete();
       case 'protection_panel.open':
@@ -1008,7 +1096,7 @@ class _WorkspaceState extends State<Workspace> {
                   'provider': c.service.label,
                   'model': c.model == ModelChoice.router.id
                       ? t('model.free_router')
-                      : c.model,
+                      : activeModelName(c),
                 }),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -1042,47 +1130,84 @@ class _WorkspaceState extends State<Workspace> {
               width: double.infinity,
               color: panel,
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              child: Wrap(
-                spacing: 10,
-                runSpacing: 4,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(
-                    c.free
-                        ? interpolate(t('metrics.free_summary'), {
-                            'count':
-                                (settings['token_limit'] as int? ?? 8192) -
-                                total!.used -
-                                total.reserved,
-                            'last': local.lastOrNull?['usage_total'] ?? '—',
-                          })
-                        : interpolate(t('metrics.paid_summary'), {
-                            'amount': budget == null
-                                ? '—'
-                                : '${budget! - total!.spent - total.held} ${c.service.currency}',
-                            'last': local.lastOrNull?['cost'] ?? '—',
-                          }),
-                  ),
-                  Tooltip(
-                    message: interpolate(t('metrics.account_help'), {
-                      'provider': c.service.label,
-                    }),
-                    child: Text(
-                      accountText(c.service),
-                      style: const TextStyle(fontSize: 12, color: muted),
-                    ),
-                  ),
-                  if (!c.free && c.service == Service.openrouter)
-                    Text(
-                      keyLimitText(c.service),
-                      style: const TextStyle(fontSize: 12, color: muted),
-                    ),
                   if (!c.free)
-                    FilterChip(
-                      selected: settings['skip_paid'] == 1,
-                      label: Text(t('metrics.without_confirmation')),
-                      onSelected: (enabled) =>
-                          run(() => toggleConfirmations(c, enabled)),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Checkbox(
+                          value: settings['skip_paid'] == 1,
+                          onChanged: (enabled) {
+                            if (enabled != null) {
+                              run(() => toggleConfirmations(c, enabled));
+                            }
+                          },
+                        ),
+                        Flexible(
+                          child: Text(
+                            t('metrics.without_confirmation'),
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                        ),
+                        Tooltip(
+                          message: t('paid.no_confirmation_help'),
+                          child: const Icon(
+                            Icons.help_outline,
+                            size: 16,
+                            color: muted,
+                          ),
+                        ),
+                      ],
                     ),
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 4,
+                    children: [
+                      Text(
+                        c.free
+                            ? interpolate(t('metrics.free_summary'), {
+                                'count':
+                                    (settings['token_limit'] as int? ?? 8192) -
+                                    total!.used -
+                                    total.reserved,
+                                'last': local.isEmpty
+                                    ? t('metrics.no_requests')
+                                    : local.last['usage_total'] ??
+                                          t('analytics.unknown'),
+                              })
+                            : interpolate(t('metrics.paid_summary'), {
+                                'amount': budget == null
+                                    ? '—'
+                                    : showAmount(
+                                        budget! - total!.spent - total.held,
+                                        c.service,
+                                      ),
+                                'last': local.isEmpty
+                                    ? t('metrics.no_requests')
+                                    : showAmount(
+                                        Amount.parse(local.last['cost']),
+                                        c.service,
+                                      ),
+                              }),
+                      ),
+                      Tooltip(
+                        message: interpolate(t('metrics.account_help'), {
+                          'provider': c.service.label,
+                        }),
+                        child: Text(
+                          accountText(c.service),
+                          style: const TextStyle(fontSize: 12, color: muted),
+                        ),
+                      ),
+                      if (!c.free && c.service == Service.openrouter)
+                        Text(
+                          keyLimitText(c.service),
+                          style: const TextStyle(fontSize: 12, color: muted),
+                        ),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -1125,7 +1250,9 @@ class _WorkspaceState extends State<Workspace> {
               SliverPadding(
                 padding: const EdgeInsets.all(16),
                 sliver: messages.isEmpty
-                    ? SliverToBoxAdapter(child: Text(t('history.empty')))
+                    ? SliverToBoxAdapter(
+                        child: Center(child: Text(t('history.empty'))),
+                      )
                     : SliverList.builder(
                         itemCount: messages.length,
                         itemBuilder: (_, index) {
@@ -1207,6 +1334,11 @@ class _WorkspaceState extends State<Workspace> {
                   children: [
                     home,
                     ProviderPage(
+                      languagePicker: LanguagePicker(
+                        t: t,
+                        language: widget.language,
+                        onChanged: widget.setLanguage,
+                      ),
                       key: ValueKey(providerFilter),
                       t: t,
                       vault: widget.vault,
@@ -1224,12 +1356,22 @@ class _WorkspaceState extends State<Workspace> {
                       onKeyChanged: (_) => widget.session.sending.invalidate(),
                     ),
                     AnalyticsPage(
+                      languagePicker: LanguagePicker(
+                        t: t,
+                        language: widget.language,
+                        onChanged: widget.setLanguage,
+                      ),
                       key: const ValueKey('tokens'),
                       t: t,
                       rows: rows,
                       money: false,
                     ),
                     AnalyticsPage(
+                      languagePicker: LanguagePicker(
+                        t: t,
+                        language: widget.language,
+                        onChanged: widget.setLanguage,
+                      ),
                       key: const ValueKey('spending'),
                       t: t,
                       rows: rows,

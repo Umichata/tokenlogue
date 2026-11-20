@@ -43,6 +43,21 @@ final class Amount implements Comparable<Amount> {
   Amount operator -(Amount other) =>
       this + Amount._(-other.coefficient, other.scale);
   Amount times(int n) => _normalize(coefficient * BigInt.from(n), scale);
+
+  /// Display precision only. Never feed rounded values back into accounting.
+  Amount forDisplay({bool upperBound = false}) {
+    if (scale <= 4) return this;
+    final divisor = BigInt.from(10).pow(scale - 4);
+    final difference = coefficient.remainder(divisor);
+    var rounded = coefficient ~/ divisor;
+    if (upperBound
+        ? difference > BigInt.zero
+        : difference.abs() * BigInt.two >= divisor) {
+      rounded += BigInt.from(coefficient.sign);
+    }
+    return _normalize(rounded, 4);
+  }
+
   @override
   int compareTo(Amount other) => (this - other).coefficient.sign;
   @override

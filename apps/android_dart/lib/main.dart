@@ -489,34 +489,7 @@ class _TokenlogueState extends State<Tokenlogue> with WidgetsBindingObserver {
             style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
           ),
         ),
-        DropdownMenu<String>(
-          width: 104,
-          menuHeight: 176,
-          initialSelection: lang,
-          textStyle: const TextStyle(fontSize: 13, color: ink),
-          label: Text(
-            t('language.label'),
-            style: const TextStyle(fontSize: 11, color: muted),
-          ),
-          inputDecorationTheme: InputDecorationTheme(
-            isDense: true,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 8,
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: border),
-            ),
-          ),
-          dropdownMenuEntries: const [
-            DropdownMenuEntry(value: 'ru', label: 'RU'),
-            DropdownMenuEntry(value: 'en', label: 'EN'),
-          ],
-          onSelected: (v) {
-            if (v != null) setLanguage(v);
-          },
-        ),
+        LanguagePicker(t: t, language: lang, onChanged: setLanguage),
       ],
     ),
   );

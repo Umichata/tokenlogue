@@ -224,7 +224,18 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('service.auth_rejected'), findsOneWidget);
-      expect(saveButton().onPressed, isNull);
+      expect(
+        find.widgetWithText(OutlinedButton, 'providers.save_unverified'),
+        findsNothing,
+      );
+      expect(
+        tester
+            .widget<OutlinedButton>(
+              find.widgetWithText(OutlinedButton, 'providers.save'),
+            )
+            .onPressed,
+        isNull,
+      );
       expect(profile.keyFor(Service.vsegpt), 'sk-or-vis-previous');
       await tester.pumpWidget(const SizedBox.shrink());
       accounts.dispose();

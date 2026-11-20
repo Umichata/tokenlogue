@@ -19,11 +19,12 @@ class RequestPlan {
     this.reserve,
     this.warning,
     this.projected,
+    this.remainingBefore,
     this.reservationAmount,
   );
   final List<Map<String, String>> messages;
   final int prompt, completion;
-  final Amount? reserve, projected;
+  final Amount? reserve, projected, remainingBefore;
   final Amount reservationAmount;
   final bool warning;
 
@@ -91,6 +92,7 @@ class RequestPlan {
       output = low;
     }
     final quote = model.quote(prompt, output);
+    final remainingBefore = budget == null ? null : budget - spent - reserved;
     return RequestPlan(
       messages,
       prompt,
@@ -102,9 +104,8 @@ class RequestPlan {
         reserve: reserved,
         estimate: quote,
       ),
-      budget == null || quote == null
-          ? null
-          : budget - spent - reserved - quote,
+      remainingBefore == null || quote == null ? null : remainingBefore - quote,
+      remainingBefore,
       quote ??
           ((budget! - spent - reserved).coefficient.isNegative
               ? Amount.zero

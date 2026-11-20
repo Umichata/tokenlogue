@@ -14,6 +14,7 @@ class AccountState extends ChangeNotifier {
   final loading = <Service>{}, stale = <Service>{};
   final generation = <Service, int>{};
   final errors = <Service, String>{};
+  final keyChecks = <Service, KeyStatus>{};
   bool active = true;
   Future<void> refresh(Service service) async {
     final key = profile.keyFor(service);
@@ -31,6 +32,7 @@ class AccountState extends ChangeNotifier {
       try {
         final result = await api.account(service, key);
         if (!current()) return;
+        if (service == Service.vsegpt) keyChecks[service] = KeyStatus.accepted;
         values[service] = (
           amount: result.balance.toString(),
           time: DateTime.now(),
@@ -40,6 +42,9 @@ class AccountState extends ChangeNotifier {
         errors.remove(service);
       } on ApiFailure catch (e) {
         if (!current()) return;
+        if (service == Service.vsegpt) {
+          keyChecks[service] = KeyStatus.fromFailure(service, e);
+        }
         stale.add(service);
         errors[service] = switch (e.label) {
           'catalog.error.auth' => 'providers.balance_status.invalid',
@@ -57,9 +62,15 @@ class AccountState extends ChangeNotifier {
     Future<void> limits() async {
       try {
         final value = await api.routerKeyLimits(key);
-        if (current()) routerLimits = value;
-      } on ApiFailure {
-        if (current()) routerLimits = null;
+        if (current()) {
+          routerLimits = value;
+          keyChecks[service] = KeyStatus.accepted;
+        }
+      } on ApiFailure catch (e) {
+        if (current()) {
+          routerLimits = null;
+          keyChecks[service] = KeyStatus.fromFailure(service, e);
+        }
       }
     }
 
@@ -80,6 +91,7 @@ class AccountState extends ChangeNotifier {
     generation[service] = (generation[service] ?? 0) + 1;
     values.remove(service);
     errors.remove(service);
+    keyChecks.remove(service);
     if (service == Service.openrouter) routerLimits = null;
     stale.remove(service);
     loading.remove(service);
@@ -105,6 +117,7 @@ class ProviderPage extends StatefulWidget {
     required this.setPolicy,
     required this.onKeyChanged,
     this.initial,
+    this.languagePicker,
   });
   final Translate t;
   final ProfileVault vault;
@@ -115,6 +128,7 @@ class ProviderPage extends StatefulWidget {
   final ValueChanged<String> setPolicy;
   final ValueChanged<Service> onKeyChanged;
   final Service? initial;
+  final Widget? languagePicker;
   @override
   State<ProviderPage> createState() => _ProviderPageState();
 }
@@ -127,53 +141,65 @@ class _ProviderPageState extends State<ProviderPage> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        Text(
-          t('providers.title'),
-          style: Theme.of(context).textTheme.headlineMedium,
-        ),
+        pageHeading(t('providers.title'), widget.languagePicker),
+        const SizedBox(height: 12),
         Text(t('providers.description')),
-        const SizedBox(height: 16),
-        panelCard([
-          DropdownButtonFormField<String>(
-            initialValue: widget.policy,
-            decoration: InputDecoration(labelText: t('providers.default')),
-            items: [
-              DropdownMenuItem(
-                value: 'manual',
-                child: Text(t('creation.manual')),
-              ),
-              ...Service.values.map(
-                (s) => DropdownMenuItem(value: s.name, child: Text(s.label)),
-              ),
-            ],
-            onChanged: (v) {
-              if (v != null) widget.setPolicy(v);
-            },
-          ),
-          Text(
-            widget.policy == 'manual'
-                ? t('creation.manual_help')
-                : interpolate(t('creation.provider_help'), {
-                    'provider': Service.values.byName(widget.policy).label,
-                  }),
-          ),
-        ]),
-        const SizedBox(height: 16),
-        DropdownButtonFormField<String>(
-          initialValue: filter,
-          decoration: InputDecoration(labelText: t('analytics.provider')),
-          items: [
-            DropdownMenuItem(
-              value: 'all',
-              child: Text(t('common.provider_all')),
+        const SizedBox(height: 12),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 210),
+            child: DropdownButtonFormField<String>(
+              isExpanded: true,
+              initialValue: filter,
+              decoration: InputDecoration(labelText: t('analytics.provider')),
+              items: [
+                DropdownMenuItem(
+                  value: 'all',
+                  child: Text(t('common.provider_all')),
+                ),
+                ...Service.values.map(
+                  (s) => DropdownMenuItem(value: s.name, child: Text(s.label)),
+                ),
+              ],
+              onChanged: (v) {
+                if (v != null) setState(() => filter = v);
+              },
             ),
-            ...Service.values.map(
-              (s) => DropdownMenuItem(value: s.name, child: Text(s.label)),
+          ),
+        ),
+        const SizedBox(height: 10),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 260),
+            child: DropdownButtonFormField<String>(
+              isExpanded: true,
+              initialValue: widget.policy,
+              decoration: InputDecoration(labelText: t('providers.default')),
+              items: [
+                DropdownMenuItem(
+                  value: 'manual',
+                  child: Text(t('creation.manual')),
+                ),
+                ...Service.values.map(
+                  (s) => DropdownMenuItem(value: s.name, child: Text(s.label)),
+                ),
+              ],
+              onChanged: (v) {
+                if (v != null) widget.setPolicy(v);
+              },
             ),
-          ],
-          onChanged: (v) {
-            if (v != null) setState(() => filter = v);
-          },
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          widget.policy == 'manual'
+              ? t('creation.manual_help')
+              : interpolate(t('creation.provider_help'), {
+                  'provider': Service.values.byName(widget.policy).label,
+                }),
+          style: const TextStyle(fontSize: 12),
         ),
         for (final s in Service.values.where(
           (s) => filter == 'all' || s.name == filter,
@@ -272,6 +298,11 @@ class _ServiceCardState extends State<_ServiceCard> {
         (status == KeyStatus.accepted || status?.maySaveUnverified(s) == true);
     return panelCard([
       Text(s.label, style: Theme.of(context).textTheme.titleLarge),
+      Text(t(saved ? 'providers.saved_key' : 'providers.no_saved_key')),
+      Text(
+        interpolate(t('connection.shared_key'), {'provider': s.label}),
+        style: const TextStyle(fontSize: 12),
+      ),
       Semantics(
         container: true,
         child: Text(
@@ -318,9 +349,9 @@ class _ServiceCardState extends State<_ServiceCard> {
             onPressed: canSave && !busy ? save : null,
             child: Text(
               t(
-                status == KeyStatus.accepted
-                    ? 'providers.save'
-                    : 'providers.save_unverified',
+                status?.maySaveUnverified(s) == true
+                    ? 'providers.save_unverified'
+                    : 'providers.save',
               ),
             ),
           ),

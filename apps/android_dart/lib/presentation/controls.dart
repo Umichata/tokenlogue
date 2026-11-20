@@ -113,3 +113,51 @@ class BrandLoader extends StatelessWidget {
     );
   }
 }
+
+class LanguagePicker extends StatelessWidget {
+  const LanguagePicker({
+    super.key,
+    required this.t,
+    required this.language,
+    required this.onChanged,
+  });
+  final Translate t;
+  final String language;
+  final ValueChanged<String> onChanged;
+  @override
+  Widget build(BuildContext context) => DropdownMenu<String>(
+    width: 104,
+    menuHeight: 176,
+    key: ValueKey(language),
+    initialSelection: language,
+    textStyle: const TextStyle(fontSize: 13, color: ink),
+    label: Text(
+      t('language.label'),
+      style: const TextStyle(fontSize: 11, color: muted),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      isDense: true,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: border),
+      ),
+    ),
+    dropdownMenuEntries: const [
+      DropdownMenuEntry(value: 'ru', label: 'RU'),
+      DropdownMenuEntry(value: 'en', label: 'EN'),
+    ],
+    onSelected: (v) {
+      if (v != null && v != language) onChanged(v);
+    },
+  );
+}
+
+Widget pageHeading(String title, Widget? languagePicker) => Row(
+  children: [
+    Expanded(
+      child: Text(title, style: const TextStyle(fontSize: 22, color: ink)),
+    ),
+    if (languagePicker != null) ...[const SizedBox(width: 8), languagePicker],
+  ],
+);

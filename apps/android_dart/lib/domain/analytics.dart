@@ -18,6 +18,8 @@ class DayUsage {
       estimateInput = 0,
       estimateOutput = 0,
       partial = 0;
+  int apiInputsReported = 0, apiOutputsReported = 0, apiTotalsReported = 0;
+  int confirmedCosts = 0, estimatedCosts = 0;
   Amount confirmed = Amount.zero, estimated = Amount.zero;
   DayUsage(this.date, this.currency);
   void add(Attempt a) {
@@ -30,12 +32,15 @@ class DayUsage {
       estimateInput += input as int? ?? 0;
       estimateOutput += output as int? ?? 0;
     } else if (a['usage_source'] == 'api') {
+      if (input is int) apiInputsReported++;
+      if (output is int) apiOutputsReported++;
       apiInput += input as int? ?? 0;
       apiOutput += output as int? ?? 0;
     }
     if (total is! int) {
       unknownTokens++;
     } else if (a['usage_source'] == 'api') {
+      apiTotalsReported++;
       apiTokens += total;
     } else {
       estimatedTokens += total;
@@ -44,8 +49,10 @@ class DayUsage {
     if (cost == null) {
       unknownCost++;
     } else if (a['cost_source'] == 'api') {
+      confirmedCosts++;
       confirmed += cost;
     } else {
+      estimatedCosts++;
       estimated += cost;
     }
   }
@@ -60,10 +67,9 @@ List<DayUsage> daily(
   required bool money,
 }) {
   final grouped = <String, DayUsage>{};
-  final today = now.toLocal(),
-      first = days == null
-          ? null
-          : DateTime(today.year, today.month, today.day - days + 1);
+  final period = days == null
+      ? null
+      : ChartPeriod.forFilter(now, days, const []);
   for (final a in attempts) {
     if (provider != 'all' && a['provider'] != provider ||
         model != 'all' && modelKey(a) != model) {
@@ -71,12 +77,54 @@ List<DayUsage> daily(
     }
     final stamp = a['dispatch_ms'];
     final d = stamp is int ? DateTime.fromMillisecondsSinceEpoch(stamp) : null;
-    if (first != null && (d == null || d.isBefore(first) || d.isAfter(now))) {
-      continue;
-    }
+    if (period != null && !period.contains(a)) continue;
     final date = d == null ? '' : dateLabel(d),
         currency = money ? a['currency'] as String : '';
     (grouped['$date|$currency'] ??= DayUsage(date, currency)).add(a);
   }
   return grouped.values.toList()..sort((a, b) => a.date.compareTo(b.date));
+}
+
+/// The chart includes calendar days without dispatches. The journal remains sparse.
+class ChartPeriod {
+  ChartPeriod._(this.start, this.end);
+  final DateTime start, end;
+
+  static DateTime _day(DateTime local) =>
+      DateTime.utc(local.year, local.month, local.day);
+
+  factory ChartPeriod.forFilter(
+    DateTime now,
+    int? days,
+    Iterable<Attempt> rows,
+  ) {
+    var end = _day(now.toLocal()), start = end;
+    if (days != null) {
+      start = end.subtract(Duration(days: days - 1));
+    } else {
+      DateTime? earliest;
+      for (final row in rows) {
+        if (row['dispatch_ms'] case final int stamp) {
+          final date = _day(DateTime.fromMillisecondsSinceEpoch(stamp));
+          if (earliest == null || date.isBefore(earliest)) earliest = date;
+          if (date.isAfter(end)) end = date;
+        }
+      }
+      start = earliest ?? end;
+    }
+    return ChartPeriod._(start, end);
+  }
+  int get length => end.difference(start).inDays + 1;
+  String label(int i) => dateLabel(start.add(Duration(days: i)));
+  int index(String label) {
+    final date = DateTime.tryParse('${label}T00:00:00Z');
+    return date == null ? -1 : date.difference(start).inDays;
+  }
+
+  bool contains(Attempt row) {
+    final stamp = row['dispatch_ms'];
+    if (stamp is! int) return false;
+    final day = _day(DateTime.fromMillisecondsSinceEpoch(stamp));
+    return !day.isBefore(start) && !day.isAfter(end);
+  }
 }
