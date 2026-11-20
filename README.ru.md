@@ -30,7 +30,7 @@
 
 | Переписка и черновик | Токены по дням |
 | --- | --- |
-| <a href="docs/android-dart/images/v9/chat-ru.png"><img src="docs/android-dart/images/v9/chat-ru.png" alt="Демонстрационный чат о поездке и сохранённый черновик" width="215"></a> | <a href="docs/android-dart/images/v9/tokens-ru.png"><img src="docs/android-dart/images/v9/tokens-ru.png" alt="График токенов по дням в Tokenlogue Dart" width="215"></a> |
+| <a href="docs/android-dart/images/v10/chat-ru.png"><img src="docs/android-dart/images/v10/chat-ru.png" alt="Демонстрационный чат о поездке и сохранённый черновик" width="215"></a> | <a href="docs/android-dart/images/v10/tokens-ru.png"><img src="docs/android-dart/images/v10/tokens-ru.png" alt="График токенов по дням в Tokenlogue Dart" width="215"></a> |
 
 <img src="docs/assets/ui/frame-bottom.svg" alt="" width="100%">
 
