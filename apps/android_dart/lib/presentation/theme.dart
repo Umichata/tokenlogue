@@ -52,6 +52,16 @@ ThemeData buildTheme() {
       onSurfaceVariant: muted,
       outline: border,
     ),
+    dialogTheme: DialogThemeData(
+      constraints: const BoxConstraints(minWidth: 360, maxWidth: 560),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+    ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        side: const BorderSide(color: primary),
+      ),
+    ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
         minimumSize: const Size(44, 44),

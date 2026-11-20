@@ -336,7 +336,9 @@ class _SelectChatState extends State<SelectChat> {
                       decimal: true,
                     ),
                     decoration: InputDecoration(
-                      helperText: t('limits.money_help'),
+                      helperText: interpolate(t('workspace.money_help'), {
+                        'currency': service!.currency,
+                      }),
                       helperMaxLines: 4,
                       labelText: t(
                         'limits.money',

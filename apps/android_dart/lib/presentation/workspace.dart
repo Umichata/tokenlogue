@@ -251,6 +251,8 @@ class _WorkspaceState extends State<Workspace> {
         title: Text(t('chat.rename_title')),
         content: TextFormField(
           initialValue: c.title,
+          decoration: InputDecoration(labelText: t('chat.title_label')),
+          maxLength: 120,
           autofocus: true,
           onChanged: (v) => value = v,
         ),
@@ -280,6 +282,7 @@ class _WorkspaceState extends State<Workspace> {
       interpolate(t('chat.delete_body'), {'title': c.title}),
       t('common.cancel'),
       t('chat.delete'),
+      destructive: true,
     )) {
       return;
     }
@@ -303,6 +306,8 @@ class _WorkspaceState extends State<Workspace> {
         title: Text(t('limits.dialog')),
         content: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: 12,
           children: [
             TextFormField(
               initialValue: token,
@@ -328,7 +333,9 @@ class _WorkspaceState extends State<Workspace> {
               TextFormField(
                 initialValue: amount,
                 decoration: InputDecoration(
-                  helperText: t('limits.money_help'),
+                  helperText: interpolate(t('workspace.money_help'), {
+                    'currency': c.service.currency,
+                  }),
                   helperMaxLines: 4,
                   labelText: t(
                     'limits.money',
@@ -339,16 +346,16 @@ class _WorkspaceState extends State<Workspace> {
                 ),
                 onChanged: (v) => amount = v,
               ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(t('limits.save')),
+            ),
           ],
         ),
         actions: [
-          TextButton(
+          OutlinedButton(
             onPressed: () => Navigator.pop(ctx),
             child: Text(t('common.cancel')),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(t('limits.save')),
           ),
         ],
       ),

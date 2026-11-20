@@ -29,22 +29,31 @@ Future<bool> confirm(
   String title,
   String body,
   String cancel,
-  String accept,
-) => showDialog<bool>(
+  String accept, {
+  bool destructive = false,
+}) => showDialog<bool>(
   context: context,
   builder: (ctx) => AlertDialog(
     scrollable: true,
     title: Text(title),
     content: Text(body),
     actions: [
-      TextButton(
+      OutlinedButton(
         onPressed: () => Navigator.pop(ctx, false),
         child: Text(cancel),
       ),
-      FilledButton(
-        onPressed: () => Navigator.pop(ctx, true),
-        child: Text(accept),
-      ),
+      if (destructive)
+        TextButton.icon(
+          onPressed: () => Navigator.pop(ctx, true),
+          style: TextButton.styleFrom(foregroundColor: Colors.red.shade300),
+          icon: const Icon(Icons.delete_outline),
+          label: Text(accept),
+        )
+      else
+        FilledButton(
+          onPressed: () => Navigator.pop(ctx, true),
+          child: Text(accept),
+        ),
     ],
   ),
 ).then((v) => v == true);

@@ -106,7 +106,7 @@ void main() {
         reconnect: false,
       );
       final long = List.filled(65, '🚆').join();
-      await store.saveDraft('two', '  Trip  \n  ${long} ', 0);
+      await store.saveDraft('two', '  Trip  \n  $long ', 0);
       http.finishReason = 'length';
       final chat = (await store.chats()).firstWhere((c) => c.id == 'two');
       await service.dispatch(await service.preview(chat), confirmed: false);
