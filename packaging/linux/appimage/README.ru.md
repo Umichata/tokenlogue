@@ -1,10 +1,9 @@
+<p align="left"><a href="README.ru.md#russian" title="RU"><img align="right" src="../../../docs/assets/ui/buttons/v3-ru-1a85308e1a5a.svg" alt="RU" width="46" height="30"></a> <a href="README.md#english" title="EN"><img align="right" src="../../../docs/assets/ui/buttons/v3-ru-724a8b1ba967.svg" alt="EN" width="45" height="30"></a>
+<a href="../../../README.ru.md" title="Главная"><img src="../../../docs/assets/ui/buttons/v3-ru-3a2f7e4ed2ac.svg" alt="Главная" width="36" height="30"></a> <a href="https://github.com/Umichata/tokenlogue/blob/android/README.ru.md" title="Android Python"><img src="../../../docs/assets/ui/buttons/android-python.svg" alt="Android Python" width="142" height="30"></a> <a href="https://github.com/Umichata/tokenlogue/blob/android-dart/README.ru.md" title="Android Dart"><img src="../../../docs/assets/ui/buttons/android-dart.svg" alt="Android Dart" width="126" height="30"></a> <a href="https://github.com/Umichata/tokenlogue/blob/linux/README.ru.md" title="Linux"><img src="../../../docs/assets/ui/buttons/v3-ru-e31c456bd05c.svg" alt="Linux" width="65" height="30"></a>
+</p>
+
 <a id="russian"></a>
 <a id="lang-ru"></a>
-
-<p align="left">
-<a href="README.ru.md#russian" title="RU"><img align="right" src="../../../docs/assets/ui/buttons/v3-ru-1a85308e1a5a.svg" alt="RU" width="46" height="30"></a> <a href="README.md#english" title="EN"><img align="right" src="../../../docs/assets/ui/buttons/v3-ru-724a8b1ba967.svg" alt="EN" width="45" height="30"></a>
-<a href="../../../README.ru.md" title="Главная"><img src="../../../docs/assets/ui/buttons/v3-ru-3a2f7e4ed2ac.svg" alt="Главная" width="36" height="30"></a> <a href="https://github.com/Umichata/tokenlogue/tree/android" title="Android"><img src="../../../docs/assets/ui/buttons/v3-ru-4a0b64bd4ded.svg" alt="Android" width="83" height="30"></a> <a href="https://github.com/Umichata/tokenlogue/tree/linux" title="Linux"><img src="../../../docs/assets/ui/buttons/v3-ru-e31c456bd05c.svg" alt="Linux" width="65" height="30"></a>
-</p>
 
 <p align="center"><img src="../../../docs/assets/tokenlogue-masthead-ru-v3.svg" alt="Tokenlogue · OpenRouter + VSEGPT · Linux &amp; Android" width="100%"></p>
 
@@ -19,7 +18,7 @@
 
 ## <img src="../../../docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Выбор пакета
 
-[Руководство Linux](../../../docs/linux-appimage.ru.md) различает опубликованную AppImage 0.1.0 и текущий локальный настольный bundle 0.1.1. Для готового приложения не нужны Python, Flutter и Java.
+[Руководство Linux](../../../docs/linux-appimage.ru.md) различает опубликованную AppImage 0.1.0 и настольный комплект 0.1.1+56 из предварительного выпуска. Для готового приложения не нужны Python, Flutter и Java.
 
 AppImage не подписана. Сверьте её сумму, разрешите исполнение и закройте старые копии перед запуском замены. Обычное монтирование требует FUSE. Есть вариант extract-and-run. Настольный bundle хранит исполняемый файл, библиотеки и данные вместе и не использует FUSE.
 
@@ -27,9 +26,9 @@ AppImage не подписана. Сверьте её сумму, разреши
 
 ## <img src="../../../docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Требования рабочего стола
 
-Для локального настольного bundle нужны Linux x86_64, совместимые системные библиотеки, GTK3, видеодрайверы дистрибутива и пользовательская сессия D-Bus. Базовая среда сборки и проверок совместимости библиотек соответствует Ubuntu 22.04. Это не означает испытание на каждом дистрибутиве.
+Для комплекта 0.1.1+56 нужны Linux x86_64, совместимые системные библиотеки, GTK3, видеодрайверы дистрибутива и пользовательская сессия D-Bus. Базовая среда сборки и проверок совместимости библиотек соответствует Ubuntu 22.04. Это не означает испытание на каждом дистрибутиве.
 
-Опубликованная AppImage 0.1.0 требует процессор x86-64-v2. Минимальный набор инструкций процессора для локального bundle 0.1.1 пока не установлен проверкой запуска.
+Опубликованная AppImage 0.1.0 требует процессор x86-64-v2. Минимальный набор инструкций процессора для комплекта 0.1.1+56 пока не установлен проверкой запуска.
 
 Защищённые ключи хранит Secret Service, например GNOME Keyring. AppImage содержит приложение и не является резервной копией переписки. Перед переносом профиля и изменением хранилища прочитайте о [защите и восстановлении](../../../docs/security.ru.md).
 

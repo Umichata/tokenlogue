@@ -3,7 +3,7 @@
 
 <p align="left">
 <a href="README.ru.md#russian" title="RU"><img align="right" src="assets/ui/buttons/v3-en-10762eaa75fd.svg" alt="RU" width="46" height="30"></a> <a href="README.md#english" title="EN"><img align="right" src="assets/ui/buttons/v3-en-2022af2877c8.svg" alt="EN" width="45" height="30"></a>
-<a href="../README.md" title="Home"><img src="assets/ui/buttons/v3-en-4e7a793b89e3.svg" alt="Home" width="36" height="30"></a> <a href="https://github.com/Umichata/tokenlogue/tree/android" title="Android"><img src="assets/ui/buttons/v3-en-4a0b64bd4ded.svg" alt="Android" width="83" height="30"></a> <a href="https://github.com/Umichata/tokenlogue/tree/linux" title="Linux"><img src="assets/ui/buttons/v3-en-e31c456bd05c.svg" alt="Linux" width="65" height="30"></a>
+<a href="../README.md" title="Home"><img src="assets/ui/buttons/v3-en-4e7a793b89e3.svg" alt="Home" width="36" height="30"></a> <a href="https://github.com/Umichata/tokenlogue/tree/android" title="Android Python"><img src="assets/ui/buttons/android-python.svg" alt="Android Python" width="142" height="30"></a> <a href="https://github.com/Umichata/tokenlogue/blob/android-dart/README.md" title="Android Dart"><img src="assets/ui/buttons/android-dart.svg" alt="Android Dart" width="126" height="30"></a> <a href="https://github.com/Umichata/tokenlogue/tree/linux" title="Linux"><img src="assets/ui/buttons/v3-en-e31c456bd05c.svg" alt="Linux" width="65" height="30"></a>
 </p>
 
 <p align="center"><img src="assets/tokenlogue-banner-en-v3.svg" alt="Tokenlogue · OpenRouter + VSEGPT · Linux &amp; Android" width="100%"></p>
@@ -15,7 +15,7 @@
 # Documentation
 
 
-> **[0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1)** provides an Android ARM64 APK and a Linux x86_64 desktop bundle. Read the platform requirements and verify the downloaded file before installing.
+> **[0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1)** provides the Python Android ARM64 APK (build 56) and a Linux x86_64 desktop bundle. Read the platform requirements and verify the downloaded file before installing.
 
 
 <a id="start-here"></a>
@@ -25,6 +25,7 @@
 | Task | Guide |
 | --- | --- |
 | Install or update | <a href="android.md#en-install" title="Android"><img src="assets/ui/buttons/v3-en-4a0b64bd4ded.svg" alt="Android" width="83" height="30"></a> <a href="linux-appimage.md#en-download" title="Linux"><img src="assets/ui/buttons/v3-en-e31c456bd05c.svg" alt="Linux" width="65" height="30"></a> |
+| Install Android Dart alongside the Python app | [Installation and updates](https://github.com/Umichata/tokenlogue/blob/android-dart/README.md) · [Dart user guide](https://github.com/Umichata/tokenlogue/blob/android-dart/docs/android-dart/README.md) |
 | Connect a key and start chatting | <a href="user-guide.md" title="User guide"><img src="assets/ui/buttons/v3-en-896461d1c049.svg" alt="User guide" width="104" height="30"></a> |
 | Check or replace a provider key | <a href="providers.md" title="Providers"><img src="assets/ui/buttons/v3-en-6aead91ab18a.svg" alt="Providers" width="95" height="30"></a> |
 | Read token usage and daily costs | <a href="analytics.md" title="Statistics"><img src="assets/ui/buttons/v3-en-2ec193cc8c9a.svg" alt="Statistics" width="94" height="30"></a> |
@@ -35,7 +36,7 @@
 
 ## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Downloads and requirements
 
-[0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1) provides an Android ARM64 APK and a complete Linux x86_64 desktop bundle. The platform guides identify the exact files, checksums and update steps. The earlier 0.1.0 release remains available separately.
+[0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1) provides the Python Android ARM64 APK (build 56) and a complete Linux x86_64 desktop bundle. The platform guides identify the exact files, checksums and update steps. The earlier 0.1.0 release remains available separately.
 
 Android requires API 24 or later. Linux requires a compatible graphical desktop and secure key storage. Follow the platform guide before starting. Source archives are optional for application users.
 

@@ -3,7 +3,7 @@
 
 <p align="left">
 <a href="source-materials.ru.md#russian" title="RU"><img align="right" src="assets/ui/buttons/v3-en-10762eaa75fd.svg" alt="RU" width="46" height="30"></a> <a href="source-materials.md#english" title="EN"><img align="right" src="assets/ui/buttons/v3-en-2022af2877c8.svg" alt="EN" width="45" height="30"></a>
-<a href="../README.md" title="Home"><img src="assets/ui/buttons/v3-en-4e7a793b89e3.svg" alt="Home" width="36" height="30"></a> <a href="https://github.com/Umichata/tokenlogue/tree/android" title="Android"><img src="assets/ui/buttons/v3-en-4a0b64bd4ded.svg" alt="Android" width="83" height="30"></a> <a href="https://github.com/Umichata/tokenlogue/tree/linux" title="Linux"><img src="assets/ui/buttons/v3-en-e31c456bd05c.svg" alt="Linux" width="65" height="30"></a>
+<a href="../README.md" title="Home"><img src="assets/ui/buttons/v3-en-4e7a793b89e3.svg" alt="Home" width="36" height="30"></a> <a href="https://github.com/Umichata/tokenlogue/tree/android" title="Android Python"><img src="assets/ui/buttons/android-python.svg" alt="Android Python" width="142" height="30"></a> <a href="https://github.com/Umichata/tokenlogue/blob/android-dart/README.md" title="Android Dart"><img src="assets/ui/buttons/android-dart.svg" alt="Android Dart" width="126" height="30"></a> <a href="https://github.com/Umichata/tokenlogue/tree/linux" title="Linux"><img src="assets/ui/buttons/v3-en-e31c456bd05c.svg" alt="Linux" width="65" height="30"></a>
 </p>
 
 <p align="center"><img src="assets/tokenlogue-masthead-en-v3.svg" alt="Tokenlogue · OpenRouter + VSEGPT · Linux &amp; Android" width="100%"></p>
@@ -15,14 +15,16 @@
 # Source code and dependencies
 
 
-> **[0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1)** provides an Android ARM64 APK and a Linux x86_64 desktop bundle. Read the platform requirements and verify the downloaded file before installing.
+> **[0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1)** provides the Python Android ARM64 APK (build 56) and a Linux x86_64 desktop bundle. Read the platform requirements and verify the downloaded file before installing.
 
 
 <a id="choose-materials-for-your-package"></a>
 
 ## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Choose materials for your package
 
-For the 0.1.1 APK and Linux bundle 0.1.1+56, use the index supplied with [0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1). The [Android](android.md#en-install) and [Linux](linux-appimage.md#en-download) guides identify the exact packages and checksums.
+For the Python 0.1.1 APK (build 56) and Linux bundle 0.1.1+56, use the index supplied with [0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1). The [Android](android.md#en-install) and [Linux](linux-appimage.md#en-download) guides identify the exact packages and checksums.
+
+For the Android Dart sources and build settings, see the [Dart build guide](https://github.com/Umichata/tokenlogue/blob/android-dart/apps/android_dart/README.md).
 
 `Tokenlogue-0.1.1+56-build-sources.tar.gz` contains the shared tracked sources and packaging for both builds. Provenance records the exact commit, tree, actual dependency graphs and inputs. A later documentation revision does not become an input to an already built binary.
 
