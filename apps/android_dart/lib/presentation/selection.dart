@@ -257,6 +257,30 @@ class _SelectChatState extends State<SelectChat> {
     widget.onSelected((model: chosen!, tokens: n, output: cap, money: limit));
   }
 
+  Widget limitField(
+    TextEditingController controller,
+    String label, {
+    bool readOnly = false,
+    bool decimal = false,
+  }) => Align(
+    alignment: AlignmentDirectional.centerStart,
+    child: SizedBox(
+      width: 300,
+      child: TextField(
+        controller: controller,
+        readOnly: readOnly,
+        enabled: !submitting,
+        keyboardType: decimal
+            ? const TextInputType.numberWithOptions(decimal: true)
+            : TextInputType.number,
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: const TextStyle(fontSize: 14, color: muted),
+        ),
+      ),
+    ),
+  );
+
   Widget limitsPage(Widget brand) {
     final t = widget.t, model = chosen!;
     const warning = Color(0xFFF2C46D);
@@ -311,38 +335,21 @@ class _SelectChatState extends State<SelectChat> {
                       spacing: 12,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        TextField(
-                          controller: tokens,
+                        limitField(
+                          tokens,
+                          t('limits.total'),
                           readOnly: widget.changing,
-                          enabled: !submitting,
-                          keyboardType: TextInputType.number,
-                          decoration: InputDecoration(
-                            labelText: t('limits.total'),
-                          ),
                         ),
                         Text(t('limits.total_help'), style: help),
-                        TextField(
-                          controller: output,
-                          enabled: !submitting,
-                          keyboardType: TextInputType.number,
-                          decoration: InputDecoration(
-                            labelText: t('limits.completion'),
-                          ),
-                        ),
+                        limitField(output, t('limits.completion')),
                         Text(t('limits.completion_help'), style: help),
                         if (paid) ...[
-                          TextField(
-                            controller: money,
-                            enabled: !submitting,
-                            keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true,
-                            ),
-                            decoration: InputDecoration(
-                              labelText: interpolate(
-                                t('workspace.money_limit'),
-                                {'currency': service.currency},
-                              ),
-                            ),
+                          limitField(
+                            money,
+                            interpolate(t('workspace.money_limit'), {
+                              'currency': service.currency,
+                            }),
+                            decimal: true,
                           ),
                           Text(
                             interpolate(t('workspace.money_help'), {
