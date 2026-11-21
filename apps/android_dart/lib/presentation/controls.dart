@@ -9,20 +9,23 @@ String interpolate(String text, Map<String, Object?> values) {
   return text;
 }
 
-Widget panelCard(List<Widget> children, {EdgeInsetsGeometry? padding}) =>
-    Container(
-      padding: padding ?? const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: panel,
-        border: Border.all(color: border),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        spacing: 12,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: children,
-      ),
-    );
+Widget panelCard(
+  List<Widget> children, {
+  EdgeInsetsGeometry? padding,
+  double spacing = 12,
+}) => Container(
+  padding: padding ?? const EdgeInsets.all(24),
+  decoration: BoxDecoration(
+    color: panel,
+    border: Border.all(color: border),
+    borderRadius: BorderRadius.circular(16),
+  ),
+  child: Column(
+    spacing: spacing,
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: children,
+  ),
+);
 
 Future<bool> confirm(
   BuildContext context,

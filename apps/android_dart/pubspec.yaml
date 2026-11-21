@@ -1,7 +1,7 @@
 name: tokenlogue_dart
 description: Private Android client for OpenRouter and VSEGPT.
 publish_to: none
-version: 0.1.1+15
+version: 0.1.1+16
 environment:
   sdk: '>=3.12.2 <3.13.0'
   flutter: '>=3.44.8 <3.45.0'

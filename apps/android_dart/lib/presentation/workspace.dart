@@ -282,7 +282,7 @@ class _WorkspaceState extends State<Workspace> {
       tokens: choice.tokens,
       output: choice.output,
       budget: choice.money,
-      skip: choice.skip,
+      skip: false,
       reconnect: change,
     );
     await selectChat(id);

@@ -13,7 +13,6 @@ typedef Selection = ({
   int tokens,
   int output,
   Amount? money,
-  bool skip,
 });
 
 enum _Step { mode, model, limits }
@@ -113,7 +112,8 @@ class SelectChat extends StatefulWidget {
 class _SelectChatState extends State<SelectChat> {
   late _Step step;
   Service get service => widget.service;
-  bool paid = false, skip = false, loading = false, checking = false;
+  bool paid = false, submitting = false, loading = false, checking = false;
+  String limitError = '';
   String error = '', keyStatus = '', search = '';
   int generation = 0;
   List<ModelChoice> choices = [];
@@ -189,6 +189,7 @@ class _SelectChatState extends State<SelectChat> {
   }
 
   void back() {
+    if (submitting) return;
     if (step == _Step.limits) {
       setState(() => step = _Step.model);
     } else if (step == _Step.model && service == Service.openrouter) {
@@ -210,9 +211,186 @@ class _SelectChatState extends State<SelectChat> {
     setState(() {
       chosen = m;
       step = _Step.limits;
-      skip = false;
-      money.text = amount?.toString() ?? '';
+      submitting = false;
+      limitError = '';
+      tokens.text = widget.existingTokens.toString();
+      output.text = widget.existingOutput.toString();
+      money.text = !m.free
+          ? amount?.toString() ?? (m.service == Service.openrouter ? '1' : '')
+          : '';
     });
+  }
+
+  void submitLimits() {
+    if (submitting) return;
+    final t = widget.t;
+    final total = tokens.text.trim(), response = output.text.trim();
+    final digits = RegExp(r'^[0-9]+$');
+    final n = digits.hasMatch(total) ? int.tryParse(total) : null;
+    final cap = digits.hasMatch(response) ? int.tryParse(response) : null;
+    String integerError(String label) =>
+        interpolate(t('service.positive_integer'), {'field': t(label)});
+    void reject(String message) => setState(() => limitError = message);
+    if (n == null) return reject(integerError('service.limit_total_label'));
+    if (cap == null) {
+      return reject(integerError('service.limit_completion_label'));
+    }
+    final raw = money.text.trim();
+    if (paid && raw.isEmpty) return reject(t('service.paid_limit_required'));
+    // A manually entered decimal can omit the zero on either side of the point.
+    final decimal = raw
+        .replaceFirst(RegExp(r'^\+(?=[.0-9])'), '')
+        .replaceFirstMapped(RegExp(r'^(-?)\.(?=[0-9])'), (m) => '${m[1]}0.')
+        .replaceFirstMapped(RegExp(r'([0-9])\.(?=$|[eE])'), (m) => m[1]!);
+    final limit = paid ? Amount.parse(decimal) : null;
+    if (paid && limit == null) return reject(t('service.money_number'));
+    if (n == 0) return reject(t('service.token_positive'));
+    if (cap < 16) return reject(t('service.completion_minimum'));
+    if (cap > n) return reject(t('service.completion_budget'));
+    if (limit != null && limit.coefficient.sign <= 0) {
+      return reject(t('service.money_positive'));
+    }
+    setState(() {
+      submitting = true;
+      limitError = '';
+    });
+    widget.onSelected((model: chosen!, tokens: n, output: cap, money: limit));
+  }
+
+  Widget limitsPage(Widget brand) {
+    final t = widget.t, model = chosen!;
+    const warning = Color(0xFFF2C46D);
+    const help = TextStyle(fontSize: 12, color: muted);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        brand,
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 24, 16, 32),
+            children: [
+              Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 560),
+                  child: panelCard([
+                    Text(
+                      t('limits.configure'),
+                      style: Theme.of(context).textTheme.headlineMedium,
+                    ),
+                    Text(
+                      model.id == ModelChoice.router.id
+                          ? t('model.free_router')
+                          : model.name,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    SelectableText(
+                      model.id,
+                      style: const TextStyle(color: muted),
+                    ),
+                    if (paid)
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: warning.withValues(alpha: .15),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          interpolate(t('workspace.paid_warning'), {
+                            'provider': service.label,
+                            'currency': service.currency,
+                          }),
+                          style: const TextStyle(color: warning),
+                        ),
+                      ),
+                    if (widget.changing)
+                      Text(
+                        t('connection.shared_tokens'),
+                        style: const TextStyle(color: muted),
+                      ),
+                    Column(
+                      spacing: 12,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        TextField(
+                          controller: tokens,
+                          readOnly: widget.changing,
+                          enabled: !submitting,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            labelText: t('limits.total'),
+                          ),
+                        ),
+                        Text(t('limits.total_help'), style: help),
+                        TextField(
+                          controller: output,
+                          enabled: !submitting,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            labelText: t('limits.completion'),
+                          ),
+                        ),
+                        Text(t('limits.completion_help'), style: help),
+                        if (paid) ...[
+                          TextField(
+                            controller: money,
+                            enabled: !submitting,
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                            decoration: InputDecoration(
+                              labelText: interpolate(
+                                t('workspace.money_limit'),
+                                {'currency': service.currency},
+                              ),
+                            ),
+                          ),
+                          Text(
+                            interpolate(t('workspace.money_help'), {
+                              'currency': service.currency,
+                            }),
+                            style: help,
+                          ),
+                        ],
+                        if (limitError.isNotEmpty)
+                          Semantics(
+                            liveRegion: true,
+                            child: Text(
+                              limitError,
+                              style: TextStyle(color: Colors.red.shade300),
+                            ),
+                          ),
+                        Align(
+                          alignment: AlignmentDirectional.centerStart,
+                          child: FilledButton(
+                            style: FilledButton.styleFrom(
+                              minimumSize: const Size(0, 48),
+                            ),
+                            onPressed: submitting ? null : submitLimits,
+                            child: Text(
+                              t(
+                                widget.changing
+                                    ? 'connection.review'
+                                    : paid
+                                    ? 'limits.create_paid'
+                                    : 'limits.create_free',
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    TextButton(
+                      onPressed: submitting ? null : back,
+                      child: Text(t('common.back')),
+                    ),
+                  ], spacing: 16),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 
   @override
@@ -226,6 +404,27 @@ class _SelectChatState extends State<SelectChat> {
 
   @override
   Widget build(BuildContext context) {
+    final brand = Row(
+      children: [
+        Image.asset(
+          'assets/branding/tokenlogue-logo-transparent.png',
+          width: 32,
+          height: 32,
+        ),
+        const SizedBox(width: 8),
+        Text('Tokenlogue', style: Theme.of(context).textTheme.titleLarge),
+      ],
+    );
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) back();
+      },
+      child: step == _Step.limits ? limitsPage(brand) : cataloguePage(brand),
+    );
+  }
+
+  Widget cataloguePage(Widget brand) {
     final t = widget.t;
     final filtered = choices.where(
       (m) =>
@@ -233,236 +432,129 @@ class _SelectChatState extends State<SelectChat> {
           (m.name.toLowerCase().contains(search.toLowerCase().trim()) ||
               m.id.toLowerCase().contains(search.toLowerCase().trim())),
     );
-    final limit = Amount.parse(money.text.trim()),
-        n = int.tryParse(tokens.text),
-        cap = int.tryParse(output.text);
-    final valid =
-        n != null &&
-        cap != null &&
-        cap >= 16 &&
-        n >= cap &&
-        (!paid || limit != null && limit.coefficient.sign > 0);
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) back();
-      },
-      child: ListView(
-        key: ValueKey(step),
-        padding: const EdgeInsets.all(20),
-        children: [
-          Row(
-            children: [
-              Image.asset(
-                'assets/branding/tokenlogue-logo-transparent.png',
-                width: 32,
-                height: 32,
-              ),
-              const SizedBox(width: 8),
-              Text('Tokenlogue', style: Theme.of(context).textTheme.titleLarge),
-            ],
+    return ListView(
+      key: ValueKey(step),
+      padding: const EdgeInsets.all(20),
+      children: [
+        brand,
+        const SizedBox(height: 12),
+        Text(
+          t(
+            widget.changing
+                ? 'connection.change_provider'
+                : step == _Step.mode
+                ? 'mode.choose_first'
+                : service == Service.vsegpt
+                ? 'selection.models.vsegpt'
+                : paid
+                ? 'catalog.select_paid'
+                : 'catalog.select_free',
           ),
-          const SizedBox(height: 12),
-          if (step != _Step.limits) ...[
-            Text(
-              t(
-                widget.changing
-                    ? 'connection.change_provider'
-                    : step == _Step.mode
-                    ? 'mode.choose_first'
-                    : service == Service.vsegpt
-                    ? 'selection.models.vsegpt'
-                    : paid
-                    ? 'catalog.select_paid'
-                    : 'catalog.select_free',
-              ),
-              style: Theme.of(context).textTheme.headlineSmall,
+          style: Theme.of(context).textTheme.headlineSmall,
+        ),
+        if (step == _Step.model)
+          TextFormField(
+            initialValue: search,
+            decoration: InputDecoration(
+              labelText: t('catalog.search'),
+              hintText: t('catalog.search_hint'),
+              prefixIcon: const Icon(Icons.search),
             ),
-            if (step == _Step.model)
-              TextFormField(
-                initialValue: search,
-                decoration: InputDecoration(
-                  labelText: t('catalog.search'),
-                  hintText: t('catalog.search_hint'),
-                  prefixIcon: const Icon(Icons.search),
-                ),
-                onChanged: (v) => setState(() => search = v),
-              ),
-            Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: TextButton(onPressed: back, child: Text(t('common.back'))),
+            onChanged: (v) => setState(() => search = v),
+          ),
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: TextButton(onPressed: back, child: Text(t('common.back'))),
+        ),
+        panelCard([
+          Text(
+            interpolate(t('selection.connection'), {'provider': service.label}),
+          ),
+          Text(interpolate(t(keyStatus), {'provider': service.label})),
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: TextButton.icon(
+              onPressed:
+                  checking || loading || widget.profile.keyFor(service) == null
+                  ? null
+                  : check,
+              icon: const Icon(Icons.key),
+              label: Text(t('selection.key.check')),
             ),
-            panelCard([
-              Text(
-                interpolate(t('selection.connection'), {
-                  'provider': service.label,
-                }),
-              ),
-              Text(interpolate(t(keyStatus), {'provider': service.label})),
-              Align(
-                alignment: AlignmentDirectional.centerStart,
-                child: TextButton.icon(
-                  onPressed:
-                      checking ||
-                          loading ||
-                          widget.profile.keyFor(service) == null
-                      ? null
-                      : check,
-                  icon: const Icon(Icons.key),
-                  label: Text(t('selection.key.check')),
+          ),
+          if (checking || loading) const LinearProgressIndicator(),
+          if (error.isNotEmpty)
+            Text(interpolate(t(error), {'provider': service.label})),
+        ]),
+        TextButton.icon(
+          onPressed: loading || checking ? null : refresh,
+          icon: const Icon(Icons.refresh),
+          label: Text(t('catalog.refresh')),
+        ),
+        if (step == _Step.model && service == Service.vsegpt)
+          Text(
+            t('selection.models.vsegpt_paid'),
+            style: const TextStyle(color: muted),
+          ),
+        if (step == _Step.mode) ...[
+          for (final p in [false, true])
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: panelCard([
+                Text(t(p ? 'mode.paid_title' : 'mode.free_title')),
+                Text(t(p ? 'workspace.mode_paid_help' : 'mode.free_help')),
+                FilledButton(
+                  onPressed: choices.any((m) => m.free != p)
+                      ? () => setState(() {
+                          paid = p;
+                          step = _Step.model;
+                        })
+                      : null,
+                  child: Text(t(p ? 'mode.choose_paid' : 'mode.choose_free')),
                 ),
-              ),
-              if (checking || loading) const LinearProgressIndicator(),
-              if (error.isNotEmpty)
-                Text(interpolate(t(error), {'provider': service.label})),
-            ]),
-            TextButton.icon(
-              onPressed: loading || checking ? null : refresh,
-              icon: const Icon(Icons.refresh),
-              label: Text(t('catalog.refresh')),
+              ]),
             ),
-            if (step == _Step.model && service == Service.vsegpt)
-              Text(
-                t('selection.models.vsegpt_paid'),
-                style: const TextStyle(color: muted),
-              ),
-            if (step == _Step.mode) ...[
-              for (final p in [false, true])
-                Padding(
-                  padding: const EdgeInsets.only(top: 12),
-                  child: panelCard([
-                    Text(t(p ? 'mode.paid_title' : 'mode.free_title')),
-                    Text(t(p ? 'workspace.mode_paid_help' : 'mode.free_help')),
-                    FilledButton(
-                      onPressed: choices.any((m) => m.free != p)
-                          ? () => setState(() {
-                              paid = p;
-                              step = _Step.model;
-                            })
-                          : null,
-                      child: Text(
-                        t(p ? 'mode.choose_paid' : 'mode.choose_free'),
-                      ),
-                    ),
-                  ]),
-                ),
-            ],
-            if (step == _Step.model) ...[
-              if (!loading && error.isEmpty && filtered.isEmpty)
-                Text(t('catalog.none')),
-              ...filtered.map(
-                (m) => Padding(
-                  padding: const EdgeInsets.only(top: 10),
-                  child: panelCard([
-                    Text(
-                      m.id == ModelChoice.router.id
-                          ? t('model.free_router')
-                          : m.name,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    Text(m.service.label),
-                    Text(m.id),
-                    if (m.rates.isEmpty)
-                      Text(
-                        t('workspace.pricing_unknown'),
-                        style: const TextStyle(color: Colors.amber),
-                      )
-                    else ...[
-                      Text(
-                        "${t('price.prompt_million')} · ${m.maximum('prompt').times(1000000)} ${m.service.currency}",
-                      ),
-                      Text(
-                        "${t('price.completion_million')} · ${m.maximum('completion').times(1000000)} ${m.service.currency}",
-                      ),
-                    ],
-                    Align(
-                      alignment: AlignmentDirectional.centerStart,
-                      child: FilledButton(
-                        onPressed: () => select(m),
-                        child: Text(t('catalog.select')),
-                      ),
-                    ),
-                  ], padding: const EdgeInsets.all(16)),
-                ),
-              ),
-            ],
-          ],
-          if (step == _Step.limits)
-            panelCard([
-              Text(t('limits.configure')),
-              Text(chosen!.name),
-              TextField(
-                controller: tokens,
-                readOnly: widget.changing,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: t('limits.total'),
-                  helperText: t('limits.total_help'),
-                  helperMaxLines: 4,
-                ),
-                onChanged: (_) => setState(() {}),
-              ),
-              TextField(
-                controller: output,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: t('limits.completion'),
-                  helperText: t('limits.completion_help'),
-                  helperMaxLines: 4,
-                ),
-                onChanged: (_) => setState(() {}),
-              ),
-              if (paid)
-                TextField(
-                  controller: money,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  decoration: InputDecoration(
-                    helperText: interpolate(t('workspace.money_help'), {
-                      'currency': service.currency,
-                    }),
-                    helperMaxLines: 4,
-                    labelText: t(
-                      'limits.money',
-                    ).replaceAll('USD', service.currency),
-                  ),
-                  onChanged: (_) => setState(() {}),
-                ),
-              if (paid && !widget.changing)
-                Material(
-                  type: MaterialType.transparency,
-                  child: CheckboxListTile(
-                    value: skip,
-                    onChanged: (v) => setState(() => skip = v ?? false),
-                    title: Text(t('paid.no_confirmation')),
-                  ),
-                ),
-              FilledButton(
-                onPressed: valid
-                    ? () => widget.onSelected((
-                        model: chosen!,
-                        tokens: n,
-                        output: cap,
-                        money: paid ? limit : null,
-                        skip: skip,
-                      ))
-                    : null,
-                child: Text(
-                  t(
-                    widget.changing
-                        ? 'connection.review'
-                        : paid
-                        ? 'limits.create_paid'
-                        : 'limits.create_free',
-                  ),
-                ),
-              ),
-            ]),
-          if (step == _Step.limits)
-            TextButton(onPressed: back, child: Text(t('common.back'))),
         ],
-      ),
+        if (step == _Step.model) ...[
+          if (!loading && error.isEmpty && filtered.isEmpty)
+            Text(t('catalog.none')),
+          ...filtered.map(
+            (m) => Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: panelCard([
+                Text(
+                  m.id == ModelChoice.router.id
+                      ? t('model.free_router')
+                      : m.name,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                Text(m.service.label),
+                Text(m.id),
+                if (m.rates.isEmpty)
+                  Text(
+                    t('workspace.pricing_unknown'),
+                    style: const TextStyle(color: Colors.amber),
+                  )
+                else ...[
+                  Text(
+                    "${t('price.prompt_million')} · ${m.maximum('prompt').times(1000000)} ${m.service.currency}",
+                  ),
+                  Text(
+                    "${t('price.completion_million')} · ${m.maximum('completion').times(1000000)} ${m.service.currency}",
+                  ),
+                ],
+                Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: FilledButton(
+                    onPressed: () => select(m),
+                    child: Text(t('catalog.select')),
+                  ),
+                ),
+              ], padding: const EdgeInsets.all(16)),
+            ),
+          ),
+        ],
+      ],
     );
   }
 }
