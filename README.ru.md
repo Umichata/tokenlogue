@@ -26,6 +26,8 @@
 
 ## <img src="docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Интерфейс Android
 
+Переписка и график токенов за день сняты на Android Dart 0.1.1+13.
+
 <img src="docs/assets/ui/frame-top.svg" alt="" width="100%">
 
 | Переписка и черновик | Токены по дням |

@@ -4,6 +4,8 @@
 
 These Android screenshots follow a demonstration profile from the first connection to a working chat. Select an image to open it at full size.
 
+The [image register](screenshots.csv) lists each capture and its build. The updated selection screens and filters are from 0.1.1+15. The populated conversation and its usage charts were captured on 0.1.1+13.
+
 <a name="connect"></a>
 
 ## <img src="../assets/ui/section-mark.svg" alt="" width="20" height="20"> Connect a provider
@@ -44,11 +46,11 @@ These Android screenshots follow a demonstration profile from the first connecti
 
 | Choose a service for a new chat | OpenRouter modes | Free OpenRouter models |
 | --- | --- | --- |
-| <a href="images/v13/choose-provider-en.png"><img src="images/v13/choose-provider-en.png" alt="Choose a provider for a new chat · 0.1.1+13" width="196"></a> | <a href="images/v13/openrouter-mode-en.png"><img src="images/v13/openrouter-mode-en.png" alt="OpenRouter modes · 0.1.1+13" width="196"></a> | <a href="images/v13/openrouter-free-en.png"><img src="images/v13/openrouter-free-en.png" alt="Free OpenRouter models · 0.1.1+13" width="196"></a> |
+| <a href="images/v15/manual-provider-en-phone.png"><img src="images/v15/manual-provider-en-phone.png" alt="Choose a provider for a new chat · 0.1.1+15" width="196"></a> | <a href="images/v15/openrouter-mode-en-phone.png"><img src="images/v15/openrouter-mode-en-phone.png" alt="OpenRouter modes · 0.1.1+15" width="196"></a> | <a href="images/v15/openrouter-free-en-phone.png"><img src="images/v15/openrouter-free-en-phone.png" alt="Free OpenRouter models · 0.1.1+15" width="196"></a> |
 
 | Paid OpenRouter models | Refreshed VSEGPT catalogue |
 | --- | --- |
-| <a href="images/v13/openrouter-paid-en.png"><img src="images/v13/openrouter-paid-en.png" alt="Paid OpenRouter models · 0.1.1+13" width="196"></a> | <a href="images/v13/vsegpt-models-en.png"><img src="images/v13/vsegpt-models-en.png" alt="VSEGPT model catalogue · 0.1.1+13" width="196"></a> |
+| <a href="images/v15/openrouter-paid-en-phone.png"><img src="images/v15/openrouter-paid-en-phone.png" alt="Paid OpenRouter models · 0.1.1+15" width="196"></a> | <a href="images/v15/vsegpt-models-en-phone.png"><img src="images/v15/vsegpt-models-en-phone.png" alt="VSEGPT model catalogue · 0.1.1+15" width="196"></a> |
 
 <img src="../assets/ui/frame-bottom.svg" alt="" width="100%">
 
@@ -69,6 +71,12 @@ These Android screenshots follow a demonstration profile from the first connecti
 | Daily details in USD | Ruble spending with no requests |
 | --- | --- |
 | <a href="images/v13/usd-day-en.png"><img src="images/v13/usd-day-en.png" alt="Daily details in USD · 0.1.1+13" width="196"></a> | <a href="images/v13/rub-empty-en.png"><img src="images/v13/rub-empty-en.png" alt="Ruble spending with no requests · 0.1.1+13" width="196"></a> |
+
+**A day with spending in RUB**
+
+The separate QA build 0.1.1+13 displays two demonstration entries of 1.20 and 0.35 RUB. Their daily total is 1.55 RUB.
+
+<a href="images/qa-v13/ruble-day-en.png"><img src="images/qa-v13/ruble-day-en.png" alt="A day with spending in RUB · QA 0.1.1+13" width="196"></a>
 
 <img src="../assets/ui/frame-bottom.svg" alt="" width="100%">
 
@@ -110,12 +118,23 @@ These Android screenshots follow a demonstration profile from the first connecti
 
 | Set the limits for a new chat | Unverified VSEGPT connection | First connection after deleting a local profile |
 | --- | --- | --- |
-| <a href="images/v13/configure-limits-en.png"><img src="images/v13/configure-limits-en.png" alt="Set the limits for a new chat · 0.1.1+13" width="196"></a> | <a href="images/v13/vsegpt-unverified-en.png"><img src="images/v13/vsegpt-unverified-en.png" alt="Unverified VSEGPT connection · 0.1.1+13" width="196"></a> | <a href="images/v13/new-profile-en.png"><img src="images/v13/new-profile-en.png" alt="First connection after deleting a local profile · 0.1.1+13" width="196"></a> |
+| <a href="images/v15/configure-limits-en-phone.png"><img src="images/v15/configure-limits-en-phone.png" alt="Set the limits for a new chat · 0.1.1+15" width="196"></a> | <a href="images/v13/vsegpt-unverified-en.png"><img src="images/v13/vsegpt-unverified-en.png" alt="Unverified VSEGPT connection · 0.1.1+13" width="196"></a> | <a href="images/v13/new-profile-en.png"><img src="images/v13/new-profile-en.png" alt="First connection after deleting a local profile · 0.1.1+13" width="196"></a> |
 
 | Choose your app PIN |
 | --- |
 | <a href="images/v13/choose-pin-en.png"><img src="images/v13/choose-pin-en.png" alt="Choose your app PIN · 0.1.1+13" width="196"></a> |
 
 <img src="../assets/ui/frame-bottom.svg" alt="" width="100%">
+
+<a id="navigation"></a>
+
+## Provider selection and filters
+
+These 0.1.1+15 screens show the current connection and the statistics filters. The filters stack on a phone and share one row on a wide tablet.
+
+| Current chat provider | Provider filter on a phone | Filters on a tablet |
+| --- | --- | --- |
+| <a href="images/v15/current-provider-en-phone.png"><img src="images/v15/current-provider-en-phone.png" alt="Current chat provider · 0.1.1+15" width="196"></a> | <a href="images/v15/tokens-provider-open-en-phone.png"><img src="images/v15/tokens-provider-open-en-phone.png" alt="Provider filter on a phone · 0.1.1+15" width="196"></a> | <a href="images/v15/tokens-closed-en-tablet.png"><img src="images/v15/tokens-closed-en-tablet.png" alt="Filters on a tablet · 0.1.1+15" width="196"></a> |
+
 
 [Using the app](README.md) · [Project overview](../../README.md)

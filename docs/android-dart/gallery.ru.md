@@ -4,6 +4,8 @@
 
 На снимках Android показан путь от первого подключения до рабочего чата. Переписка демонстрационная. Нажмите на снимок, чтобы открыть его в полном размере.
 
+Версия каждого кадра указана в [реестре снимков](screenshots.csv). Формы выбора и фильтры обновлены для 0.1.1+15. Примеры заполненной переписки и её статистики сняты на 0.1.1+13.
+
 <a name="connect"></a>
 
 ## <img src="../assets/ui/section-mark.svg" alt="" width="20" height="20"> Подключение провайдера
@@ -44,11 +46,11 @@
 
 | Выбор сервиса для нового чата | Режимы OpenRouter | Бесплатные модели OpenRouter |
 | --- | --- | --- |
-| <a href="images/v13/choose-provider-ru.png"><img src="images/v13/choose-provider-ru.png" alt="Выбор провайдера для нового чата · 0.1.1+13" width="196"></a> | <a href="images/v13/openrouter-mode-ru.png"><img src="images/v13/openrouter-mode-ru.png" alt="Режимы OpenRouter · 0.1.1+13" width="196"></a> | <a href="images/v13/openrouter-free-ru.png"><img src="images/v13/openrouter-free-ru.png" alt="Бесплатные модели OpenRouter · 0.1.1+13" width="196"></a> |
+| <a href="images/v15/manual-provider-ru-phone.png"><img src="images/v15/manual-provider-ru-phone.png" alt="Выбор провайдера для нового чата · 0.1.1+15" width="196"></a> | <a href="images/v15/openrouter-mode-ru-phone.png"><img src="images/v15/openrouter-mode-ru-phone.png" alt="Режимы OpenRouter · 0.1.1+15" width="196"></a> | <a href="images/v15/openrouter-free-ru-phone.png"><img src="images/v15/openrouter-free-ru-phone.png" alt="Бесплатные модели OpenRouter · 0.1.1+15" width="196"></a> |
 
 | Платные модели OpenRouter | Обновлённый каталог VSEGPT |
 | --- | --- |
-| <a href="images/v13/openrouter-paid-ru.png"><img src="images/v13/openrouter-paid-ru.png" alt="Платные модели OpenRouter · 0.1.1+13" width="196"></a> | <a href="images/v13/vsegpt-models-ru.png"><img src="images/v13/vsegpt-models-ru.png" alt="Каталог моделей VSEGPT · 0.1.1+13" width="196"></a> |
+| <a href="images/v15/openrouter-paid-ru-phone.png"><img src="images/v15/openrouter-paid-ru-phone.png" alt="Платные модели OpenRouter · 0.1.1+15" width="196"></a> | <a href="images/v15/vsegpt-models-ru-phone.png"><img src="images/v15/vsegpt-models-ru-phone.png" alt="Каталог моделей VSEGPT · 0.1.1+15" width="196"></a> |
 
 <img src="../assets/ui/frame-bottom.svg" alt="" width="100%">
 
@@ -69,6 +71,12 @@
 | Подробности дня в USD | Расходы в рублях без запросов |
 | --- | --- |
 | <a href="images/v13/usd-day-ru.png"><img src="images/v13/usd-day-ru.png" alt="Подробности дня в USD · 0.1.1+13" width="196"></a> | <a href="images/v13/rub-empty-ru.png"><img src="images/v13/rub-empty-ru.png" alt="Расходы в рублях без запросов · 0.1.1+13" width="196"></a> |
+
+**День с расходами в рублях**
+
+В отдельной QA-сборке 0.1.1+13 показаны две демонстрационные записи на 1,20 и 0,35 рубля. Сумма за день составляет 1,55 рубля.
+
+<a href="images/qa-v13/ruble-day-ru.png"><img src="images/qa-v13/ruble-day-ru.png" alt="День с расходами в рублях · QA 0.1.1+13" width="196"></a>
 
 <img src="../assets/ui/frame-bottom.svg" alt="" width="100%">
 
@@ -106,8 +114,19 @@
 
 | Лимиты нового чата | Непроверенное подключение VSEGPT | Настройка PIN приложения |
 | --- | --- | --- |
-| <a href="images/v13/configure-limits-ru.png"><img src="images/v13/configure-limits-ru.png" alt="Лимиты нового чата · 0.1.1+13" width="196"></a> | <a href="images/v13/vsegpt-unverified-ru.png"><img src="images/v13/vsegpt-unverified-ru.png" alt="Непроверенное подключение VSEGPT · 0.1.1+13" width="196"></a> | <a href="images/v13/choose-pin-ru.png"><img src="images/v13/choose-pin-ru.png" alt="Настройка PIN приложения · 0.1.1+13" width="196"></a> |
+| <a href="images/v15/configure-limits-ru-phone.png"><img src="images/v15/configure-limits-ru-phone.png" alt="Лимиты нового чата · 0.1.1+15" width="196"></a> | <a href="images/v13/vsegpt-unverified-ru.png"><img src="images/v13/vsegpt-unverified-ru.png" alt="Непроверенное подключение VSEGPT · 0.1.1+13" width="196"></a> | <a href="images/v13/choose-pin-ru.png"><img src="images/v13/choose-pin-ru.png" alt="Настройка PIN приложения · 0.1.1+13" width="196"></a> |
 
 <img src="../assets/ui/frame-bottom.svg" alt="" width="100%">
+
+<a id="navigation"></a>
+
+## Выбор провайдера и фильтры
+
+На снимках 0.1.1+15 видны текущее подключение и фильтры статистики. На телефоне фильтры расположены друг под другом. На широком планшете они помещаются в одну строку.
+
+| Текущее подключение чата | Фильтр провайдера на телефоне | Фильтры на планшете |
+| --- | --- | --- |
+| <a href="images/v15/current-provider-ru-phone.png"><img src="images/v15/current-provider-ru-phone.png" alt="Текущее подключение чата · 0.1.1+15" width="196"></a> | <a href="images/v15/tokens-provider-open-ru-phone.png"><img src="images/v15/tokens-provider-open-ru-phone.png" alt="Фильтр провайдера на телефоне · 0.1.1+15" width="196"></a> | <a href="images/v15/tokens-closed-ru-tablet.png"><img src="images/v15/tokens-closed-ru-tablet.png" alt="Фильтры на планшете · 0.1.1+15" width="196"></a> |
+
 
 [Как пользоваться приложением](README.ru.md) · [Проект](../../README.ru.md)

@@ -26,6 +26,8 @@
 
 ## <img src="docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Android interface
 
+The conversation and daily token chart below were captured on Android Dart 0.1.1+13.
+
 <img src="docs/assets/ui/frame-top.svg" alt="" width="100%">
 
 | Chat and draft | Tokens by day |
