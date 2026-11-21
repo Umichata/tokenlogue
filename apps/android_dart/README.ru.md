@@ -4,7 +4,7 @@
 
 [Скачать Tokenlogue Dart 0.1.1+18 для Android ARM64](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1-android-dart-arm64-v8a-v18.apk) · [Проверка и установка APK](../../docs/android-dart/README.ru.md#apk)
 
-Пакет Dart `io.github.umichata.tokenlogue.dart` можно установить рядом с пакетом Python `io.github.umichata.tokenlogue`. Благодаря разным идентификаторам Android выделяет каждому приложению собственное хранилище для PIN, ключей провайдеров и истории чатов.
+Пакет Dart `io.github.umichata.tokenlogue.dart` можно установить рядом с [Tokenlogue на Python](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1-android-arm64-v8a-v56.apk) (`io.github.umichata.tokenlogue`). Благодаря разным идентификаторам Android выделяет каждому приложению собственное хранилище для PIN, ключей провайдеров и истории чатов.
 
 Для сборки нужны Flutter 3.44.8, Dart 3.12.2, JDK 17, Android SDK 36 и NDK 28.2.13676358. Укажите пути к инструментам в `FLUTTER_ROOT`, `JAVA_HOME` и `ANDROID_HOME`. В `TOKENLOGUE_DART_SIGNING_PROPERTIES` укажите путь к приватному файлу Java properties с полями `storeFile`, `storePassword`, `keyAlias` и `keyPassword`. Для обновлений сохраните тот же keystore.
 

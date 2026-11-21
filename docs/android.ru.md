@@ -15,7 +15,7 @@
 # Tokenlogue для Android на Python
 
 
-> **[0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1)** содержит два установщика Android ARM64 (Dart, сборка 18, и Python, сборка 56) и настольный пакет Linux x86_64. Перед установкой проверьте требования платформы и сумму скачанного файла.
+> В **[0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1)** доступны два APK для Android ARM64 ([Python +56](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1-android-arm64-v8a-v56.apk) и [Dart +18](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1-android-dart-arm64-v8a-v18.apk)) и [архив для Linux x86_64 +56](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1%2B56-linux-x86_64-bundle.tar.gz). Перед установкой проверьте требования платформы и контрольную сумму файла.
 
 У Android Dart 0.1.1+18 отдельный профиль. Установка и обновление описаны в [руководстве Dart](android-dart/README.ru.md).
 
@@ -36,11 +36,11 @@
 
 ## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Установка Android 0.1.1
 
-Скачайте `Tokenlogue-0.1.1-android-arm64-v8a-v56.apk` со страницы [0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1). APK служит установщиком. Для запуска приложения исходные архивы не нужны.
+Скачайте [`Tokenlogue-0.1.1-android-arm64-v8a-v56.apk`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1-android-arm64-v8a-v56.apk) со страницы [0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1). APK служит установщиком. Для запуска приложения исходные архивы не нужны.
 
 | Параметр | Значение |
 | --- | --- |
-| Файл | `Tokenlogue-0.1.1-android-arm64-v8a-v56.apk` |
+| Файл | [`Tokenlogue-0.1.1-android-arm64-v8a-v56.apk`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1-android-arm64-v8a-v56.apk) |
 | Версия | 0.1.1, versionCode 56 |
 | Архитектура | ARM64, `arm64-v8a` |
 | Размер | 56 543 774 байт |
@@ -62,7 +62,7 @@ printf '%s  %s\n' \
 
 ## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Предыдущий выпуск
 
-[Tokenlogue 0.1.0](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9) остаётся отдельным прежним выпуском. Его APK не является новой версией. Правила совместимого обновления приведены ниже.
+В стабильном выпуске [Tokenlogue 0.1.0](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9) доступен [APK Python +43 для Android ARM64](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-android-arm64-v8a-v43.apk). Правила совместимого обновления приведены ниже.
 
 <a id="обновление-без-удаления-данных"></a>
 

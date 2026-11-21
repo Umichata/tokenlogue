@@ -14,7 +14,7 @@ printf '%s  %s\n' '806cb00d46615bfed5766e47ecd33d9b24fe7bf0e6e24d18fb62cbd6d44bc
 
 После результата `OK` откройте APK на устройстве и подтвердите установку. Найдите **Tokenlogue Dart** в списке приложений.
 
-Android хранит профили Dart и Python в отдельных каталогах приложений. Для обновления Dart сохраните установленное приложение и откройте APK с той же Dart-подписью.
+На то же устройство можно установить [Tokenlogue на Python для Android ARM64](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1-android-arm64-v8a-v56.apk). Android хранит профили Dart и Python в отдельных каталогах приложений. Для обновления Dart сохраните установленное приложение и откройте APK с той же Dart-подписью.
 
 [Экраны приложения](gallery.ru.md)
 

@@ -15,7 +15,7 @@
 # Исходники и зависимости
 
 
-> **[0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1)** содержит два установщика Android ARM64 (Dart, сборка 18, и Python, сборка 56) и настольный пакет Linux x86_64. Перед установкой проверьте требования платформы и сумму скачанного файла.
+> В **[0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1)** доступны два APK для Android ARM64 ([Python +56](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1-android-arm64-v8a-v56.apk) и [Dart +18](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1-android-dart-arm64-v8a-v18.apk)) и [архив для Linux x86_64 +56](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1%2B56-linux-x86_64-bundle.tar.gz). Перед установкой проверьте требования платформы и контрольную сумму файла.
 
 
 Для Android Dart используйте [исходники приложения](../apps/android_dart/README.ru.md) и [список зависимостей](../apps/android_dart/pubspec.lock). Архивы сборки +56 ниже относятся к версиям на Python.
@@ -24,7 +24,7 @@
 
 ## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Материалы для выбранного пакета
 
-Для APK 0.1.1 и Linux bundle 0.1.1+56 используйте реестр со страницы [0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1). Руководства [Android](android.ru.md#ru-install) и [Linux](linux-appimage.ru.md#ru-download) указывают точные пакеты и суммы.
+Для [APK Python 0.1.1 (+56)](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1-android-arm64-v8a-v56.apk) и [архива Linux 0.1.1+56](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1%2B56-linux-x86_64-bundle.tar.gz) используйте реестр со страницы [0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1). Руководства [Android](android.ru.md#ru-install) и [Linux](linux-appimage.ru.md#ru-download) указывают точные пакеты и суммы.
 
 Архив `Tokenlogue-0.1.1+56-build-sources.tar.gz` содержит общие отслеживаемые исходники и упаковку обеих сборок. Точные commit, дерево, действительные графы зависимостей и входы указаны в provenance. Более поздняя редакция документации не становится сборочным входом уже созданных бинарников.
 
@@ -37,9 +37,9 @@
 
 ## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Исходники приложения
 
-В выпуске [0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1) выберите `Tokenlogue-0.1.1+56-build-sources.tar.gz` и проверьте его по манифесту выпуска. Архив включает исходники приложения, lock-файлы, рецепты упаковки и материалы выбранных нативных wheels. Он относится к исходникам поставленных сборок. Отдельная текущая документация может иметь более новую ревизию.
+В выпуске [0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1) выберите [`Tokenlogue-0.1.1+56-build-sources.tar.gz`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1%2B56-build-sources.tar.gz) и проверьте его по [манифесту выпуска](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/SHA256SUMS). Архив включает исходники приложения, lock-файлы, рецепты упаковки и материалы выбранных нативных wheels. Он относится к исходникам поставленных сборок. Отдельная текущая документация может иметь более новую ревизию.
 
-Для запуска приложения достаточно подходящего APK или Linux bundle. Сторонние исходники не являются установщиком.
+Для запуска выберите [APK Python](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1-android-arm64-v8a-v56.apk), [APK Dart](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1-android-dart-arm64-v8a-v18.apk) или [комплект Linux](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1%2B56-linux-x86_64-bundle.tar.gz). Архивы зависимостей нужны только для работы с исходниками.
 
 <a id="-выбор-подходящего-комплекта"></a>
 <a id="архив-зависимостей"></a>
@@ -49,9 +49,9 @@
 | Файл | Назначение |
 | --- | --- |
 | [`Tokenlogue-0.1.0-dependency-sources.tar.gz`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-dependency-sources.tar.gz) | Идентифицированные сторонние исходники, оригинальные уведомления, изменения и рецепты без повторных копий одинаковых файлов. |
-| `SOURCE_MATERIALS.json` на странице <a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1" title="0.1.1 Preview"><img src="assets/ui/buttons/v3-ru-cd57105d0b1a.svg" alt="0.1.1 Preview" width="125" height="30"></a> | Версии, связи компонентов, относительные пути, размеры и SHA-256 материалов. Также описывает границы подтверждения исходников и происхождения бинарников. |
-| `Tokenlogue-0.1.1-source-additions.tar.gz` | Шесть точных дополнительных исходных архивов, включая tzdata 2026.6 и Android url_launcher_android 6.3.35. |
-| `SHA256SUMS` текущего выпуска | Контрольные суммы новых загрузок. Для повторно используемого базового архива ниже указан прежний манифест. |
+| [`SOURCE_MATERIALS.json`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/SOURCE_MATERIALS.json) | Версии, связи компонентов, относительные пути, размеры и SHA-256 материалов. Также описывает границы подтверждения исходников и происхождения бинарников. |
+| [`Tokenlogue-0.1.1-source-additions.tar.gz`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1-source-additions.tar.gz) | Шесть точных дополнительных исходных архивов, включая tzdata 2026.6 и Android url_launcher_android 6.3.35. |
+| [`SHA256SUMS`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/SHA256SUMS) текущего выпуска | Контрольные суммы новых загрузок. Для повторно используемого базового архива ниже указан прежний манифест. |
 
 В архиве зависимостей нет дополнительной внешней папки. Он содержит двуязычный `README.md`, `SOURCE_MATERIALS.json`, `BUILD_INPUTS.json`, `RECONSTRUCTION.json`, `SHA256SUMS` и оригинальные файлы в `materials/<SHA-256>/<исходное имя>`. Одинаковый файл хранится один раз и может относиться к нескольким компонентам. Если исходники или уведомление находятся внутри сохранённого архива, реестр указывает точный внутренний путь.
 

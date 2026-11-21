@@ -30,13 +30,24 @@
 
 The chat, daily token chart and budget dialog were captured on Android Dart 0.1.1+13.
 
-<img src="docs/assets/ui/frame-top.svg" alt="" width="100%">
-
-| Chat and draft | Tokens by day | Chat budget |
-| --- | --- | --- |
-| <a href="docs/android-dart/images/v13/chat-en.png"><img src="docs/android-dart/images/v13/chat-en.png" alt="English controls with a Russian sample conversation" width="215"></a> | <a href="docs/android-dart/images/v13/tokens-filled-en.png"><img src="docs/android-dart/images/v13/tokens-filled-en.png" alt="Daily token chart for the sample conversation" width="215"></a> | <a href="docs/android-dart/images/v13/budget-en.png"><img src="docs/android-dart/images/v13/budget-en.png" alt="Budget warning before sending a paid request in RUB" width="215"></a> |
-
-<img src="docs/assets/ui/frame-bottom.svg" alt="" width="100%">
+<table width="100%">
+  <tr><td colspan="3" align="center"><img src="docs/assets/ui/frame-top.svg" alt="" width="100%"></td></tr>
+  <tr>
+    <td width="33%" align="center" valign="top">
+      <a href="docs/android-dart/images/v13/chat-en.png"><img src="docs/android-dart/images/v13/chat-en.png" alt="English controls with a Russian sample conversation" width="216"></a><br>
+      <strong>Chat and draft</strong>
+    </td>
+    <td width="33%" align="center" valign="top">
+      <a href="docs/android-dart/images/v13/tokens-filled-en.png"><img src="docs/android-dart/images/v13/tokens-filled-en.png" alt="Daily token chart for the sample conversation" width="216"></a><br>
+      <strong>Tokens by day</strong>
+    </td>
+    <td width="33%" align="center" valign="top">
+      <a href="docs/android-dart/images/v13/budget-en.png"><img src="docs/android-dart/images/v13/budget-en.png" alt="Budget warning before sending a paid request in RUB" width="216"></a><br>
+      <strong>Chat budget</strong>
+    </td>
+  </tr>
+  <tr><td colspan="3" align="center"><img src="docs/assets/ui/frame-bottom.svg" alt="" width="100%"></td></tr>
+</table>
 
 [Browse the app screens](docs/android-dart/gallery.md)
 
@@ -45,7 +56,13 @@ The chat, daily token chart and budget dialog were captured on Android Dart 0.1.
 
 ## Install and connect
 
-Download the Dart APK above, [verify its SHA-256](docs/android-dart/README.md#apk) and open the file on your device. Android 7.0 or later is required. The launcher entry is **Tokenlogue Dart**. It can be installed alongside the Python edition. Each edition has its own PIN, keys and history. There is no automatic transfer between the two.
+| Edition · 0.1.1 Preview | Download | Installation guide |
+| --- | --- | --- |
+| Android Dart · ARM64 | [APK · build 18](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1-android-dart-arm64-v8a-v18.apk) | [Install Tokenlogue Dart](docs/android-dart/README.md#apk) |
+| Android Python · ARM64 | [APK · build 56](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1-android-arm64-v8a-v56.apk) | [Install Tokenlogue on Python](docs/android.md#en-install) |
+| Linux · x86_64 | [Desktop bundle · build 56](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1%2B56-linux-x86_64-bundle.tar.gz) | [Extract and launch](docs/linux-appimage.md#en-download) |
+
+For Tokenlogue Dart, [verify the APK checksum](docs/android-dart/README.md#apk) and open the file on a device running Android 7.0 or later. Choose **Tokenlogue Dart** in the app list. It can be installed alongside the Python edition. Each edition has its own PIN, keys and history. There is no automatic transfer between the two.
 
 <a name="first-connection"></a>
 
@@ -64,7 +81,6 @@ The budget applies to one chat. The provider balance belongs to the account, and
 | --- | --- |
 | [Using the app](docs/android-dart/README.md) | Providers, chats, limits, statistics and recovery |
 | [Android build](apps/android_dart/README.md) | Toolchain, signing and local package verification |
-| [Download Tokenlogue on Python 0.1.1, APK56](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1-android-arm64-v8a-v56.apk) | Android ARM64 installer for the Python edition and its profile. |
 
 <a name="sources-and-licenses"></a>
 

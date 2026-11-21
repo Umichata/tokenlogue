@@ -15,7 +15,7 @@
 # Source code and dependencies
 
 
-> **[0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1)** includes two Android ARM64 installers (Dart build 18 and Python build 56) and the Linux x86_64 desktop bundle. Read the platform requirements and verify the downloaded file before installing.
+> **[0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1)** includes the [Python APK +56](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1-android-arm64-v8a-v56.apk) and [Dart APK +18](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1-android-dart-arm64-v8a-v18.apk) for Android ARM64 and the [desktop bundle +56](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1%2B56-linux-x86_64-bundle.tar.gz) for Linux x86_64. Check the platform requirements and checksum before installing.
 
 
 For Android Dart, see the [application sources](../apps/android_dart/README.md) and [dependency lockfile](../apps/android_dart/pubspec.lock). The build +56 archives below belong to the Python editions.
@@ -24,7 +24,7 @@ For Android Dart, see the [application sources](../apps/android_dart/README.md) 
 
 ## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Choose materials for your package
 
-For the 0.1.1 APK and Linux bundle 0.1.1+56, use the index supplied with [0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1). The [Android](android.md#en-install) and [Linux](linux-appimage.md#en-download) guides identify the exact packages and checksums.
+For the [Python APK 0.1.1 (+56)](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1-android-arm64-v8a-v56.apk) and [Linux bundle 0.1.1+56](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1%2B56-linux-x86_64-bundle.tar.gz), use the index supplied with [0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1). The [Android](android.md#en-install) and [Linux](linux-appimage.md#en-download) guides identify the exact packages and checksums.
 
 `Tokenlogue-0.1.1+56-build-sources.tar.gz` contains the shared tracked sources and packaging for both builds. Provenance records the exact commit, tree, actual dependency graphs and inputs. A later documentation revision does not become an input to an already built binary.
 
@@ -37,9 +37,9 @@ Tokenlogue's application code uses the [MIT License](../LICENSE). Third-party co
 
 ## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Application sources
 
-On [0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1), select `Tokenlogue-0.1.1+56-build-sources.tar.gz` and verify it against the release manifest. The archive contains application sources, locks, packaging recipes and the selected native wheel materials. It represents the sources of the delivered builds. Separate current documentation may have a newer revision.
+On [0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1), select [`Tokenlogue-0.1.1+56-build-sources.tar.gz`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1%2B56-build-sources.tar.gz) and verify it against [the release manifest](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/SHA256SUMS). The archive contains application sources, locks, packaging recipes and the selected native wheel materials. It represents the sources of the delivered builds. Separate current documentation may have a newer revision.
 
-To run the app, choose the APK or Linux bundle. Dependency sources are not installers.
+To run the app, download the [Python APK](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1-android-arm64-v8a-v56.apk), [Dart APK](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1-android-dart-arm64-v8a-v18.apk) or [Linux bundle](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1%2B56-linux-x86_64-bundle.tar.gz). Dependency archives are for working with the sources.
 
 <a id="-find-the-matching-collection"></a>
 <a id="dependency-archive"></a>
@@ -49,9 +49,9 @@ To run the app, choose the APK or Linux bundle. Dependency sources are not insta
 | File | Purpose |
 | --- | --- |
 | [`Tokenlogue-0.1.0-dependency-sources.tar.gz`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-dependency-sources.tar.gz) | Identified third-party sources, original notices, modifications and recipes in a deduplicated collection. |
-| `SOURCE_MATERIALS.json` on <a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1" title="0.1.1 Preview"><img src="assets/ui/buttons/v3-en-cd57105d0b1a.svg" alt="0.1.1 Preview" width="125" height="30"></a> | Versions, component mappings, relative material paths, sizes and SHA-256 values. It also records the scope of source and binary-provenance evidence. |
-| `Tokenlogue-0.1.1-source-additions.tar.gz` | Six exact additional source archives, including tzdata 2026.6 and Android url_launcher_android 6.3.35. |
-| Current release `SHA256SUMS` | Checksums of the new downloads. Use the earlier manifest below for the reused base archive. |
+| [`SOURCE_MATERIALS.json`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/SOURCE_MATERIALS.json) | Versions, component mappings, relative material paths, sizes and SHA-256 values. It also records the scope of source and binary-provenance evidence. |
+| [`Tokenlogue-0.1.1-source-additions.tar.gz`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1-source-additions.tar.gz) | Six exact additional source archives, including tzdata 2026.6 and Android url_launcher_android 6.3.35. |
+| Current release [`SHA256SUMS`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/SHA256SUMS) | Checksums of the new downloads. Use the earlier manifest below for the reused base archive. |
 
 The dependency archive has no extra outer directory. It contains a bilingual `README.md`, `SOURCE_MATERIALS.json`, `BUILD_INPUTS.json`, `RECONSTRUCTION.json`, `SHA256SUMS` and the original files under `materials/<SHA-256>/<original filename>`. An identical file is stored once and can be mapped to several components. The index identifies the exact archive member when a component's source or notice is inside a retained archive.
 

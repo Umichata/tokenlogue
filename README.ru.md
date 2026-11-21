@@ -30,13 +30,24 @@
 
 Переписка, график токенов по дням и окно бюджета сняты на Android Dart 0.1.1+13.
 
-<img src="docs/assets/ui/frame-top.svg" alt="" width="100%">
-
-| Переписка и черновик | Токены по дням | Бюджет чата |
-| --- | --- | --- |
-| <a href="docs/android-dart/images/v13/chat-ru.png"><img src="docs/android-dart/images/v13/chat-ru.png" alt="Рабочий чат о поездке и сохранённый черновик" width="215"></a> | <a href="docs/android-dart/images/v13/tokens-filled-ru.png"><img src="docs/android-dart/images/v13/tokens-filled-ru.png" alt="Токены по дням для демонстрационного чата" width="215"></a> | <a href="docs/android-dart/images/v13/budget-ru.png"><img src="docs/android-dart/images/v13/budget-ru.png" alt="Предупреждение об остатке бюджета в рублях перед отправкой запроса" width="215"></a> |
-
-<img src="docs/assets/ui/frame-bottom.svg" alt="" width="100%">
+<table width="100%">
+  <tr><td colspan="3" align="center"><img src="docs/assets/ui/frame-top.svg" alt="" width="100%"></td></tr>
+  <tr>
+    <td width="33%" align="center" valign="top">
+      <a href="docs/android-dart/images/v13/chat-ru.png"><img src="docs/android-dart/images/v13/chat-ru.png" alt="Рабочий чат о поездке и сохранённый черновик" width="216"></a><br>
+      <strong>Чат и черно&shy;вик</strong>
+    </td>
+    <td width="33%" align="center" valign="top">
+      <a href="docs/android-dart/images/v13/tokens-filled-ru.png"><img src="docs/android-dart/images/v13/tokens-filled-ru.png" alt="Токены по дням для демонстрационного чата" width="216"></a><br>
+      <strong>Токены по дням</strong>
+    </td>
+    <td width="33%" align="center" valign="top">
+      <a href="docs/android-dart/images/v13/budget-ru.png"><img src="docs/android-dart/images/v13/budget-ru.png" alt="Предупреждение об остатке бюджета в рублях перед отправкой запроса" width="216"></a><br>
+      <strong>Бюджет чата</strong>
+    </td>
+  </tr>
+  <tr><td colspan="3" align="center"><img src="docs/assets/ui/frame-bottom.svg" alt="" width="100%"></td></tr>
+</table>
 
 [Все экраны приложения](docs/android-dart/gallery.ru.md)
 
@@ -45,7 +56,13 @@
 
 ## Установка и первое подключение
 
-Скачайте Dart APK по ссылке выше, [проверьте SHA-256](docs/android-dart/README.ru.md#apk) и откройте файл на устройстве. Нужен Android 7.0 или новее. В меню приложений он называется **Tokenlogue Dart**. Его можно установить рядом с Python-версией. У каждой версии собственные PIN, ключи и история. Перенос между ними не выполняется автоматически.
+| Версия · 0.1.1 Preview | Скачать | Установка |
+| --- | --- | --- |
+| Android Dart · ARM64 | [APK · сборка 18](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1-android-dart-arm64-v8a-v18.apk) | [Установить Tokenlogue Dart](docs/android-dart/README.ru.md#apk) |
+| Android Python · ARM64 | [APK · сборка 56](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1-android-arm64-v8a-v56.apk) | [Установить Tokenlogue на Python](docs/android.ru.md#ru-install) |
+| Linux · x86_64 | [Настольный пакет · сборка 56](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1%2B56-linux-x86_64-bundle.tar.gz) | [Распаковать и запустить](docs/linux-appimage.ru.md#ru-download) |
+
+Для установки Tokenlogue Dart [проверьте SHA-256 файла APK](docs/android-dart/README.ru.md#apk) и откройте его на устройстве с Android 7.0 или новее. В списке приложений выберите **Tokenlogue Dart**. Его можно установить рядом с Python-версией. У каждой версии собственные PIN, ключи и история. Перенос между ними не выполняется автоматически.
 
 <a name="первое-подключение"></a>
 
@@ -64,7 +81,6 @@
 | --- | --- |
 | [Использование приложения](docs/android-dart/README.ru.md) | Провайдеры, чат, лимиты, статистика и восстановление |
 | [Сборка Android](apps/android_dart/README.ru.md) | Инструменты, подпись и локальная проверка пакета |
-| [Скачать Tokenlogue на Python 0.1.1, APK56](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1-android-arm64-v8a-v56.apk) | Установочный APK для Android ARM64. Открывает профиль Python. |
 
 <a name="исходники-и-лицензии"></a>
 
