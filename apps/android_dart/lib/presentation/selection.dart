@@ -241,7 +241,7 @@ class _SelectChatState extends State<SelectChat> {
     final decimal = raw
         .replaceFirst(RegExp(r'^\+(?=[.0-9])'), '')
         .replaceFirstMapped(RegExp(r'^(-?)\.(?=[0-9])'), (m) => '${m[1]}0.')
-        .replaceFirstMapped(RegExp(r'([0-9])\.(?=$|[eE])'), (m) => m[1]!);
+        .replaceFirstMapped(RegExp(r'^(-?[0-9]+)\.(?=$|[eE])'), (m) => m[1]!);
     final limit = paid ? Amount.parse(decimal) : null;
     if (paid && limit == null) return reject(t('service.money_number'));
     if (n == 0) return reject(t('service.token_positive'));

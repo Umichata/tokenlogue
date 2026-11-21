@@ -170,6 +170,8 @@ void main() {
           ('0', 'service.money_positive'),
           ('-0.01', 'service.money_positive'),
           ('abc', 'service.money_number'),
+          ('1.2.', 'service.money_number'),
+          ('1.2.e3', 'service.money_number'),
         ]) {
           await tester.enterText(fields.at(2), raw);
           await tester.tap(button);
