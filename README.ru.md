@@ -11,6 +11,8 @@
 
 **Tokenlogue Dart** — клиент OpenRouter и VSEGPT для Android. Выбирайте сервис и модель для каждого чата. Возвращайтесь к черновику после просмотра токенов или расходов.
 
+Установить Dart можно по [инструкции сборки ARM64 APK](apps/android_dart/README.ru.md). Пакет Dart устанавливается рядом с Tokenlogue на Python. У каждого приложения свой профиль.
+
 <a name="ru-features"></a>
 <a name="features"></a>
 <a name="возможности"></a>
@@ -62,7 +64,7 @@
 | --- | --- |
 | [Использование приложения](docs/android-dart/README.ru.md) | Провайдеры, чат, лимиты, статистика и восстановление |
 | [Сборка Android](apps/android_dart/README.ru.md) | Инструменты, подпись и локальная проверка пакета |
-| [Выпуск на Python](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1) | Отдельные пакеты Python для Android и Linux |
+| [Скачать Tokenlogue на Python 0.1.1, APK56](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1-android-arm64-v8a-v56.apk) | Установочный APK для Android ARM64. Открывает профиль Python. |
 
 <a name="исходники-и-лицензии"></a>
 

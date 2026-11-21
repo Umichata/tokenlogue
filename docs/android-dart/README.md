@@ -6,6 +6,8 @@ Install the Dart APK on Android ARM64. Android keeps the Dart and Python profile
 
 [App screens](gallery.md)
 
+[Build and install the Dart APK](../../apps/android_dart/README.md)
+
 ## Connect a service
 
 Start with an OpenRouter key beginning with `sk-or-v1-`, or a VSEGPT key beginning with `sk-or-vv-` or `sk-or-vis`. Use **Check key**, then choose a four-digit app PIN. On the Providers page, each form belongs to one service. If VSEGPT restricts balance checks, you can explicitly save an unverified key. A successful catalogue refresh alone does not verify a key.
