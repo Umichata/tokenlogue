@@ -15,6 +15,10 @@ PACKAGE = "io.github.umichata.tokenlogue.dart.qa.vaultrotation"
 ACTIVITY = "io.github.umichata.tokenlogue.dart.MainActivity"
 
 
+class CheckpointFailure(RuntimeError):
+    """A public, fixed test failure label returned by the isolated fixture."""
+
+
 class Emulator:
     def __init__(self, sdk, serial, port):
         self.client = [str(sdk / "platform-tools/adb"), "-P", str(port), "-s", serial]
@@ -35,6 +39,20 @@ class Emulator:
     def private_input(self, commands):
         # Standard input keeps fixture values out of argv and test output.
         return self.adb("shell", "-T", stdin=commands + "\n")
+
+    def send_fixture(self, fixture):
+        # The test-only Focus widget accepts physical key events. An IME must
+        # never compose or modify the packet between the two app processes.
+        if PACKAGE + "/" not in self.focus():
+            raise RuntimeError("Wrong foreground package for the fixture")
+        chunks = [fixture[i : i + 8] for i in range(0, len(fixture), 8)]
+        commands = [
+            "input keyevent " + " ".join("KEYCODE_" + c.upper() for c in part)
+            for part in chunks
+        ]
+        self.private_input(
+            "\nsleep 0.08\n".join(commands + ["input keyevent KEYCODE_ENTER"])
+        )
 
     def focus(self):
         return next(
@@ -73,7 +91,7 @@ class Emulator:
                         return
                     for label in labels:
                         if label.startswith("Failed: "):
-                            raise RuntimeError(label)
+                            raise CheckpointFailure(label)
             time.sleep(0.2)
         raise TimeoutError(f"Missing public QA checkpoint: {expected}")
 
@@ -140,10 +158,10 @@ def run(device, sdk, apk, system_pin, fixture, checkpoints):
             raise RuntimeError("Installed base APK differs from the QA artifact")
         first = device.start("Fresh registration ready")
         checkpoints.append({"observed": "Fresh registration ready", "pid": first})
-        device.private_input(f"input text {fixture}\ninput keyevent KEYCODE_ENTER")
+        device.send_fixture(fixture)
         device.confirm_device(system_pin)
-        device.wait_for_status("Replacement committed")
-        checkpoints.append({"observed": "Replacement committed", "pid": first})
+        device.wait_for_status("Replacement read back")
+        checkpoints.append({"observed": "Replacement read back", "pid": first})
 
         device.shell("am", "force-stop", PACKAGE)
         if device.adb("shell", "pidof", PACKAGE, check=False).stdout.strip():
@@ -153,7 +171,7 @@ def run(device, sdk, apk, system_pin, fixture, checkpoints):
         checkpoints.append({"observed": "Cold verification ready", "pid": second})
         if second == first:
             raise RuntimeError("Distinct process identities could not be confirmed")
-        device.private_input(f"input text {fixture}\ninput keyevent KEYCODE_ENTER")
+        device.send_fixture(fixture)
         device.wait_for_status("Cold verification passed")
         checkpoints.append({"observed": "Cold verification passed", "pid": second})
         return {
@@ -168,6 +186,9 @@ def run(device, sdk, apk, system_pin, fixture, checkpoints):
             "guest_abi": device.shell("getprop", "ro.product.cpu.abi"),
             "page_size": int(device.shell("getconf", "PAGE_SIZE")),
             "pins_distinct": True,
+            "fixture_checksum_verified_in_both_processes": True,
+            "same_run_slot_confirmed_in_both_processes": True,
+            "updated_verifier_read_back_before_stop": True,
             "system_credential_prompt_confirmed": True,
             "before_recovery": {
                 "stored_verifier_matches_A": True,
@@ -202,7 +223,8 @@ def main():
         parser.error("Expected an emulator serial")
     sdk = Path(os.environ["ANDROID_HOME"])
     system, original, replacement = secrets.SystemRandom().sample(range(10000), 3)
-    fixture = f"{original:04d}{replacement:04d}{secrets.token_hex(16)}"
+    payload = f"{original:04d}{replacement:04d}{secrets.token_hex(16)}"
+    fixture = payload + hashlib.sha256(payload.encode("ascii")).hexdigest()[:24]
     device = Emulator(sdk, args.device, args.adb_port)
     checkpoints = []
     with args.receipt.open("x", encoding="utf-8") as output:
@@ -214,6 +236,9 @@ def main():
                 {
                     "result": "INCOMPLETE",
                     "failure_type": type(error).__name__,
+                    "app_checkpoint": str(error)
+                    if isinstance(error, CheckpointFailure)
+                    else None,
                     "checkpoints": checkpoints,
                 },
                 output,
