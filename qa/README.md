@@ -29,9 +29,17 @@ The provider scenario checks account states and quotas in both interface languag
 qa/android_dart_integration/run "$QA_DEVICE" providers
 ```
 
+On a fresh, disposable API 24–29 emulator, run the legacy scenario to check the unavailable system recovery notice and sign in again with the original test PIN.
+
+```bash
+qa/android_dart_integration/run "$QA_DEVICE" legacy
+```
+
 ## PIN rotation across a process restart
 
 Use a fresh API 30 or newer Android emulator with device credential support and no configured screen lock. The test sets a temporary screen PIN and installs a separate app with the ID `io.github.umichata.tokenlogue.dart.qa.vaultrotation`. It generates its own fixture values. At the end it removes its app and screen credential. The build uses the Android debug signing configuration and the locally cached dependencies.
+
+This check builds revision `4288b33`. With a shallow clone, fetch the branch history first using `git fetch --unshallow origin android-dart`.
 
 ```bash
 mkdir -p out

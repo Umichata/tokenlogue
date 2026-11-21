@@ -23,10 +23,10 @@ sha256sum "$PWD/../../out/android-dart/Tokenlogue-0.1.1-android-dart-arm64-v8a-v
 Для каждой сборки выбирайте новое выходное имя. При передаче обновления проверяйте отпечаток сертификата и контрольную сумму файла. Храните четыре параметра подписи и keystore вне дерева исходников. У локальных сборок с собственной подписью отдельная последовательность обновлений.
 
 ```bash
-flutter pub get --enforce-lockfile
-dart format --output=none --set-exit-if-changed lib test
-dart analyze --fatal-infos
-flutter test --no-pub
+"$FLUTTER_ROOT/bin/flutter" pub get --enforce-lockfile
+"$FLUTTER_ROOT/bin/dart" format --output=none --set-exit-if-changed lib test
+"$FLUTTER_ROOT/bin/dart" analyze --fatal-infos
+"$FLUTTER_ROOT/bin/flutter" test --no-pub
 ```
 
 В release входят Flutter, значки Material, интеграция SQLite и пакеты Dart, включая cryptography и markdown. Уведомления находятся внутри APK в `assets/flutter_assets/NOTICES.Z`. Для проверки пакета нужны инструменты Android SDK. Укажите путь к Android Build Tools 36.0.0 в `buildTools`, а SHA-256 сертификата подписи в `cert`, затем выполните команду.

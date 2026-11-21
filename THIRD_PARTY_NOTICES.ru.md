@@ -3,7 +3,7 @@
 
 <p align="left">
 <a href="THIRD_PARTY_NOTICES.ru.md#russian" title="RU"><img align="right" src="docs/assets/ui/buttons/v3-ru-1a85308e1a5a.svg" alt="RU" width="46" height="30"></a> <a href="THIRD_PARTY_NOTICES.md#english" title="EN"><img align="right" src="docs/assets/ui/buttons/v3-ru-724a8b1ba967.svg" alt="EN" width="45" height="30"></a>
-<a href="README.ru.md" title="Главная"><img src="docs/assets/ui/buttons/v3-ru-3a2f7e4ed2ac.svg" alt="Главная" width="36" height="30"></a> <a href="https://github.com/Umichata/tokenlogue/tree/android" title="Android"><img src="docs/assets/ui/buttons/v3-ru-4a0b64bd4ded.svg" alt="Android" width="83" height="30"></a> <a href="https://github.com/Umichata/tokenlogue/tree/linux" title="Linux"><img src="docs/assets/ui/buttons/v3-ru-e31c456bd05c.svg" alt="Linux" width="65" height="30"></a>
+<a href="README.ru.md" title="Главная"><img src="docs/assets/ui/buttons/v3-ru-3a2f7e4ed2ac.svg" alt="Главная" width="36" height="30"></a> <a href="https://github.com/Umichata/tokenlogue/blob/android/README.ru.md" title="Android Python"><img src="docs/assets/ui/buttons//android-python.svg" alt="Android Python" width="142" height="30"></a> <a href="https://github.com/Umichata/tokenlogue/blob/android-dart/README.ru.md" title="Android Dart"><img src="docs/assets/ui/buttons//android-dart.svg" alt="Android Dart" width="126" height="30"></a> <a href="https://github.com/Umichata/tokenlogue/blob/linux/README.ru.md" title="Linux"><img src="docs/assets/ui/buttons/v3-ru-e31c456bd05c.svg" alt="Linux" width="65" height="30"></a>
 </p>
 
 <p align="center"><img src="docs/assets/tokenlogue-masthead-ru-v3.svg" alt="Tokenlogue · OpenRouter + VSEGPT · Linux &amp; Android" width="100%"></p>
@@ -15,6 +15,10 @@
 # Сторонние уведомления
 
 Код приложения Tokenlogue доступен по [лицензии MIT](LICENSE). Зависимости сохраняют собственные условия. Этот обзор не заменяет оригинальные уведомления.
+
+## Android Dart 0.1.1+18
+
+Уведомления Flutter и пакетов Dart находятся в APK по пути `assets/flutter_assets/NOTICES.Z`. Версии зависимостей указаны в [pubspec.lock](apps/android_dart/pubspec.lock). Ниже перечислены компоненты поставок Tokenlogue на Python.
 
 <a id="компоненты"></a>
 
@@ -30,13 +34,13 @@
 | pycparser | 3.11 | BSD 3-Clause, объявления C |
 | tzdata | 2026.6 | Apache 2.0 и уведомление IANA об общественном достоянии, часовые пояса |
 
-Защищённое хранилище Android использует flutter_secure_storage 10.3.1. Системное восстановление использует local_auth 3.0.2, local_auth_android 2.2.0 и local_auth_platform_interface 1.1.0. Эти пакеты Flutter распространяются по BSD 3-Clause. Реализации других платформ в графе не означают поставку версии Tokenlogue для них.
+Защищённое хранилище Python-версии для Android использует flutter_secure_storage 10.3.1. Системное восстановление использует local_auth 3.0.2, local_auth_android 2.2.0 и local_auth_platform_interface 1.1.0. Эти пакеты Flutter распространяются по BSD 3-Clause. Реализации других платформ в графе не означают поставку версии Tokenlogue для них.
 
 <a id="уведомления-в-пакете"></a>
 
 ## <img src="docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Уведомления в пакете
 
-Android включает уведомления Flutter и дополнение в `assets/third-party-notices/` внутри `assets/app.zip`. Сохранены оригинальные MIT-уведомления libffi среды Android и Dart bridge, полный OFL, авторские права KaTeX, декларация и авторство Material Icons и уведомления tzdata. См. [библиотеки и шрифты](packaging/notices/README.ru.md).
+В APK Python-версии входят уведомления Flutter и дополнение в `assets/third-party-notices/` внутри `assets/app.zip`. Сохранены оригинальные MIT-уведомления libffi среды Android и Dart bridge, полный OFL, авторские права KaTeX, декларация и авторство Material Icons и уведомления tzdata. См. [библиотеки и шрифты](packaging/notices/README.ru.md).
 
 AppImage Linux содержит реестр и оригинальные лицензии в `usr/share/doc/tokenlogue/`. У настольного bundle собственные уведомления расположены рядом с приложением. Сверяйтесь с описью конкретного пакета, не предполагая одинаковые пути форматов. См. [руководство по уведомлениям AppImage](packaging/linux/appimage/notices.ru.md).
 

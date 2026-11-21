@@ -3,7 +3,7 @@
 
 <p align="left">
 <a href="THIRD_PARTY_NOTICES.ru.md#russian" title="RU"><img align="right" src="docs/assets/ui/buttons/v3-en-10762eaa75fd.svg" alt="RU" width="46" height="30"></a> <a href="THIRD_PARTY_NOTICES.md#english" title="EN"><img align="right" src="docs/assets/ui/buttons/v3-en-2022af2877c8.svg" alt="EN" width="45" height="30"></a>
-<a href="README.md" title="Home"><img src="docs/assets/ui/buttons/v3-en-4e7a793b89e3.svg" alt="Home" width="36" height="30"></a> <a href="https://github.com/Umichata/tokenlogue/tree/android" title="Android"><img src="docs/assets/ui/buttons/v3-en-4a0b64bd4ded.svg" alt="Android" width="83" height="30"></a> <a href="https://github.com/Umichata/tokenlogue/tree/linux" title="Linux"><img src="docs/assets/ui/buttons/v3-en-e31c456bd05c.svg" alt="Linux" width="65" height="30"></a>
+<a href="README.md" title="Home"><img src="docs/assets/ui/buttons/v3-en-4e7a793b89e3.svg" alt="Home" width="36" height="30"></a> <a href="https://github.com/Umichata/tokenlogue/tree/android" title="Android Python"><img src="docs/assets/ui/buttons//android-python.svg" alt="Android Python" width="142" height="30"></a> <a href="https://github.com/Umichata/tokenlogue/blob/android-dart/README.md" title="Android Dart"><img src="docs/assets/ui/buttons//android-dart.svg" alt="Android Dart" width="126" height="30"></a> <a href="https://github.com/Umichata/tokenlogue/tree/linux" title="Linux"><img src="docs/assets/ui/buttons/v3-en-e31c456bd05c.svg" alt="Linux" width="65" height="30"></a>
 </p>
 
 <p align="center"><img src="docs/assets/tokenlogue-masthead-en-v3.svg" alt="Tokenlogue · OpenRouter + VSEGPT · Linux &amp; Android" width="100%"></p>
@@ -15,6 +15,10 @@
 # Third-party notices
 
 Tokenlogue's application code uses the [MIT license](LICENSE). Dependencies retain their original terms. This overview does not replace original notices.
+
+## Android Dart 0.1.1+18
+
+The Dart APK includes the Flutter and Dart package notices in `assets/flutter_assets/NOTICES.Z`. The [package lockfile](apps/android_dart/pubspec.lock) lists dependency versions. The following sections cover the Python distributions.
 
 <a id="components"></a>
 
@@ -30,13 +34,13 @@ Tokenlogue's application code uses the [MIT license](LICENSE). Dependencies reta
 | pycparser | 3.11 | BSD 3-Clause, C declarations |
 | tzdata | 2026.6 | Apache 2.0 and IANA public-domain notice, time-zone rules |
 
-Android secure storage uses flutter_secure_storage 10.3.1. System recovery uses local_auth 3.0.2, local_auth_android 2.2.0 and local_auth_platform_interface 1.1.0. These Flutter packages use BSD 3-Clause terms. Other platform implementations in the graph do not imply another distributed Tokenlogue platform.
+The Python Android app uses flutter_secure_storage 10.3.1 for secure storage. System recovery uses local_auth 3.0.2, local_auth_android 2.2.0 and local_auth_platform_interface 1.1.0. These Flutter packages use BSD 3-Clause terms. Other platform implementations in the graph do not imply another distributed Tokenlogue platform.
 
 <a id="notices-inside-a-package"></a>
 
 ## <img src="docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Notices inside a package
 
-Android includes Flutter notices and a supplement under `assets/third-party-notices/` inside `assets/app.zip`. It preserves the Android runtime libffi and Dart bridge MIT notices, full OFL, KaTeX copyright, Material Icons declaration and attribution, and tzdata notices. See [libraries and fonts](packaging/notices/README.md).
+The Python Android APK includes Flutter notices and a supplement under `assets/third-party-notices/` inside `assets/app.zip`. It preserves the Android runtime libffi and Dart bridge MIT notices, full OFL, KaTeX copyright, Material Icons declaration and attribution, and tzdata notices. See [libraries and fonts](packaging/notices/README.md).
 
 Linux AppImage includes its index and original license collection under `usr/share/doc/tokenlogue/`. A desktop bundle includes its own notices alongside the application. Use the inventory supplied with your exact package rather than assuming both formats have identical paths. See the [AppImage notice guide](packaging/linux/appimage/notices.md).
 

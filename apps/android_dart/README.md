@@ -23,10 +23,10 @@ sha256sum "$PWD/../../out/android-dart/Tokenlogue-0.1.1-android-dart-arm64-v8a-v
 Use a fresh output filename for each build. Compare the certificate fingerprint as well as the file checksum when distributing an update. A separately signed local build needs its own update sequence.
 
 ```bash
-flutter pub get --enforce-lockfile
-dart format --output=none --set-exit-if-changed lib test
-dart analyze --fatal-infos
-flutter test --no-pub
+"$FLUTTER_ROOT/bin/flutter" pub get --enforce-lockfile
+"$FLUTTER_ROOT/bin/dart" format --output=none --set-exit-if-changed lib test
+"$FLUTTER_ROOT/bin/dart" analyze --fatal-infos
+"$FLUTTER_ROOT/bin/flutter" test --no-pub
 ```
 
 The release includes Flutter, Material icons, SQLite integration and Dart packages including cryptography and markdown. Their notices are in `assets/flutter_assets/NOTICES.Z` in the APK. Release checks use the Android SDK tools. With `buildTools` pointing to Android Build Tools 36.0.0 and `cert` set to the signing certificate's SHA-256, run the following command.

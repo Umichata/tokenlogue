@@ -3,7 +3,7 @@
 
 <p align="left">
 <a href="android.ru.md#russian" title="RU"><img align="right" src="assets/ui/buttons/v3-en-10762eaa75fd.svg" alt="RU" width="46" height="30"></a> <a href="android.md#english" title="EN"><img align="right" src="assets/ui/buttons/v3-en-2022af2877c8.svg" alt="EN" width="45" height="30"></a>
-<a href="../README.md" title="Home"><img src="assets/ui/buttons/v3-en-4e7a793b89e3.svg" alt="Home" width="36" height="30"></a> <a href="https://github.com/Umichata/tokenlogue/tree/android" title="Android"><img src="assets/ui/buttons/v3-en-4a0b64bd4ded.svg" alt="Android" width="83" height="30"></a> <a href="https://github.com/Umichata/tokenlogue/tree/linux" title="Linux"><img src="assets/ui/buttons/v3-en-e31c456bd05c.svg" alt="Linux" width="65" height="30"></a>
+<a href="../README.md" title="Home"><img src="assets/ui/buttons/v3-en-4e7a793b89e3.svg" alt="Home" width="36" height="30"></a> <a href="https://github.com/Umichata/tokenlogue/tree/android" title="Android Python"><img src="assets/ui/buttons//android-python.svg" alt="Android Python" width="142" height="30"></a> <a href="https://github.com/Umichata/tokenlogue/blob/android-dart/README.md" title="Android Dart"><img src="assets/ui/buttons//android-dart.svg" alt="Android Dart" width="126" height="30"></a> <a href="https://github.com/Umichata/tokenlogue/tree/linux" title="Linux"><img src="assets/ui/buttons/v3-en-e31c456bd05c.svg" alt="Linux" width="65" height="30"></a>
 </p>
 
 <p align="center"><img src="assets/tokenlogue-masthead-en-v3.svg" alt="Tokenlogue · OpenRouter + VSEGPT · Linux &amp; Android" width="100%"></p>
@@ -12,10 +12,12 @@
 
 <a id="tokenlogue-for-android"></a>
 
-# Tokenlogue for Android
+# Tokenlogue for Android on Python
 
 
-> **[0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1)** provides an Android ARM64 APK and a Linux x86_64 desktop bundle. Read the platform requirements and verify the downloaded file before installing.
+> **[0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1)** provides the Python edition for Android ARM64 (APK56) and Linux x86_64. Read the platform requirements and verify the downloaded file before installing.
+
+For Android Dart 0.1.1+18 and its separate profile, see the [Dart guide](android-dart/README.md).
 
 
 <a id="requirements"></a>
@@ -58,9 +60,9 @@ Continue only after the named APK reports `OK`. Open the verified file on Androi
 <a id="en-published-preview"></a>
 <a id="earlier-preview"></a>
 
-## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Earlier preview
+## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Earlier release
 
-[0.1.0 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9) remains a separate earlier release. Its APK is not the current version. Follow the compatible-update guidance below.
+[Tokenlogue 0.1.0](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9) remains a separate earlier release. Its APK is not the current version. Follow the compatible-update guidance below.
 
 <a id="update-without-deleting-data"></a>
 
