@@ -12,7 +12,7 @@ These Android screenshots follow a demonstration profile from the first connecti
 
 | First connection | Saved OpenRouter key | Saved VSEGPT key |
 | --- | --- | --- |
-| <a href="images/v12/onboarding-en.png"><img src="images/v12/onboarding-en.png" alt="First connection · 0.1.1+12" width="196"></a> | <a href="images/v10/openrouter-saved-en.png"><img src="images/v10/openrouter-saved-en.png" alt="Saved OpenRouter key · 0.1.1+10" width="196"></a> | <a href="images/v10/vsegpt-saved-en.png"><img src="images/v10/vsegpt-saved-en.png" alt="Saved VSEGPT key · 0.1.1+10" width="196"></a> |
+| <a href="images/v13/onboarding-en.png"><img src="images/v13/onboarding-en.png" alt="Connect a provider · 0.1.1+13" width="196"></a> | <a href="images/v10/openrouter-saved-en.png"><img src="images/v10/openrouter-saved-en.png" alt="Saved OpenRouter key · 0.1.1+10" width="196"></a> | <a href="images/v10/vsegpt-saved-en.png"><img src="images/v10/vsegpt-saved-en.png" alt="Saved VSEGPT key · 0.1.1+10" width="196"></a> |
 
 | Check a saved key |
 | --- |
@@ -28,7 +28,7 @@ These Android screenshots follow a demonstration profile from the first connecti
 
 | Conversation and draft | Large text and the on-screen keyboard | Chat menu and demonstration key mask |
 | --- | --- | --- |
-| <a href="images/v10/chat-en.png"><img src="images/v10/chat-en.png" alt="Conversation and draft · 0.1.1+10" width="196"></a> | <a href="images/v10/chat-large-keyboard-en.png"><img src="images/v10/chat-large-keyboard-en.png" alt="Large text and the on-screen keyboard · 0.1.1+10" width="196"></a> | <a href="images/v10/demo-connection-en.png"><img src="images/v10/demo-connection-en.png" alt="Chat menu and demonstration key mask · 0.1.1+10" width="196"></a> |
+| <a href="images/v10/chat-en.png"><img src="images/v10/chat-en.png" alt="Conversation and draft · 0.1.1+10" width="196"></a> | <a href="images/v13/chat-large-keyboard-en.png"><img src="images/v13/chat-large-keyboard-en.png" alt="Message editor with large text and the on-screen keyboard · 0.1.1+13" width="196"></a> | <a href="images/v13/demo-connection-en.png"><img src="images/v13/demo-connection-en.png" alt="Chat menu with a masked demonstration key · 0.1.1+13" width="196"></a> |
 
 | Review the new chat connection |
 | --- |
@@ -44,11 +44,11 @@ These Android screenshots follow a demonstration profile from the first connecti
 
 | Choose a service for a new chat | OpenRouter modes | Free OpenRouter models |
 | --- | --- | --- |
-| <a href="images/v10/choose-provider-en.png"><img src="images/v10/choose-provider-en.png" alt="Choose a service for a new chat · 0.1.1+10" width="196"></a> | <a href="images/v10/openrouter-mode-en.png"><img src="images/v10/openrouter-mode-en.png" alt="OpenRouter modes · 0.1.1+10" width="196"></a> | <a href="images/v10/openrouter-free-en.png"><img src="images/v10/openrouter-free-en.png" alt="Free OpenRouter models · 0.1.1+10" width="196"></a> |
+| <a href="images/v13/choose-provider-en.png"><img src="images/v13/choose-provider-en.png" alt="Choose a provider for a new chat · 0.1.1+13" width="196"></a> | <a href="images/v10/openrouter-mode-en.png"><img src="images/v10/openrouter-mode-en.png" alt="OpenRouter modes · 0.1.1+10" width="196"></a> | <a href="images/v10/openrouter-free-en.png"><img src="images/v10/openrouter-free-en.png" alt="Free OpenRouter models · 0.1.1+10" width="196"></a> |
 
 | Paid OpenRouter models | Refreshed VSEGPT catalogue |
 | --- | --- |
-| <a href="images/v10/openrouter-paid-en.png"><img src="images/v10/openrouter-paid-en.png" alt="Paid OpenRouter models · 0.1.1+10" width="196"></a> | <a href="images/v10/vsegpt-models-en.png"><img src="images/v10/vsegpt-models-en.png" alt="Refreshed VSEGPT catalogue · 0.1.1+10" width="196"></a> |
+| <a href="images/v10/openrouter-paid-en.png"><img src="images/v10/openrouter-paid-en.png" alt="Paid OpenRouter models · 0.1.1+10" width="196"></a> | <a href="images/v13/vsegpt-models-en.png"><img src="images/v13/vsegpt-models-en.png" alt="VSEGPT model catalogue · 0.1.1+13" width="196"></a> |
 
 <img src="../assets/ui/frame-bottom.svg" alt="" width="100%">
 
@@ -60,11 +60,11 @@ These Android screenshots follow a demonstration profile from the first connecti
 
 | Tokens by day | Spending by day | Budget warning before sending |
 | --- | --- | --- |
-| <a href="images/v10/tokens-en.png"><img src="images/v10/tokens-en.png" alt="Tokens by day · 0.1.1+10" width="196"></a> | <a href="images/v10/spending-en.png"><img src="images/v10/spending-en.png" alt="Spending by day · 0.1.1+10" width="196"></a> | <a href="images/v12/budget-en.png"><img src="images/v12/budget-en.png" alt="Review the budget before sending · 0.1.1+12" width="196"></a> |
+| <a href="images/v10/tokens-en.png"><img src="images/v10/tokens-en.png" alt="Tokens by day · 0.1.1+10" width="196"></a> | <a href="images/v10/spending-en.png"><img src="images/v10/spending-en.png" alt="Spending by day · 0.1.1+10" width="196"></a> | <a href="images/v13/budget-en.png"><img src="images/v13/budget-en.png" alt="Review the budget before sending · 0.1.1+13" width="196"></a> |
 
 | Edit the chat limit |
 | --- |
-| <a href="images/v12/edit-limits-en.png"><img src="images/v12/edit-limits-en.png" alt="Edit chat limits · 0.1.1+12" width="196"></a> |
+| <a href="images/v13/edit-limits-en.png"><img src="images/v13/edit-limits-en.png" alt="Edit chat limits · 0.1.1+13" width="196"></a> |
 
 | Daily details in USD | Ruble spending with no requests |
 | --- | --- |
@@ -80,15 +80,15 @@ These Android screenshots follow a demonstration profile from the first connecti
 
 | Recover access with Android |
 | --- |
-| <a href="images/v12/device-recovery-en.png"><img src="images/v12/device-recovery-en.png" alt="Request Android device verification · 0.1.1+12" width="196"></a> |
+| <a href="images/v13/device-recovery-en.png"><img src="images/v13/device-recovery-en.png" alt="Recovery with Android · 0.1.1+13" width="196"></a> |
 
 | Confirm local profile deletion |
 | --- |
-| <a href="images/v10/delete-confirm-en.png"><img src="images/v10/delete-confirm-en.png" alt="Confirm local profile deletion" width="196"></a> |
+| <a href="images/v13/delete-confirm-en.png"><img src="images/v13/delete-confirm-en.png" alt="Confirm local profile deletion · 0.1.1+13" width="196"></a> |
 
 | Unlock your profile |
 | --- |
-| <a href="images/v12/sign-in-en.png"><img src="images/v12/sign-in-en.png" alt="Unlock Tokenlogue · 0.1.1+12" width="196"></a> |
+| <a href="images/v13/sign-in-en.png"><img src="images/v13/sign-in-en.png" alt="Unlock your profile · 0.1.1+13" width="196"></a> |
 
 <img src="../assets/ui/frame-bottom.svg" alt="" width="100%">
 
@@ -100,7 +100,21 @@ These Android screenshots follow a demonstration profile from the first connecti
 
 | Rename a conversation | Confirm chat deletion | Choose a new PIN after verification |
 | --- | --- | --- |
-| <a href="images/v12/rename-en.png"><img src="images/v12/rename-en.png" alt="Rename a conversation · 0.1.1+12" width="196"></a> | <a href="images/v12/delete-chat-en.png"><img src="images/v12/delete-chat-en.png" alt="Confirm chat deletion · 0.1.1+12" width="196"></a> | <a href="images/v12/new-pin-en.png"><img src="images/v12/new-pin-en.png" alt="Choose a new PIN after verification · 0.1.1+12" width="196"></a> |
+| <a href="images/v13/rename-en.png"><img src="images/v13/rename-en.png" alt="Rename a conversation · 0.1.1+13" width="196"></a> | <a href="images/v13/delete-chat-en.png"><img src="images/v13/delete-chat-en.png" alt="Confirm chat deletion · 0.1.1+13" width="196"></a> | <a href="images/v13/new-pin-en.png"><img src="images/v13/new-pin-en.png" alt="Choose a new PIN after verification · 0.1.1+13" width="196"></a> |
+
+<img src="../assets/ui/frame-bottom.svg" alt="" width="100%">
+
+## <img src="../assets/ui/section-mark.svg" alt="" width="20" height="20"> Provider and chat setup
+
+<img src="../assets/ui/frame-top.svg" alt="" width="100%">
+
+| Set the limits for a new chat | Unverified VSEGPT connection | First connection after deleting a local profile |
+| --- | --- | --- |
+| <a href="images/v13/configure-limits-en.png"><img src="images/v13/configure-limits-en.png" alt="Set the limits for a new chat · 0.1.1+13" width="196"></a> | <a href="images/v13/vsegpt-unverified-en.png"><img src="images/v13/vsegpt-unverified-en.png" alt="Unverified VSEGPT connection · 0.1.1+13" width="196"></a> | <a href="images/v13/new-profile-en.png"><img src="images/v13/new-profile-en.png" alt="First connection after deleting a local profile · 0.1.1+13" width="196"></a> |
+
+| Choose your app PIN |
+| --- |
+| <a href="images/v13/choose-pin-en.png"><img src="images/v13/choose-pin-en.png" alt="Choose your app PIN · 0.1.1+13" width="196"></a> |
 
 <img src="../assets/ui/frame-bottom.svg" alt="" width="100%">
 
