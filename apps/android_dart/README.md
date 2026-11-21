@@ -2,7 +2,7 @@
 
 # Tokenlogue Dart for Android
 
-Tokenlogue Dart has a separate Android identity, PIN, provider keys and chat history. Install it alongside Tokenlogue for Python. Each app opens its own profile.
+Android can install the Dart package `io.github.umichata.tokenlogue.dart` alongside the Python package `io.github.umichata.tokenlogue`. Their distinct package IDs give each app its own storage for its PIN, provider keys and chat history.
 
 To build the Android app, use Flutter 3.44.8, Dart 3.12.2, JDK 17, Android SDK 36 and NDK 28.2.13676358. Set `FLUTTER_ROOT`, `JAVA_HOME` and `ANDROID_HOME` to those installations. Set `TOKENLOGUE_DART_SIGNING_PROPERTIES` to a private Java properties file with `storeFile`, `storePassword`, `keyAlias` and `keyPassword`. Use the same keystore for future updates.
 
@@ -20,7 +20,7 @@ tool/build-release "$PWD/../../out/android-dart/Tokenlogue-0.1.1-android-dart-ar
 sha256sum "$PWD/../../out/android-dart/Tokenlogue-0.1.1-android-dart-arm64-v8a-v18.apk"
 ```
 
-Use a fresh output filename for each build. Compare the certificate fingerprint as well as the file checksum when distributing an update. Keep the four signing properties and keystore outside the source tree. A separately signed local build needs its own update sequence.
+Use a fresh output filename for each build. Compare the certificate fingerprint as well as the file checksum when distributing an update. A separately signed local build needs its own update sequence.
 
 ```bash
 flutter pub get --enforce-lockfile

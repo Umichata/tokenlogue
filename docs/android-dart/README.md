@@ -40,6 +40,8 @@ Open **Tokens** or **Spending** to filter the journal by provider, model and per
 
 Use the app PIN when returning from the background. On supported Android 11 or newer devices, **Forgot PIN?** can use a fresh Android system credential check to choose a new app PIN. Cancel before saving to retain your current PIN. This method requires a configured screen lock. Recovery retains the data encryption key for your existing profile.
 
+On Android 7–10, system PIN recovery is unavailable. Choose **Cancel recovery** to return to the sign-in form, then enter your existing app PIN.
+
 **Delete local profile** removes the Dart app's provider keys, protection material, chats and statistics. This operation is irreversible. To finish it, type the confirmation phrase displayed by the app. A compatible update does not require deleting the profile.
 
 [Build instructions](../../apps/android_dart/README.md) · [Project](../../README.md)
