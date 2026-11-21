@@ -145,52 +145,24 @@ class _ProviderPageState extends State<ProviderPage> {
         const SizedBox(height: 12),
         Text(t('providers.description')),
         const SizedBox(height: 12),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 210),
-            child: DropdownButtonFormField<String>(
-              isExpanded: true,
-              initialValue: filter,
-              decoration: InputDecoration(labelText: t('analytics.provider')),
-              items: [
-                DropdownMenuItem(
-                  value: 'all',
-                  child: Text(t('common.provider_all')),
-                ),
-                ...Service.values.map(
-                  (s) => DropdownMenuItem(value: s.name, child: Text(s.label)),
-                ),
-              ],
-              onChanged: (v) {
-                if (v != null) setState(() => filter = v);
-              },
-            ),
-          ),
+        PageFilter<String>(
+          label: t('analytics.provider'),
+          value: filter,
+          options: {
+            'all': t('common.provider_all'),
+            for (final s in Service.values) s.name: s.label,
+          },
+          onSelected: (v) => setState(() => filter = v),
         ),
-        const SizedBox(height: 10),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 260),
-            child: DropdownButtonFormField<String>(
-              isExpanded: true,
-              initialValue: widget.policy,
-              decoration: InputDecoration(labelText: t('providers.default')),
-              items: [
-                DropdownMenuItem(
-                  value: 'manual',
-                  child: Text(t('creation.manual')),
-                ),
-                ...Service.values.map(
-                  (s) => DropdownMenuItem(value: s.name, child: Text(s.label)),
-                ),
-              ],
-              onChanged: (v) {
-                if (v != null) widget.setPolicy(v);
-              },
-            ),
-          ),
+        const SizedBox(height: 16),
+        PageFilter<String>(
+          label: t('providers.default'),
+          value: widget.policy,
+          options: {
+            'manual': t('creation.manual'),
+            for (final s in Service.values) s.name: s.label,
+          },
+          onSelected: widget.setPolicy,
         ),
         const SizedBox(height: 8),
         Text(

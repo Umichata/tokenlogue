@@ -58,6 +58,14 @@ class _WorkspaceState extends State<Workspace> {
   JournalRow settings = {};
   Amount? budget;
   Service? providerFilter;
+  SelectChat? selection;
+  Completer<Selection?>? selectionResult;
+  void finishSelection([Selection? result]) {
+    selectionResult?.complete(result);
+    selectionResult = null;
+    selection = null;
+  }
+
   ChatStore get store => widget.session.store;
   ChatRecord? get chat => chats.where((c) => c.id == selected).firstOrNull;
   bool get alive => mounted && !widget.session.closing;
@@ -152,6 +160,7 @@ class _WorkspaceState extends State<Workspace> {
     await widget.session.flush();
     if (alive && view == _viewVersion) {
       setState(() {
+        finishSelection();
         page = i;
         error = '';
         showChats = false;
@@ -181,21 +190,56 @@ class _WorkspaceState extends State<Workspace> {
     final identities = {
       for (final s in Service.values) s: originalProfile.keyFor(s),
     };
-    final choice = await Navigator.push<Selection>(
-      context,
-      MaterialPageRoute(
-        builder: (_) => SelectChat(
+    final manual = change || policy == 'manual';
+    final view = _viewVersion;
+    Selection? choice;
+    do {
+      if (!mounted || !alive) return;
+      final service = manual
+          ? await chooseChatProvider(
+              context,
+              t,
+              current: change ? c?.service : null,
+            )
+          : Service.values.byName(policy);
+      if (!mounted || !alive || service == null || view != _viewVersion) return;
+      if (originalProfile.keyFor(service) == null) {
+        final configure = interpolate(t('connection.configure_key'), {
+          'provider': service.label,
+        });
+        final accepted = await confirm(
+          context,
+          configure,
+          interpolate(t('connection.missing_key'), {'provider': service.label}),
+          t('common.cancel'),
+          configure,
+        );
+        if (accepted && alive && view == _viewVersion) {
+          providerFilter = service;
+          await selectPage(1);
+        }
+        return;
+      }
+      var pickAgain = false;
+      final result = Completer<Selection?>();
+      setState(() {
+        selectionResult = result;
+        selection = SelectChat(
+          key: ObjectKey(result),
           t: t,
           api: widget.api,
           profile: originalProfile,
-          policy: policy,
+          service: service,
+          initialKeyStatus: accounts.keyChecks[service],
           changing: change,
-          onConfigureKey: (s) {
-            if (alive) {
-              providerFilter = s;
-              unawaited(selectPage(1));
-            }
-          },
+          onCancel: () => setState(() => finishSelection()),
+          onSelected: (choice) => setState(() => finishSelection(choice)),
+          onChooseProvider: !manual
+              ? null
+              : () {
+                  pickAgain = true;
+                  setState(() => finishSelection());
+                },
           existingTokens: change
               ? settings['token_limit'] as int? ?? 8192
               : 8192,
@@ -203,9 +247,12 @@ class _WorkspaceState extends State<Workspace> {
               ? settings['response_limit'] as int? ?? 1024
               : 1024,
           moneyFor: change ? (s) => store.limitFor(c!.id, s) : null,
-        ),
-      ),
-    );
+        );
+      });
+      choice = await result.future;
+      if (!alive || view != _viewVersion) return;
+      if (!pickAgain) break;
+    } while (true);
     if (!mounted || choice == null || !alive) return;
     if (identities[choice.model.service] !=
         originalProfile.keyFor(choice.model.service)) {
@@ -1328,6 +1375,7 @@ class _WorkspaceState extends State<Workspace> {
 
   @override
   void dispose() {
+    finishSelection();
     accounts.dispose();
     composer.dispose();
     super.dispose();
@@ -1343,9 +1391,9 @@ class _WorkspaceState extends State<Workspace> {
       ],
     );
     return PopScope(
-      canPop: page == 0 && !showChats,
+      canPop: page == 0 && !showChats && selection == null,
       onPopInvokedWithResult: (didPop, _) {
-        if (didPop) return;
+        if (didPop || selection != null) return;
         if (page != 0) {
           unawaited(selectPage(0));
         } else {
@@ -1360,7 +1408,7 @@ class _WorkspaceState extends State<Workspace> {
               : IndexedStack(
                   index: page,
                   children: [
-                    home,
+                    selection ?? home,
                     ProviderPage(
                       languagePicker: LanguagePicker(
                         t: t,

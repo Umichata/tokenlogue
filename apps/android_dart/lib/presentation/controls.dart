@@ -162,6 +162,39 @@ class LanguagePicker extends StatelessWidget {
   );
 }
 
+/// A read-only Material menu, sized by its options within the available column.
+class PageFilter<T> extends StatelessWidget {
+  const PageFilter({
+    super.key,
+    required this.label,
+    required this.value,
+    required this.options,
+    required this.onSelected,
+  });
+  final String label;
+  final T value;
+  final Map<T, String> options;
+  final ValueChanged<T> onSelected;
+  @override
+  Widget build(BuildContext context) => Align(
+    alignment: AlignmentDirectional.centerStart,
+    child: DropdownMenu<T>(
+      key: ValueKey((label, value, options[value])),
+      selectOnly: true,
+      requestFocusOnTap: false,
+      initialSelection: value,
+      label: Text(label),
+      dropdownMenuEntries: [
+        for (final item in options.entries)
+          DropdownMenuEntry(value: item.key, label: item.value),
+      ],
+      onSelected: (v) {
+        if (v != null && v != value) onSelected(v);
+      },
+    ),
+  );
+}
+
 Widget pageHeading(String title, Widget? languagePicker) => Row(
   children: [
     Expanded(

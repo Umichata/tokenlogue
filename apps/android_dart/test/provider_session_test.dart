@@ -7,6 +7,7 @@ import 'package:tokenlogue_dart/data/transport.dart';
 import 'package:tokenlogue_dart/data/vault.dart';
 import 'package:tokenlogue_dart/domain/provider.dart';
 import 'package:tokenlogue_dart/presentation/provider_page.dart';
+import 'package:tokenlogue_dart/presentation/controls.dart';
 
 class DelayedProvider implements Transport {
   final pending = <Completer<Payload>>[];
@@ -201,7 +202,10 @@ void main() {
           ),
         ),
       );
-      final input = find.byType(TextField);
+      final input = find.descendant(
+        of: find.byType(SecretField),
+        matching: find.byType(TextField),
+      );
       await tester.enterText(input, 'sk-or-vis-demo');
       await tester.pump();
       await tester.tap(find.text('providers.check'));

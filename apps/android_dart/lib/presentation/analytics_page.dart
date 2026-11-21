@@ -83,73 +83,51 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
         const SizedBox(height: 12),
         Text(t('analytics.scope')),
         const SizedBox(height: 12),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 270),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+        LayoutBuilder(
+          builder: (context, bounds) {
+            final wide = MediaQuery.sizeOf(context).width >= 768;
+            final width = wide ? (bounds.maxWidth - 20) / 3 : bounds.maxWidth;
+            final filters = [
+              PageFilter<String>(
+                label: t('analytics.provider'),
+                value: provider,
+                options: {
+                  'all': t('common.provider_all'),
+                  for (final s in Service.values) s.name: s.label,
+                },
+                onSelected: (v) => setState(() {
+                  provider = v;
+                  model = 'all';
+                }),
+              ),
+              PageFilter<int>(
+                label: t('analytics.period'),
+                value: days,
+                options: {
+                  for (final d in [7, 30, 0])
+                    d: t('analytics.period.${d == 0 ? 'all' : '${d}d'}'),
+                },
+                onSelected: (v) => setState(() => days = v),
+              ),
+              PageFilter<String>(
+                label: t('analytics.model'),
+                value: model,
+                options: {
+                  'all': t('analytics.all_models'),
+                  for (final m in models) m: m,
+                },
+                onSelected: (v) => setState(() => model = v),
+              ),
+            ];
+            return Wrap(
               spacing: 10,
+              runSpacing: 10,
               children: [
-                DropdownButtonFormField<String>(
-                  isExpanded: true,
-                  initialValue: provider,
-                  decoration: InputDecoration(
-                    labelText: t('analytics.provider'),
-                  ),
-                  items: [
-                    DropdownMenuItem(
-                      value: 'all',
-                      child: Text(t('common.provider_all')),
-                    ),
-                    for (final s in Service.values)
-                      DropdownMenuItem(value: s.name, child: Text(s.label)),
-                  ],
-                  onChanged: (s) => setState(() {
-                    provider = s ?? 'all';
-                    model = 'all';
-                  }),
-                ),
-                DropdownButtonFormField<int>(
-                  isExpanded: true,
-                  initialValue: days,
-                  decoration: InputDecoration(labelText: t('analytics.period')),
-                  items: [
-                    for (final d in [7, 30, 0])
-                      DropdownMenuItem(
-                        value: d,
-                        child: Text(
-                          t('analytics.period.${d == 0 ? 'all' : '${d}d'}'),
-                        ),
-                      ),
-                  ],
-                  onChanged: (d) => setState(() {
-                    days = d ?? 7;
-                  }),
-                ),
-                DropdownButtonFormField<String>(
-                  key: ValueKey((provider, model)),
-                  initialValue: model,
-                  isExpanded: true,
-                  decoration: InputDecoration(labelText: t('analytics.model')),
-                  items: [
-                    DropdownMenuItem(
-                      value: 'all',
-                      child: Text(t('analytics.all_models')),
-                    ),
-                    for (final m in models)
-                      DropdownMenuItem(
-                        value: m,
-                        child: Text(m, overflow: TextOverflow.ellipsis),
-                      ),
-                  ],
-                  onChanged: (m) => setState(() {
-                    model = m ?? 'all';
-                  }),
-                ),
+                for (final filter in filters)
+                  SizedBox(width: width, child: filter),
               ],
-            ),
-          ),
+            );
+          },
         ),
         const SizedBox(height: 12),
         Text(
