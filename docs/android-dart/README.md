@@ -20,6 +20,8 @@ If the service times out or asks you to wait, retry the check later. To keep a V
 
 Choose **New chat**, a service, a model and the limits. OpenRouter offers free and paid modes. VSEGPT opens its paid catalogue directly. The free OpenRouter router uses zero price limits. Select **⋮** to view the chat connection or choose a different provider. Review the new model and budget before accepting the change.
 
+For a paid VSEGPT chat, enter a budget greater than zero in RUB. OpenRouter suggests 1 USD for a paid chat. You can change that amount before creating the chat. Free chats only have token limits. A new paid chat asks for confirmation before sending. You can change that setting inside the chat.
+
 With **Choose each time** enabled, **New chat** opens the provider list over your current conversation. Cancel to return to your draft. While choosing a model, the bottom navigation gives you access to usage and spending. Returning to Home brings back the selected chat.
 
 Your draft belongs to its chat. The Send action passes the selected conversation context to the chosen service. Copy a message or a code block using its copy button. Deleting a chat also deletes its local history, draft and statistics.

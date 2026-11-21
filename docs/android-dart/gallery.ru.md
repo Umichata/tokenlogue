@@ -4,7 +4,7 @@
 
 На снимках Android показан путь от первого подключения до рабочего чата. Переписка демонстрационная. Нажмите на снимок, чтобы открыть его в полном размере.
 
-Версия каждого кадра указана в [реестре снимков](screenshots.csv). Формы выбора и фильтры обновлены для 0.1.1+15. Примеры заполненной переписки и её статистики сняты на 0.1.1+13.
+Версия каждого кадра указана в [реестре снимков](screenshots.csv). Выбор провайдера, каталоги и фильтры сняты на 0.1.1+15. Форма настройки лимитов чата снята на 0.1.1+18. Примеры заполненной переписки и её статистики сняты на 0.1.1+13.
 
 <a name="connect"></a>
 
@@ -114,7 +114,12 @@
 
 | Лимиты нового чата | Непроверенное подключение VSEGPT | Настройка PIN приложения |
 | --- | --- | --- |
-| <a href="images/v15/configure-limits-ru-phone.png"><img src="images/v15/configure-limits-ru-phone.png" alt="Лимиты нового чата · 0.1.1+15" width="196"></a> | <a href="images/v13/vsegpt-unverified-ru.png"><img src="images/v13/vsegpt-unverified-ru.png" alt="Непроверенное подключение VSEGPT · 0.1.1+13" width="196"></a> | <a href="images/v13/choose-pin-ru.png"><img src="images/v13/choose-pin-ru.png" alt="Настройка PIN приложения · 0.1.1+13" width="196"></a> |
+| <a href="images/v18/configure-limits-ru.png"><img src="images/v18/configure-limits-ru.png" alt="Лимиты нового чата · 0.1.1+18" width="196"></a> | <a href="images/v13/vsegpt-unverified-ru.png"><img src="images/v13/vsegpt-unverified-ru.png" alt="Непроверенное подключение VSEGPT · 0.1.1+13" width="196"></a> | <a href="images/v13/choose-pin-ru.png"><img src="images/v13/choose-pin-ru.png" alt="Настройка PIN приложения · 0.1.1+13" width="196"></a> |
+
+Форма на Android Dart 0.1.1+18 показывает имя и идентификатор модели. Если бюджет VSEGPT пуст, кнопка «Создать платный чат» оставляет введённые лимиты на экране и подсказывает, что заполнить.
+
+<a href="images/v18/budget-required-ru.png"><img src="images/v18/budget-required-ru.png" alt="Пустой бюджет платного чата · 0.1.1+18" width="196"></a>
+
 
 <img src="../assets/ui/frame-bottom.svg" alt="" width="100%">
 

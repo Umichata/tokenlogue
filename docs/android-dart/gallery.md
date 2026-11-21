@@ -4,7 +4,7 @@
 
 These Android screenshots follow a demonstration profile from the first connection to a working chat. Select an image to open it at full size.
 
-The [image register](screenshots.csv) lists each capture and its build. The updated selection screens and filters are from 0.1.1+15. The populated conversation and its usage charts were captured on 0.1.1+13.
+The [image register](screenshots.csv) lists each capture and its build. The provider picker, model catalogues and filters are from 0.1.1+15. The chat limits form is from 0.1.1+18. The populated conversation and its usage charts were captured on 0.1.1+13.
 
 <a name="connect"></a>
 
@@ -118,7 +118,12 @@ The separate QA build 0.1.1+13 displays two demonstration entries of 1.20 and 0.
 
 | Set the limits for a new chat | Unverified VSEGPT connection | First connection after deleting a local profile |
 | --- | --- | --- |
-| <a href="images/v15/configure-limits-en-phone.png"><img src="images/v15/configure-limits-en-phone.png" alt="Set the limits for a new chat · 0.1.1+15" width="196"></a> | <a href="images/v13/vsegpt-unverified-en.png"><img src="images/v13/vsegpt-unverified-en.png" alt="Unverified VSEGPT connection · 0.1.1+13" width="196"></a> | <a href="images/v13/new-profile-en.png"><img src="images/v13/new-profile-en.png" alt="First connection after deleting a local profile · 0.1.1+13" width="196"></a> |
+| <a href="images/v18/configure-limits-en.png"><img src="images/v18/configure-limits-en.png" alt="Set the limits for a new chat · 0.1.1+18" width="196"></a> | <a href="images/v13/vsegpt-unverified-en.png"><img src="images/v13/vsegpt-unverified-en.png" alt="Unverified VSEGPT connection · 0.1.1+13" width="196"></a> | <a href="images/v13/new-profile-en.png"><img src="images/v13/new-profile-en.png" alt="First connection after deleting a local profile · 0.1.1+13" width="196"></a> |
+
+The Android Dart 0.1.1+18 form shows the model name and ID. If the VSEGPT budget is empty, **Create paid chat** keeps the entered limits and shows which value is missing.
+
+<a href="images/v18/budget-required-en.png"><img src="images/v18/budget-required-en.png" alt="Missing budget for a paid chat · 0.1.1+18" width="196"></a>
+
 
 | Choose your app PIN |
 | --- |
