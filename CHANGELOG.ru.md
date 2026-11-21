@@ -18,7 +18,7 @@
 
 ## <img src="docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> 0.1.1
 
-[0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1) содержит Python APK (+56) и [Dart APK (+18)](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1-android-dart-arm64-v8a-v18.apk) для Android ARM64, а также комплект для Linux x86_64. Также доступен [стабильный выпуск 0.1.0](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9).
+В **[0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1)** доступны два APK для Android ARM64 ([Python +56](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1-android-arm64-v8a-v56.apk) и [Dart +18](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1-android-dart-arm64-v8a-v18.apk)) и [архив для Linux x86_64 +56](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1%2B56-linux-x86_64-bundle.tar.gz). Стабильная версия 0.1.0 доступна для [Android ARM64 (APK Python +43)](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-android-arm64-v8a-v43.apk) и [Linux x86_64 (AppImage)](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage).
 
 <a id="изменения-относительно-010"></a>
 

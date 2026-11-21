@@ -17,7 +17,7 @@
 
 
 
-> **[0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1)** содержит два APK для Android ARM64 (Python +56 и Dart +18) и комплект для Linux x86_64. Перед установкой проверьте требования платформы и сумму скачанного файла.
+> В **[0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1)** доступны два APK для Android ARM64 ([Python +56](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1-android-arm64-v8a-v56.apk) и [Dart +18](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1-android-dart-arm64-v8a-v18.apk)) и [архив для Linux x86_64 +56](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1%2B56-linux-x86_64-bundle.tar.gz). Перед установкой проверьте требования платформы и контрольную сумму файла.
 
 
 <a id="ru-features"></a>
@@ -52,11 +52,11 @@
 
 | Платформа | Пакет | Установка |
 | --- | --- | --- |
-| Android ARM64 · Python | APK 0.1.1, versionCode 56, API 24 или новее | <a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1" title="0.1.1 Preview"><img src="docs/assets/ui/buttons/v3-ru-cd57105d0b1a.svg" alt="0.1.1 Preview" width="125" height="30"></a> <a href="docs/android.ru.md#ru-install" title="Руководство"><img src="docs/assets/ui/buttons/v3-ru-071f2a99d224.svg" alt="Руководство" width="121" height="30"></a> |
-| Android ARM64 · Dart | 0.1.1+18, API 24 или новее, отдельный профиль | [Скачать APK Dart +18](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1-android-dart-arm64-v8a-v18.apk) · [Установка и обновление](https://github.com/Umichata/tokenlogue/blob/android-dart/README.ru.md) |
-| Linux x86_64 | Настольный bundle 0.1.1+56 | <a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1" title="0.1.1 Preview"><img src="docs/assets/ui/buttons/v3-ru-cd57105d0b1a.svg" alt="0.1.1 Preview" width="125" height="30"></a> <a href="docs/linux-appimage.ru.md#ru-download" title="Руководство"><img src="docs/assets/ui/buttons/v3-ru-071f2a99d224.svg" alt="Руководство" width="121" height="30"></a> |
+| Android ARM64 · Python | APK 0.1.1, versionCode 56, API 24 или новее | <a href="https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1-android-arm64-v8a-v56.apk" title="Скачать APK Python +56"><img src="docs/assets/ui/buttons/ru-f3b0f21094a4.svg" alt="Скачать APK Python +56" width="86" height="28"></a> <a href="docs/android.ru.md#ru-install" title="Руководство · Python"><img src="docs/assets/ui/buttons/v3-ru-071f2a99d224.svg" alt="Руководство · Python" width="121" height="30"></a> |
+| Android ARM64 · Dart | 0.1.1+18, API 24 или новее, отдельный профиль | <a href="https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1-android-dart-arm64-v8a-v18.apk" title="Скачать APK Dart +18"><img src="docs/assets/ui/buttons/ru-f3b0f21094a4.svg" alt="Скачать APK Dart +18" width="86" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/blob/android-dart/README.ru.md" title="Руководство · Dart"><img src="docs/assets/ui/buttons/v3-ru-071f2a99d224.svg" alt="Руководство · Dart" width="121" height="30"></a> |
+| Linux x86_64 | Настольный bundle 0.1.1+56 | <a href="https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1%2B56-linux-x86_64-bundle.tar.gz" title="Скачать Linux x86_64 (.tar.gz)"><img src="docs/assets/ui/buttons/ru-f3b0f21094a4.svg" alt="Скачать Linux x86_64 (.tar.gz)" width="86" height="28"></a> <a href="docs/linux-appimage.ru.md#ru-download" title="Руководство · Linux"><img src="docs/assets/ui/buttons/v3-ru-071f2a99d224.svg" alt="Руководство · Linux" width="121" height="30"></a> |
 
-На странице выпуска выберите подходящий пакет и проверьте его сумму по руководству платформы. Linux поставляется полным bundle, а не AppImage. Архив не подписан. Для готового приложения не нужны Python, Flutter и исходные архивы.
+Скачайте пакет своей платформы и проверьте его контрольную сумму по руководству. Linux поставляется в виде архива с приложением и библиотеками. Архив не подписан. Для запуска готового приложения не нужны Python, Flutter или исходники.
 
 Совместимый APK с прежней подписью устанавливайте поверх приложения с сохранением данных. В Linux закройте старые копии перед запуском замены от той же учётной записи ОС.
 

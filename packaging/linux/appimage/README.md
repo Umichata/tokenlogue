@@ -18,7 +18,7 @@
 
 ## <img src="../../../docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Choose the package
 
-The [Linux installation guide](../../../docs/linux-appimage.md) distinguishes the published 0.1.0 AppImage from the 0.1.1+56 desktop bundle from the preview release. Python, Flutter and Java are not required to run packaged applications.
+The [Linux installation guide](../../../docs/linux-appimage.md) distinguishes the published [0.1.0 AppImage](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage) from the [0.1.1+56 desktop bundle](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1%2B56-linux-x86_64-bundle.tar.gz) from the preview release. Python, Flutter and Java are not required to run packaged applications.
 
 AppImage is unsigned. Verify its supplied checksum, grant execute permission and close older copies before opening a replacement. FUSE is needed for ordinary mounting, with extract-and-run available as an alternative. A desktop bundle keeps the executable, libraries and data together and uses no FUSE.
 

@@ -15,7 +15,7 @@
 # Tokenlogue для Linux
 
 
-> **[0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1)** содержит два APK для Android ARM64 (Python +56 и Dart +18) и комплект для Linux x86_64. Перед установкой проверьте требования платформы и сумму скачанного файла.
+> В **[0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1)** доступны два APK для Android ARM64 ([Python +56](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1-android-arm64-v8a-v56.apk) и [Dart +18](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1-android-dart-arm64-v8a-v18.apk)) и [архив для Linux x86_64 +56](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1%2B56-linux-x86_64-bundle.tar.gz). Перед установкой проверьте требования платформы и контрольную сумму файла.
 
 
 <a id="требования"></a>
@@ -32,11 +32,11 @@
 
 ## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Настольный bundle 0.1.1
 
-Скачайте полный bundle со страницы [0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1). Это архив приложения с библиотеками, а не AppImage. Он не требует FUSE и не подписан.
+Скачайте [архив приложения для Linux x86_64](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1%2B56-linux-x86_64-bundle.tar.gz) со страницы [0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1). Это архив приложения с библиотеками, а не AppImage. Он не требует FUSE и не подписан.
 
 | Параметр | Значение |
 | --- | --- |
-| Файл | `Tokenlogue-0.1.1+56-linux-x86_64-bundle.tar.gz` |
+| Файл | [`Tokenlogue-0.1.1+56-linux-x86_64-bundle.tar.gz`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1%2B56-linux-x86_64-bundle.tar.gz) |
 | Версия | 0.1.1+56 |
 | Архитектура | Linux x86_64 |
 | Размер | 34 974 386 байт |

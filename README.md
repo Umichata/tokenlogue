@@ -17,7 +17,7 @@
 
 
 
-> **[0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1)** includes two ARM64 Android packages (Python +56 and Dart +18) and the Linux x86_64 desktop bundle. Read the platform requirements and verify the downloaded file before installing.
+> **[0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1)** includes the [Python APK +56](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1-android-arm64-v8a-v56.apk) and [Dart APK +18](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1-android-dart-arm64-v8a-v18.apk) for Android ARM64 and the [desktop bundle +56](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1%2B56-linux-x86_64-bundle.tar.gz) for Linux x86_64. Check the platform requirements and checksum before installing.
 
 
 <a id="en-features"></a>
@@ -52,11 +52,11 @@
 
 | Platform | Package | Installation |
 | --- | --- | --- |
-| Android ARM64 · Python | 0.1.1 APK, versionCode 56, API 24 or later | <a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1" title="0.1.1 Preview"><img src="docs/assets/ui/buttons/v3-en-cd57105d0b1a.svg" alt="0.1.1 Preview" width="125" height="30"></a> <a href="docs/android.md#en-install" title="Guide"><img src="docs/assets/ui/buttons/v3-en-c637083bb2f2.svg" alt="Guide" width="67" height="30"></a> |
-| Android ARM64 · Dart | 0.1.1+18, API 24 or later, separate profile | [Download Dart APK +18](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1-android-dart-arm64-v8a-v18.apk) · [Installation and updates](https://github.com/Umichata/tokenlogue/blob/android-dart/README.md) |
-| Linux x86_64 | 0.1.1+56 desktop bundle | <a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1" title="0.1.1 Preview"><img src="docs/assets/ui/buttons/v3-en-cd57105d0b1a.svg" alt="0.1.1 Preview" width="125" height="30"></a> <a href="docs/linux-appimage.md#en-download" title="Guide"><img src="docs/assets/ui/buttons/v3-en-c637083bb2f2.svg" alt="Guide" width="67" height="30"></a> |
+| Android ARM64 · Python | 0.1.1 APK, versionCode 56, API 24 or later | <a href="https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1-android-arm64-v8a-v56.apk" title="Download APK Python +56"><img src="docs/assets/ui/buttons/en-eb7306e41747.svg" alt="Download APK Python +56" width="98" height="28"></a> <a href="docs/android.md#en-install" title="Guide · Python"><img src="docs/assets/ui/buttons/v3-en-c637083bb2f2.svg" alt="Guide · Python" width="67" height="30"></a> |
+| Android ARM64 · Dart | 0.1.1+18, API 24 or later, separate profile | <a href="https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1-android-dart-arm64-v8a-v18.apk" title="Download APK Dart +18"><img src="docs/assets/ui/buttons/en-eb7306e41747.svg" alt="Download APK Dart +18" width="98" height="28"></a> <a href="https://github.com/Umichata/tokenlogue/blob/android-dart/README.md" title="Guide · Dart"><img src="docs/assets/ui/buttons/v3-en-c637083bb2f2.svg" alt="Guide · Dart" width="67" height="30"></a> |
+| Linux x86_64 | 0.1.1+56 desktop bundle | <a href="https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1%2B56-linux-x86_64-bundle.tar.gz" title="Download Linux x86_64 (.tar.gz)"><img src="docs/assets/ui/buttons/en-eb7306e41747.svg" alt="Download Linux x86_64 (.tar.gz)" width="98" height="28"></a> <a href="docs/linux-appimage.md#en-download" title="Guide · Linux"><img src="docs/assets/ui/buttons/v3-en-c637083bb2f2.svg" alt="Guide · Linux" width="67" height="30"></a> |
 
-Choose your platform's package on the release page and check its checksum using the platform guide. Linux is supplied as a complete bundle, rather than an AppImage. The archive is unsigned. You do not need Python, Flutter or source archives to run the packaged app.
+Download your platform’s package and verify its checksum using the guide. The Linux archive includes the app and its libraries and is unsigned. You do not need Python, Flutter or source archives to run the packaged app.
 
 Install a compatible Android update over the existing app with the same signature. Keep its data. On Linux, close old copies before starting a replacement under the same OS account.
 

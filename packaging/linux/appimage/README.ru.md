@@ -18,7 +18,7 @@
 
 ## <img src="../../../docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> Выбор пакета
 
-[Руководство Linux](../../../docs/linux-appimage.ru.md) различает опубликованную AppImage 0.1.0 и настольный комплект 0.1.1+56 из предварительного выпуска. Для готового приложения не нужны Python, Flutter и Java.
+[Руководство Linux](../../../docs/linux-appimage.ru.md) различает опубликованную [AppImage 0.1.0](https://github.com/Umichata/tokenlogue/releases/download/v0.1.0-preview.a981db9/Tokenlogue-0.1.0-a981db9-linux-x86_64.AppImage) и [настольный комплект 0.1.1+56](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1%2B56-linux-x86_64-bundle.tar.gz) из предварительного выпуска. Для готового приложения не нужны Python, Flutter и Java.
 
 AppImage не подписана. Сверьте её сумму, разрешите исполнение и закройте старые копии перед запуском замены. Обычное монтирование требует FUSE. Есть вариант extract-and-run. Настольный bundle хранит исполняемый файл, библиотеки и данные вместе и не использует FUSE.
 

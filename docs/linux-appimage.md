@@ -15,7 +15,7 @@
 # Tokenlogue for Linux
 
 
-> **[0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1)** includes two ARM64 Android packages (Python +56 and Dart +18) and the Linux x86_64 desktop bundle. Read the platform requirements and verify the downloaded file before installing.
+> **[0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1)** includes the [Python APK +56](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1-android-arm64-v8a-v56.apk) and [Dart APK +18](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1-android-dart-arm64-v8a-v18.apk) for Android ARM64 and the [desktop bundle +56](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1%2B56-linux-x86_64-bundle.tar.gz) for Linux x86_64. Check the platform requirements and checksum before installing.
 
 
 <a id="requirements"></a>
@@ -32,11 +32,11 @@ Online model use needs a key for the chat's provider. Cinnamon/X11 is the suppor
 
 ## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Desktop bundle 0.1.1
 
-Download the complete bundle from [0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1). It contains the application and its libraries. It is not an AppImage, does not require FUSE and is unsigned.
+Download the [complete Linux x86_64 bundle](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1%2B56-linux-x86_64-bundle.tar.gz) from [0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1). It contains the application and its libraries. It is not an AppImage, does not require FUSE and is unsigned.
 
 | Item | Value |
 | --- | --- |
-| File | `Tokenlogue-0.1.1+56-linux-x86_64-bundle.tar.gz` |
+| File | [`Tokenlogue-0.1.1+56-linux-x86_64-bundle.tar.gz`](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1%2B56-linux-x86_64-bundle.tar.gz) |
 | Version | 0.1.1+56 |
 | Architecture | Linux x86_64 |
 | Size | 34,974,386 bytes |
