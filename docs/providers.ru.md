@@ -15,7 +15,7 @@
 # Ключи и балансы провайдеров
 
 
-> **[0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1)** содержит APK версии на Python для Android ARM64 (сборка 56) и настольный bundle Linux x86_64. Перед установкой проверьте требования платформы и сумму скачанного файла.
+> **[0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1)** содержит два APK для Android ARM64 (Python +56 и Dart +18) и комплект для Linux x86_64. Перед установкой проверьте требования платформы и сумму скачанного файла.
 
 
 <a id="выбор-просмотра"></a>

@@ -17,7 +17,7 @@
 
 
 
-> **[0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1)** содержит APK версии на Python для Android ARM64 (сборка 56) и настольный bundle Linux x86_64. Перед установкой проверьте требования платформы и сумму скачанного файла.
+> **[0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1)** содержит два APK для Android ARM64 (Python +56 и Dart +18) и комплект для Linux x86_64. Перед установкой проверьте требования платформы и сумму скачанного файла.
 
 
 <a id="ru-features"></a>
@@ -53,7 +53,7 @@
 | Платформа | Пакет | Установка |
 | --- | --- | --- |
 | Android ARM64 · Python | APK 0.1.1, versionCode 56, API 24 или новее | <a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1" title="0.1.1 Preview"><img src="docs/assets/ui/buttons/v3-ru-cd57105d0b1a.svg" alt="0.1.1 Preview" width="125" height="30"></a> <a href="docs/android.ru.md#ru-install" title="Руководство"><img src="docs/assets/ui/buttons/v3-ru-071f2a99d224.svg" alt="Руководство" width="121" height="30"></a> |
-| Android ARM64 · Dart | 0.1.1+18, API 24 или новее, отдельный профиль | [Установка и обновление](https://github.com/Umichata/tokenlogue/blob/android-dart/README.ru.md) |
+| Android ARM64 · Dart | 0.1.1+18, API 24 или новее, отдельный профиль | [Скачать APK Dart +18](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1-android-dart-arm64-v8a-v18.apk) · [Установка и обновление](https://github.com/Umichata/tokenlogue/blob/android-dart/README.ru.md) |
 | Linux x86_64 | Настольный bundle 0.1.1+56 | <a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1" title="0.1.1 Preview"><img src="docs/assets/ui/buttons/v3-ru-cd57105d0b1a.svg" alt="0.1.1 Preview" width="125" height="30"></a> <a href="docs/linux-appimage.ru.md#ru-download" title="Руководство"><img src="docs/assets/ui/buttons/v3-ru-071f2a99d224.svg" alt="Руководство" width="121" height="30"></a> |
 
 На странице выпуска выберите подходящий пакет и проверьте его сумму по руководству платформы. Linux поставляется полным bundle, а не AppImage. Архив не подписан. Для готового приложения не нужны Python, Flutter и исходные архивы.

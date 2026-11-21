@@ -15,7 +15,7 @@
 # Protect conversations and recover access
 
 
-> **[0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1)** provides the Python Android ARM64 APK (build 56) and a Linux x86_64 desktop bundle. Read the platform requirements and verify the downloaded file before installing.
+> **[0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1)** includes two ARM64 Android packages (Python +56 and Dart +18) and the Linux x86_64 desktop bundle. Read the platform requirements and verify the downloaded file before installing.
 
 
 <a id="pin-and-app-locking"></a>

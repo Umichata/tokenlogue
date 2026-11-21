@@ -17,7 +17,7 @@
 
 
 
-> **[0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1)** provides the Python Android ARM64 APK (build 56) and a Linux x86_64 desktop bundle. Read the platform requirements and verify the downloaded file before installing.
+> **[0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1)** includes two ARM64 Android packages (Python +56 and Dart +18) and the Linux x86_64 desktop bundle. Read the platform requirements and verify the downloaded file before installing.
 
 
 <a id="en-features"></a>
@@ -53,7 +53,7 @@
 | Platform | Package | Installation |
 | --- | --- | --- |
 | Android ARM64 · Python | 0.1.1 APK, versionCode 56, API 24 or later | <a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1" title="0.1.1 Preview"><img src="docs/assets/ui/buttons/v3-en-cd57105d0b1a.svg" alt="0.1.1 Preview" width="125" height="30"></a> <a href="docs/android.md#en-install" title="Guide"><img src="docs/assets/ui/buttons/v3-en-c637083bb2f2.svg" alt="Guide" width="67" height="30"></a> |
-| Android ARM64 · Dart | 0.1.1+18, API 24 or later, separate profile | [Installation and updates](https://github.com/Umichata/tokenlogue/blob/android-dart/README.md) |
+| Android ARM64 · Dart | 0.1.1+18, API 24 or later, separate profile | [Download Dart APK +18](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1-android-dart-arm64-v8a-v18.apk) · [Installation and updates](https://github.com/Umichata/tokenlogue/blob/android-dart/README.md) |
 | Linux x86_64 | 0.1.1+56 desktop bundle | <a href="https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1" title="0.1.1 Preview"><img src="docs/assets/ui/buttons/v3-en-cd57105d0b1a.svg" alt="0.1.1 Preview" width="125" height="30"></a> <a href="docs/linux-appimage.md#en-download" title="Guide"><img src="docs/assets/ui/buttons/v3-en-c637083bb2f2.svg" alt="Guide" width="67" height="30"></a> |
 
 Choose your platform's package on the release page and check its checksum using the platform guide. Linux is supplied as a complete bundle, rather than an AppImage. The archive is unsigned. You do not need Python, Flutter or source archives to run the packaged app.

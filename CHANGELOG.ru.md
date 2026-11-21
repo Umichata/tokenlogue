@@ -18,7 +18,7 @@
 
 ## <img src="docs/assets/ui/section-mark.svg" alt="" width="20" height="20"> 0.1.1
 
-[0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1) содержит Python APK для Android ARM64 и комплект для Linux x86_64. Также доступен [стабильный выпуск 0.1.0](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9).
+[0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1) содержит Python APK (+56) и [Dart APK (+18)](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1-android-dart-arm64-v8a-v18.apk) для Android ARM64, а также комплект для Linux x86_64. Также доступен [стабильный выпуск 0.1.0](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.0-preview.a981db9).
 
 <a id="изменения-относительно-010"></a>
 

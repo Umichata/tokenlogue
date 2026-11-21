@@ -15,10 +15,12 @@
 # Tokenlogue для Android (Python)
 
 
-> **[0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1)** содержит APK версии на Python для Android ARM64 (сборка 56) и настольный bundle Linux x86_64. Перед установкой проверьте требования платформы и сумму скачанного файла.
+> **[0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1)** содержит два APK для Android ARM64 (Python +56 и Dart +18) и комплект для Linux x86_64. Перед установкой проверьте требования платформы и сумму скачанного файла.
 
 
 [Android Dart 0.1.1+18](https://github.com/Umichata/tokenlogue/blob/android-dart/README.ru.md) можно установить рядом с версией на Python. У каждого приложения свои PIN, ключи провайдеров и чаты. Для обновления выберите APK того же приложения (Python или Dart).
+
+[Скачать APK Dart +18](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1-android-dart-arm64-v8a-v18.apk) · SHA-256 `806cb00d46615bfed5766e47ecd33d9b24fe7bf0e6e24d18fb62cbd6d44bc745`.
 
 <a id="требования"></a>
 

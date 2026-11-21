@@ -15,7 +15,7 @@
 # Source code and dependencies
 
 
-> **[0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1)** provides the Python Android ARM64 APK (build 56) and a Linux x86_64 desktop bundle. Read the platform requirements and verify the downloaded file before installing.
+> **[0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1)** includes two ARM64 Android packages (Python +56 and Dart +18) and the Linux x86_64 desktop bundle. Read the platform requirements and verify the downloaded file before installing.
 
 
 <a id="choose-materials-for-your-package"></a>
@@ -26,7 +26,7 @@ For the Python 0.1.1 APK (build 56) and Linux bundle 0.1.1+56, use the index sup
 
 For the Android Dart sources and build settings, see the [Dart build guide](https://github.com/Umichata/tokenlogue/blob/android-dart/apps/android_dart/README.md).
 
-`Tokenlogue-0.1.1+56-build-sources.tar.gz` contains the shared tracked sources and packaging for both builds. Provenance records the exact commit, tree, actual dependency graphs and inputs. A later documentation revision does not become an input to an already built binary.
+`Tokenlogue-0.1.1+56-build-sources.tar.gz` contains the shared sources and packaging for the Python APK and Linux bundle. Provenance records the exact commit, tree, actual dependency graphs and inputs. A later documentation revision does not become an input to an already built binary.
 
 The application source archive, original dependency sources and evidence of binary production have different roles. Matching a version or source checksum does not prove that a particular wheel was compiled from it. Source availability is separate from complete binary provenance.
 

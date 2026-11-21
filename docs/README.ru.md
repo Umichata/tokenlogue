@@ -15,7 +15,7 @@
 # Документация
 
 
-> **[0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1)** содержит APK версии на Python для Android ARM64 (сборка 56) и настольный bundle Linux x86_64. Перед установкой проверьте требования платформы и сумму скачанного файла.
+> **[0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1)** содержит два APK для Android ARM64 (Python +56 и Dart +18) и комплект для Linux x86_64. Перед установкой проверьте требования платформы и сумму скачанного файла.
 
 
 <a id="с-чего-начать"></a>
@@ -25,7 +25,7 @@
 | Задача | Руководство |
 | --- | --- |
 | Установить или обновить | <a href="android.ru.md#ru-install" title="Android"><img src="assets/ui/buttons/v3-ru-4a0b64bd4ded.svg" alt="Android" width="83" height="30"></a> <a href="linux-appimage.ru.md#ru-download" title="Linux"><img src="assets/ui/buttons/v3-ru-e31c456bd05c.svg" alt="Linux" width="65" height="30"></a> |
-| Установить Android Dart рядом с версией на Python | [Установка и обновление](https://github.com/Umichata/tokenlogue/blob/android-dart/README.ru.md) · [Руководство Dart](https://github.com/Umichata/tokenlogue/blob/android-dart/docs/android-dart/README.ru.md) |
+| Установить Android Dart рядом с версией на Python | [Скачать APK Dart +18](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1-android-dart-arm64-v8a-v18.apk) · [Установка и обновление](https://github.com/Umichata/tokenlogue/blob/android-dart/README.ru.md) · [Руководство Dart](https://github.com/Umichata/tokenlogue/blob/android-dart/docs/android-dart/README.ru.md) |
 | Подключить ключ и начать чат | <a href="user-guide.ru.md" title="Руководство пользователя"><img src="assets/ui/buttons/v3-ru-7d359634fd6d.svg" alt="Руководство пользователя" width="229" height="30"></a> |
 | Проверить или заменить ключ | <a href="providers.ru.md" title="Провайдеры"><img src="assets/ui/buttons/v3-ru-75c2bb600681.svg" alt="Провайдеры" width="121" height="30"></a> |
 | Посмотреть токены и дневные расходы | <a href="analytics.ru.md" title="Статистика"><img src="assets/ui/buttons/v3-ru-dd604a9fe99c.svg" alt="Статистика" width="109" height="30"></a> |
@@ -36,7 +36,7 @@
 
 ## <img src="assets/ui/section-mark.svg" alt="" width="20" height="20"> Загрузки и требования
 
-[0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1) содержит APK версии на Python для Android ARM64 (сборка 56) и полный настольный bundle Linux x86_64. Точные имена, суммы и правила обновления приведены в руководствах платформ. Прежний выпуск 0.1.0 остаётся доступен отдельно.
+[0.1.1 Preview](https://github.com/Umichata/tokenlogue/releases/tag/v0.1.1-preview.1) содержит версии для Android ARM64 на Python (+56) и Dart (+18), а также полный комплект для Linux x86_64. Точные имена, суммы и правила обновления приведены в руководствах платформ. Прежний выпуск 0.1.0 остаётся доступен отдельно.
 
 Android требует API 24 или новее. Для Linux нужны совместимый рабочий стол и защищённое хранилище ключей. Перед запуском прочитайте руководство платформы. Архивы исходников для использования приложения не нужны.
 
