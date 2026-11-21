@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+: "${FLUTTER_ROOT:?Set FLUTTER_ROOT to the pinned Flutter SDK}"
+: "${ANDROID_HOME:?Set ANDROID_HOME to the Android SDK}"
+: "${JAVA_HOME:?Set JAVA_HOME to JDK 17}"
+output="${1:?Specify a new absolute APK output path}"
+revision="${2:?Specify the source commit to test}"
+[[ "$output" = /* && ! -e "$output" ]] || { echo "Expected a new absolute output file" >&2; exit 2; }
+here="$(cd -- "$(dirname "$0")" && pwd -P)"
+repo="$(git -C "$here" rev-parse --show-toplevel)"
+commit="$(git -C "$repo" rev-parse --verify "$revision^{commit}")"
+stage="$(mktemp -d /tmp/tokenlogue-vault-build.XXXXXXXX)"
+trap 'rm -rf -- "$stage"' EXIT
+git -C "$repo" archive "$commit:apps/android_dart" | tar -x -C "$stage"
+cd "$stage"
+cp "$here/vault_rotation.dart" lib/vault_rotation_qa.dart
+export PATH="$FLUTTER_ROOT/bin:$JAVA_HOME/bin:$PATH" CI=true FLUTTER_SUPPRESS_ANALYTICS=true
+unset TOKENLOGUE_DART_SIGNING_PROPERTIES
+config=android/app/build.gradle.kts
+sed -i 's/applicationId = "io.github.umichata.tokenlogue.dart"/applicationId = "io.github.umichata.tokenlogue.dart.qa.vaultrotation"/; s/release { signingConfig = signingConfigs.getByName("dartRelease") }/release { signingConfig = signingConfigs.getByName("debug") }/' "$config"
+grep -Fq 'applicationId = "io.github.umichata.tokenlogue.dart.qa.vaultrotation"' "$config"
+grep -Fq 'release { signingConfig = signingConfigs.getByName("debug") }' "$config"
+sed -i '/android.permission.INTERNET/d; s/android:label="Tokenlogue Dart"/android:label="Tokenlogue vault QA"/; s/android:name="\.MainActivity"/android:name="io.github.umichata.tokenlogue.dart.MainActivity"/' android/app/src/main/AndroidManifest.xml
+flutter pub get --offline --enforce-lockfile
+dart analyze --fatal-infos lib/vault_rotation_qa.dart
+version="$(awk '/^version:/ {print $2}' pubspec.yaml)"
+printf 'flutter.sdk=%s\nsdk.dir=%s\nflutter.versionName=%s\nflutter.versionCode=%s\n' "$FLUTTER_ROOT" "$ANDROID_HOME" "${version%+*}" "${version#*+}" > android/local.properties
+(
+  cd android
+  "${TOKENLOGUE_GRADLE:-./gradlew}" --offline --no-daemon -Ptarget-platform=android-arm64 \
+    -Ptarget=lib/vault_rotation_qa.dart -Ptrack-widget-creation=false assembleRelease
+)
+(set -C; cat build/app/outputs/flutter-apk/app-release.apk > "$output")
