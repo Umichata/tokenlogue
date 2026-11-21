@@ -12,11 +12,11 @@
 
 | Первое подключение | Сохранённый ключ OpenRouter | Сохранённый ключ VSEGPT |
 | --- | --- | --- |
-| <a href="images/v13/onboarding-ru.png"><img src="images/v13/onboarding-ru.png" alt="Подключение провайдера · 0.1.1+13" width="196"></a> | <a href="images/v10/openrouter-saved-ru.png"><img src="images/v10/openrouter-saved-ru.png" alt="Сохранённый ключ OpenRouter · 0.1.1+10" width="196"></a> | <a href="images/v10/vsegpt-saved-ru.png"><img src="images/v10/vsegpt-saved-ru.png" alt="Сохранённый ключ VSEGPT · 0.1.1+10" width="196"></a> |
+| <a href="images/v13/onboarding-ru.png"><img src="images/v13/onboarding-ru.png" alt="Подключение провайдера · 0.1.1+13" width="196"></a> | <a href="images/v13/openrouter-saved-ru.png"><img src="images/v13/openrouter-saved-ru.png" alt="Сохранённый ключ OpenRouter при отключённой сети · 0.1.1+13" width="196"></a> | <a href="images/v13/vsegpt-saved-ru.png"><img src="images/v13/vsegpt-saved-ru.png" alt="Сохранённый ключ VSEGPT при отключённой сети · 0.1.1+13" width="196"></a> |
 
 | Проверка сохранённого ключа |
 | --- |
-| <a href="images/v10/openrouter-check-ru.png"><img src="images/v10/openrouter-check-ru.png" alt="Проверка сохранённого ключа · 0.1.1+10" width="196"></a> |
+| <a href="images/v13/openrouter-check-ru.png"><img src="images/v13/openrouter-check-ru.png" alt="Проверка сохранённого ключа OpenRouter · 0.1.1+13" width="196"></a> |
 
 <img src="../assets/ui/frame-bottom.svg" alt="" width="100%">
 
@@ -28,11 +28,11 @@
 
 | Переписка и черновик | Меню чата и маска демонстрационного ключа |
 | --- | --- |
-| <a href="images/v10/chat-ru.png"><img src="images/v10/chat-ru.png" alt="Переписка и черновик · 0.1.1+10" width="196"></a> | <a href="images/v13/demo-connection-ru.png"><img src="images/v13/demo-connection-ru.png" alt="Меню чата с маской демонстрационного ключа · 0.1.1+13" width="196"></a> |
+| <a href="images/v13/chat-ru.png"><img src="images/v13/chat-ru.png" alt="Рабочий чат о поездке и сохранённый черновик · 0.1.1+13" width="196"></a> | <a href="images/v13/demo-connection-ru.png"><img src="images/v13/demo-connection-ru.png" alt="Меню чата с маской демонстрационного ключа · 0.1.1+13" width="196"></a> |
 
 | Подтверждение смены подключения |
 | --- |
-| <a href="images/v10/connection-review-ru.png"><img src="images/v10/connection-review-ru.png" alt="Подтверждение смены подключения" width="196"></a> |
+| <a href="images/v13/connection-review-ru.png"><img src="images/v13/connection-review-ru.png" alt="Проверка нового подключения чата · 0.1.1+13" width="196"></a> |
 
 <img src="../assets/ui/frame-bottom.svg" alt="" width="100%">
 
@@ -44,11 +44,11 @@
 
 | Выбор сервиса для нового чата | Режимы OpenRouter | Бесплатные модели OpenRouter |
 | --- | --- | --- |
-| <a href="images/v13/choose-provider-ru.png"><img src="images/v13/choose-provider-ru.png" alt="Выбор провайдера для нового чата · 0.1.1+13" width="196"></a> | <a href="images/v10/openrouter-mode-ru.png"><img src="images/v10/openrouter-mode-ru.png" alt="Режимы OpenRouter · 0.1.1+10" width="196"></a> | <a href="images/v10/openrouter-free-ru.png"><img src="images/v10/openrouter-free-ru.png" alt="Бесплатные модели OpenRouter · 0.1.1+10" width="196"></a> |
+| <a href="images/v13/choose-provider-ru.png"><img src="images/v13/choose-provider-ru.png" alt="Выбор провайдера для нового чата · 0.1.1+13" width="196"></a> | <a href="images/v13/openrouter-mode-ru.png"><img src="images/v13/openrouter-mode-ru.png" alt="Режимы OpenRouter · 0.1.1+13" width="196"></a> | <a href="images/v13/openrouter-free-ru.png"><img src="images/v13/openrouter-free-ru.png" alt="Бесплатные модели OpenRouter · 0.1.1+13" width="196"></a> |
 
 | Платные модели OpenRouter | Обновлённый каталог VSEGPT |
 | --- | --- |
-| <a href="images/v10/openrouter-paid-ru.png"><img src="images/v10/openrouter-paid-ru.png" alt="Платные модели OpenRouter · 0.1.1+10" width="196"></a> | <a href="images/v13/vsegpt-models-ru.png"><img src="images/v13/vsegpt-models-ru.png" alt="Каталог моделей VSEGPT · 0.1.1+13" width="196"></a> |
+| <a href="images/v13/openrouter-paid-ru.png"><img src="images/v13/openrouter-paid-ru.png" alt="Платные модели OpenRouter · 0.1.1+13" width="196"></a> | <a href="images/v13/vsegpt-models-ru.png"><img src="images/v13/vsegpt-models-ru.png" alt="Каталог моделей VSEGPT · 0.1.1+13" width="196"></a> |
 
 <img src="../assets/ui/frame-bottom.svg" alt="" width="100%">
 
@@ -60,7 +60,7 @@
 
 | Токены по дням | Расходы по дням | Предупреждение о бюджете перед отправкой |
 | --- | --- | --- |
-| <a href="images/v10/tokens-ru.png"><img src="images/v10/tokens-ru.png" alt="Токены по дням · 0.1.1+10" width="196"></a> | <a href="images/v10/spending-ru.png"><img src="images/v10/spending-ru.png" alt="Расходы по дням · 0.1.1+10" width="196"></a> | <a href="images/v13/budget-ru.png"><img src="images/v13/budget-ru.png" alt="Проверка бюджета перед отправкой · 0.1.1+13" width="196"></a> |
+| <a href="images/v13/tokens-filled-ru.png"><img src="images/v13/tokens-filled-ru.png" alt="Токены по дням · 0.1.1+13" width="196"></a> | <a href="images/v13/spending-filled-ru.png"><img src="images/v13/spending-filled-ru.png" alt="Расходы по дням · 0.1.1+13" width="196"></a> | <a href="images/v13/budget-ru.png"><img src="images/v13/budget-ru.png" alt="Проверка бюджета перед отправкой · 0.1.1+13" width="196"></a> |
 
 | Изменение лимита чата |
 | --- |
@@ -68,7 +68,7 @@
 
 | Подробности дня в USD | Расходы в рублях без запросов |
 | --- | --- |
-| <a href="images/v10/usd-day-ru.png"><img src="images/v10/usd-day-ru.png" alt="Подробности дня в USD" width="196"></a> | <a href="images/v10/rub-empty-ru.png"><img src="images/v10/rub-empty-ru.png" alt="Расходы в рублях без запросов" width="196"></a> |
+| <a href="images/v13/usd-day-ru.png"><img src="images/v13/usd-day-ru.png" alt="Подробности дня в USD · 0.1.1+13" width="196"></a> | <a href="images/v13/rub-empty-ru.png"><img src="images/v13/rub-empty-ru.png" alt="Расходы в рублях без запросов · 0.1.1+13" width="196"></a> |
 
 <img src="../assets/ui/frame-bottom.svg" alt="" width="100%">
 

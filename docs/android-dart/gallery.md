@@ -12,11 +12,11 @@ These Android screenshots follow a demonstration profile from the first connecti
 
 | First connection | Saved OpenRouter key | Saved VSEGPT key |
 | --- | --- | --- |
-| <a href="images/v13/onboarding-en.png"><img src="images/v13/onboarding-en.png" alt="Connect a provider · 0.1.1+13" width="196"></a> | <a href="images/v10/openrouter-saved-en.png"><img src="images/v10/openrouter-saved-en.png" alt="Saved OpenRouter key · 0.1.1+10" width="196"></a> | <a href="images/v10/vsegpt-saved-en.png"><img src="images/v10/vsegpt-saved-en.png" alt="Saved VSEGPT key · 0.1.1+10" width="196"></a> |
+| <a href="images/v13/onboarding-en.png"><img src="images/v13/onboarding-en.png" alt="Connect a provider · 0.1.1+13" width="196"></a> | <a href="images/v13/openrouter-saved-en.png"><img src="images/v13/openrouter-saved-en.png" alt="Saved OpenRouter key with the device offline · 0.1.1+13" width="196"></a> | <a href="images/v13/vsegpt-saved-en.png"><img src="images/v13/vsegpt-saved-en.png" alt="Saved VSEGPT key with the device offline · 0.1.1+13" width="196"></a> |
 
 | Check a saved key |
 | --- |
-| <a href="images/v10/openrouter-check-en.png"><img src="images/v10/openrouter-check-en.png" alt="Check a saved key · 0.1.1+10" width="196"></a> |
+| <a href="images/v13/openrouter-check-en.png"><img src="images/v13/openrouter-check-en.png" alt="Check a saved OpenRouter key · 0.1.1+13" width="196"></a> |
 
 <img src="../assets/ui/frame-bottom.svg" alt="" width="100%">
 
@@ -28,11 +28,11 @@ These Android screenshots follow a demonstration profile from the first connecti
 
 | Conversation and draft | Large text and the on-screen keyboard | Chat menu and demonstration key mask |
 | --- | --- | --- |
-| <a href="images/v10/chat-en.png"><img src="images/v10/chat-en.png" alt="Conversation and draft · 0.1.1+10" width="196"></a> | <a href="images/v13/chat-large-keyboard-en.png"><img src="images/v13/chat-large-keyboard-en.png" alt="Message editor with large text and the on-screen keyboard · 0.1.1+13" width="196"></a> | <a href="images/v13/demo-connection-en.png"><img src="images/v13/demo-connection-en.png" alt="Chat menu with a masked demonstration key · 0.1.1+13" width="196"></a> |
+| <a href="images/v13/chat-en.png"><img src="images/v13/chat-en.png" alt="English controls with a Russian travel conversation and draft · 0.1.1+13" width="196"></a> | <a href="images/v13/chat-large-keyboard-en.png"><img src="images/v13/chat-large-keyboard-en.png" alt="Message editor with large text and the on-screen keyboard · 0.1.1+13" width="196"></a> | <a href="images/v13/demo-connection-en.png"><img src="images/v13/demo-connection-en.png" alt="Chat menu with a masked demonstration key · 0.1.1+13" width="196"></a> |
 
 | Review the new chat connection |
 | --- |
-| <a href="images/v10/connection-review-en.png"><img src="images/v10/connection-review-en.png" alt="Review the new chat connection" width="196"></a> |
+| <a href="images/v13/connection-review-en.png"><img src="images/v13/connection-review-en.png" alt="Review a change of chat provider · 0.1.1+13" width="196"></a> |
 
 <img src="../assets/ui/frame-bottom.svg" alt="" width="100%">
 
@@ -44,11 +44,11 @@ These Android screenshots follow a demonstration profile from the first connecti
 
 | Choose a service for a new chat | OpenRouter modes | Free OpenRouter models |
 | --- | --- | --- |
-| <a href="images/v13/choose-provider-en.png"><img src="images/v13/choose-provider-en.png" alt="Choose a provider for a new chat · 0.1.1+13" width="196"></a> | <a href="images/v10/openrouter-mode-en.png"><img src="images/v10/openrouter-mode-en.png" alt="OpenRouter modes · 0.1.1+10" width="196"></a> | <a href="images/v10/openrouter-free-en.png"><img src="images/v10/openrouter-free-en.png" alt="Free OpenRouter models · 0.1.1+10" width="196"></a> |
+| <a href="images/v13/choose-provider-en.png"><img src="images/v13/choose-provider-en.png" alt="Choose a provider for a new chat · 0.1.1+13" width="196"></a> | <a href="images/v13/openrouter-mode-en.png"><img src="images/v13/openrouter-mode-en.png" alt="OpenRouter modes · 0.1.1+13" width="196"></a> | <a href="images/v13/openrouter-free-en.png"><img src="images/v13/openrouter-free-en.png" alt="Free OpenRouter models · 0.1.1+13" width="196"></a> |
 
 | Paid OpenRouter models | Refreshed VSEGPT catalogue |
 | --- | --- |
-| <a href="images/v10/openrouter-paid-en.png"><img src="images/v10/openrouter-paid-en.png" alt="Paid OpenRouter models · 0.1.1+10" width="196"></a> | <a href="images/v13/vsegpt-models-en.png"><img src="images/v13/vsegpt-models-en.png" alt="VSEGPT model catalogue · 0.1.1+13" width="196"></a> |
+| <a href="images/v13/openrouter-paid-en.png"><img src="images/v13/openrouter-paid-en.png" alt="Paid OpenRouter models · 0.1.1+13" width="196"></a> | <a href="images/v13/vsegpt-models-en.png"><img src="images/v13/vsegpt-models-en.png" alt="VSEGPT model catalogue · 0.1.1+13" width="196"></a> |
 
 <img src="../assets/ui/frame-bottom.svg" alt="" width="100%">
 
@@ -60,7 +60,7 @@ These Android screenshots follow a demonstration profile from the first connecti
 
 | Tokens by day | Spending by day | Budget warning before sending |
 | --- | --- | --- |
-| <a href="images/v10/tokens-en.png"><img src="images/v10/tokens-en.png" alt="Tokens by day · 0.1.1+10" width="196"></a> | <a href="images/v10/spending-en.png"><img src="images/v10/spending-en.png" alt="Spending by day · 0.1.1+10" width="196"></a> | <a href="images/v13/budget-en.png"><img src="images/v13/budget-en.png" alt="Review the budget before sending · 0.1.1+13" width="196"></a> |
+| <a href="images/v13/tokens-filled-en.png"><img src="images/v13/tokens-filled-en.png" alt="Tokens by day · 0.1.1+13" width="196"></a> | <a href="images/v13/spending-filled-en.png"><img src="images/v13/spending-filled-en.png" alt="Spending by day · 0.1.1+13" width="196"></a> | <a href="images/v13/budget-en.png"><img src="images/v13/budget-en.png" alt="Review the budget before sending · 0.1.1+13" width="196"></a> |
 
 | Edit the chat limit |
 | --- |
@@ -68,7 +68,7 @@ These Android screenshots follow a demonstration profile from the first connecti
 
 | Daily details in USD | Ruble spending with no requests |
 | --- | --- |
-| <a href="images/v10/usd-day-en.png"><img src="images/v10/usd-day-en.png" alt="Daily details in USD" width="196"></a> | <a href="images/v10/rub-empty-en.png"><img src="images/v10/rub-empty-en.png" alt="Ruble spending with no requests" width="196"></a> |
+| <a href="images/v13/usd-day-en.png"><img src="images/v13/usd-day-en.png" alt="Daily details in USD · 0.1.1+13" width="196"></a> | <a href="images/v13/rub-empty-en.png"><img src="images/v13/rub-empty-en.png" alt="Ruble spending with no requests · 0.1.1+13" width="196"></a> |
 
 <img src="../assets/ui/frame-bottom.svg" alt="" width="100%">
 
