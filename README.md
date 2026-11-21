@@ -6,12 +6,12 @@
 
 <p align="left">
 <a href="README.ru.md" title="RU"><img align="right" src="docs/assets/ui/buttons/v3-en-10762eaa75fd.svg" alt="RU" width="46" height="30"></a> <a href="README.md" title="EN"><img align="right" src="docs/assets/ui/buttons/v3-en-2022af2877c8.svg" alt="EN" width="45" height="30"></a>
-<a href="https://github.com/Umichata/tokenlogue/tree/main" title="Home"><img src="docs/assets/ui/buttons/v3-en-4e7a793b89e3.svg" alt="Home" width="36" height="30"></a> <a href="https://github.com/Umichata/tokenlogue/tree/android" title="Android Python"><img src="docs/assets/ui/buttons//android-python.svg" alt="Android Python" width="142" height="30"></a> <a href="https://github.com/Umichata/tokenlogue/blob/android-dart/README.md" title="Android Dart"><img src="docs/assets/ui/buttons//android-dart.svg" alt="Android Dart" width="126" height="30"></a> <a href="https://github.com/Umichata/tokenlogue/tree/linux" title="Linux"><img src="docs/assets/ui/buttons/v3-en-e31c456bd05c.svg" alt="Linux" width="65" height="30"></a>
+<a href="https://github.com/Umichata/tokenlogue/tree/main" title="Home"><img src="docs/assets/ui/buttons/v3-en-4e7a793b89e3.svg" alt="Home" width="36" height="30"></a> <a href="https://github.com/Umichata/tokenlogue/tree/android" title="Android Python"><img src="docs/assets/ui/buttons/android-python.svg" alt="Android Python" width="142" height="30"></a> <a href="https://github.com/Umichata/tokenlogue/blob/android-dart/README.md" title="Android Dart"><img src="docs/assets/ui/buttons/android-dart.svg" alt="Android Dart" width="126" height="30"></a> <a href="https://github.com/Umichata/tokenlogue/tree/linux" title="Linux"><img src="docs/assets/ui/buttons/v3-en-e31c456bd05c.svg" alt="Linux" width="65" height="30"></a>
 <a href="docs/android-dart/README.md" title="Documentation map"><img src="docs/assets/ui/buttons/v3-en-2e9bcfa8f92e.svg" alt="Documentation map" width="173" height="30"></a> <a href="docs/android-dart/README.md#chat" title="User guide"><img src="docs/assets/ui/buttons/v3-en-896461d1c049.svg" alt="User guide" width="104" height="30"></a> <a href="#features" title="Features"><img src="docs/assets/ui/buttons/v3-en-32eedba1fb28.svg" alt="Features" width="89" height="30"></a></p>
 
 **Tokenlogue Dart** is an Android client for OpenRouter and VSEGPT. Choose a service and model for each conversation. Return to an unfinished draft after reviewing tokens or spending.
 
-To install Dart, [build the ARM64 APK](apps/android_dart/README.md). Android installs it alongside Tokenlogue on Python and keeps a separate profile for each app.
+[Download Tokenlogue Dart 0.1.1+18 for Android ARM64](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1-android-dart-arm64-v8a-v18.apk). Android installs it alongside Tokenlogue on Python and keeps a separate profile for each app.
 
 <a name="en-features"></a>
 <a name="features"></a>
@@ -45,7 +45,7 @@ The chat, daily token chart and budget dialog were captured on Android Dart 0.1.
 
 ## Install and connect
 
-Build the ARM64 APK with the [Android build guide](apps/android_dart/README.md). Android 7.0 or later is required. The launcher entry is **Tokenlogue Dart**. It can be installed alongside the Python edition. Each edition has its own PIN, keys and history. There is no automatic transfer between the two.
+Download the Dart APK above, [verify its SHA-256](docs/android-dart/README.md#apk) and open the file on your device. Android 7.0 or later is required. The launcher entry is **Tokenlogue Dart**. It can be installed alongside the Python edition. Each edition has its own PIN, keys and history. There is no automatic transfer between the two.
 
 <a name="first-connection"></a>
 

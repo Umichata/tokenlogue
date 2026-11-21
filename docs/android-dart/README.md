@@ -2,7 +2,19 @@
 
 # Using Tokenlogue Dart
 
-Install the Dart APK on Android ARM64. Android keeps the Dart and Python profiles in separate app directories. For a Dart update, keep the existing installation and use an APK signed with the same Dart certificate.
+<a id="apk"></a>
+
+## Install the APK
+
+[Download Tokenlogue Dart 0.1.1+18 for Android ARM64](https://github.com/Umichata/tokenlogue/releases/download/v0.1.1-preview.1/Tokenlogue-0.1.1-android-dart-arm64-v8a-v18.apk). Android 7.0 or later is required. Check the downloaded file by running this command in your download directory.
+
+```sh
+printf '%s  %s\n' '806cb00d46615bfed5766e47ecd33d9b24fe7bf0e6e24d18fb62cbd6d44bc745' 'Tokenlogue-0.1.1-android-dart-arm64-v8a-v18.apk' | sha256sum --check -
+```
+
+After the file reports `OK`, open the APK on your device and confirm installation. Choose **Tokenlogue Dart** in the app list.
+
+Android keeps the Dart and Python profiles in separate app directories. For a Dart update, keep the existing installation and use an APK signed with the same Dart certificate.
 
 [App screens](gallery.md)
 
