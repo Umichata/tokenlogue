@@ -183,7 +183,8 @@ class PageFilter<T> extends StatelessWidget {
       selectOnly: true,
       requestFocusOnTap: false,
       initialSelection: value,
-      label: Text(label),
+      textStyle: const TextStyle(fontSize: 16, color: ink),
+      label: Text(label, style: const TextStyle(fontSize: 14, color: muted)),
       dropdownMenuEntries: [
         for (final item in options.entries)
           DropdownMenuEntry(value: item.key, label: item.value),
