@@ -1064,6 +1064,7 @@ class _WorkspaceState extends State<Workspace> {
   Widget conversation(bool wide) {
     final c = chat, local = rows.where((r) => r['chat'] == selected).toList();
     final total = c == null ? null : totals(local, c.service);
+    final title = c?.title ?? 'Tokenlogue';
     return LayoutBuilder(
       builder: (context, constraints) {
         final short = constraints.maxHeight < 480;
@@ -1080,13 +1081,14 @@ class _WorkspaceState extends State<Workspace> {
                   tooltip: t('chat.open_list'),
                 ),
                 Expanded(
-                  child: Text(
-                    c?.title ?? 'Tokenlogue',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
+                  child: Tooltip(
+                    message: title,
+                    excludeFromSemantics: true,
+                    child: Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleMedium,
                     ),
                   ),
                 ),

@@ -6,7 +6,8 @@ device="${1:?Specify the serial of a disposable Android emulator}"
 case "${2:-workspace}" in
     workspace) scenario=onboarding_test.dart ;;
     legacy) scenario=legacy_recovery_test.dart ;;
-    *) echo "Choose workspace or legacy" >&2; exit 2 ;;
+    providers) scenario=provider_states_test.dart ;;
+    *) echo "Choose workspace, legacy or providers" >&2; exit 2 ;;
 esac
 here="$(cd -- "$(dirname "$0")" && pwd -P)"
 stage="$(mktemp -d /tmp/tokenlogue-dart-integration.XXXXXXXX)"

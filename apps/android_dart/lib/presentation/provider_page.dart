@@ -292,6 +292,21 @@ class _ServiceCardState extends State<_ServiceCard> {
         saved = page.profile.keyFor(s) != null;
     final account = page.accounts.values[s],
         stale = page.accounts.stale.contains(s);
+    final savedStatus = !saved
+        ? 'providers.status.not_configured'
+        : switch (page.accounts.keyChecks[s]) {
+            KeyStatus.accepted
+                when !stale && account?.status == 'subscription_required' =>
+              'providers.status.subscription_required',
+            KeyStatus.accepted when !stale && account?.status == 'warning' =>
+              'providers.status.warning',
+            KeyStatus.accepted => 'providers.status.connected',
+            KeyStatus.invalid => 'providers.status.invalid',
+            KeyStatus.restricted => 'providers.status.restricted',
+            null when page.profile.credentials[s.name]['verified'] == true =>
+              'providers.status.connected',
+            _ => 'providers.status.unverified',
+          };
     final limits = page.accounts.routerLimits;
     final canSave =
         validated == input.text.trim() &&
@@ -303,18 +318,7 @@ class _ServiceCardState extends State<_ServiceCard> {
         interpolate(t('connection.shared_key'), {'provider': s.label}),
         style: const TextStyle(fontSize: 12),
       ),
-      Semantics(
-        container: true,
-        child: Text(
-          t(
-            !saved
-                ? 'providers.status.not_configured'
-                : page.profile.credentials[s.name]['verified'] == true
-                ? 'providers.status.connected'
-                : 'providers.status.unverified',
-          ),
-        ),
-      ),
+      Semantics(container: true, child: Text(t(savedStatus))),
       SecretField(
         controller: input,
         label: interpolate(t('providers.form_key'), {'provider': s.label}),
@@ -373,7 +377,9 @@ class _ServiceCardState extends State<_ServiceCard> {
                 }),
         ),
       ),
-      if (account != null && account.status != 'ready')
+      if (account != null &&
+          account.status != 'ready' &&
+          t(savedStatus) != t('providers.balance_status.${account.status}'))
         Text(t('providers.balance_status.${account.status}')),
       if (stale && page.accounts.errors[s] != null)
         Text(t(page.accounts.errors[s]!)),
